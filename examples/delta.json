@@ -1,0 +1,16 @@
+{
+  "type": "delta",
+  "base_epoch": 0,
+  "epoch": 1,
+  "ops": [
+    {
+      "op": "cell_set",
+      "slot_id": 0,
+      "payload": "AAAAMg=="
+    },
+    {
+      "op": "invalidate",
+      "slot_id": 2
+    }
+  ]
+}

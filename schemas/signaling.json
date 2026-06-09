@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/signaling.json",
+  "title": "Signaling Protocol",
+  "description": "WebSocket signaling frames for lazily peer discovery",
+  "$comment": "Validates both client→server and server→client frames",
+
+  "oneOf": [
+    {
+      "title": "ClientMessage",
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "Join",
+          "properties": {
+            "type": { "const": "join" },
+            "peer": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+            "capabilities": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["type", "peer"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "Offer",
+          "properties": {
+            "type": { "const": "offer" },
+            "to": { "type": "integer", "minimum": 0 },
+            "sdp": { "type": "string" }
+          },
+          "required": ["type", "to", "sdp"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "Answer",
+          "properties": {
+            "type": { "const": "answer" },
+            "to": { "type": "integer", "minimum": 0 },
+            "sdp": { "type": "string" }
+          },
+          "required": ["type", "to", "sdp"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "Ice",
+          "properties": {
+            "type": { "const": "ice" },
+            "to": { "type": "integer", "minimum": 0 },
+            "candidate": { "type": "string" }
+          },
+          "required": ["type", "to", "candidate"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "Relay",
+          "properties": {
+            "type": { "const": "relay" },
+            "to": { "type": "integer", "minimum": 0 },
+            "payload": {}
+          },
+          "required": ["type", "to", "payload"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "Leave",
+          "properties": {
+            "type": { "const": "leave" }
+          },
+          "required": ["type"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    {
+      "title": "ServerMessage",
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "Welcome",
+          "properties": {
+            "type": { "const": "welcome" },
+            "peer": { "type": "integer", "minimum": 0 },
+            "peers": {
+              "type": "array",
+              "items": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "required": ["type", "peer", "peers"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "PeerJoined",
+          "properties": {
+            "type": { "const": "peer-joined" },
+            "peer": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["type", "peer"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "PeerLeft",
+          "properties": {
+            "type": { "const": "peer-left" },
+            "peer": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["type", "peer"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "ForwardedOffer",
+          "properties": {
+            "type": { "const": "offer" },
+            "from": { "type": "integer", "minimum": 0 },
+            "sdp": { "type": "string" }
+          },
+          "required": ["type", "from", "sdp"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "ForwardedAnswer",
+          "properties": {
+            "type": { "const": "answer" },
+            "from": { "type": "integer", "minimum": 0 },
+            "sdp": { "type": "string" }
+          },
+          "required": ["type", "from", "sdp"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "ForwardedIce",
+          "properties": {
+            "type": { "const": "ice" },
+            "from": { "type": "integer", "minimum": 0 },
+            "candidate": { "type": "string" }
+          },
+          "required": ["type", "from", "candidate"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "ForwardedRelay",
+          "properties": {
+            "type": { "const": "relay" },
+            "from": { "type": "integer", "minimum": 0 },
+            "payload": {}
+          },
+          "required": ["type", "from", "payload"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "title": "Error",
+          "properties": {
+            "type": { "const": "error" },
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          },
+          "required": ["type", "code", "message"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/distributed.json",
+  "title": "Distributed Types",
+  "description": "CRDT and permission types for lazily-distributed",
+
+  "$defs": {
+    "PeerId": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Wire-stable peer identifier (u64, must stay ≤ Number.MAX_SAFE_INTEGER)"
+    },
+    "NodeId": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Wire-stable node identifier (decoupled from internal SlotId)"
+    },
+    "OpKind": {
+      "type": "string",
+      "enum": ["read", "write", "trigger_effect"],
+      "description": "Permission-gated operation kind"
+    },
+    "RemoteOp": {
+      "type": "object",
+      "description": "Gated, serializable unit a peer requests",
+      "properties": {
+        "kind": { "$ref": "#/$defs/OpKind" },
+        "node": { "$ref": "#/$defs/NodeId" }
+      },
+      "required": ["kind", "node"],
+      "additionalProperties": false
+    },
+    "CellRegisterType": {
+      "type": "string",
+      "enum": ["lww", "mv", "pn-counter"],
+      "description": "CRDT register type for a replicated cell"
+    },
+    "HLCStamp": {
+      "type": "object",
+      "description": "Hybrid logical clock stamp for causal ordering",
+      "properties": {
+        "wall_time": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Wall-clock microseconds since epoch"
+        },
+        "logical": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Logical counter for causal tiebreak"
+        },
+        "peer_id": { "$ref": "#/$defs/PeerId" }
+      },
+      "required": ["wall_time", "logical", "peer_id"],
+      "additionalProperties": false
+    }
+  }
+}

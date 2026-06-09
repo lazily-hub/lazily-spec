@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/ffi.json",
+  "title": "FFI Types",
+  "description": "C ABI types for the lazily FFI boundary",
+
+  "$defs": {
+    "LazilyFfiBytes": {
+      "type": "object",
+      "description": "Owned byte buffer crossing the FFI boundary",
+      "properties": {
+        "ptr": { "type": "integer", "minimum": 0, "description": "Pointer to byte buffer" },
+        "len": { "type": "integer", "minimum": 0, "description": "Buffer length in bytes" }
+      },
+      "required": ["ptr", "len"],
+      "additionalProperties": false
+    },
+    "LazilyFfiStatus": {
+      "type": "integer",
+      "enum": [0, 1, 2, 3, 4, 5],
+      "description": "FFI operation status code",
+      "oneOf": [
+        { "const": 0, "title": "Ok" },
+        { "const": 1, "title": "Empty" },
+        { "const": 2, "title": "NullPointer" },
+        { "const": 3, "title": "InvalidMessage" },
+        { "const": 4, "title": "EncodeFailed" },
+        { "const": 5, "title": "Panic" }
+      ]
+    },
+    "LazilyFfiMessageKind": {
+      "type": "integer",
+      "enum": [0, 1, 2],
+      "description": "IPC message kind discriminator",
+      "oneOf": [
+        { "const": 0, "title": "Unknown" },
+        { "const": 1, "title": "Snapshot" },
+        { "const": 2, "title": "Delta" }
+      ]
+    }
+  }
+}

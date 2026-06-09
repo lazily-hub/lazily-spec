@@ -1,0 +1,29 @@
+{
+  "type": "snapshot",
+  "epoch": 0,
+  "nodes": [
+    {
+      "slot_id": 0,
+      "type_tag": "i32",
+      "state": "resolved",
+      "payload": "AAAAAQ=="
+    },
+    {
+      "slot_id": 1,
+      "type_tag": "string",
+      "state": "resolved",
+      "payload": "ImhlbGxvIg=="
+    },
+    {
+      "slot_id": 2,
+      "type_tag": "i32",
+      "state": "resolved",
+      "payload": "AAAAMQ=="
+    }
+  ],
+  "edges": [
+    { "dependent": 2, "dependency": 0 },
+    { "dependent": 2, "dependency": 1 }
+  ],
+  "roots": [0, 1]
+}

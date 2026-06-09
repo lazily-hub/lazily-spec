@@ -1,0 +1,13 @@
+[
+  { "type": "join", "peer": 1 },
+  { "type": "welcome", "peer": 1, "peers": [] },
+  { "type": "join", "peer": 2 },
+  { "type": "welcome", "peer": 2, "peers": [1] },
+  { "type": "peer-joined", "peer": 2 },
+  { "type": "offer", "to": 2, "sdp": "v=0\r\no=- 12345 2 IN IP4 127.0.0.1\r\n..." },
+  { "type": "answer", "from": 2, "sdp": "v=0\r\no=- 67890 2 IN IP4 127.0.0.1\r\n..." },
+  { "type": "ice", "to": 2, "candidate": "candidate:1 1 udp 2130706431 192.168.1.1 5000 typ host" },
+  { "type": "ice", "from": 2, "candidate": "candidate:1 1 udp 2130706431 192.168.1.2 5001 typ host" },
+  { "type": "relay", "to": 2, "payload": { "type": "delta", "base_epoch": 0, "epoch": 1, "ops": [] } },
+  { "type": "leave" }
+]

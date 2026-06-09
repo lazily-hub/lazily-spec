@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/snapshot.json",
+  "title": "Snapshot",
+  "description": "Full graph state message for lazily-IPC",
+  "type": "object",
+  "properties": {
+    "type": { "const": "snapshot" },
+    "epoch": { "type": "integer", "minimum": 0, "description": "Current IPC epoch" },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/NodeSnapshot" },
+      "description": "All serialized nodes"
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/EdgeSnapshot" },
+      "description": "Dependency edges"
+    },
+    "roots": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0 },
+      "description": "Cell and source slot IDs"
+    }
+  },
+  "required": ["type", "epoch", "nodes", "edges", "roots"],
+  "additionalProperties": false,
+  "$defs": {
+    "NodeSnapshot": {
+      "type": "object",
+      "properties": {
+        "slot_id": { "type": "integer", "minimum": 0 },
+        "type_tag": { "type": "string", "description": "Stable cross-process type key" },
+        "state": {
+          "type": "string",
+          "enum": ["resolved", "dirty", "unset"],
+          "description": "Node state"
+        },
+        "payload": {
+          "type": ["string", "null"],
+          "contentEncoding": "base64",
+          "description": "Serialized value (null if unset)"
+        }
+      },
+      "required": ["slot_id", "type_tag", "state"],
+      "additionalProperties": false
+    },
+    "EdgeSnapshot": {
+      "type": "object",
+      "properties": {
+        "dependent": { "type": "integer", "minimum": 0 },
+        "dependency": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["dependent", "dependency"],
+      "additionalProperties": false
+    }
+  }
+}
