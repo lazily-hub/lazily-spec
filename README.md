@@ -31,6 +31,35 @@ Schemas are provided as **JSON Schema (Draft 2020-12)**. Each implementation mus
 
 This repo extracts the wire-protocol and cross-language compatibility sections from `lazily-rs/SPEC.md` into a standalone reference. Rust-specific internals (Context, ThreadSafeContext, lock strategy, benchmarks) remain in the Rust crate.
 
+## Conformance Fixtures
+
+The `conformance/` directory contains canonical test fixtures that all IPC-capable bindings must validate against. Each binding's CI should deserialize the `wire` field, run the assertions, and re-serialize to confirm round-trip fidelity.
+
+**Fixture schema:**
+
+```json
+{
+  "description": "Human-readable summary",
+  "protocol_version": 1,
+  "kind": "Snapshot" | "Delta",
+  "assertions": { "…language-agnostic field checks…" },
+  "wire": { "…IpcMessage as serde_json…" }
+}
+```
+
+**Current fixtures:**
+
+| Fixture | Kind | Description |
+|---------|------|-------------|
+| `snapshot_minimal.json` | Snapshot | One payload node, no edges |
+| `snapshot_multi_node.json` | Snapshot | Multiple nodes and edges |
+| `snapshot_shared_blob.json` | Snapshot | SharedBlob node state |
+| `delta_sequential.json` | Delta | All 7 DeltaOp variants, sequential |
+| `delta_non_sequential.json` | Delta | Non-sequential delta with gap |
+| `delta_shared_blob.json` | Delta | CellSet/SlotValue with SharedBlob |
+
+**Adding a new binding:** Copy the fixture-loading pattern from `lazily-rs/tests/conformance.rs`. Each test should (1) load the fixture, (2) parse the `wire` field into the binding's native `IpcMessage` type, (3) assert the `assertions` fields, (4) re-serialize and compare.
+
 ## Versioning
 
 Protocol versioning follows the IPC capability negotiation: each session exchanges `{ protocol_id, protocol_major_version, codec }` before any graph state flows. A major version bump is a breaking change; minor additions are additive.
