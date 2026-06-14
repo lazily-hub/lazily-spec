@@ -131,6 +131,28 @@ A context-level monotonic `ipc_epoch: u64` advances **once per outermost batch f
 - **PartialEq cell guard**: An equal `set_cell` emits no `cell_set` and no downstream ops.
 - **Memo equality suppression**: A dirty `memo()` that recomputes to an equal value emits no `slot_value` and no downstream `invalidate`.
 - **Coalesced frontier**: A dependent reached through many changed cells in one batch appears at most once per delta.
+- **Eager Signal values are concrete**: A changed eager Signal emits a concrete
+  `slot_value` for its backing slot, not a bare `invalidate`.
+
+### Eager Signal nodes
+
+A `Signal` is the eager derived value in the `Slot -> Cell -> Signal` family. It
+is not a separate wire type. A Signal is represented by the ordinary backing
+slot node that stores its materialized value:
+
+- **Snapshot**: the backing slot appears as a `NodeSnapshot` with a concrete
+  `payload`/shared-blob payload like any other readable slot.
+- **Delta**: a value change appears as `slot_value` for the backing slot's
+  `NodeId`. Because the value is recomputed during the invalidation flush, eager
+  Signals do not emit bare `invalidate` ops for their own changed value.
+- **Memo guard**: an eager recompute that yields an equal value suppresses
+  `slot_value` and downstream invalidation exactly like a lazy memoized slot.
+- **Local puller**: the producer-side effect that keeps the Signal eager is local
+  execution state and is not serialized as a graph node.
+
+Consumers therefore need no protocol extension to read eager Signals from a
+producer. They observe the same permission-filtered `Snapshot`/`Delta` state
+plane and see Signals as slots whose changed values are reliably materialized.
 
 ### Lazy reconciliation
 
