@@ -27,6 +27,20 @@ All messages use **JSON** with `serde`-compatible tagging (`"type"` discriminant
 
 Schemas are provided as **JSON Schema (Draft 2020-12)**. Each implementation must validate against these schemas.
 
+## Formal Model
+
+`formal/lean` contains a small Lean 4 Lake package for the IPC Snapshot/Delta
+state machine. It proves the epoch sequencing, fail-closed resync,
+PartialEq/memo suppression, batch coalescing, and eager Signal `slot_value`
+invariants that all bindings share.
+
+Verify it with:
+
+```bash
+cd formal/lean
+lake build
+```
+
 ## Relationship to lazily-rs SPEC.md
 
 This repo extracts the wire-protocol and cross-language compatibility sections from `lazily-rs/SPEC.md` into a standalone reference. Rust-specific internals (Context, ThreadSafeContext, lock strategy, benchmarks) remain in the Rust crate.

@@ -134,6 +134,9 @@ A context-level monotonic `ipc_epoch: u64` advances **once per outermost batch f
 - **Eager Signal values are concrete**: A changed eager Signal emits a concrete
   `slot_value` for its backing slot, not a bare `invalidate`.
 
+The companion Lean model in `formal/lean` encodes these IPC transition rules and
+checks them with `lake build`.
+
 ### Eager Signal nodes
 
 A `Signal` is the eager derived value in the `Slot -> Cell -> Signal` family. It
