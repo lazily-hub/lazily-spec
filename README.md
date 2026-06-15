@@ -34,11 +34,10 @@ state machine. It proves the epoch sequencing, fail-closed resync,
 PartialEq/memo suppression, batch coalescing, and eager Signal `slot_value`
 invariants that all bindings share.
 
-Verify it with:
+Verify it with the local check target:
 
 ```bash
-cd formal/lean
-lake build
+make check
 ```
 
 ## Relationship to lazily-rs SPEC.md

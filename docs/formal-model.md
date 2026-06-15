@@ -14,10 +14,10 @@ bindings:
   `invalidate` ops for their backing slot;
 - batch flushes carry a coalesced frontier and advance the IPC epoch once.
 
-Run it from `formal/lean`:
+Run it through the local check target:
 
 ```bash
-lake build
+make check
 ```
 
 Keep the Lean package narrow. JSON Schema, Rust implementation behavior,
