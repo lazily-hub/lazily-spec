@@ -1,0 +1,15 @@
+[book]
+title = "lazily-spec"
+description = "Language-agnostic wire protocol specification for the lazily reactive signals family."
+authors = ["Brian Takita"]
+language = "en"
+src = "docs"
+
+[output.html]
+git-repository-url = "https://github.com/lazily-hub/lazily-spec"
+edit-url-template = "https://github.com/lazily-hub/lazily-spec/edit/main/{path}"
+default-theme = "rust"
+
+[output.html.fold]
+enable = true
+level = 1
