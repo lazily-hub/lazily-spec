@@ -13,13 +13,26 @@ PeerId = u64
 
 Wire-stable identifiers decoupled from internal `SlotId`. Serialized as bare JSON numbers. JavaScript/TypeScript peers must keep values at or below `Number.MAX_SAFE_INTEGER` (2^53).
 
-### IpcPayload
+### IpcValue (payload)
 
-Opaque serialized value bytes. The producing language owns type-aware encoding through stable `type_tag` strings; the channel only moves bytes.
+A `DeltaOp` cell payload is carried as an externally-tagged `IpcValue`:
 
 ```
-IpcPayload = { type_tag: string, bytes: base64-string }
+IpcValue = { "Inline": [u8] }           // inline byte array (JSON array of 0..255)
+          | { "SharedBlob": ShmBlobRef } // descriptor into a shared-memory arena
 ```
+
+### NodeState
+
+A `NodeSnapshot` / `NodeAdd` node body is carried as an externally-tagged `NodeState`:
+
+```
+NodeState = { "Payload": [u8] }          // concrete serialized value bytes
+           | { "SharedBlob": ShmBlobRef } // concrete value in shared memory
+           | "Opaque"                      // visible node whose value cannot be serialized
+```
+
+Opaque serialized value bytes are owned by the producing language; type-aware decoding is fixed by the stable `type_tag` carried on the node. Over the JSON codec, bytes are transmitted as JSON arrays of integers in `0..255` (not base64).
 
 ### type_tag
 
@@ -46,15 +59,16 @@ A context-level monotonic `ipc_epoch: u64` advances **once per outermost batch f
 
 ```json
 {
-  "type": "snapshot",
-  "epoch": 0,
-  "nodes": [
-    { "slot_id": 0, "type_tag": "i32", "state": "resolved", "payload": "base64..." }
-  ],
-  "edges": [
-    { "dependent": 1, "dependency": 0 }
-  ],
-  "roots": [0]
+  "Snapshot": {
+    "epoch": 1,
+    "nodes": [
+      { "node": 1, "type_tag": "i32", "state": { "Payload": [1, 2, 3, 4] } }
+    ],
+    "edges": [
+      { "dependent": 2, "dependency": 1 }
+    ],
+    "roots": [1]
+  }
 }
 ```
 
@@ -63,25 +77,19 @@ A context-level monotonic `ipc_epoch: u64` advances **once per outermost batch f
 | `epoch` | `u64` | Current IPC epoch |
 | `nodes` | `NodeSnapshot[]` | All serialized nodes |
 | `edges` | `EdgeSnapshot[]` | Dependency edges (dependent → dependency) |
-| `roots` | `NodeId[]` | Cell and source slot IDs |
+| `roots` | `NodeId[]` | Cell and source slot ids |
 
 #### NodeSnapshot
 
 ```json
-{
-  "slot_id": 0,
-  "type_tag": "i32",
-  "state": "resolved",
-  "payload": "base64..."
-}
+{ "node": 1, "type_tag": "i32", "state": { "Payload": [1, 2, 3, 4] } }
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `slot_id` | `u64` | Node identifier |
-| `type_tag` | `string` | Stable cross-process type key |
-| `state` | `"resolved" \| "dirty" \| "unset"` | Node state |
-| `payload` | `base64 string?` | Serialized value (null if unset) |
+| `node` | `NodeId (u64)` | Wire-stable node identifier |
+| `type_tag` | `string` | Stable cross-process type key for decoding `state` |
+| `state` | `NodeState` | `{"Payload":[u8]}` \| `{"SharedBlob":ShmBlobRef}` \| `"Opaque"` |
 
 #### EdgeSnapshot
 
@@ -93,18 +101,19 @@ A context-level monotonic `ipc_epoch: u64` advances **once per outermost batch f
 
 ```json
 {
-  "type": "delta",
-  "base_epoch": 0,
-  "epoch": 1,
-  "ops": [
-    { "op": "cell_set", "slot_id": 0, "payload": "base64..." },
-    { "op": "slot_value", "slot_id": 1, "payload": "base64..." },
-    { "op": "invalidate", "slot_id": 2 },
-    { "op": "node_add", "slot_id": 3, "type_tag": "string", "payload": "base64..." },
-    { "op": "node_remove", "slot_id": 4 },
-    { "op": "edge_add", "dependent": 5, "dependency": 0 },
-    { "op": "edge_remove", "dependent": 5, "dependency": 0 }
-  ]
+  "Delta": {
+    "base_epoch": 40,
+    "epoch": 41,
+    "ops": [
+      { "CellSet":    { "node": 1, "payload": { "Inline": [10] } } },
+      { "SlotValue":  { "node": 2, "payload": { "Inline": [20] } } },
+      { "Invalidate": { "node": 3 } },
+      { "NodeAdd":    { "node": 4, "type_tag": "u64", "state": { "Payload": [64] } } },
+      { "NodeRemove": { "node": 5 } },
+      { "EdgeAdd":    { "dependent": 2, "dependency": 1 } },
+      { "EdgeRemove": { "dependent": 3, "dependency": 1 } }
+    ]
+  }
 }
 ```
 
@@ -116,23 +125,25 @@ A context-level monotonic `ipc_epoch: u64` advances **once per outermost batch f
 
 #### DeltaOp variants
 
-| Op | Fields | Description |
-|----|--------|-------------|
-| `cell_set` | `slot_id`, `payload` | Changed-value cell write (PartialEq-guarded) |
-| `slot_value` | `slot_id`, `payload` | A recompute published a new value |
-| `invalidate` | `slot_id` | Dirtied, not yet recomputed (lazy) |
-| `node_add` | `slot_id`, `type_tag`, `payload?` | New node (payload optional for unset) |
-| `node_remove` | `slot_id` | Removed node (free-list reuse: Remove then Add) |
-| `edge_add` | `dependent`, `dependency` | New dependency edge |
-| `edge_remove` | `dependent`, `dependency` | Removed dependency edge |
+All `DeltaOp`, `IpcValue`, `NodeState`, and `IpcMessage` variants are **externally tagged**: a single-key JSON object whose key is the PascalCase variant name and whose value is the body (or a bare `"Opaque"` / unit string).
+
+| Op | Body fields | Description |
+|----|-------------|-------------|
+| `CellSet` | `node`, `payload: IpcValue` | Changed-value cell write (PartialEq-guarded) |
+| `SlotValue` | `node`, `payload: IpcValue` | A recompute published a new value |
+| `Invalidate` | `node` | Dirtied, not yet recomputed (lazy) |
+| `NodeAdd` | `node`, `type_tag`, `state: NodeState` | New node |
+| `NodeRemove` | `node` | Removed node (free-list reuse: Remove then Add) |
+| `EdgeAdd` | `dependent`, `dependency` | New dependency edge |
+| `EdgeRemove` | `dependent`, `dependency` | Removed dependency edge |
 
 ### Consistency invariants
 
-- **PartialEq cell guard**: An equal `set_cell` emits no `cell_set` and no downstream ops.
-- **Memo equality suppression**: A dirty `memo()` that recomputes to an equal value emits no `slot_value` and no downstream `invalidate`.
+- **PartialEq cell guard**: An equal `set_cell` emits no `CellSet` and no downstream ops.
+- **Memo equality suppression**: A dirty `memo()` that recomputes to an equal value emits no `SlotValue` and no downstream `Invalidate`.
 - **Coalesced frontier**: A dependent reached through many changed cells in one batch appears at most once per delta.
 - **Eager Signal values are concrete**: A changed eager Signal emits a concrete
-  `slot_value` for its backing slot, not a bare `invalidate`.
+  `SlotValue` for its backing slot, not a bare `Invalidate`.
 
 The companion Lean model in `formal/lean` encodes these IPC transition rules and
 checks them with `lake build`.
@@ -145,11 +156,11 @@ slot node that stores its materialized value:
 
 - **Snapshot**: the backing slot appears as a `NodeSnapshot` with a concrete
   `payload`/shared-blob payload like any other readable slot.
-- **Delta**: a value change appears as `slot_value` for the backing slot's
+- **Delta**: a value change appears as `SlotValue` for the backing slot's
   `NodeId`. Because the value is recomputed during the invalidation flush, eager
-  Signals do not emit bare `invalidate` ops for their own changed value.
+  Signals do not emit bare `Invalidate` ops for their own changed value.
 - **Memo guard**: an eager recompute that yields an equal value suppresses
-  `slot_value` and downstream invalidation exactly like a lazy memoized slot.
+  `SlotValue` and downstream invalidation exactly like a lazy memoized slot.
 - **Local puller**: the producer-side effect that keeps the Signal eager is local
   execution state and is not serialized as a graph node.
 
@@ -159,8 +170,8 @@ plane and see Signals as slots whose changed values are reliably materialized.
 
 ### Lazy reconciliation
 
-- **Value-mirror (default)**: At flush, the sender resolves each invalidated allowlisted slot so the delta carries concrete `slot_value`s. The receiver holds no compute closures.
-- **Mirror-lazy**: The sender emits bare `invalidate`; the receiver keeps a stale marker. Requires compute closure replication. Deferred to `lazily-distributed`.
+- **Value-mirror (default)**: At flush, the sender resolves each invalidated allowlisted slot so the delta carries concrete `SlotValue`s. The receiver holds no compute closures.
+- **Mirror-lazy**: The sender emits bare `Invalidate`; the receiver keeps a stale marker. Requires compute closure replication. Deferred to `lazily-distributed`.
 
 ### Resync / gap handling
 
