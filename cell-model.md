@@ -189,11 +189,26 @@ It conforms to the cell model when:
 1. Each entry is an ordinary cell — its single-writer / multi-write classification,
    `merge:` mechanism, and ingress rules are exactly those above. The collection adds no
    new merge unit; **cell = merge unit** still holds per entry.
-2. **Value reactivity and membership reactivity are independent**: writing one entry's
-   value MUST NOT invalidate membership readers (`keys` / `len` / `contains`), and
-   adding/removing a key MUST NOT invalidate readers of unrelated entry values.
-3. A key resolves to a **stable handle** for the key's lifetime; membership changes are
-   signalled by the membership cell, never by mutating sibling entries.
+2. **Value, set-membership, and order reactivity are independent**: writing one entry's
+   value MUST NOT invalidate membership or order readers; adding/removing a key MUST NOT
+   invalidate readers of unrelated entry values; and a **pure reorder** (atomic move) MUST
+   NOT invalidate set-membership readers (`len` / `contains`) — only order readers (`keys`).
+3. A key resolves to a **stable handle** for the key's lifetime; membership and order
+   changes are signalled by their dedicated cells, never by mutating sibling entries.
+4. **Atomic ordered move** (`move_to` / `move_before` / `move_after`): reordering a key MUST
+   keep the entry's same cell handle, dependents, and lineage (not remove + re-mint) and
+   bump only the order signal once.
+
+### Ordered keyed tree
+
+An *ordered keyed tree* (`CellTree`) is a further **composition**: each node is
+`(stable id, value cell, ordered keyed child collection)`. It conforms when per-node value
+reactivity holds (editing a node invalidates only that node's readers), per-level
+membership/order reactivity holds (a sibling subtree or descendant change MUST NOT
+invalidate an unrelated level's child readers), and child reorder inherits the atomic-move
+guarantee. The tree is still a composition of cells — not a new cell kind — so per-cell
+merge applies node-by-node.
 
 This is the runtime substrate for stable keyed/wire addressing of collection entries
-(see the protocol spec's node-key addressing).
+(see the protocol spec's node-key addressing) and for keyed reconciliation of document
+trees (minimal `{insert, remove, move, update}` ops per item → per-cell CRDT merge).
