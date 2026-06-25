@@ -31,10 +31,35 @@
       "required": ["kind", "node"],
       "additionalProperties": false
     },
+    "MergeMechanism": {
+      "type": "string",
+      "enum": ["crdt", "lww", "ot", "lease", "custom"],
+      "description": "Convergence mechanism for a multi-write cell. `crdt` is the first normative mechanism (converges without coordination); the rest are reserved extension points (see cell-model.md). Every mechanism MUST be deterministic. An implementation MUST reject an unimplemented mechanism explicitly rather than aliasing it to `crdt`."
+    },
+    "CellKind": {
+      "description": "Static classification of a cell by concurrent-writer count. Single-writer cells take no merge; multi-write cells carry a pluggable merge mechanism. Multi-write is NOT a hardcoded `crdt` kind — see cell-model.md.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "kind": { "const": "single_writer" } },
+          "required": ["kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "multi_write" },
+            "merge": { "$ref": "#/$defs/MergeMechanism" }
+          },
+          "required": ["kind", "merge"],
+          "additionalProperties": false
+        }
+      ]
+    },
     "CellRegisterType": {
       "type": "string",
       "enum": ["lww", "mv", "pn-counter"],
-      "description": "CRDT register type for a replicated cell"
+      "description": "CRDT register type for a `merge: crdt` cell (the value shape within the CRDT mechanism); distinct from MergeMechanism"
     },
     "HLCStamp": {
       "type": "object",

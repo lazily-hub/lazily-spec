@@ -10,6 +10,15 @@ repository. It defines the canonical message schemas shared across every lazily 
 - **lazily-zig** (Zig)
 - **@lazily/signaling** (TypeScript / Cloudflare Worker)
 
+## Cell Model
+
+Upstream of every transport, the [Cell Model](cell-model.md) fixes how a cell's value
+converges. A cell is either **single-writer** (`local`/`direct`, no merge) or
+**multi-write**, and a multi-write cell carries a pluggable `merge: <mechanism>`
+attribute. **CRDT is the first multi-write merge mechanism** (`merge: crdt`), not the
+only one — `lww`, `ot`, `lease`, and `custom` are reserved alongside it. All transports
+below carry cells classified by this model.
+
 ## Protocol Layers
 
 | Layer | Spec | Schema |

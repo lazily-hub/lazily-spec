@@ -325,7 +325,20 @@ The `from` field on every forwarded frame is the sender connection's registered 
 
 ## Distributed: CRDT Cell Plane
 
+This plane specifies **`merge: crdt`** — the *first* multi-write merge mechanism of the
+[Cell Model](cell-model.md#merge-mechanisms). CRDT is one mechanism among several the
+cell model reserves (`lww`, `ot`, `lease`, `custom`); it is the first defined because it
+converges without coordination. Everything here applies to a multi-write cell that
+declares `merge: crdt`; the cell-kind classification, ingress-on-roots-only boundary,
+and cell-as-merge-unit granularity are defined once, mechanism-independently, in the
+[Cell Model](cell-model.md).
+
 ### Cell register types
+
+These are the CRDT-mechanism register types (the value shapes available *within*
+`merge: crdt`); they are distinct from the cell-model's `MergeMechanism` axis.
+
+
 
 | Type | Merge | Description |
 |------|-------|-------------|
