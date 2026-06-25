@@ -224,6 +224,16 @@ value cell invalidated by a sibling reorder. Applying this minimal op set per-ce
 enabling step for per-cell CRDT merge of a document tree — it replaces whole-subtree
 replacement with proportional-to-the-diff work.
 
+### Memoized semantic tree
+
+The syntactic tree holds input cells; a **semantic** tree (unresolved prompts, drainable
+heads, summaries) is a layer of **memoized computeds** derived from it — one memo slot per
+node folding `(node value, child derived values)`. It conforms when the derivation is
+incremental and glitch-free: editing one node recomputes only its **ancestor chain** (a
+sibling subtree's derived value stays cached), and a node edit that does not change the
+folded result MUST NOT re-run a downstream consumer (memo equality guard). Semantics are
+derived, not materialized eagerly — cost is proportional to the diff, not the document.
+
 ### Manufactured identity for text
 
 Markdown has no inherent node ids, so reconciliation keys are *manufactured* from text in
