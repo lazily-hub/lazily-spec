@@ -223,3 +223,14 @@ the reactive collection a **stable** entry (unchanged value, in the LIS) MUST NO
 value cell invalidated by a sibling reorder. Applying this minimal op set per-cell is the
 enabling step for per-cell CRDT merge of a document tree — it replaces whole-subtree
 replacement with proportional-to-the-diff work.
+
+### Move-aware sequence order
+
+Sibling order under concurrency is a separate **composition** above per-cell value merge: a
+move-aware sequence CRDT (fractional-index positions tiebroken by peer). It conforms when a
+move is a **single LWW reassignment** of an element's position — not delete + reinsert — so
+two concurrent moves of the same element converge to the later one **without duplication**,
+and a concurrent move + value-edit of one element both apply (position and value are
+independent registers). Removal is an LWW tombstone. This is the order layer beneath keyed
+reconciliation; it lives only at the multi-writer boundary, leaving the single-producer
+Snapshot/Delta mirror unchanged.
