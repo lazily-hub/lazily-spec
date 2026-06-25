@@ -177,3 +177,23 @@ An implementation conforms to the cell model when:
    kind.
 7. The attach/detach authority governs writer **liveness** only, never a cell's kind or
    mechanism.
+
+## Keyed cell collections
+
+A *keyed cell collection* (`CellMap`, and the `CellFamily` factory over it) is a
+**composition of cells**, not a new cell kind. It maps keys `K` to per-entry cells and
+adds a dedicated **membership cell** tracking the set of keys.
+
+It conforms to the cell model when:
+
+1. Each entry is an ordinary cell — its single-writer / multi-write classification,
+   `merge:` mechanism, and ingress rules are exactly those above. The collection adds no
+   new merge unit; **cell = merge unit** still holds per entry.
+2. **Value reactivity and membership reactivity are independent**: writing one entry's
+   value MUST NOT invalidate membership readers (`keys` / `len` / `contains`), and
+   adding/removing a key MUST NOT invalidate readers of unrelated entry values.
+3. A key resolves to a **stable handle** for the key's lifetime; membership changes are
+   signalled by the membership cell, never by mutating sibling entries.
+
+This is the runtime substrate for stable keyed/wire addressing of collection entries
+(see the protocol spec's node-key addressing).
