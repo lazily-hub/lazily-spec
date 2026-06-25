@@ -244,6 +244,17 @@ of normalized text (survive reflow/reorder, change on edit), and **alignment** b
 is why the controlled skeleton uses in-band markers: stable identity is the linchpin that
 keeps keyed reconciliation from degrading to whole-document replacement over unstable text.
 
+### Free-text CRDT + re-parse
+
+For anchorless prose under concurrent edits the merge unit drops to **characters**: a
+Fugue/RGA-style character CRDT (each char an element with a unique id + left origin; deletes
+tombstoned) whose order is a pure function of the element set, so merge is commutative,
+associative, idempotent and concurrent same-point inserts converge with both preserved. The
+structural tree is then a **projection** of the merged text (re-parse → manufactured-identity
+keys → reconcile), not the merge unit. Honest floor: a true rewrite is a replace — no
+character identity survives it. The anchored layer keeps per-node lineage; the free-text
+layer's guarantee is "merge the text, re-derive the tree."
+
 ### Move-aware sequence order
 
 Sibling order under concurrency is a separate **composition** above per-cell value merge: a
