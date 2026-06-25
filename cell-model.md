@@ -212,3 +212,14 @@ merge applies node-by-node.
 This is the runtime substrate for stable keyed/wire addressing of collection entries
 (see the protocol spec's node-key addressing) and for keyed reconciliation of document
 trees (minimal `{insert, remove, move, update}` ops per item → per-cell CRDT merge).
+
+### Keyed reconciliation
+
+Reconciling a level diffs two keyed sequences **by stable key, not position**, emitting the
+minimal `{insert, remove, move, update}` op set. It conforms when reordering is
+move-minimized (keys already in relative order — the longest-increasing-subsequence over
+their prior indices — MUST NOT move; only the remainder emit `move`), and when applied to
+the reactive collection a **stable** entry (unchanged value, in the LIS) MUST NOT have its
+value cell invalidated by a sibling reorder. Applying this minimal op set per-cell is the
+enabling step for per-cell CRDT merge of a document tree — it replaces whole-subtree
+replacement with proportional-to-the-diff work.
