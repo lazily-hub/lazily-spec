@@ -224,6 +224,16 @@ value cell invalidated by a sibling reorder. Applying this minimal op set per-ce
 enabling step for per-cell CRDT merge of a document tree — it replaces whole-subtree
 replacement with proportional-to-the-diff work.
 
+### Manufactured identity for text
+
+Markdown has no inherent node ids, so reconciliation keys are *manufactured* from text in
+three layers: in-band **anchors** (exact, survive a body rewrite), **content-derived hashes**
+of normalized text (survive reflow/reorder, change on edit), and **alignment** by similarity
+(word-LCS ratio) to distinguish an *edit* (key inherited from the matched predecessor → an
+`update`) from a genuine *insert*. A true rewrite legitimately reads as insert+remove. This
+is why the controlled skeleton uses in-band markers: stable identity is the linchpin that
+keeps keyed reconciliation from degrading to whole-document replacement over unstable text.
+
 ### Move-aware sequence order
 
 Sibling order under concurrency is a separate **composition** above per-cell value merge: a
