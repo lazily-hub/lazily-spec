@@ -368,6 +368,64 @@ These are the CRDT-mechanism register types (the value shapes available *within*
 - **Memo equality suppression** holds post-merge.
 - `lazily-ipc`'s `Delta` generalizes to **per-peer causal stamps**: each peer keeps its own sequence; cross-peer order comes from HLC/dot metadata.
 
+### Anti-entropy wire format (`CrdtSync`)
+
+The plane rides the same `lazily-ipc` transport as `Snapshot`/`Delta`. Alongside the
+single-producer mirror, a third `IpcMessage` variant carries multi-writer plane traffic:
+
+```
+IpcMessage = Snapshot(Snapshot) | Delta(Delta) | CrdtSync(CrdtSync)
+
+WireStamp = { wall_time: u64, logical: u64, peer: u64 }   # total order (wall, logical, peer)
+
+CrdtOp = {
+  node:  NodeId,           # volatile target id
+  key:   NodeKey?,         # optional wire-stable address (survives NodeId churn, #lzwirekey)
+  stamp: WireStamp,        # the HLC stamp that produced this state
+  state: IpcValue,         # the converged CRDT state to merge (state-based / CvRDT)
+}
+
+CrdtSync = {
+  frontier: [(peer: u64, WireStamp)],   # the sender's per-peer stamp frontier
+  ops:      [CrdtOp],                    # the op batch this frame ships
+}
+```
+
+`WireStamp` is the wire mirror of the runtime HLC stamp (all plain integers), so the wire
+format is codec-stable whether or not a peer compiles the CRDT runtime in. It round-trips
+across all three codecs (JSON, MessagePack, postcard) and is classified by the FFI message
+kind (`CrdtSync = 3`).
+
+**State-based, idempotent.** Each `CrdtOp` ships the *converged* register/sequence/text
+state for a node. The receiver merges `state` into its local replica; because every cell
+CRDT merge is commutative, associative, and idempotent (proven in
+`formal/lean/LazilyFormal/CRDT.lean`, `stampJoin_{comm,assoc,idem}`), out-of-order,
+duplicated, or batched delivery all converge. Re-sending a frame the receiver already has
+is a no-op.
+
+**Stamp-frontier exchange.** `CrdtSync.frontier` advertises the highest `WireStamp` the
+sender has observed from each peer. The receiver merges it into its own frontier (per-peer
+`max`); the **causal-stability watermark** is the `min` over membership of that frontier —
+the causal point every replica has provably passed.
+
+**Watermark / GC contract.** A tombstone whose delete stamp is `≤` the stability watermark
+is collectable on *every* replica, so dropping it cannot lose an edit. This safety property
+is formally proven (`LazilyFormal.CRDT.collectable_implies_observed_everywhere`: a
+collectable stamp is `≤` every member's observation) and drives the runtime
+`SeqCrdt::gc` / `TextCrdt::gc_with`. A single replica's local clock is explicitly **not** a
+sound watermark; only the version-vector minimum is.
+
+**Permission filtering.** `CrdtSync.filter_readable(peer)` drops ops for non-readable nodes
+entirely (omission, not redaction — like `Delta`). The `frontier` advertisement is retained
+in full: it names peers and stamps, not node content, and the receiver needs the whole
+frontier to compute a sound watermark.
+
+> **Status.** The wire format, codec round-trips, permission filtering, and point-to-point
+> `IpcSink`/`IpcSource` delivery are implemented (`#lzcrdtplane5a`). Wiring the plane to live
+> `merge: crdt` root cells (local edits → `CrdtOp`s; remote `CrdtOp`s → `ReplicatedCell`
+> ingress merge) and `BridgeHub` fan-out of `CrdtSync` is the runtime-integration slice
+> (`#lzcrdtplane5b`).
+
 ### Single-writer effect authority
 
 CRDT convergence covers *state*. For **irreversible external actions** (send email, charge card, fire webhook), gate the effect behind a single-writer authority — a designated peer (or small Raft group) decides when the effect fires, at-most-once.
