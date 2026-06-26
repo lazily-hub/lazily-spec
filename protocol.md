@@ -13,6 +13,20 @@ PeerId = u64
 
 Wire-stable identifiers decoupled from internal `SlotId`. Serialized as bare JSON numbers. JavaScript/TypeScript peers must keep values at or below `Number.MAX_SAFE_INTEGER` (2^53).
 
+### NodeKey
+
+```
+NodeKey = string   // a "/"-joined path, e.g. "scores/alice", "outer/k1/inner/k2"
+```
+
+An **optional, wire-stable keyed address** for a collection entry (a `CellMap` / `CellFamily` entry). Unlike `NodeId` — the volatile internal handle a producer may re-mint after a resync or remove-then-readd — a `NodeKey` is producer-defined and **stable across NodeId churn**, so a peer can subscribe to "entry `scores/alice`" without an out-of-band key→NodeId map. A multi-segment path addresses nested collections (an entry of a `CellMap` inside a `CellMap` entry) with no extra machinery.
+
+`NodeKey` is **additive** — it never changes `NodeId` semantics. It appears only as the optional `key` field on `NodeSnapshot` and the `NodeAdd` delta op.
+
+Bounds (reject on construction and on the wire): path ≤ 1024 bytes; ≤ 32 `/`-separated segments; empty path and empty segments (leading/trailing/double `/`) are rejected.
+
+**Serialization is format-aware.** Self-describing codecs (JSON, MessagePack) **omit** the `key` field when absent, so pre-`key` encoders/decoders and existing conformance fixtures round-trip unchanged; positional Postcard always carries the optional discriminant for binary schema stability. A decoder that sees no `key` field treats it as absent (`null`). Cross-language implementations (lazily-py, lazily-zig, lazily-js, lazily-kt) add the optional nullable `key` field; they need not emit it when no key is set. Multi-producer key uniqueness (last-writer rule) is owned by the distributed CRDT plane, not this protocol.
+
 ### IpcValue (payload)
 
 A `DeltaOp` cell payload is carried as an externally-tagged `IpcValue`:
@@ -90,6 +104,7 @@ A context-level monotonic `ipc_epoch: u64` advances **once per outermost batch f
 | `node` | `NodeId (u64)` | Wire-stable node identifier |
 | `type_tag` | `string` | Stable cross-process type key for decoding `state` |
 | `state` | `NodeState` | `{"Payload":[u8]}` \| `{"SharedBlob":ShmBlobRef}` \| `"Opaque"` |
+| `key` | `NodeKey?` | Optional wire-stable keyed address; omitted in JSON/MessagePack when absent |
 
 #### EdgeSnapshot
 
@@ -132,7 +147,7 @@ All `DeltaOp`, `IpcValue`, `NodeState`, and `IpcMessage` variants are **external
 | `CellSet` | `node`, `payload: IpcValue` | Changed-value cell write (PartialEq-guarded) |
 | `SlotValue` | `node`, `payload: IpcValue` | A recompute published a new value |
 | `Invalidate` | `node` | Dirtied, not yet recomputed (lazy) |
-| `NodeAdd` | `node`, `type_tag`, `state: NodeState` | New node |
+| `NodeAdd` | `node`, `type_tag`, `state: NodeState`, `key: NodeKey?` | New node (optional wire-stable `key`, omitted in JSON/MessagePack when absent) |
 | `NodeRemove` | `node` | Removed node (free-list reuse: Remove then Add) |
 | `EdgeAdd` | `dependent`, `dependency` | New dependency edge |
 | `EdgeRemove` | `dependent`, `dependency` | Removed dependency edge |
