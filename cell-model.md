@@ -265,3 +265,16 @@ and a concurrent move + value-edit of one element both apply (position and value
 independent registers). Removal is an LWW tombstone. This is the order layer beneath keyed
 reconciliation; it lives only at the multi-writer boundary, leaving the single-producer
 Snapshot/Delta mirror unchanged.
+
+### Tombstone garbage collection
+
+Tombstones (both the sequence-CRDT LWW flag and the character-CRDT sticky delete, which
+carries the delete's own id) accumulate without bound — the standard set-CRDT memory-bloat
+cost. Conformant GC is **causal-stability-gated**: a tombstone is collectable only once
+*every* replica has observed the deletion (the version-vector frontier supplied by the
+distributed plane, never a single replica's clock). The sequence layer drops a stable
+tombstone directly (observationally inert: order/contains already skip it, re-merge re-adopts
+it as a tombstone, a genuine resurrection wins by LWW). The character layer is conservative:
+it collects a stable deleted element only when nothing references it as a left origin, so
+removal never orphans a survivor; interior tombstones are reclaimed bottom-up. Bloat is
+bounded to the multi-writer plane — the single-producer Snapshot/Delta mirror accrues none.
