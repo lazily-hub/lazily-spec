@@ -1,0 +1,26 @@
+{
+  "description": "Guarded door: a named guard on OPEN that is fail-closed (guard resolves false rejects the event, leaving state unchanged) and passes when the guard resolves true",
+  "kind": "StateChart",
+  "initial_active": "closed",
+  "chart": {
+    "initial": "closed",
+    "states": {
+      "root": { "initial": "closed" },
+      "closed": {
+        "parent": "root",
+        "on": { "OPEN": { "target": "open", "guard": "allowed" } }
+      },
+      "open": {
+        "parent": "root",
+        "on": { "CLOSE": "closed" }
+      }
+    }
+  },
+  "steps": [
+    { "event": "OPEN", "guards": { "allowed": false }, "accepted": false, "active": "closed" },
+    { "event": "OPEN", "guards": { "allowed": true }, "accepted": true, "active": "open" },
+    { "event": "CLOSE", "accepted": true, "active": "closed" },
+    { "event": "OPEN", "guards": { "allowed": false }, "accepted": false, "active": "closed" },
+    { "event": "OPEN", "guards": { "allowed": true }, "accepted": true, "active": "open" }
+  ]
+}

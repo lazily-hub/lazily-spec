@@ -1,0 +1,54 @@
+{
+  "description": "Shallow history: leaving and re-entering a region via its history pseudo-state restores the last active DIRECT child (not nested leaves). POWER_OFF records on's shallow history; POWER_ON_HISTORY resumes it. First entry (no recorded history) falls back to the region's initial.",
+  "kind": "StateChart",
+  "initial_active": "a",
+  "chart": {
+    "initial": "on",
+    "states": {
+      "root": { "initial": "on" },
+      "on": {
+        "parent": "root",
+        "initial": "a",
+        "on": { "POWER_OFF": "off" }
+      },
+      "a": {
+        "parent": "on",
+        "on": { "NEXT": "b" }
+      },
+      "b": {
+        "parent": "on",
+        "on": { "NEXT": "a" }
+      },
+      "h": {
+        "parent": "on",
+        "history": "shallow",
+        "default": "a"
+      },
+      "off": {
+        "parent": "root",
+        "on": { "POWER_ON_HISTORY": "h" }
+      }
+    }
+  },
+  "steps": [
+    {
+      "event": "NEXT",
+      "accepted": true,
+      "active": "b",
+      "matches": { "on": true, "a": false, "b": true }
+    },
+    {
+      "event": "POWER_OFF",
+      "accepted": true,
+      "active": "off",
+      "matches": { "on": false, "b": false, "off": true }
+    },
+    {
+      "event": "POWER_ON_HISTORY",
+      "accepted": true,
+      "active": "b",
+      "matches": { "on": true, "a": false, "b": true },
+      "note": "shallow history resumes the last direct child of `on` (b), not the initial (a)"
+    }
+  ]
+}

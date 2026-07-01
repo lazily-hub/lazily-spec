@@ -73,6 +73,20 @@ The `conformance/` directory contains canonical test fixtures that all IPC-capab
 
 **Adding a new binding:** Copy the fixture-loading pattern from `lazily-rs/tests/conformance.rs`. Each test should (1) load the fixture, (2) parse the `wire` field into the binding's native `IpcMessage` type, (3) assert the `assertions` fields, (4) re-serialize and compare.
 
+## State Chart Conformance
+
+The `conformance/statechart/` directory contains canonical Harel/SCXML state-chart fixtures (see [State Charts](docs/state-charts.md)). The declarative chart form is normatively defined by [`schemas/statechart.json`](schemas/statechart.json). Unlike IPC fixtures, these are **compute** — a chart is never serialized as a distinct wire kind; only its converged active-state value crosses IPC as an ordinary cell `Payload`. The fixtures fix cross-language *behavior*: each binding loads the declarative `chart`, replays `steps`, and asserts `accepted`, `active`, `matches`, and (when present) `actions` identically.
+
+| Fixture | Covers |
+|---------|--------|
+| `statechart/flat_cycle.json` | flat transitions, rejection, cycle |
+| `statechart/hierarchical_player.json` | nesting, walk-up transition resolution, LCA across levels, `matches()` |
+| `statechart/guarded_door.json` | named guards, fail-closed rejection, guard pass |
+| `statechart/parallel_regions.json` | orthogonal (AND) regions, per-region transitions, multi-leaf configuration |
+| `statechart/history_shallow.json` | shallow history: resume last direct child; first-entry default |
+| `statechart/history_deep.json` | deep history: resume full nested leaf configuration |
+| `statechart/entry_exit_actions.json` | entry/exit/transition action ordering across LCA boundaries |
+
 ## Versioning
 
 Protocol versioning follows the IPC capability negotiation: each session exchanges `{ protocol_id, protocol_major_version, codec }` before any graph state flows. A major version bump is a breaking change; minor additions are additive.

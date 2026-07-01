@@ -1,0 +1,60 @@
+{
+  "description": "Hierarchical player chart: descend-initial entry, walk-up transition resolution (POWER from a leaf handled by an ancestor), LCA across a compound boundary (STOP from a nested leaf to a sibling subtree), and rejection at a root-level leaf",
+  "kind": "StateChart",
+  "initial_active": "menu",
+  "chart": {
+    "initial": "menu",
+    "states": {
+      "root": { "initial": "player" },
+      "player": { "parent": "root", "initial": "menu", "on": { "POWER": "off" } },
+      "menu": { "parent": "player", "on": { "SELECT": "buffering" } },
+      "playing": { "parent": "player", "initial": "buffering", "on": { "STOP": "menu" } },
+      "buffering": { "parent": "playing", "on": { "LOADED": "ready" } },
+      "ready": { "parent": "playing", "on": { "PAUSE": "paused", "STOP": "menu" } },
+      "paused": { "parent": "playing", "on": { "RESUME": "ready", "STOP": "menu" } },
+      "off": { "parent": "root" }
+    }
+  },
+  "steps": [
+    {
+      "event": "SELECT",
+      "accepted": true,
+      "active": "buffering",
+      "matches": { "root": true, "player": true, "playing": true, "menu": false, "off": false }
+    },
+    {
+      "event": "LOADED",
+      "accepted": true,
+      "active": "ready",
+      "matches": { "playing": true, "paused": false }
+    },
+    {
+      "event": "PAUSE",
+      "accepted": true,
+      "active": "paused",
+      "matches": { "playing": true, "ready": false }
+    },
+    {
+      "event": "RESUME",
+      "accepted": true,
+      "active": "ready"
+    },
+    {
+      "event": "STOP",
+      "accepted": true,
+      "active": "menu",
+      "matches": { "player": true, "playing": false, "ready": false }
+    },
+    {
+      "event": "POWER",
+      "accepted": true,
+      "active": "off",
+      "matches": { "player": false, "off": true }
+    },
+    {
+      "event": "POWER",
+      "accepted": false,
+      "active": "off"
+    }
+  ]
+}

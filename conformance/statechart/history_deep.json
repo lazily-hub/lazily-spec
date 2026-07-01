@@ -1,0 +1,75 @@
+{
+  "description": "Deep history: leaving and re-entering a region via its deep-history pseudo-state restores the full nested active-leaf configuration, not just the direct child. After buffering under on/playing, POWER_OFF records on's deep history as {playing: buffering}; POWER_ON resumes all the way to buffering.",
+  "kind": "StateChart",
+  "initial_active": "ready",
+  "chart": {
+    "initial": "on",
+    "states": {
+      "root": { "initial": "on" },
+      "on": {
+        "parent": "root",
+        "initial": "playing",
+        "on": { "POWER_OFF": "off" }
+      },
+      "playing": {
+        "parent": "on",
+        "initial": "ready",
+        "on": { "PAUSE": "paused" }
+      },
+      "ready": {
+        "parent": "playing",
+        "on": { "BUFFER": "buffering" }
+      },
+      "buffering": {
+        "parent": "playing",
+        "on": { "LOADED": "ready" }
+      },
+      "paused": {
+        "parent": "on",
+        "on": { "RESUME": "playing" }
+      },
+      "hdeep": {
+        "parent": "on",
+        "history": "deep",
+        "default": "playing"
+      },
+      "off": {
+        "parent": "root",
+        "on": { "POWER_ON": "hdeep" }
+      }
+    }
+  },
+  "steps": [
+    {
+      "event": "BUFFER",
+      "accepted": true,
+      "active": "buffering",
+      "matches": { "on": true, "playing": true, "ready": false, "buffering": true }
+    },
+    {
+      "event": "POWER_OFF",
+      "accepted": true,
+      "active": "off",
+      "matches": { "on": false, "playing": false, "buffering": false }
+    },
+    {
+      "event": "POWER_ON",
+      "accepted": true,
+      "active": "buffering",
+      "matches": { "on": true, "playing": true, "buffering": true, "ready": false },
+      "note": "deep history resumes the full nested leaf (playing/buffering), not playing's initial (ready)"
+    },
+    {
+      "event": "POWER_OFF",
+      "accepted": true,
+      "active": "off"
+    },
+    {
+      "event": "POWER_ON",
+      "accepted": true,
+      "active": "buffering",
+      "matches": { "buffering": true },
+      "note": "deep history is sticky across repeated leave/re-enter cycles"
+    }
+  ]
+}

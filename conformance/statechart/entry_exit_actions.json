@@ -1,0 +1,67 @@
+{
+  "description": "Entry/exit action ordering: entries run outermost-first (after ancestors), exits run innermost-first (before ancestors); transition actions run after the exit set and before the enter set. Asserts the ordered action trace per step.",
+  "kind": "StateChart",
+  "initial_active": "a1",
+  "initial_actions": ["enterA", "enterA1"],
+  "chart": {
+    "initial": "a",
+    "states": {
+      "root": { "initial": "a" },
+      "a": {
+        "parent": "root",
+        "initial": "a1",
+        "entry": ["enterA"],
+        "exit": ["exitA"]
+      },
+      "a1": {
+        "parent": "a",
+        "entry": ["enterA1"],
+        "exit": ["exitA1"],
+        "on": {
+          "SWAP": { "target": "a2" },
+          "LEAVE": { "target": "b", "action": ["leaveA"] }
+        }
+      },
+      "a2": {
+        "parent": "a",
+        "entry": ["enterA2"],
+        "exit": ["exitA2"],
+        "on": { "SWAP": "a1" }
+      },
+      "b": {
+        "parent": "root",
+        "entry": ["enterB"],
+        "exit": ["exitB"],
+        "on": { "BACK": { "target": "a1", "action": ["backToA"] } }
+      }
+    }
+  },
+  "steps": [
+    {
+      "event": "SWAP",
+      "accepted": true,
+      "active": "a2",
+      "actions": ["exitA1", "enterA2"],
+      "note": "LCA is `a`: only a1 is exited, a2 entered; a's entry/exit do not fire"
+    },
+    {
+      "event": "SWAP",
+      "accepted": true,
+      "active": "a1",
+      "actions": ["exitA2", "enterA1"]
+    },
+    {
+      "event": "LEAVE",
+      "accepted": true,
+      "active": "b",
+      "actions": ["exitA1", "exitA", "leaveA", "enterB"],
+      "note": "LCA is root: a1 and a exited (innermost-first), transition action, then b entered"
+    },
+    {
+      "event": "BACK",
+      "accepted": true,
+      "active": "a1",
+      "actions": ["exitB", "backToA", "enterA", "enterA1"]
+    }
+  ]
+}

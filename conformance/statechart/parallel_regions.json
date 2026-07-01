@@ -1,0 +1,55 @@
+{
+  "description": "Parallel (AND) regions: a media device with concurrent audio and video regions. AUDIO_ON touches only the audio region; VIDEO_ON only video; PAUSE exits both regions and lifts the single-active-leaf invariant.",
+  "kind": "StateChart",
+  "initial_active": ["a_off", "v_off"],
+  "chart": {
+    "initial": "active",
+    "states": {
+      "root": { "initial": "active" },
+      "active": {
+        "parent": "root",
+        "parallel": true,
+        "on": { "PAUSE": "paused" }
+      },
+      "audio": { "parent": "active", "initial": "a_off" },
+      "a_off": { "parent": "audio", "on": { "AUDIO_ON": "a_on" } },
+      "a_on": { "parent": "audio", "on": { "AUDIO_OFF": "a_off" } },
+      "video": { "parent": "active", "initial": "v_off" },
+      "v_off": { "parent": "video", "on": { "VIDEO_ON": "v_on" } },
+      "v_on": { "parent": "video", "on": { "VIDEO_OFF": "v_off" } },
+      "paused": { "parent": "root", "on": { "RESUME": "active" } }
+    }
+  },
+  "steps": [
+    {
+      "event": "AUDIO_ON",
+      "accepted": true,
+      "active": ["a_on", "v_off"],
+      "matches": { "active": true, "audio": true, "a_on": true, "v_off": true, "paused": false }
+    },
+    {
+      "event": "VIDEO_ON",
+      "accepted": true,
+      "active": ["a_on", "v_on"],
+      "matches": { "active": true, "video": true, "v_on": true }
+    },
+    {
+      "event": "AUDIO_OFF",
+      "accepted": true,
+      "active": ["a_off", "v_on"],
+      "matches": { "a_on": false, "v_on": true }
+    },
+    {
+      "event": "PAUSE",
+      "accepted": true,
+      "active": ["paused"],
+      "matches": { "active": false, "audio": false, "video": false, "paused": true }
+    },
+    {
+      "event": "RESUME",
+      "accepted": true,
+      "active": ["a_off", "v_off"],
+      "matches": { "active": true, "audio": true, "video": true }
+    }
+  ]
+}

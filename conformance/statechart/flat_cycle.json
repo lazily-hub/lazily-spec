@@ -1,0 +1,20 @@
+{
+  "description": "Flat (single-level) traffic-light cycle: green -> yellow -> red -> green, plus rejection of an unknown event",
+  "kind": "StateChart",
+  "initial_active": "green",
+  "chart": {
+    "initial": "green",
+    "states": {
+      "root": { "initial": "green" },
+      "red": { "parent": "root", "on": { "TICK": "green" } },
+      "green": { "parent": "root", "on": { "TICK": "yellow" } },
+      "yellow": { "parent": "root", "on": { "TICK": "red" } }
+    }
+  },
+  "steps": [
+    { "event": "TICK", "accepted": true, "active": "yellow" },
+    { "event": "TICK", "accepted": true, "active": "red" },
+    { "event": "TICK", "accepted": true, "active": "green" },
+    { "event": "UNKNOWN", "accepted": false, "active": "green" }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/statechart.json",
+  "title": "StateChart",
+  "description": "Declarative form of a lazily state chart (Harel/SCXML subset). This is COMPUTE, not a wire message: a chart is never serialized over IPC/FFI as a distinct type — only its converged active configuration crosses the wire as an ordinary cell Payload. This schema fixes the cross-language declarative form used by conformance fixtures and chart definitions.",
+  "type": "object",
+  "required": ["initial", "states"],
+  "additionalProperties": false,
+  "properties": {
+    "initial": {
+      "description": "Default entry state of the root region. MUST resolve to a leaf by descending compound `initial`s (or, for a parallel root, to one leaf per region).",
+      "type": "string"
+    },
+    "context": {
+      "description": "Optional extended-state schema: host-resolved caller state over which guard expressions evaluate. Never serialized as part of the active configuration.",
+      "type": "object"
+    },
+    "states": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/State"}
+    }
+  },
+  "$defs": {
+    "State": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parent": {
+          "description": "Parent state id. Exactly one state (the root) has no parent.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Structural kind. If omitted, it is inferred: `history` when `history` is set; `parallel` when `parallel` is true; `compound` when the state has children; otherwise `atomic`.",
+          "enum": ["atomic", "compound", "parallel", "history", "final"]
+        },
+        "parallel": {
+          "description": "If true, this state is an AND-state: its children are concurrent regions, all of which are active whenever this state is active. Mutually exclusive with `initial`.",
+          "type": "boolean"
+        },
+        "initial": {
+          "description": "Default child entered when this compound state is entered. Required for compound states; forbidden for parallel states.",
+          "type": "string"
+        },
+        "history": {
+          "description": "Marks this state as a history pseudo-state. `shallow` records/restores the direct children of the parent region; `deep` records/restores the full active leaf configuration. Resolve to `default` on first entry (no recorded history).",
+          "enum": ["shallow", "deep"]
+        },
+        "default": {
+          "description": "Default target for a history state when no configuration has been recorded for its region yet.",
+          "type": "string"
+        },
+        "on": {
+          "description": "Event → transition table. An event maps to a target id or a transition object. Transitions on compound/parallel states are reachable from any active descendant (event bubbling).",
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/Transition"}
+        },
+        "entry": {
+          "description": "Ordered actions fired when this state is entered, after its ancestors' entry actions.",
+          "type": "array",
+          "items": {"$ref": "#/$defs/Action"}
+        },
+        "exit": {
+          "description": "Ordered actions fired when this state is exited, before its ancestors' exit actions.",
+          "type": "array",
+          "items": {"$ref": "#/$defs/Action"}
+        },
+        "run": {
+          "description": "Ongoing (do) actions started on entry and cancelled on exit. Host-managed; not part of conformance replay.",
+          "type": "array",
+          "items": {"$ref": "#/$defs/Action"}
+        }
+      },
+      "allOf": [
+        {
+          "if": {"required": ["parallel"], "properties": {"parallel": {"const": true}}},
+          "then": {"not": {"required": ["initial"]}}
+        },
+        {
+          "if": {"required": ["history"]},
+          "then": {"not": {"anyOf": [{"required": ["initial"]}, {"required": ["parallel"]}]}}
+        }
+      ]
+    },
+    "Transition": {
+      "description": "A transition. A bare string is shorthand for `{\"target\": <string>}`.",
+      "oneOf": [
+        {"type": "string"},
+        {
+          "type": "object",
+          "required": ["target"],
+          "additionalProperties": false,
+          "properties": {
+            "target": {
+              "description": "Target state id. MAY be compound or parallel; entry descends via `initial` (compound) or enters every region (parallel). MAY target a history state to resume its parent region.",
+              "type": "string"
+            },
+            "guard": {"$ref": "#/$defs/Guard"},
+            "action": {
+              "description": "Ordered actions fired after the exit set and before the enter set.",
+              "type": "array",
+              "items": {"$ref": "#/$defs/Action"}
+            },
+            "internal": {
+              "description": "If true, an internal transition: the source state is not exited/re-entered even when the target is the source or a descendant. Defaults to false (external).",
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "Guard": {
+      "description": "A guard predicate. A bare string is a named guard resolved by the caller's guard resolver (fail-closed if absent). An object is an extended-state expression the host evaluates against `context`.",
+      "oneOf": [
+        {"type": "string"},
+        {
+          "type": "object",
+          "required": ["expr"],
+          "additionalProperties": false,
+          "properties": {
+            "expr": {"type": "string"}
+          }
+        }
+      ]
+    },
+    "Action": {
+      "description": "An action. A bare string is a named action resolved by the caller's action handler. An object carries an action name plus an opaque payload.",
+      "oneOf": [
+        {"type": "string"},
+        {
+          "type": "object",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {"type": "string"},
+            "payload": {}
+          }
+        }
+      ]
+    }
+  }
+}

@@ -11,6 +11,7 @@ codecs encode the same shapes.
 | `ffi.json` | Cross-language FFI boundary |
 | `signaling.json` | Signaling (WebSocket) |
 | `distributed.json` | Distributed (CRDT) |
+| `statechart.json` | Compute (Harel/SCXML chart form — not a wire message) |
 
 ## `snapshot.json`
 
@@ -40,4 +41,16 @@ codecs encode the same shapes.
 
 ```json
 {{#include ../schemas/distributed.json}}
+```
+
+## `statechart.json`
+
+This is a **compute** schema, not a wire message. It normatively defines the
+declarative Harel/SCXML chart form used by conformance fixtures and
+cross-language chart definitions. A chart is never serialized as a distinct
+wire kind; only its converged active configuration crosses IPC/FFI as an
+ordinary cell `Payload`. See [State Charts](state-charts.md).
+
+```json
+{{#include ../schemas/statechart.json}}
 ```
