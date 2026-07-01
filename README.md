@@ -34,6 +34,12 @@ state machine. It proves the epoch sequencing, fail-closed resync,
 PartialEq/memo suppression, batch coalescing, and eager Signal `slot_value`
 invariants that all bindings share.
 
+The language-agnostic formal model — shared primitive types, the flat FSM
+kernel, and the full Harel/SCXML state chart — lives in its own repo,
+[`lazily-formal`](https://github.com/lazily-hub/lazily-formal), as the neutral
+formal home every binding depends on equally. It is the executable reference
+behind the state-chart conformance fixtures (see below).
+
 Verify it with the local check target:
 
 ```bash
