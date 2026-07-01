@@ -40,11 +40,52 @@ is normative.
 Schemas are provided as **JSON Schema (Draft 2020-12)**. Each implementation must validate
 against these schemas. See [JSON Schemas](schemas.md).
 
-## Relationship to lazily-rs SPEC.md
+## Scope & non-goals
 
-This repo extracts the wire-protocol and cross-language compatibility sections from
-`lazily-rs/SPEC.md` into a standalone reference. Rust-specific internals (Context,
-ThreadSafeContext, lock strategy, benchmarks) remain in the Rust crate.
+This repo extracts the cross-language, wire-protocol, and behavioral sections
+from `lazily-rs/SPEC.md` into a standalone reference. Every lazily-rs feature
+area is accounted for here exactly once: either normatively specified (with a
+link below) or explicitly marked Rust-specific. Rust-specific internals remain
+in the Rust crate and are intentionally out of scope.
+
+### Covered (normative, cross-language)
+
+| lazily-rs area | Spec |
+|----------------|------|
+| Cell / Slot / Effect / Signal (reactive core) | [Cell Model](cell-model.md), [Wire Protocol § Eager Signals](protocol.md#eager-signal-nodes) |
+| `CellFamily` / `CellMap` (keyed collections) | [Cell Model § Keyed cell collections](cell-model.md#keyed-cell-collections) |
+| `CellTree` (ordered keyed tree) | [Cell Model § Ordered keyed tree](cell-model.md#ordered-keyed-tree) |
+| `reconcile` (LIS keyed reconciliation) | [Cell Model § Keyed reconciliation](cell-model.md#keyed-reconciliation) |
+| `SemTree` (memoized semantic tree) | [Cell Model § Memoized semantic tree](cell-model.md#memoized-semantic-tree) |
+| `stable_id` (manufactured text identity) | [Cell Model § Manufactured identity](cell-model.md#manufactured-identity-for-text) |
+| `TextCrdt` (free-text CRDT + re-parse) | [Cell Model § Free-text CRDT](cell-model.md#free-text-crdt--re-parse) |
+| `SeqCrdt` (move-aware sequence order) | [Cell Model § Move-aware sequence order](cell-model.md#move-aware-sequence-order) |
+| Tombstone GC | [Cell Model § Tombstone garbage collection](cell-model.md#tombstone-garbage-collection) |
+| `StateMachine` (flat FSM) | [State Machine](state-machine.md) |
+| `StateChart` (Harel/SCXML) | [State Charts](state-charts.md) |
+| `AsyncContext` (async reactive graph) | [Async Reactive Context](async.md) |
+| IPC Snapshot/Delta + `ShmBlobArena` | [Wire Protocol § IPC](protocol.md#ipc-snapshot--incremental-update-protocol), [Conformance Fixtures](conformance.md) |
+| FFI boundary | [Wire Protocol § FFI](protocol.md#ffi-boundary), [`ffi.json`](schemas.md#ffijson) |
+| Signaling (WebSocket) | [Wire Protocol § Signaling](protocol.md#signaling-protocol-websocket), [`signaling.json`](schemas.md#signalingjson) |
+| Distributed CRDT plane (`CrdtSync`/`WireStamp`) | [Wire Protocol § Distributed](protocol.md#distributed-crdt-cell-plane), [`distributed.json`](schemas.md#distributedjson) |
+| Permission boundary (`RemoteOp`/`PeerPermissions`) | [Wire Protocol § Permission Boundary](protocol.md#permission-boundary-remoteop) |
+| Capability negotiation | [Wire Protocol § Capability Negotiation](protocol.md#capability-negotiation) |
+| Transport abstraction (`IpcSink`/`IpcSource`/`DataChannel`) | [Wire Protocol § Cross-language channels](protocol.md#cross-language-channel-compatibility) |
+
+### Out of scope (Rust-specific implementation)
+
+These lazily-rs features are implementation choices, not cross-language
+contracts. Other bindings pick their own; they MUST meet the normative contracts
+above but need not mirror Rust's approach.
+
+| lazily-rs area | Why out of scope |
+|----------------|------------------|
+| `Context` / `ThreadSafeContext` lock strategy (`ReadStrategy`, inline seqlock, typed cache fast-path) | Internal scheduling/locking; each binding picks its own concurrency strategy |
+| `SlotId` internal representation | Volatile internal handle; the wire-stable identity is [`NodeId`](protocol.md#nodeid--peerid) / [`NodeKey`](protocol.md#nodekey) |
+| `instrumentation` (lock-site tracking) | Rust diagnostics |
+| `str0m_backend` / `str0m_net` | Concrete Rust WebRTC backend (`str0m` crate); only the transport [abstraction](protocol.md#cross-language-channel-compatibility) is cross-language |
+| Performance benchmarks | Rust-specific measurement |
+| `lazily-serde` type-erasure internals | Rust serialization approach; the [wire shape](schemas.md), not the codec implementation, is normative |
 
 ## Versioning
 
