@@ -1,29 +1,45 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lazily.dev/schemas/distributed.json",
-  "title": "Distributed Types",
-  "description": "CRDT and permission types for lazily-distributed",
-
+  "title": "Distributed (CRDT) Message",
+  "description": "CRDT anti-entropy IPC message (protocol.md § Distributed). The CrdtSync message rides the same lazily-ipc transport as Snapshot/Delta as a third IpcMessage variant: the externally-tagged envelope {\"CrdtSync\": {...}}. Supporting distributed/cell-model types are kept under $defs.",
+  "type": "object",
+  "required": ["CrdtSync"],
+  "additionalProperties": false,
+  "properties": {
+    "CrdtSync": {
+      "type": "object",
+      "description": "Anti-entropy sync frame: the sender advertises its per-peer stamp frontier and ships an op batch.",
+      "required": ["frontier", "ops"],
+      "additionalProperties": false,
+      "properties": {
+        "frontier": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/StampFrontierEntry" },
+          "description": "Per-peer highest observed stamp. Retained in full (not permission-filtered) so the receiver can compute a sound causal-stability watermark."
+        },
+        "ops": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/CrdtOp" },
+          "description": "Op batch this frame ships; permission-filtered by omission before serialization."
+        }
+      }
+    }
+  },
   "$defs": {
-    "PeerId": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 9007199254740991,
-      "description": "Wire-stable peer identifier (u64, must stay ≤ Number.MAX_SAFE_INTEGER)"
-    },
-    "NodeId": {
-      "type": "integer",
-      "minimum": 0,
-      "description": "Wire-stable node identifier (decoupled from internal SlotId)"
-    },
+    "NodeId": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
+    "PeerId": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/PeerId" },
+    "NodeKey": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeKey" },
+    "WireStamp": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/WireStamp" },
+    "IpcValue": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/IpcValue" },
     "OpKind": {
       "type": "string",
       "enum": ["read", "write", "trigger_effect"],
-      "description": "Permission-gated operation kind"
+      "description": "Permission-gated operation kind. The three kinds are gated independently."
     },
     "RemoteOp": {
       "type": "object",
-      "description": "Gated, serializable unit a peer requests",
+      "description": "Gated, serializable unit a peer requests.",
       "properties": {
         "kind": { "$ref": "#/$defs/OpKind" },
         "node": { "$ref": "#/$defs/NodeId" }
@@ -59,26 +75,36 @@
     "CellRegisterType": {
       "type": "string",
       "enum": ["lww", "mv", "pn-counter"],
-      "description": "CRDT register type for a `merge: crdt` cell (the value shape within the CRDT mechanism); distinct from MergeMechanism"
+      "description": "CRDT register type for a `merge: crdt` cell (the value shape within the CRDT mechanism); distinct from MergeMechanism."
     },
-    "HLCStamp": {
+    "StampFrontierEntry": {
+      "type": "array",
+      "description": "A (peer, WireStamp) tuple in the per-peer stamp frontier.",
+      "prefixItems": [
+        { "$ref": "#/$defs/PeerId" },
+        { "$ref": "#/$defs/WireStamp" }
+      ],
+      "minItems": 2,
+      "maxItems": 2,
+      "items": false
+    },
+    "CrdtOp": {
       "type": "object",
-      "description": "Hybrid logical clock stamp for causal ordering",
+      "description": "One CRDT cell op on the wire (state-based / CvRDT): the converged register/sequence/text state for `node`, tagged with the WireStamp that produced it and an optional wire-stable NodeKey. State-based, idempotent — safe to resend.",
+      "required": ["node", "key", "stamp", "state"],
+      "additionalProperties": false,
       "properties": {
-        "wall_time": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Wall-clock microseconds since epoch"
+        "node": { "$ref": "#/$defs/NodeId", "description": "Volatile target id; pair with `key` for stable addressing." },
+        "key": {
+          "description": "Wire-stable keyed address, or null when unset. Mirrors the lazily-rs derived struct: `key` is always present (null when unset), unlike NodeSnapshot/NodeAdd which omit it.",
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/NodeKey" }
+          ]
         },
-        "logical": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Logical counter for causal tiebreak"
-        },
-        "peer_id": { "$ref": "#/$defs/PeerId" }
-      },
-      "required": ["wall_time", "logical", "peer_id"],
-      "additionalProperties": false
+        "stamp": { "$ref": "#/$defs/WireStamp" },
+        "state": { "$ref": "#/$defs/IpcValue", "description": "The converged CRDT state to merge." }
+      }
     }
   }
 }

@@ -13,7 +13,8 @@ This repo defines the canonical message schemas shared across all lazily impleme
 
 | Layer | Spec | Schema |
 |-------|------|--------|
-| IPC (Snapshot + Delta) | [protocol.md](protocol.md) § IPC | [schemas/snapshot.json](schemas/snapshot.json), [schemas/delta-op.json](schemas/delta-op.json) |
+| IPC (Snapshot + Delta) | [protocol.md](protocol.md) § IPC | [schemas/snapshot.json](schemas/snapshot.json), [schemas/delta.json](schemas/delta.json) |
+| Shared wire primitives | [protocol.md](protocol.md) § Shared Types | [schemas/defs.json](schemas/defs.json) |
 | Cross-language FFI | [protocol.md](protocol.md) § FFI | [schemas/ffi.json](schemas/ffi.json) |
 | Signaling (WebSocket) | [protocol.md](protocol.md) § Signaling | [schemas/signaling.json](schemas/signaling.json) |
 | Distributed (CRDT) | [protocol.md](protocol.md) § Distributed | [schemas/distributed.json](schemas/distributed.json) |

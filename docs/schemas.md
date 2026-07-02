@@ -6,12 +6,27 @@ codecs encode the same shapes.
 
 | Schema | Layer |
 |--------|-------|
-| `snapshot.json` | IPC — Snapshot message |
-| `delta.json` | IPC — Delta message (all 7 `DeltaOp` variants) |
+| `defs.json` | Shared wire primitives (NodeId, NodeKey, NodeState, IpcValue, ShmBlobRef, WireStamp) |
+| `snapshot.json` | IPC — Snapshot message (externally-tagged `{"Snapshot": …}` envelope) |
+| `delta.json` | IPC — Delta message (externally-tagged `{"Delta": …}`, all 7 `DeltaOp` variants) |
 | `ffi.json` | Cross-language FFI boundary |
 | `signaling.json` | Signaling (WebSocket) |
-| `distributed.json` | Distributed (CRDT) |
+| `distributed.json` | Distributed — CrdtSync message (`{"CrdtSync": …}`) + CRDT/cell-model types |
 | `statechart.json` | Compute (Harel/SCXML chart form — not a wire message) |
+
+The IPC schemas describe the **normative externally-tagged envelope** that
+every binding serializes (the single-key `{"Snapshot": …}` / `{"Delta": …}` /
+`{"CrdtSync": …}` form), with `node` addressing and value bytes as JSON arrays
+of `u8` (not base64). Shared wire primitives live in `defs.json` and are
+referenced via absolute `$ref` so the primitive definitions never copy-drift.
+Every conformance fixture's `wire` field validates against its schema — enforced
+by `make test-schemas` (see `tests/test_schema_conformance.py`).
+
+## `defs.json`
+
+```json
+{{#include ../schemas/defs.json}}
+```
 
 ## `snapshot.json`
 

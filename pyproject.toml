@@ -1,0 +1,15 @@
+[project]
+name = "lazily-spec-schemas"
+version = "0"
+description = "JSON Schema validation tooling for the lazily wire protocol spec. Not published; dev-only."
+requires-python = ">=3.11"
+
+[dependency-groups]
+dev = [
+    "jsonschema>=4.23",
+    "referencing>=0.35",
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

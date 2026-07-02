@@ -2,57 +2,45 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lazily.dev/schemas/snapshot.json",
   "title": "Snapshot",
-  "description": "Full graph state message for lazily-IPC",
+  "description": "Full graph state IPC message. Normative form (protocol.md § IPC) is the EXTERNALLY-TAGGED envelope {\"Snapshot\": {...}} — not a \"type\" discriminant. Serialized value bytes are JSON arrays of u8, not base64. A NodeSnapshot's optional `key` (NodeKey) is omitted when absent.",
   "type": "object",
+  "required": ["Snapshot"],
+  "additionalProperties": false,
   "properties": {
-    "type": { "const": "snapshot" },
-    "epoch": { "type": "integer", "minimum": 0, "description": "Current IPC epoch" },
-    "nodes": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/NodeSnapshot" },
-      "description": "All serialized nodes"
-    },
-    "edges": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/EdgeSnapshot" },
-      "description": "Dependency edges"
-    },
-    "roots": {
-      "type": "array",
-      "items": { "type": "integer", "minimum": 0 },
-      "description": "Cell and source slot IDs"
+    "Snapshot": {
+      "type": "object",
+      "required": ["epoch", "nodes", "edges", "roots"],
+      "additionalProperties": false,
+      "properties": {
+        "epoch": { "type": "integer", "minimum": 0, "description": "Current IPC epoch." },
+        "nodes": { "type": "array", "items": { "$ref": "#/$defs/NodeSnapshot" }, "description": "All serialized nodes." },
+        "edges": { "type": "array", "items": { "$ref": "#/$defs/EdgeSnapshot" }, "description": "Dependency edges (dependent → dependency)." },
+        "roots": { "type": "array", "items": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" }, "description": "Cell and source slot ids." }
+      }
     }
   },
-  "required": ["type", "epoch", "nodes", "edges", "roots"],
-  "additionalProperties": false,
   "$defs": {
     "NodeSnapshot": {
       "type": "object",
+      "description": "Full state for one node in a snapshot.",
+      "required": ["node", "type_tag", "state"],
+      "additionalProperties": false,
       "properties": {
-        "slot_id": { "type": "integer", "minimum": 0 },
-        "type_tag": { "type": "string", "description": "Stable cross-process type key" },
-        "state": {
-          "type": "string",
-          "enum": ["resolved", "dirty", "unset"],
-          "description": "Node state"
-        },
-        "payload": {
-          "type": ["string", "null"],
-          "contentEncoding": "base64",
-          "description": "Serialized value (null if unset)"
-        }
-      },
-      "required": ["slot_id", "type_tag", "state"],
-      "additionalProperties": false
+        "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
+        "type_tag": { "type": "string", "description": "Stable cross-process type key for decoding state." },
+        "state": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeState" },
+        "key": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeKey", "description": "Optional wire-stable keyed address; omitted in JSON when absent." }
+      }
     },
     "EdgeSnapshot": {
       "type": "object",
-      "properties": {
-        "dependent": { "type": "integer", "minimum": 0 },
-        "dependency": { "type": "integer", "minimum": 0 }
-      },
+      "description": "Directed dependency edge (dependent → dependency).",
       "required": ["dependent", "dependency"],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "properties": {
+        "dependent": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
+        "dependency": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" }
+      }
     }
   }
 }

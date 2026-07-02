@@ -2,119 +2,120 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lazily.dev/schemas/delta.json",
   "title": "Delta",
-  "description": "Incremental change set for lazily-IPC",
+  "description": "Incremental change-set IPC message. Normative form (protocol.md § IPC) is the EXTERNALLY-TAGGED envelope {\"Delta\": {...}} — not a \"type\" discriminant. Each DeltaOp variant is itself externally tagged by its PascalCase name (single-key object). Serialized value bytes are JSON arrays of u8, not base64. NodeAdd's optional `key` (NodeKey) is omitted in JSON when absent.",
   "type": "object",
+  "required": ["Delta"],
+  "additionalProperties": false,
   "properties": {
-    "type": { "const": "delta" },
-    "base_epoch": {
-      "type": "integer",
-      "minimum": 0,
-      "description": "Epoch this delta applies to"
-    },
-    "epoch": {
-      "type": "integer",
-      "minimum": 0,
-      "description": "New epoch (must equal base_epoch + 1)"
-    },
-    "ops": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/DeltaOp" },
-      "description": "Ordered operations"
+    "Delta": {
+      "type": "object",
+      "required": ["base_epoch", "epoch", "ops"],
+      "additionalProperties": false,
+      "properties": {
+        "base_epoch": { "type": "integer", "minimum": 0, "description": "Epoch this delta applies to." },
+        "epoch": { "type": "integer", "minimum": 0, "description": "New epoch (must equal base_epoch + 1)." },
+        "ops": { "type": "array", "items": { "$ref": "#/$defs/DeltaOp" }, "description": "Ordered operations." }
+      }
     }
   },
-  "required": ["type", "base_epoch", "epoch", "ops"],
-  "additionalProperties": false,
   "$defs": {
     "DeltaOp": {
+      "description": "One incremental graph mutation. Externally tagged: a single-key object whose key is the PascalCase variant name.",
       "oneOf": [
         {
           "type": "object",
           "title": "CellSet",
-          "properties": {
-            "op": { "const": "cell_set" },
-            "slot_id": { "type": "integer", "minimum": 0 },
-            "payload": {
-              "type": "string",
-              "contentEncoding": "base64",
-              "description": "Serialized cell value"
-            }
-          },
-          "required": ["op", "slot_id", "payload"],
-          "additionalProperties": false
+          "required": ["CellSet"],
+          "additionalProperties": false,
+          "properties": { "CellSet": { "$ref": "#/$defs/CellSetBody" } }
         },
         {
           "type": "object",
           "title": "SlotValue",
-          "properties": {
-            "op": { "const": "slot_value" },
-            "slot_id": { "type": "integer", "minimum": 0 },
-            "payload": {
-              "type": "string",
-              "contentEncoding": "base64",
-              "description": "Serialized slot value"
-            }
-          },
-          "required": ["op", "slot_id", "payload"],
-          "additionalProperties": false
+          "required": ["SlotValue"],
+          "additionalProperties": false,
+          "properties": { "SlotValue": { "$ref": "#/$defs/SlotValueBody" } }
         },
         {
           "type": "object",
           "title": "Invalidate",
-          "properties": {
-            "op": { "const": "invalidate" },
-            "slot_id": { "type": "integer", "minimum": 0 }
-          },
-          "required": ["op", "slot_id"],
-          "additionalProperties": false
+          "required": ["Invalidate"],
+          "additionalProperties": false,
+          "properties": { "Invalidate": { "$ref": "#/$defs/NodeBody" } }
         },
         {
           "type": "object",
           "title": "NodeAdd",
-          "properties": {
-            "op": { "const": "node_add" },
-            "slot_id": { "type": "integer", "minimum": 0 },
-            "type_tag": { "type": "string" },
-            "payload": {
-              "type": ["string", "null"],
-              "contentEncoding": "base64"
-            }
-          },
-          "required": ["op", "slot_id", "type_tag"],
-          "additionalProperties": false
+          "required": ["NodeAdd"],
+          "additionalProperties": false,
+          "properties": { "NodeAdd": { "$ref": "#/$defs/NodeAddBody" } }
         },
         {
           "type": "object",
           "title": "NodeRemove",
-          "properties": {
-            "op": { "const": "node_remove" },
-            "slot_id": { "type": "integer", "minimum": 0 }
-          },
-          "required": ["op", "slot_id"],
-          "additionalProperties": false
+          "required": ["NodeRemove"],
+          "additionalProperties": false,
+          "properties": { "NodeRemove": { "$ref": "#/$defs/NodeBody" } }
         },
         {
           "type": "object",
           "title": "EdgeAdd",
-          "properties": {
-            "op": { "const": "edge_add" },
-            "dependent": { "type": "integer", "minimum": 0 },
-            "dependency": { "type": "integer", "minimum": 0 }
-          },
-          "required": ["op", "dependent", "dependency"],
-          "additionalProperties": false
+          "required": ["EdgeAdd"],
+          "additionalProperties": false,
+          "properties": { "EdgeAdd": { "$ref": "#/$defs/EdgeBody" } }
         },
         {
           "type": "object",
           "title": "EdgeRemove",
-          "properties": {
-            "op": { "const": "edge_remove" },
-            "dependent": { "type": "integer", "minimum": 0 },
-            "dependency": { "type": "integer", "minimum": 0 }
-          },
-          "required": ["op", "dependent", "dependency"],
-          "additionalProperties": false
+          "required": ["EdgeRemove"],
+          "additionalProperties": false,
+          "properties": { "EdgeRemove": { "$ref": "#/$defs/EdgeBody" } }
         }
       ]
+    },
+    "CellSetBody": {
+      "type": "object",
+      "required": ["node", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
+        "payload": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/IpcValue" }
+      }
+    },
+    "SlotValueBody": {
+      "type": "object",
+      "required": ["node", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
+        "payload": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/IpcValue" }
+      }
+    },
+    "NodeBody": {
+      "type": "object",
+      "required": ["node"],
+      "additionalProperties": false,
+      "properties": { "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" } }
+    },
+    "NodeAddBody": {
+      "type": "object",
+      "required": ["node", "type_tag", "state"],
+      "additionalProperties": false,
+      "properties": {
+        "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
+        "type_tag": { "type": "string" },
+        "state": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeState" },
+        "key": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeKey", "description": "Optional wire-stable keyed address; omitted in JSON when absent." }
+      }
+    },
+    "EdgeBody": {
+      "type": "object",
+      "required": ["dependent", "dependency"],
+      "additionalProperties": false,
+      "properties": {
+        "dependent": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
+        "dependency": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" }
+      }
     }
   }
 }

@@ -30,12 +30,13 @@
     },
     "LazilyFfiMessageKind": {
       "type": "integer",
-      "enum": [0, 1, 2],
+      "enum": [0, 1, 2, 3],
       "description": "IPC message kind discriminator",
       "oneOf": [
         { "const": 0, "title": "Unknown" },
         { "const": 1, "title": "Snapshot" },
-        { "const": 2, "title": "Delta" }
+        { "const": 2, "title": "Delta" },
+        { "const": 3, "title": "CrdtSync" }
       ]
     }
   }

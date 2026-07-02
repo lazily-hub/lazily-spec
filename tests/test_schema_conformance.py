@@ -1,0 +1,254 @@
+"""Schema-vs-fixture drift tests for the lazily wire protocol.
+
+These tests are the permanent guard against the schema drift this repo
+previously suffered: ``schemas/snapshot.json`` and ``schemas/delta.json`` had
+silently drifted to a stale ``slot_id`` / base64 / ``"type"``-discriminant form
+that contradicted the normative ``protocol.md`` (externally-tagged, byte-array,
+``node``) form every binding actually serializes.
+
+Every IPC conformance fixture's ``wire`` field MUST validate against its schema,
+and the schemas MUST reject the stale form. If a future edit re-introduces the
+drift, these tests fail.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+import jsonschema
+from referencing import Registry
+from referencing.jsonschema import DRAFT202012
+
+ROOT = Path(__file__).resolve().parent.parent
+SCHEMA_DIR = ROOT / "schemas"
+FIXTURE_DIR = ROOT / "conformance"
+
+_SCHEMA_NAMES = [
+    "defs",
+    "snapshot",
+    "delta",
+    "distributed",
+    "ffi",
+    "signaling",
+    "statechart",
+]
+
+
+def _load_schema(name: str) -> dict:
+    return json.loads((SCHEMA_DIR / f"{name}.json").read_text())
+
+
+def _load_schemas() -> dict[str, dict]:
+    return {
+        f"https://lazily.dev/schemas/{name}.json": _load_schema(name)
+        for name in _SCHEMA_NAMES
+    }
+
+
+def _registry() -> Registry:
+    schemas = _load_schemas()
+    resources = [
+        (uri, DRAFT202012.create_resource(schema)) for uri, schema in schemas.items()
+    ]
+    return Registry().with_resources(resources)
+
+
+def _validator(schema_name: str) -> jsonschema.Draft202012Validator:
+    schemas = _load_schemas()
+    return jsonschema.Draft202012Validator(
+        schemas[f"https://lazily.dev/schemas/{schema_name}.json"],
+        registry=_registry(),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Meta: every schema is itself a valid Draft 2020-12 document
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("name", _SCHEMA_NAMES)
+def test_schema_is_meta_valid(name: str) -> None:
+    jsonschema.Draft202012Validator.check_schema(_load_schema(name))
+
+
+# ---------------------------------------------------------------------------
+# Every IPC conformance fixture validates against its schema
+# ---------------------------------------------------------------------------
+
+_FIXTURE_TO_SCHEMA = [
+    ("snapshot_minimal.json", "snapshot"),
+    ("snapshot_multi_node.json", "snapshot"),
+    ("snapshot_shared_blob.json", "snapshot"),
+    ("delta_sequential.json", "delta"),
+    ("delta_non_sequential.json", "delta"),
+    ("delta_shared_blob.json", "delta"),
+]
+
+
+@pytest.mark.parametrize("fixture,schema", _FIXTURE_TO_SCHEMA)
+def test_fixture_wire_validates_schema(fixture: str, schema: str) -> None:
+    fixture_obj = json.loads((FIXTURE_DIR / fixture).read_text())
+    assert fixture_obj["protocol_version"] == 1
+    wire = fixture_obj["wire"]
+    errors = sorted(_validator(schema).iter_errors(wire), key=lambda e: list(e.path))
+    assert not errors, (
+        f"{fixture} wire does not validate against {schema}.json:\n"
+        + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Regression: the stale (slot_id / base64 / "type" discriminant) form is REJECTED
+# ---------------------------------------------------------------------------
+
+
+def test_stale_snapshot_form_with_slot_id_is_rejected() -> None:
+    # The exact shape the old snapshot.json described — which contradicts protocol.md.
+    stale = {
+        "Snapshot": {
+            "epoch": 1,
+            "nodes": [
+                {"node": 1, "type_tag": "i32", "state": {"Payload": [1]}, "slot_id": 1}
+            ],
+            "edges": [],
+            "roots": [1],
+        }
+    }
+    assert _validator("snapshot").iter_errors(stale), (
+        "schema must reject extra `slot_id` (the stale SlotId-based addressing)"
+    )
+
+
+def test_stale_base64_payload_is_rejected() -> None:
+    stale = {
+        "Snapshot": {
+            "epoch": 1,
+            "nodes": [
+                {"node": 1, "type_tag": "i32", "state": "AAAAAQID"}  # base64 str
+            ],
+            "edges": [],
+            "roots": [1],
+        }
+    }
+    assert _validator("snapshot").iter_errors(stale), (
+        "schema must reject base64 state bytes (normative form is a u8 array)"
+    )
+
+
+def test_stale_type_discriminant_envelope_is_rejected() -> None:
+    # Stale envelope used {"type": "snapshot"} instead of {"Snapshot": {...}}.
+    stale = {"type": "snapshot", "epoch": 1, "nodes": [], "edges": [], "roots": []}
+    assert _validator("snapshot").iter_errors(stale), (
+        "schema must reject the `type`-discriminant envelope (normative is externally-tagged)"
+    )
+
+
+def test_stale_lowercase_base64_delta_op_is_rejected() -> None:
+    stale = {
+        "Delta": {
+            "base_epoch": 1,
+            "epoch": 2,
+            "ops": [{"cell_set": {"node": 1, "payload": "Cg=="}}],
+        }
+    }
+    assert _validator("delta").iter_errors(stale), (
+        "schema must reject lowercase-snake_case base64 delta ops "
+        "(normative is PascalCase externally-tagged, u8-array payloads)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# CrdtSync message (distributed.json root) — the third IpcMessage variant
+# ---------------------------------------------------------------------------
+
+
+def test_crdt_sync_message_validates_with_keyed_and_keyless_ops() -> None:
+    msg = {
+        "CrdtSync": {
+            "frontier": [[1, {"wall_time": 5, "logical": 0, "peer": 1}]],
+            "ops": [
+                {  # keyless op: key is null (matches lazily-rs derived struct)
+                    "node": 1,
+                    "key": None,
+                    "stamp": {"wall_time": 5, "logical": 0, "peer": 1},
+                    "state": {"Inline": [1]},
+                },
+                {  # keyed op with shared-blob state
+                    "node": 2,
+                    "key": "scores/alice",
+                    "stamp": {"wall_time": 6, "logical": 1, "peer": 2},
+                    "state": {
+                        "SharedBlob": {
+                            "offset": 0,
+                            "len": 3,
+                            "generation": 1,
+                            "epoch": 1,
+                            "checksum": 9,
+                        }
+                    },
+                },
+            ],
+        }
+    }
+    errors = list(_validator("distributed").iter_errors(msg))
+    assert not errors, "\n".join(f"  - {e.message}" for e in errors)
+
+
+def test_crdt_sync_rejects_peer_id_field_name() -> None:
+    # WireStamp uses `peer`, NOT `peer_id`. Regression for the old HLCStamp shape.
+    bad = {
+        "CrdtSync": {
+            "frontier": [[1, {"wall_time": 5, "logical": 0, "peer_id": 1}]],
+            "ops": [],
+        }
+    }
+    assert _validator("distributed").iter_errors(bad), (
+        "WireStamp must use `peer` (not `peer_id`)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NodeKey bounds: empty/leading/double-slash paths are rejected by the pattern
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "bad_key", ["", "/leading", "trailing/", "a//b", "a/", "/a"]
+)
+def test_node_key_pattern_rejects_empty_segments(bad_key: str) -> None:
+    if bad_key == "":
+        pytest.skip("empty string fails minLength, not pattern, but still rejected")
+    snap = {
+        "Snapshot": {
+            "epoch": 1,
+            "nodes": [
+                {"node": 1, "type_tag": "i32", "state": {"Payload": [1]}, "key": bad_key}
+            ],
+            "edges": [],
+            "roots": [1],
+        }
+    }
+    assert _validator("snapshot").iter_errors(snap), (
+        f"NodeKey pattern must reject empty-segment path {bad_key!r}"
+    )
+
+
+def test_node_key_valid_path_validates() -> None:
+    snap = {
+        "Snapshot": {
+            "epoch": 1,
+            "nodes": [
+                {
+                    "node": 1,
+                    "type_tag": "i32",
+                    "state": {"Payload": [1]},
+                    "key": "outer/k1/inner/k2",
+                }
+            ],
+            "edges": [],
+            "roots": [1],
+        }
+    }
+    assert not list(_validator("snapshot").iter_errors(snap))
