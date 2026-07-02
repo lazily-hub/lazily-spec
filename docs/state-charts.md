@@ -267,6 +267,30 @@ transition that doesn't change the leaf set). Any `Slot` / `Signal` /
 subscriber reading `active()`, `configuration()`, or `matches()` is
 invalidated on a real transition.
 
+### Context-layer variants (non-normative)
+
+A binding MAY expose the chart over each concurrency layer its context stack
+supports, exactly as it does for the flat `StateMachine` — one chart type per
+context layer, sharing a single context-free transition engine so the Harel
+semantics (and hence conformance) are identical across layers. lazily-rs ships
+`StateChart` (single-threaded `Context`), `ThreadSafeStateChart`
+(`ThreadSafeContext`), and `AsyncStateChart` (`AsyncContext`); lazily-kt ships
+`StateChart` + `ThreadSafeStateChart` (it has no async state machine);
+projection-only bindings without a reactive graph (lazily-js) expose a single
+plain-`Set` chart with no thread-safe/async variant. Which layers exist is a
+binding property; the transition function they compute is the same one this
+spec fixes.
+
+### Typed builder (non-normative)
+
+`fromChart` (the declarative JSON form above) is the normative, conformance-
+tested definition path. A binding MAY additionally offer a typed native builder
+that constructs the same `ChartDef` — e.g. lazily-rs `ChartBuilder`, lazily-kt
+`ChartBuilder`, lazily-js `ChartBuilder`. A chart assembled by the builder MUST
+be behaviourally identical to the same chart parsed from JSON (both derive the
+`children` / root / depth structure through one shared assembly step); the
+builder is a source-ergonomic convenience, not a distinct semantics.
+
 ## Self-transitions
 
 A transition whose resulting configuration equals the current one is a no-op:
