@@ -52,6 +52,10 @@ assert the emitted minimal op set.
 | `collections/cellmap_independence.json` | value / set-membership / order reactivity independence |
 | `collections/cellmap_atomic_move.json` | atomic ordered move keeps handle, bumps order once |
 | `collections/keyed_reconciliation_lis.json` | LIS move-minimized reconciliation; stable entries not invalidated |
+| `collections/semtree_incremental.json` | memoized semantic tree: ancestor-chain-only recompute, sibling isolation, memo guard |
+| `collections/seqcrdt_convergence.json` | move-aware sequence CRDT: single-LWW move, concurrent-move/value-edit independence, tombstone convergence, commutativity |
+| `collections/textcrdt_convergence.json` | Fugue/RGA character CRDT: concurrent same-point inserts, sticky tombstone, commutative/idempotent merge, GC |
+| `collections/stableid_alignment.json` | manufactured text identity: anchors / content hashes / word-LCS similarity alignment |
 
 ## Examples
 

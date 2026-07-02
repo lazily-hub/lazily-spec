@@ -1,0 +1,89 @@
+{
+  "description": "Fugue/RGA-style character CRDT (cell-model.md § Free-text CRDT). Each char is an element with a unique OpId (counter, peer) + left-origin; deletes are sticky tombstones carrying the delete op id. Order is a pure deterministic function of the element set: pre-order DFS of the origin tree, siblings sorted DESCENDING by OpId (most-recent first). Merge is commutative, associative, idempotent; concurrent same-point inserts keep both, ordered by peer tiebreak.",
+  "kind": "Collection",
+  "model": "TextCrdt",
+  "scenarios": [
+    {
+      "name": "local insert and delete",
+      "replica": { "peer": 1 },
+      "seed": "helo",
+      "steps": [
+        { "op": "insert", "index": 3, "ch": "l" },
+        { "op": "insert", "index": 5, "ch": "!" },
+        { "op": "delete", "index": 0 }
+      ],
+      "expect": { "text": "ello!", "len": 5 }
+    },
+    {
+      "name": "concurrent inserts at same spot converge deterministically",
+      "seed": { "peer": 1, "text": "XY" },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "insert", "index": 1, "ch": "a" },
+        { "on": "b", "op": "insert", "index": 1, "ch": "b" },
+        { "merge": { "into": "a", "from": "b" } },
+        { "merge": { "into": "b", "from": "a" } }
+      ],
+      "expect": {
+        "texts_equal": [["a", "b"]],
+        "len": 4,
+        "a_starts_with": "X",
+        "a_ends_with": "Y"
+      }
+    },
+    {
+      "name": "concurrent insert and delete both apply",
+      "seed": { "peer": 1, "text": "abc" },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "delete", "index": 1 },
+        { "on": "b", "op": "insert", "index": 3, "ch": "d" },
+        { "merge": { "into": "a", "from": "b" } },
+        { "merge": { "into": "b", "from": "a" } }
+      ],
+      "expect": { "texts_equal": [["a", "b"]], "text": "acd" }
+    },
+    {
+      "name": "merge is idempotent and commutative",
+      "seed": { "peer": 1, "text": "one" },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "insert", "index": 3, "ch": "X" },
+        { "on": "b", "op": "insert", "index": 0, "ch": "Y" },
+        { "clone": "ab", "from": "a" },
+        { "merge": { "into": "ab", "from": "b" } },
+        { "merge": { "into": "ab", "from": "b" } },
+        { "clone": "ba", "from": "b" },
+        { "merge": { "into": "ba", "from": "a" } }
+      ],
+      "expect": {
+        "texts_equal": [["ab", "ba"]]
+      }
+    },
+    {
+      "name": "gc collects a stable deleted leaf, keeps referenced tombstone",
+      "replica": { "peer": 1 },
+      "seed": "abc",
+      "steps": [
+        { "op": "delete", "index": 2 },
+        { "op": "gc", "stable": false, "expect_collected": 0 },
+        { "op": "gc", "stable": true, "expect_collected": 1 }
+      ],
+      "expect": { "text": "ab", "tombstone_count": 0 }
+    },
+    {
+      "name": "concurrent deletes of same char converge",
+      "seed": { "peer": 1, "text": "abc" },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "delete", "index": 1 },
+        { "on": "b", "op": "delete", "index": 1 },
+        { "clone": "ab", "from": "a" },
+        { "merge": { "into": "ab", "from": "b" } },
+        { "clone": "ba", "from": "b" },
+        { "merge": { "into": "ba", "from": "a" } }
+      ],
+      "expect": { "texts_equal": [["ab", "ba"]], "text": "ac" }
+    }
+  ]
+}

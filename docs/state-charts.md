@@ -42,13 +42,12 @@ the event stream, and each replica's chart recomputes deterministically. No
 
 | Binding | Chart backing | Why |
 |---------|---------------|-----|
-| lazily-rs, lazily-py, lazily-zig, lazily-dart | reactive `Cell` (active configuration) | these run their own reactive graph; the chart composes with slots/signals/effects |
-| lazily-kt, lazily-js | pure native (no reactive graph) | these are state-projection **consumers**; a chart is plugin-local compute. If a chart's state must be authoritative/shared, the chart runs in lazily-rs and these bindings observe it via the existing snapshot/delta projection — never via chart FFI |
+| lazily-rs, lazily-py, lazily-zig, lazily-kt, lazily-js, lazily-dart | reactive `Cell` (active configuration) | these run their own [reactive graph](reactive-graph.md); the chart composes with slots/signals/effects |
 
-A chart is **never** exposed over FFI. lazily-kt and lazily-js implement it
-natively because the transition is pure logic with zero system dependencies;
-routing it through JNA/koffi to a Rust `Context` would be circular (the only
-thing FFI buys them is an authoritative projection, which a local chart is not).
+A chart is **never** exposed over FFI. Every binding implements the transition
+as pure logic with zero system dependencies; routing it through JNA/koffi to a
+Rust `Context` would be circular (the only thing FFI buys a consumer is an
+authoritative projection, which a local chart is not).
 
 ## Declarative chart form
 

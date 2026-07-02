@@ -1,0 +1,49 @@
+{
+  "description": "Memoized semantic tree (cell-model.md § Memoized semantic tree). One memo slot per node folds (node value, child derived values). Editing one node recomputes only its ANCESTOR CHAIN — a sibling subtree's derived slot stays cached. A node edit that does not change the folded result MUST NOT re-run a downstream consumer (memo equality guard). Cost is proportional to the diff, not the document.",
+  "kind": "Collection",
+  "model": "SemTree",
+  "scenarios": [
+    {
+      "name": "folds whole subtree; edit recomputes only ancestor chain, not siblings",
+      "fold": "sum",
+      "tree": {
+        "id": "root", "value": 0,
+        "children": { "order": ["a", "b"], "values": {
+          "a": { "id": "a", "value": 1, "children": { "order": ["a1", "a2"], "values": { "a1": { "id": "a1", "value": 10 }, "a2": { "id": "a2", "value": 20 } } } },
+          "b": { "id": "b", "value": 2, "children": { "order": ["b1"], "values": { "b1": { "id": "b1", "value": 100 } } } }
+        }}
+      },
+      "expect_initial": { "root": 133, "a": 31, "b": 102 },
+      "edit": { "id": "b1", "value": 200 },
+      "expect_after": { "root": 233, "b": 202, "a": 31, "sibling_a_cached": true }
+    },
+    {
+      "name": "memo guard: an edit that does not change the folded count does not re-run downstream",
+      "fold": "count_positive",
+      "tree": {
+        "id": "root", "value": 0,
+        "children": { "order": ["a", "b"], "values": {
+          "a": { "id": "a", "value": -1 },
+          "b": { "id": "b", "value": 7 }
+        }}
+      },
+      "expect_initial": { "root": 1 },
+      "edit": { "id": "b", "value": 9 },
+      "expect_after": { "root": 1, "downstream_consumer_reran": false }
+    },
+    {
+      "name": "removal updates derivation (dropped subtree)",
+      "fold": "sum",
+      "tree": {
+        "id": "root", "value": 0,
+        "children": { "order": ["a", "b"], "values": {
+          "a": { "id": "a", "value": 1, "children": { "order": ["a1"], "values": { "a1": { "id": "a1", "value": 30 } } } },
+          "b": { "id": "b", "value": 2, "children": { "order": ["b1"], "values": { "b1": { "id": "b1", "value": 100 } } } }
+        }}
+      },
+      "expect_initial": { "root": 133 },
+      "remove_child": { "parent": "root", "child": "b" },
+      "expect_after": { "root": 31 }
+    }
+  ]
+}

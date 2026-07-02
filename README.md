@@ -102,6 +102,10 @@ The `conformance/collections/` directory contains canonical fixtures for the [ke
 | `collections/cellmap_independence.json` | value / set-membership / order reactivity independence (write, insert, remove, pure reorder) |
 | `collections/cellmap_atomic_move.json` | atomic ordered move keeps handle/dependents, bumps order once, leaves value readers untouched |
 | `collections/keyed_reconciliation_lis.json` | LIS move-minimized reconciliation; stable entries not invalidated by sibling reorder |
+| `collections/semtree_incremental.json` | memoized semantic tree: ancestor-chain-only recompute, sibling isolation, memo equality guard |
+| `collections/seqcrdt_convergence.json` | move-aware sequence CRDT: single-LWW move, concurrent-move/value-edit independence, tombstone convergence |
+| `collections/textcrdt_convergence.json` | Fugue/RGA character CRDT: concurrent same-point inserts, sticky tombstone, commutative/idempotent merge, GC |
+| `collections/stableid_alignment.json` | manufactured text identity: anchors / content hashes / word-LCS similarity alignment |
 
 ## State Chart Conformance
 

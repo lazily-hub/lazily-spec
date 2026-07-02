@@ -265,6 +265,13 @@ def _collection_fixtures() -> list[str]:
     return sorted(p.name for p in _COLLECTIONS_DIR.glob("*.json"))
 
 
+# Keyed-collection models: top-level `steps`/`reconcile` keyed reactivity.
+_KEYED_MODELS = {"CellMap", "CellTree"}
+# Compute/convergence models: `scenarios`-based CRDT / semantic-tree fixtures.
+_SCENARIO_MODELS = {"SemTree", "SeqCrdt", "StableId", "TextCrdt"}
+_KNOWN_MODELS = _KEYED_MODELS | _SCENARIO_MODELS
+
+
 @pytest.mark.parametrize("name", _collection_fixtures())
 def test_collection_fixture_is_well_formed(name: str) -> None:
     """Guard against malformed-JSON / shape drift in the collections fixtures.
@@ -275,8 +282,20 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
     """
     obj = json.loads((_COLLECTIONS_DIR / name).read_text())
     assert obj["kind"] == "Collection", f"{name}: kind must be 'Collection'"
-    assert obj["model"] in {"CellMap", "CellTree"}, f"{name}: unknown model {obj['model']!r}"
+    assert obj["model"] in _KNOWN_MODELS, f"{name}: unknown model {obj['model']!r}"
     assert isinstance(obj["description"], str) and obj["description"], f"{name}: missing description"
+
+    if obj["model"] in _SCENARIO_MODELS:
+        scenarios = obj.get("scenarios")
+        assert isinstance(scenarios, list) and scenarios, f"{name}: model {obj['model']!r} needs non-empty 'scenarios'"
+        for sc in scenarios:
+            assert isinstance(sc.get("name"), str) and sc["name"], f"{name}: scenario missing name"
+            has_expect = any(
+                k in sc for k in ("expect", "expect_initial", "expect_after")
+            )
+            assert has_expect, f"{name}: scenario {sc['name']!r} missing an expect* field"
+        return
+
     assert "reconcile" in obj or "steps" in obj, f"{name}: must define 'steps' or 'reconcile'"
     if "steps" in obj:
         for step in obj["steps"]:

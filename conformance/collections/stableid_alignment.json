@@ -1,0 +1,66 @@
+{
+  "description": "Manufactured identity for text (cell-model.md § Manufactured identity). Three layers: in-band anchors (exact, survive body rewrite), content-derived hashes of whitespace-normalized text (survive reflow/reorder, change on edit), and word-LCS similarity alignment (>= 0.5 => Edited/key-inherited; below => Inserted). Keys carry an a:/c: prefix so anchored and content keyspaces never collide.",
+  "kind": "Collection",
+  "model": "StableId",
+  "scenarios": [
+    {
+      "name": "content key survives reflow but not edit",
+      "blocks": [
+        { "text": "the quick brown fox" },
+        { "text": "the   quick\n  brown   fox\n" },
+        { "text": "the quick red fox" }
+      ],
+      "expect": { "key_equal": [[0, 1]], "key_not_equal": [[0, 2]] }
+    },
+    {
+      "name": "anchored key survives full body rewrite",
+      "blocks": [
+        { "anchor": "item-1", "text": "original body" },
+        { "anchor": "item-1", "text": "completely different prose now" }
+      ],
+      "expect": { "key_equal": [[0, 1]] }
+    },
+    {
+      "name": "pure reorder is all Same, no removed",
+      "old": [{ "text": "alpha" }, { "text": "beta" }, { "text": "gamma" }],
+      "new": [{ "text": "gamma" }, { "text": "alpha" }, { "text": "beta" }],
+      "expect": {
+        "matches": ["Same:2", "Same:0", "Same:1"],
+        "removed": []
+      }
+    },
+    {
+      "name": "small edit is Edited not Insert+Remove",
+      "old": [{ "text": "the quick brown fox jumps over the lazy dog" }],
+      "new": [{ "text": "the quick brown fox jumps over the sleepy dog" }],
+      "expect": {
+        "matches": ["Edited:0"],
+        "removed": [],
+        "similarity_min": 0.5
+      }
+    },
+    {
+      "name": "genuine insert and remove",
+      "old": [{ "text": "keep me" }, { "text": "delete me entirely" }],
+      "new": [{ "text": "keep me" }, { "text": "brand new unrelated content here" }],
+      "expect": {
+        "matches": ["Same:0", "Inserted"],
+        "removed": [1]
+      }
+    },
+    {
+      "name": "assign_stable_keys flows identity through edit",
+      "old": [
+        { "text": "first paragraph stays the same" },
+        { "text": "second paragraph will be tweaked a little" }
+      ],
+      "new": [
+        { "text": "second paragraph will be tweaked a bit" },
+        { "text": "first paragraph stays the same" }
+      ],
+      "expect": {
+        "new_key_equals_old_key": [[0, 1], [1, 0]]
+      }
+    }
+  ]
+}

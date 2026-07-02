@@ -1,0 +1,109 @@
+{
+  "description": "Move-aware sequence CRDT (cell-model.md § Move-aware sequence order). Each element is three independent LWW registers — value, position (fractional-index byte key + peer), deleted — each stamped by an HLC. A move is a SINGLE LWW reassignment of position (not delete+reinsert), so concurrent moves of the same element converge to the later stamp without duplication; a concurrent move + value-edit both apply (independent registers). Removal is an LWW tombstone. Order is the lexicographic total order on (frac, peer).",
+  "kind": "Collection",
+  "model": "SeqCrdt",
+  "scenarios": [
+    {
+      "name": "insert back and front orders",
+      "replica": { "peer": 1 },
+      "steps": [
+        { "op": "insert_back", "id": "a", "value": 0, "now": 1 },
+        { "op": "insert_back", "id": "b", "value": 1, "now": 2 },
+        { "op": "insert_back", "id": "c", "value": 2, "now": 3 },
+        { "op": "insert_front", "id": "z", "value": 9, "now": 4 }
+      ],
+      "expect": { "order": ["z", "a", "b", "c"], "get": { "b": 1 } }
+    },
+    {
+      "name": "move is single reassignment, no duplication",
+      "replica": { "peer": 1 },
+      "steps": [
+        { "op": "insert_back", "id": "a", "value": 0, "now": 1 },
+        { "op": "insert_back", "id": "b", "value": 1, "now": 2 },
+        { "op": "insert_back", "id": "c", "value": 2, "now": 3 },
+        { "op": "insert_back", "id": "d", "value": 3, "now": 4 },
+        { "op": "move_after", "id": "a", "anchor": "d", "now": 10 }
+      ],
+      "expect": { "order": ["b", "c", "d", "a"], "get": { "a": 0 }, "len": 4 }
+    },
+    {
+      "name": "concurrent inserts same gap converge (both survive, peer tiebreak)",
+      "seed": { "peer": 1, "inserts": [{ "id": "root", "value": "R", "now": 1 }] },
+      "steps": [
+        { "fork": "b", "peer": 2, "now": 2 },
+        { "on": "a", "op": "insert_back", "id": "a1", "value": "A", "now": 10 },
+        { "on": "b", "op": "insert_back", "id": "b1", "value": "B", "now": 10 },
+        { "clone": "a2", "from": "a" },
+        { "merge": { "into": "a2", "from": "b" }, "now": 20 },
+        { "clone": "b2", "from": "b" },
+        { "merge": { "into": "b2", "from": "a" }, "now": 20 }
+      ],
+      "expect": {
+        "orders_equal": [["a2", "b2"]],
+        "len": 3,
+        "contains_all": ["root", "a1", "b1"]
+      }
+    },
+    {
+      "name": "concurrent move converges to later stamp, no duplication",
+      "seed": {
+        "peer": 1,
+        "inserts": [
+          { "id": "x", "value": "X", "now": 1 },
+          { "id": "y", "value": "Y", "now": 2 },
+          { "id": "z", "value": "Z", "now": 3 }
+        ]
+      },
+      "steps": [
+        { "fork": "b", "peer": 2, "now": 4 },
+        { "on": "a", "op": "move_after", "id": "x", "anchor": "y", "now": 10 },
+        { "on": "b", "op": "move_after", "id": "x", "anchor": "z", "now": 20 },
+        { "clone": "merged", "from": "a" },
+        { "merge": { "into": "merged", "from": "b" }, "now": 30 }
+      ],
+      "expect": { "order_on": { "merged": ["y", "z", "x"] }, "len": 3 }
+    },
+    {
+      "name": "concurrent move and value edit do not conflict",
+      "seed": {
+        "peer": 1,
+        "inserts": [
+          { "id": "a", "value": 1, "now": 1 },
+          { "id": "b", "value": 2, "now": 2 }
+        ]
+      },
+      "steps": [
+        { "fork": "b", "peer": 2, "now": 3 },
+        { "on": "a", "op": "move_after", "id": "a", "anchor": "b", "now": 10 },
+        { "on": "b", "op": "set_value", "id": "a", "value": 99, "now": 10 },
+        { "clone": "merged", "from": "a" },
+        { "merge": { "into": "merged", "from": "b" }, "now": 20 }
+      ],
+      "expect": { "order_on": { "merged": ["b", "a"] }, "get_on": { "merged": { "a": 99 } } }
+    },
+    {
+      "name": "remove tombstone converges; merge is commutative",
+      "seed": {
+        "peer": 1,
+        "inserts": [
+          { "id": "a", "value": 1, "now": 1 },
+          { "id": "b", "value": 2, "now": 2 },
+          { "id": "c", "value": 3, "now": 3 }
+        ]
+      },
+      "steps": [
+        { "fork": "b", "peer": 2, "now": 4 },
+        { "on": "a", "op": "remove", "id": "b", "now": 10 },
+        { "on": "b", "op": "move_after", "id": "a", "anchor": "c", "now": 11 },
+        { "clone": "ab", "from": "a" },
+        { "merge": { "into": "ab", "from": "b" }, "now": 20 },
+        { "clone": "ba", "from": "b" },
+        { "merge": { "into": "ba", "from": "a" }, "now": 20 }
+      ],
+      "expect": {
+        "orders_equal": [["ab", "ba"]],
+        "not_contains_on": { "ab": ["b"] }
+      }
+    }
+  ]
+}
