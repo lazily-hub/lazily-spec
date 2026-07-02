@@ -99,9 +99,11 @@ context layer it implements, with identical semantics:
 
 ## Implementation status
 
-The flat machine is required of all bindings that ship a reactive graph. A
-binding MAY omit the thread-safe or async counterparts if it does not implement
-those context layers, but the single-threaded machine and its PartialEq no-op
-suppression MUST be present wherever a chart is supported (a chart depends on
-this kernel). lazily-rs, lazily-zig, and lazily-py implement it; the Lean model
-is the executable reference.
+The flat machine is required of all bindings that ship a reactive graph. The
+thread-safe and async counterparts are required of any binding whose platform
+supports them (see [Wire Protocol § Concurrency layers are required](protocol.md#concurrency-layers-are-required));
+a binding MAY omit one only when it has declared the matching `thread_safe` /
+`async` capability as `none`. In every case the single-threaded machine and its
+PartialEq no-op suppression MUST be present wherever a chart is supported (a
+chart depends on this kernel). lazily-rs, lazily-zig, and lazily-py implement
+it; the Lean model is the executable reference.

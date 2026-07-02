@@ -200,12 +200,13 @@ Messages are length-prefixed and tagged `Snapshot` / `Delta`. The protocol is tr
 
 ### Shared-memory IPC
 
-`ShmBlobArena` provides the shared-memory payload path:
+`ShmBlobArena` provides the shared-memory payload path (a **required** layer wherever the
+platform supports it — see [§ Shared-memory payload path is required](#shared-memory-payload-path-is-required)):
 - Arena writes a fixed header before each payload: `{ generation, epoch, length, checksum }`.
 - Readers validate the header before accepting a descriptor.
 - `IpcMessage` control frames carry `ShmBlobRef` descriptors instead of embedding large bytes inline.
 
-Shared memory carries large blob payloads; ordinary control transport carries framed `IpcMessage`s. Each process keeps its own local `Context` / `ThreadSafeContext` and reconciles via snapshots and deltas.
+Shared memory carries large blob payloads; ordinary control transport carries framed `IpcMessage`s. Each process keeps its own local `Context` / `ThreadSafeContext` and reconciles via snapshots and deltas. A binding whose platform cannot host a shared-memory arena carries every large payload `Inline` over the control transport (IPC / WebSocket / WebRTC) — the I/O channel accesses the memory directly, so the peer still receives the bytes without a shared-memory descriptor.
 
 ## Capability Negotiation
 
@@ -270,8 +271,10 @@ via [Capability Negotiation](#capability-negotiation) rather than failing silent
 | **Keyed cell collections** (`CellMap`, `CellTree`, keyed reconciliation) | MUST | [Cell Model § Keyed cell collections](cell-model.md#keyed-cell-collections) | [`conformance/collections/`](conformance/collections/) |
 | Flat state machine | MUST | [State Machine](state-machine.md) | — |
 | Harel state charts | MUST | [State Charts](state-charts.md) | [`conformance/statechart/`](conformance/statechart/) |
-| Async reactive context | MUST | [Async Reactive Context](async.md) | — |
+| Thread-safe reactive context | MUST² | [Reactive Graph § Context layers](reactive-graph.md#context-layers) | — |
+| Async reactive context | MUST² | [Async Reactive Context](async.md) | — |
 | IPC (`Snapshot` + `Delta`) | MUST | [§ IPC](#ipc-snapshot--incremental-update-protocol) | [`conformance/`](conformance/) IPC fixtures |
+| **Shared-memory payload path** (`ShmBlobArena` / `ShmBlobRef`) | MUST³ | [§ Shared-memory IPC](#shared-memory-ipc) | [`conformance/`](conformance/) shared-blob fixtures (`snapshot_shared_blob`, `delta_shared_blob`) |
 | **C-ABI FFI boundary** (`LazilyFfiBytes`, `LazilyFfiStatus`, `LazilyFfiMessageKind`) | MUST¹ | [§ FFI Boundary](#ffi-boundary), [`ffi.json`](schemas.md#ffijson) | every binding decodes the FFI frame to `IpcMessage` and re-encodes canonical JSON bytes |
 | **Distributed CRDT plane** (`CrdtSync` / `WireStamp`) | MUST | [§ Distributed: CRDT Cell Plane](#distributed-crdt-cell-plane), [`distributed.json`](schemas.md#distributedjson) | [`conformance/`](conformance/) `CrdtSync` round-trip |
 | Permission boundary (`RemoteOp` / `PeerPermissions`) | MUST | [§ Permission Boundary](#permission-boundary-remoteop) | — |
@@ -280,6 +283,8 @@ via [Capability Negotiation](#capability-negotiation) rather than failing silent
 | WebRTC data transport | MAY | [§ Cross-language channels](#cross-language-channel-compatibility) | only for bindings that peer over WebRTC |
 
 > ¹ C-ABI FFI has a **platform carve-out** — see [§ C-ABI FFI is required](#c-abi-ffi-is-required).
+> ² The thread-safe and async context layers have a **platform carve-out** — see [§ Concurrency layers are required](#concurrency-layers-are-required).
+> ³ The shared-memory payload path has a **platform carve-out** (I/O-channel fallback) — see [§ Shared-memory payload path is required](#shared-memory-payload-path-is-required).
 > CRDT and the keyed cell collections have **no carve-out**: they are wire/logic
 > properties implementable on any runtime that speaks the wire.
 
@@ -322,6 +327,80 @@ byte-identically. Multi-write convergence is a property of the cell model, not a
 optional distributed extra; a binding that ships only the single-producer
 `Snapshot`/`Delta` mirror conforms only to the single-writer subset and MUST downgrade its
 advertised capability accordingly.
+
+### Concurrency layers are required
+
+The reactive core ships as three context layers — single-threaded (base), thread-safe
+(lock-backed), and async (future-returning) — defined in
+[Reactive Graph § Context layers](reactive-graph.md#context-layers) and
+[Async Reactive Context](async.md). The single-threaded base context is unconditionally
+required of every binding (it is the reactive-core row above). The **thread-safe** and
+**async** layers are required **conditionally**: a binding whose platform structurally
+supports a layer MUST implement that layer.
+
+**Thread-safe context.** A binding whose platform exposes preemptive multi-threading or
+shared-memory concurrency (native threads, OS goroutines, JVM threads, Kotlin
+coroutines over a shared heap, etc.) MUST ship the lock-backed context whose handles are
+clonable and whose transition function and state are `Send + Sync`, so observers fire
+synchronously within the invalidating `send`/`batch` preserving glitch-free pull-based
+ordering. A platform with no shared-memory threading model — a strictly single-threaded
+runtime, or a process/actor-isolation model (e.g. a Dart isolate, a browser Worker) where
+peers do not share an address space — declares the `thread_safe` capability as `none`.
+
+**Async context.** A binding whose platform exposes an async/future runtime (async/await,
+promises, coroutines, an executor that suspends and resumes across `.await` points) MUST
+ship the [async context](async.md) with its full slot state machine (`Empty` /
+`Computing` / `Resolved` / `Error`), revision tracking, five-point cancellation contract,
+and `get_async` re-resolve loop. A platform with no notion of suspendable async
+computation declares the `async` capability as `none`.
+
+A `none` declaration, for either layer:
+
+- is a **binding-level conformance declaration** (advertised in the binding's conformance
+  statement and discoverable at build time), not a per-session wire flag, because
+  in-process concurrency structure is not a runtime session;
+- MUST be reserved for platforms that **structurally lack** the primitive — a binding MAY
+  NOT declare `none` merely because the layer is inconvenient or unimplemented; and
+- MUST be advertised rather than fail silently, reusing the existing fail-closed
+  principle.
+
+There is no carve-out for the keyed cell collections, the state machine, the state charts,
+the reactive core, or CRDT — those are implementable on any Turing-complete runtime that
+speaks the wire, single-threaded or not.
+
+### Shared-memory payload path is required
+
+The [shared-memory payload path](#shared-memory-ipc) (`ShmBlobArena` + `ShmBlobRef`
+descriptors) is the zero-copy large-payload transport for `IpcValue` and `NodeState`. A
+binding whose platform exposes a shared-memory primitive (POSIX `shm` / memory-mapped
+files / OS shared memory / a peer-reachable arena) MUST implement it: payloads above the
+inline threshold are written into the arena, the control frame carries the `ShmBlobRef`
+descriptor, and readers validate the `{ generation, epoch, length, checksum }` header
+before accepting it.
+
+**Platform carve-out — I/O-channel fallback.** A binding whose runtime structurally cannot
+host a shared-memory arena (browser/Worker JS, a sandboxed runtime, WASM without shared
+memory) declares the `shared_memory` capability as `none`. Such a binding MUST fall back
+to **I/O channels accessing the memory**: every payload that would have been a
+`SharedBlob` descriptor is instead carried `Inline` over the ordinary IPC / WebSocket /
+WebRTC transport, so the same `IpcMessage` state plane reaches the peer without a
+shared-memory descriptor. The wire format already supports both paths (`IpcValue` and
+`NodeState` are externally-tagged `Inline | SharedBlob`); the fallback simply never emits
+the `SharedBlob` variant on that binding and treats an absent descriptor as `Inline` on
+read.
+
+Shared memory is negotiated **per session** via the `shared-blob` entry in the
+[Capability Negotiation](#capability-negotiation) `features` array: two peers that both
+advertise `shared-blob` MAY exchange `ShmBlobRef` descriptors; if either peer omits it,
+both sides carry payloads `Inline` over the control transport for that session. (The
+`thread_safe`, `async`, and `ffi` capabilities, by contrast, are binding-level
+declarations — in-process properties — and are not per-session wire flags.)
+
+This reuses the existing fail-closed principle: the limitation is explicit and
+advertised, never silent. The shared-blob conformance fixtures
+([`snapshot_shared_blob.json`](conformance/) / [`delta_shared_blob.json`](conformance/))
+fix the descriptor shape for bindings that ship the arena; an `Inline`-only binding
+round-trips the same fixtures with the blob bytes inlined.
 
 ## FFI Boundary
 

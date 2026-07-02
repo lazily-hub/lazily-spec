@@ -33,7 +33,12 @@ Every layer in this matrix is **required of every binding**. The **Distributed C
 row and the required [keyed cell collections](cell-model.md#keyed-cell-collections) layer
 are unconditional. The **C-ABI FFI** row is required by default with a narrow platform
 carve-out (a binding whose runtime cannot host a native in-process C ABI — e.g.
-browser/Worker JS — declares `ffi = none` and interops over the wire instead). See the
+browser/Worker JS — declares `ffi = none` and interops over the wire instead). The
+**thread-safe** and **async** reactive contexts are required where the platform supports
+them (a platform that structurally lacks threading or suspendable async declares
+`thread_safe = none` / `async = none`); the **shared-memory payload path** is required
+where the platform supports it, with an **I/O-channel fallback** (`Inline` payloads over
+IPC/WebSocket/WebRTC) when it does not. See the
 [Binding Conformance Matrix](protocol.md#binding-conformance-matrix) for the full
 MUST/MAY breakdown and the carve-out terms.
 
@@ -71,8 +76,9 @@ in the Rust crate and are intentionally out of scope.
 | Tombstone GC | [Cell Model § Tombstone garbage collection](cell-model.md#tombstone-garbage-collection) |
 | `StateMachine` (flat FSM) | [State Machine](state-machine.md) |
 | `StateChart` (Harel/SCXML) | [State Charts](state-charts.md) |
-| `AsyncContext` (async reactive graph) | [Async Reactive Context](async.md) |
-| IPC Snapshot/Delta + `ShmBlobArena` | [Wire Protocol § IPC](protocol.md#ipc-snapshot--incremental-update-protocol), [Conformance Fixtures](conformance.md) |
+| `ThreadSafeContext` (thread-safe reactive graph) | [Reactive Graph § Context layers](reactive-graph.md#context-layers), [Wire Protocol § Concurrency layers are required](protocol.md#concurrency-layers-are-required) |
+| `AsyncContext` (async reactive graph) | [Async Reactive Context](async.md), [Wire Protocol § Concurrency layers are required](protocol.md#concurrency-layers-are-required) |
+| IPC Snapshot/Delta + `ShmBlobArena` | [Wire Protocol § IPC](protocol.md#ipc-snapshot--incremental-update-protocol), [Wire Protocol § Shared-memory payload path is required](protocol.md#shared-memory-payload-path-is-required), [Conformance Fixtures](conformance.md) |
 | FFI boundary | [Wire Protocol § FFI](protocol.md#ffi-boundary), [`ffi.json`](schemas.md#ffijson) |
 | Signaling (WebSocket) | [Wire Protocol § Signaling](protocol.md#signaling-protocol-websocket), [`signaling.json`](schemas.md#signalingjson) |
 | Distributed CRDT plane (`CrdtSync`/`WireStamp`) | [Wire Protocol § Distributed](protocol.md#distributed-crdt-cell-plane), [`distributed.json`](schemas.md#distributedjson) |
@@ -88,7 +94,7 @@ above but need not mirror Rust's approach.
 
 | lazily-rs area | Why out of scope |
 |----------------|------------------|
-| `Context` / `ThreadSafeContext` lock strategy (`ReadStrategy`, inline seqlock, typed cache fast-path) | Internal scheduling/locking; each binding picks its own concurrency strategy |
+| `Context` / `ThreadSafeContext` lock strategy (`ReadStrategy`, inline seqlock, typed cache fast-path) | Internal scheduling/locking; each binding picks its own concurrency strategy. The *existence* of the thread-safe and async context surfaces is required where the platform supports it ([Wire Protocol § Concurrency layers are required](protocol.md#concurrency-layers-are-required)); only the lock internals are out of scope |
 | `SlotId` internal representation | Volatile internal handle; the wire-stable identity is [`NodeId`](protocol.md#nodeid--peerid) / [`NodeKey`](protocol.md#nodekey) |
 | `instrumentation` (lock-site tracking) | Rust diagnostics |
 | `str0m_backend` / `str0m_net` | Concrete Rust WebRTC backend (`str0m` crate); only the transport [abstraction](protocol.md#cross-language-channel-compatibility) is cross-language |

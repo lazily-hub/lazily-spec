@@ -20,7 +20,16 @@ runtime that speaks the wire. The **C-ABI FFI boundary** is required by default,
 narrow platform carve-out: a binding whose runtime structurally cannot host a native
 in-process C ABI (browser/Worker JS, sandboxed runtimes) declares `ffi = none`, still
 exposes the full state plane over IPC/WebSocket/WebRTC, and must not advertise itself as
-embeddable. Any omitted `MUST` row MUST be advertised rather than fail silently.
+embeddable. The **thread-safe** and **async** reactive contexts are required where the
+platform supports them — a platform that structurally lacks threading or suspendable
+async declares `thread_safe = none` / `async = none` (see
+[Concurrency layers are required](protocol.md#concurrency-layers-are-required)). The
+**shared-memory payload path** (`ShmBlobArena`) is required where the platform supports
+it; a binding that cannot host a shared-memory arena declares `shared_memory = none` and
+MUST fall back to **I/O channels accessing the memory** — large payloads are carried
+`Inline` over IPC/WebSocket/WebRTC instead of as `ShmBlobRef` descriptors (see
+[Shared-memory payload path is required](protocol.md#shared-memory-payload-path-is-required)).
+Any omitted `MUST` row MUST be advertised rather than fail silently.
 
 ## Protocol Layers
 
@@ -62,7 +71,7 @@ make check
 
 ## Relationship to lazily-rs SPEC.md
 
-This repo extracts the wire-protocol and cross-language compatibility sections from `lazily-rs/SPEC.md` into a standalone reference. Rust-specific internals (Context, ThreadSafeContext, lock strategy, benchmarks) remain in the Rust crate.
+This repo extracts the wire-protocol and cross-language compatibility sections from `lazily-rs/SPEC.md` into a standalone reference. Rust-specific internals (the concrete `Context`/`ThreadSafeContext` lock strategy, benchmarks) remain in the Rust crate; the *existence* of the thread-safe and async context surfaces is cross-language and required where the platform supports it.
 
 ## Conformance Fixtures
 

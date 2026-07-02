@@ -228,10 +228,13 @@ An async context conforms when:
 
 ## Implementation status
 
-The async surface is **optional**. A binding MAY omit it entirely (the
-synchronous and thread-safe graphs do not require it). A binding that ships it
-MUST honor the full cancellation and re-resolve contract above. lazily-rs
-implements it behind an `async` feature flag. Concurrency-window coverage is
-pinned by targeted deterministic tests rather than exhaustive interleaving
-exploration, because the async resolve loop runs on a real async executor whose
-primitives a synchronization-model checker cannot shim.
+The async surface is **required of any binding whose platform exposes an
+async/future runtime** (async/await, promises, coroutines, a suspending
+executor) — see [Wire Protocol § Concurrency layers are required](protocol.md#concurrency-layers-are-required).
+A binding on a platform with no notion of suspendable async computation declares
+the `async` capability as `none` and advertises it, never silently. A binding
+that ships the async context MUST honor the full cancellation and re-resolve
+contract above. lazily-rs implements it behind an `async` feature flag.
+Concurrency-window coverage is pinned by targeted deterministic tests rather than
+exhaustive interleaving exploration, because the async resolve loop runs on a
+real async executor whose primitives a synchronization-model checker cannot shim.

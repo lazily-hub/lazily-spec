@@ -104,19 +104,27 @@ effect is prevented by removing it from the schedule before running cleanup.
 ## Context layers
 
 - **Single-threaded** — the base context (mirrors lazily-rs `Context`). The
-  graph is not `Send`/`Sync`; it lives on one thread/executor.
+  graph is not `Send`/`Sync`; it lives on one thread/executor. **Unconditionally
+  required** of every binding (it is the reactive core).
 - **Thread-safe** — a lock-backed counterpart (mirrors lazily-rs
   `ThreadSafeContext`); handles are clonable and the transition function and
   state are `Send + Sync`. Observers fire synchronously within the invalidating
-  `send`/`batch` preserving glitch-free pull-based ordering.
+  `send`/`batch` preserving glitch-free pull-based ordering. **Required of any
+  binding whose platform exposes preemptive multi-threading or shared-memory
+  concurrency** — see [Wire Protocol § Concurrency layers are required](protocol.md#concurrency-layers-are-required).
 - **Async** — a separate reactive surface for future-returning computations;
-  see [Async Reactive Context](async.md). It is **optional**; a binding MAY
-  omit it.
+  see [Async Reactive Context](async.md). **Required of any binding whose
+  platform exposes an async/future runtime** — see
+  [Wire Protocol § Concurrency layers are required](protocol.md#concurrency-layers-are-required).
 
-A binding MAY ship only the single-threaded context; the thread-safe and async
-counterparts are layered above. The flat [State Machine](state-machine.md) and
-[State Charts](state-charts.md) compose with whichever reactive context a
-binding ships, with identical `send` semantics.
+The single-threaded context is the unconditional base; the thread-safe and async
+layers are required **conditionally**. A platform that structurally lacks either
+primitive (a strictly single-threaded runtime, a process/actor-isolation model,
+or a platform with no suspendable async computation) declares the matching
+`thread_safe` / `async` capability as `none` and advertises it, never silently.
+The flat [State Machine](state-machine.md) and [State Charts](state-charts.md)
+compose with whichever reactive context a binding ships, with identical `send`
+semantics.
 
 ## Conformance
 
@@ -141,5 +149,8 @@ A reactive context conforms when:
 
 The single-threaded reactive context is required of every binding that
 advertises the reactive core. lazily-rs, lazily-py, lazily-zig, lazily-kt, and
-lazily-js implement it. The thread-safe and async counterparts are layered and
-MAY be omitted (the async surface is optional per [Async Reactive Context](async.md)).
+lazily-js implement it. The thread-safe and async counterparts are required of
+any binding whose platform supports them (see [Wire Protocol § Concurrency
+layers are required](protocol.md#concurrency-layers-are-required)); a platform
+that structurally lacks either declares the matching `thread_safe` / `async`
+capability as `none` and advertises it, never silently.
