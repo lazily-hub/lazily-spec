@@ -36,6 +36,23 @@ Copy the fixture-loading pattern from `lazily-rs/tests/conformance.rs`. Each tes
 3. Assert the `assertions` fields.
 4. Re-serialize and compare for byte-for-byte round-trip fidelity.
 
+## Keyed cell collections conformance
+
+The `conformance/collections/` directory contains canonical fixtures for the
+[keyed cell collections](cell-model.md#keyed-cell-collections) layer, which is **required
+of every binding** (see the [Binding Conformance Matrix](protocol.md#binding-conformance-matrix)).
+These are **compute** fixtures, not wire fixtures: a binding loads the `initial` state,
+replays each `step`'s `op`, and asserts the `expected` effects (resulting `order`,
+`values`, `membership`, and which reader classes — `value` / `membership` / `order` —
+invalidate). The reconciliation fixture is declarative: diff `prior` → `target` and
+assert the emitted minimal op set.
+
+| Fixture | Covers |
+|---------|--------|
+| `collections/cellmap_independence.json` | value / set-membership / order reactivity independence |
+| `collections/cellmap_atomic_move.json` | atomic ordered move keeps handle, bumps order once |
+| `collections/keyed_reconciliation_lis.json` | LIS move-minimized reconciliation; stable entries not invalidated |
+
 ## Examples
 
 ### `snapshot_minimal.json`

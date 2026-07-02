@@ -177,12 +177,29 @@ An implementation conforms to the cell model when:
    kind.
 7. The attach/detach authority governs writer **liveness** only, never a cell's kind or
    mechanism.
+8. A **keyed cell collection** (`CellMap` + the `CellFamily` factory) is implemented —
+   entries are ordinary cells, a dedicated membership cell tracks the key set, and the
+   value / set-membership / order reactivity-independence, stable-handle, and
+   atomic-move invariants below hold. Collections are **required of every binding**, not
+   optional.
+9. An **ordered keyed tree** (`CellTree`) is implemented, inheriting the per-cell merge
+   and atomic-move guarantees node-by-node (required of every binding).
+10. **Keyed reconciliation** emits the move-minimized `{insert, remove, move, update}`
+    op set (LIS over prior indices preserved), and a stable entry is not invalidated by a
+    sibling reorder (required of every binding).
 
 ## Keyed cell collections
 
 A *keyed cell collection* (`CellMap`, and the `CellFamily` factory over it) is a
 **composition of cells**, not a new cell kind. It maps keys `K` to per-entry cells and
 adds a dedicated **membership cell** tracking the set of keys.
+
+> **Required.** The keyed cell collections layer is normative for **every** lazily
+> binding — it is not an optional lazily-rs extension. A conforming binding MUST implement
+> `CellMap`, the ordered keyed tree (`CellTree`), and keyed reconciliation, and MUST
+> validate against the canonical fixtures in [`conformance/collections/`](conformance/collections/).
+> The single-writer / multi-write classification, `merge:` mechanism, and ingress rules
+> below are exactly those defined above — the collection adds **no new merge unit**.
 
 It conforms to the cell model when:
 

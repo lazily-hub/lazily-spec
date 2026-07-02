@@ -1,0 +1,39 @@
+{
+  "description": "Atomic ordered move (move_to / move_before / move_after). Reordering a key MUST keep the entry's same cell handle, dependents, and lineage (not remove + re-mint), bump only the order signal once, and leave value readers of the moved key untouched.",
+  "kind": "Collection",
+  "model": "CellMap",
+  "initial": {
+    "order": ["a", "b", "c", "d"],
+    "values": { "a": 1, "b": 2, "c": 3, "d": 4 }
+  },
+  "steps": [
+    {
+      "op": { "type": "move_to", "key": "b", "index": 3 },
+      "expected": {
+        "order": ["a", "c", "d", "b"],
+        "membership": ["a", "b", "c", "d"],
+        "invalidates": { "value": [], "membership": false, "order": true },
+        "handle_stable": { "b": true }
+      }
+    },
+    {
+      "op": { "type": "move_before", "key": "d", "before": "a" },
+      "expected": {
+        "order": ["d", "a", "c", "b"],
+        "membership": ["a", "b", "c", "d"],
+        "invalidates": { "value": [], "membership": false, "order": true },
+        "handle_stable": { "d": true }
+      }
+    },
+    {
+      "op": { "type": "set_value", "key": "a", "value": 11 },
+      "expected": {
+        "order": ["d", "a", "c", "b"],
+        "values": { "a": 11 },
+        "membership": ["a", "b", "c", "d"],
+        "invalidates": { "value": ["a"], "membership": false, "order": false },
+        "handle_stable": { "a": true }
+      }
+    }
+  ]
+}

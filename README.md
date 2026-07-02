@@ -7,7 +7,20 @@ This repo defines the canonical message schemas shared across all lazily impleme
 - **lazily-rs** (Rust)
 - **lazily-py** (Python)
 - **lazily-zig** (Zig)
-- **@lazily/signaling** (TypeScript / Cloudflare Worker)
+- **lazily-js** (TypeScript / Cloudflare Worker)
+- **lazily-kt** (Kotlin/JVM)
+- **lazily-dart** (Dart)
+
+## Binding Conformance
+
+Every binding MUST implement the layers in the [Binding Conformance Matrix](protocol.md#binding-conformance-matrix).
+The **distributed CRDT plane (`CrdtSync`)** and the full keyed cell collections layer
+(`CellMap`, `CellTree`, keyed reconciliation) are unconditional — implementable on any
+runtime that speaks the wire. The **C-ABI FFI boundary** is required by default, with a
+narrow platform carve-out: a binding whose runtime structurally cannot host a native
+in-process C ABI (browser/Worker JS, sandboxed runtimes) declares `ffi = none`, still
+exposes the full state plane over IPC/WebSocket/WebRTC, and must not advertise itself as
+embeddable. Any omitted `MUST` row MUST be advertised rather than fail silently.
 
 ## Protocol Layers
 
@@ -79,6 +92,16 @@ The `conformance/` directory contains canonical test fixtures that all IPC-capab
 | `delta_shared_blob.json` | Delta | CellSet/SlotValue with SharedBlob |
 
 **Adding a new binding:** Copy the fixture-loading pattern from `lazily-rs/tests/conformance.rs`. Each test should (1) load the fixture, (2) parse the `wire` field into the binding's native `IpcMessage` type, (3) assert the `assertions` fields, (4) re-serialize and compare.
+
+## Keyed Cell Collections Conformance
+
+The `conformance/collections/` directory contains canonical fixtures for the [keyed cell collections](cell-model.md#keyed-cell-collections) layer, which is **required of every binding**. Unlike IPC fixtures these are **compute** — a binding loads the `initial` state, replays each `step`'s `op`, and asserts the `expected` observable effects (resulting `order`, `values`, `membership`, and which reader classes — `value` / `membership` / `order` — invalidate). The reconciliation fixture is declarative: diff `prior` → `target` and assert the emitted minimal op set.
+
+| Fixture | Covers |
+|---------|--------|
+| `collections/cellmap_independence.json` | value / set-membership / order reactivity independence (write, insert, remove, pure reorder) |
+| `collections/cellmap_atomic_move.json` | atomic ordered move keeps handle/dependents, bumps order once, leaves value readers untouched |
+| `collections/keyed_reconciliation_lis.json` | LIS move-minimized reconciliation; stable entries not invalidated by sibling reorder |
 
 ## State Chart Conformance
 

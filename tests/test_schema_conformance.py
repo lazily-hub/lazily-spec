@@ -218,8 +218,6 @@ def test_crdt_sync_rejects_peer_id_field_name() -> None:
     "bad_key", ["", "/leading", "trailing/", "a//b", "a/", "/a"]
 )
 def test_node_key_pattern_rejects_empty_segments(bad_key: str) -> None:
-    if bad_key == "":
-        pytest.skip("empty string fails minLength, not pattern, but still rejected")
     snap = {
         "Snapshot": {
             "epoch": 1,
@@ -252,3 +250,39 @@ def test_node_key_valid_path_validates() -> None:
         }
     }
     assert not list(_validator("snapshot").iter_errors(snap))
+
+
+# ---------------------------------------------------------------------------
+# Keyed cell collection fixtures (conformance/collections/) — structural guard
+# ---------------------------------------------------------------------------
+
+_COLLECTIONS_DIR = FIXTURE_DIR / "collections"
+
+
+def _collection_fixtures() -> list[str]:
+    if not _COLLECTIONS_DIR.is_dir():
+        return []
+    return sorted(p.name for p in _COLLECTIONS_DIR.glob("*.json"))
+
+
+@pytest.mark.parametrize("name", _collection_fixtures())
+def test_collection_fixture_is_well_formed(name: str) -> None:
+    """Guard against malformed-JSON / shape drift in the collections fixtures.
+
+    These are compute fixtures (replayed by each binding, like the statechart
+    fixtures), so this asserts only the language-agnostic top-level shape, not
+    any binding's runtime semantics.
+    """
+    obj = json.loads((_COLLECTIONS_DIR / name).read_text())
+    assert obj["kind"] == "Collection", f"{name}: kind must be 'Collection'"
+    assert obj["model"] in {"CellMap", "CellTree"}, f"{name}: unknown model {obj['model']!r}"
+    assert isinstance(obj["description"], str) and obj["description"], f"{name}: missing description"
+    assert "reconcile" in obj or "steps" in obj, f"{name}: must define 'steps' or 'reconcile'"
+    if "steps" in obj:
+        for step in obj["steps"]:
+            assert "op" in step and "expected" in step, f"{name}: step missing op/expected"
+            assert "invalidates" in step["expected"], f"{name}: expected missing 'invalidates'"
+            inv = step["expected"]["invalidates"]
+            assert set(inv) >= {"value", "membership", "order"}, (
+                f"{name}: invalidates must name value/membership/order reader classes"
+            )

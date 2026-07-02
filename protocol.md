@@ -256,6 +256,73 @@ All channels carry the same `IpcMessage` state plane:
 - Permission filtering happens before serialization on every channel.
 - Back-pressure: if frames gap, reorder, or truncate, the receiver requests a fresh `Snapshot`.
 
+## Binding Conformance Matrix
+
+A lazily **binding** is a language port that intends to interoperate with the wider lazily
+ecosystem (lazily-rs, lazily-py, lazily-zig, lazily-js, lazily-kt, lazily-dart, …). The
+layers below are **required of every binding**; none is an optional lazily-rs extension.
+A binding that omits a `MUST` row is non-conforming and MUST advertise its missing surface
+via [Capability Negotiation](#capability-negotiation) rather than failing silently.
+
+| Layer | Required | Spec | Conformance |
+|-------|----------|------|-------------|
+| Reactive core (Cell / Slot / Effect / Signal) | MUST | [Cell Model](cell-model.md) | — |
+| **Keyed cell collections** (`CellMap`, `CellTree`, keyed reconciliation) | MUST | [Cell Model § Keyed cell collections](cell-model.md#keyed-cell-collections) | [`conformance/collections/`](conformance/collections/) |
+| Flat state machine | MUST | [State Machine](state-machine.md) | — |
+| Harel state charts | MUST | [State Charts](state-charts.md) | [`conformance/statechart/`](conformance/statechart/) |
+| Async reactive context | MUST | [Async Reactive Context](async.md) | — |
+| IPC (`Snapshot` + `Delta`) | MUST | [§ IPC](#ipc-snapshot--incremental-update-protocol) | [`conformance/`](conformance/) IPC fixtures |
+| **C-ABI FFI boundary** (`LazilyFfiBytes`, `LazilyFfiStatus`, `LazilyFfiMessageKind`) | MUST¹ | [§ FFI Boundary](#ffi-boundary), [`ffi.json`](schemas.md#ffijson) | every binding decodes the FFI frame to `IpcMessage` and re-encodes canonical JSON bytes |
+| **Distributed CRDT plane** (`CrdtSync` / `WireStamp`) | MUST | [§ Distributed: CRDT Cell Plane](#distributed-crdt-cell-plane), [`distributed.json`](schemas.md#distributedjson) | [`conformance/`](conformance/) `CrdtSync` round-trip |
+| Permission boundary (`RemoteOp` / `PeerPermissions`) | MUST | [§ Permission Boundary](#permission-boundary-remoteop) | — |
+| Capability negotiation | MUST | [§ Capability Negotiation](#capability-negotiation) | — |
+| Signaling (WebSocket) | MAY | [§ Signaling](#signaling-protocol-websocket) | only for bindings that bridge browser/runtime peers |
+| WebRTC data transport | MAY | [§ Cross-language channels](#cross-language-channel-compatibility) | only for bindings that peer over WebRTC |
+
+> ¹ C-ABI FFI has a **platform carve-out** — see [§ C-ABI FFI is required](#c-abi-ffi-is-required).
+> CRDT and the keyed cell collections have **no carve-out**: they are wire/logic
+> properties implementable on any runtime that speaks the wire.
+
+### C-ABI FFI is required
+
+Every binding whose platform can host a native in-process boundary MUST expose and consume
+the [C-ABI FFI boundary](#ffi-boundary): the `LazilyFfiBytes` / `LazilyFfiStatus` /
+`LazilyFfiMessageKind` contract with explicit allocation ownership, panics caught before
+crossing the C ABI, and a channel that decodes each accepted frame as `IpcMessage` and
+re-encodes canonical JSON bytes. The FFI message kind discriminant MUST include
+`CrdtSync = 3`. This is the lingua franca that lets any binding embed any other without a
+language-specific bridge.
+
+**Platform carve-out.** A binding whose runtime structurally cannot host a native C ABI
+declares the `ffi` capability as `none`; otherwise it declares `host`. `none` is reserved
+for platforms with no shared in-process address space (for example browser/Worker JS, or a
+fully-sandboxed runtime) — a binding MAY NOT declare `none` merely because FFI is
+inconvenient or unimplemented. This is a binding-level conformance declaration (advertised
+in the binding's conformance statement and discoverable at build/link time), not a
+per-session wire flag, since in-process embedding is not a runtime session.
+
+A `ffi = none` binding:
+- conforms to the **interop** contract but not the **in-process embedding** contract, and
+  MUST NOT advertise itself as embeddable;
+- MUST still expose the full state plane — including `CrdtSync` — over
+  IPC/WebSocket/WebRTC, so it interoperate without in-process embedding; and
+- MUST be treated by peers/host tooling as unable to be loaded in-process (fail closed on
+  any attempt to do so, rather than silently degrading).
+
+This reuses the existing fail-closed principle: the limitation is explicit and advertised,
+never silent. There is no equivalent carve-out for CRDT or the cell/collections model —
+those are implementable on any Turing-complete runtime that speaks the wire.
+
+### CRDT is required
+
+Every binding MUST implement the [`CrdtSync`](#distributed-crdt-cell-plane) plane — the
+`merge: crdt` mechanism, the `WireStamp` version-vector frontier, and the
+causal-stability watermark / GC contract — and MUST round-trip a `CrdtSync` `IpcMessage`
+byte-identically. Multi-write convergence is a property of the cell model, not an
+optional distributed extra; a binding that ships only the single-producer
+`Snapshot`/`Delta` mirror conforms only to the single-writer subset and MUST downgrade its
+advertised capability accordingly.
+
 ## FFI Boundary
 
 ### Types

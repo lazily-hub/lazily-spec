@@ -29,6 +29,14 @@ below carry cells classified by this model.
 | Distributed (CRDT) | [Wire Protocol § Distributed](protocol.md) | [distributed.json](schemas.md) |
 | Capability negotiation | [Wire Protocol § Capability Negotiation](protocol.md) | inline |
 
+Every layer in this matrix is **required of every binding**. The **Distributed CRDT**
+row and the required [keyed cell collections](cell-model.md#keyed-cell-collections) layer
+are unconditional. The **C-ABI FFI** row is required by default with a narrow platform
+carve-out (a binding whose runtime cannot host a native in-process C ABI — e.g.
+browser/Worker JS — declares `ffi = none` and interops over the wire instead). See the
+[Binding Conformance Matrix](protocol.md#binding-conformance-matrix) for the full
+MUST/MAY breakdown and the carve-out terms.
+
 ## Wire Format
 
 All messages use **JSON** with `serde`-compatible tagging (`"type"` discriminant). Future

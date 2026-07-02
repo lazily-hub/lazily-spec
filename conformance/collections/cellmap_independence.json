@@ -1,0 +1,45 @@
+{
+  "description": "CellMap value / set-membership / order reactivity independence. Writing an entry value MUST NOT invalidate membership or order readers; insert/remove MUST NOT invalidate unrelated entry value readers; a pure reorder (atomic move) MUST NOT invalidate set-membership readers (len/contains) — only order readers (keys).",
+  "kind": "Collection",
+  "model": "CellMap",
+  "initial": {
+    "order": ["a", "b", "c"],
+    "values": { "a": 1, "b": 2, "c": 3 }
+  },
+  "steps": [
+    {
+      "op": { "type": "set_value", "key": "a", "value": 10 },
+      "expected": {
+        "order": ["a", "b", "c"],
+        "values": { "a": 10 },
+        "membership": ["a", "b", "c"],
+        "invalidates": { "value": ["a"], "membership": false, "order": false }
+      }
+    },
+    {
+      "op": { "type": "insert", "key": "d", "value": 4, "at": "end" },
+      "expected": {
+        "order": ["a", "b", "c", "d"],
+        "values": { "d": 4 },
+        "membership": ["a", "b", "c", "d"],
+        "invalidates": { "value": [], "membership": true, "order": true }
+      }
+    },
+    {
+      "op": { "type": "remove", "key": "b" },
+      "expected": {
+        "order": ["a", "c", "d"],
+        "membership": ["a", "c", "d"],
+        "invalidates": { "value": [], "membership": true, "order": true }
+      }
+    },
+    {
+      "op": { "type": "move_to", "key": "c", "index": 0 },
+      "expected": {
+        "order": ["c", "a", "d"],
+        "membership": ["a", "c", "d"],
+        "invalidates": { "value": [], "membership": false, "order": true }
+      }
+    }
+  ]
+}
