@@ -272,6 +272,33 @@ keys → reconcile), not the merge unit. Honest floor: a true rewrite is a repla
 character identity survives it. The anchored layer keeps per-node lineage; the free-text
 layer's guarantee is "merge the text, re-derive the tree."
 
+#### Delta sync (#lztextsync)
+
+Whole-replica `merge` requires transporting the entire element set; a conformant binding also
+exposes **delta synchronization** so replicas converge by exchanging only what a partner
+lacks. Three operations, over the same element set:
+
+- **`version_vector()` → `{peer → counter}`** — the greatest [`OpId`] counter this replica
+  holds per originating peer, taken over **both** insert ids and tombstone (delete) ids. It is
+  the compact frontier a replica publishes; an op `(c, p)` is unknown to a partner iff
+  `c > their_vv[p]` (absent peer = 0).
+- **`delta_since(their_vv)` → `[TextOp]`** — the ops this replica holds that `their_vv` has not
+  observed: elements whose **insert** id is newer, plus elements whose **tombstone** id is
+  newer (a fresh deletion of an already-shared element). Each `TextOp` is the transport form of
+  one element — `{ id, ch, origin, deleted }`. A whole-state snapshot is
+  `delta_since(∅)`.
+- **`apply_delta(ops)`** — applies a delta op list with the **same** algebra as `merge`: a new
+  id adds its element (preserving that id); an incoming tombstone is merged sticky-minimally
+  (concurrent deletes keep the smaller delete id); the local Lamport counter advances past
+  every observed id. It is therefore commutative, associative, and idempotent, and re-applying
+  a delta is a no-op.
+
+Identity preservation is the load-bearing property: rebuilding a replica by `apply_delta`-ing a
+snapshot onto a fresh buffer keeps every character's `OpId`, so a later concurrent edit merges
+without duplication — unlike re-parsing the text, which would mint fresh ids and double content
+on the next merge. This is what lets a canonical replica fork per-member replicas from an
+encoded snapshot and keep them converged by bidirectional `delta_since`/`apply_delta`.
+
 ### Move-aware sequence order
 
 Sibling order under concurrency is a separate **composition** above per-cell value merge: a
