@@ -1,0 +1,29 @@
+{
+  "$comment": "Canonical cross-language feature coverage — the single source of truth. Edit THIS file, then run `node scripts/sync-coverage.mjs` to regenerate the table in docs/coverage.md and every sibling binding README (between the coverage-table markers). CI runs `--check` to fail on drift.",
+  "legend": "✅ shipped · `~` partial · `—` absent or not applicable",
+  "languages": ["Rust", "Python", "Kotlin", "JS", "Dart", "Zig"],
+  "align": ["Feature", ":----:", ":------:", ":------:", ":--:", ":----:", ":---:"],
+  "rows": [
+    { "feature": "Reactive graph — `Cell` / `Slot` / `Signal` / `Effect` / memo / batch", "marks": ["✅", "~", "✅", "✅", "~", "~"] },
+    { "feature": "Thread-safe context (lock-backed)", "marks": ["✅", "✅", "✅", "—", "—", "✅"] },
+    { "feature": "Async reactive context", "marks": ["✅", "✅", "✅", "✅", "✅", "—"] },
+    { "feature": "Flat state machine", "marks": ["✅", "✅", "✅", "✅", "✅", "✅"] },
+    { "feature": "Harel state charts", "marks": ["✅", "✅", "✅", "✅", "✅", "✅"] },
+    { "feature": "Keyed cell collections (`CellMap` / `CellTree`) + reconcile", "marks": ["✅", "✅", "✅", "✅", "✅", "~"] },
+    { "feature": "Memoized semantic tree (`SemTree`)", "marks": ["✅", "—", "✅", "✅", "—", "—"] },
+    { "feature": "Stable-id alignment (manufactured identity)", "marks": ["✅", "—", "✅", "✅", "—", "—"] },
+    { "feature": "Free-text character CRDT (`TextCrdt`)", "marks": ["✅", "—", "✅", "✅", "—", "—"] },
+    { "feature": "`TextCrdt` delta sync (`version_vector` / `delta_since` / `apply_delta`)", "marks": ["✅", "—", "✅", "✅", "—", "—"] },
+    { "feature": "Move-aware sequence CRDT (`SeqCrdt`)", "marks": ["✅", "—", "✅", "✅", "—", "—"] },
+    { "feature": "Registers (LWW / MV) + `PnCounter` + `CellCrdt`", "marks": ["✅", "—", "✅", "✅", "—", "—"] },
+    { "feature": "IPC wire — `Snapshot` + `Delta` + `CrdtSync`", "marks": ["✅", "✅", "✅", "✅", "✅", "✅"] },
+    { "feature": "Shared-memory blob path (`ShmBlobArena`)", "marks": ["✅", "✅", "✅", "~", "~", "✅"] },
+    { "feature": "Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy)", "marks": ["✅", "—", "✅", "✅", "~", "—"] },
+    { "feature": "Distributed plane — WebRTC transport + signaling", "marks": ["✅", "—", "✅", "✅", "—", "—"] },
+    { "feature": "State projection / mirror", "marks": ["✅", "—", "✅", "✅", "—", "—"] },
+    { "feature": "C-ABI FFI boundary", "marks": ["✅", "✅", "✅", "—", "✅", "✅"] },
+    { "feature": "Permission boundary (`PeerPermissions` / `RemoteOp`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅"] },
+    { "feature": "Capability negotiation (`SessionHandshake`)", "marks": ["✅", "—", "✅", "✅", "✅", "✅"] },
+    { "feature": "Instrumentation / benchmarks", "marks": ["✅", "—", "—", "—", "—", "—"] }
+  ]
+}

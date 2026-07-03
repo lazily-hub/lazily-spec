@@ -21,6 +21,24 @@ jobs:
       - name: Validate schemas vs conformance fixtures
         run: make test-schemas
 
+  coverage:
+    name: Feature-matrix single-source guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # docs/coverage.md must match the canonical coverage.json. (Sibling binding
+      # READMEs are not checked out here, so they are skipped; run
+      # `make coverage-sync` locally with siblings present to update them.)
+      - name: Check coverage table is generated from coverage.json
+        run: make coverage-check
+
   lean:
     name: Lean formal model
     runs-on: ubuntu-latest

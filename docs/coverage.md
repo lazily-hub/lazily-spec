@@ -8,14 +8,20 @@ what every binding *must* eventually provide.
 
 Legend: ✅ shipped · `~` partial · `—` absent or not applicable (see notes).
 
+> The table below is **generated** from [`coverage.json`](../coverage.json) by
+> [`scripts/sync-coverage.mjs`](../scripts/sync-coverage.mjs). Edit `coverage.json`
+> and run `make coverage-sync` (or `node scripts/sync-coverage.mjs`) to update this
+> table and every binding README in one shot; `make coverage-check` guards drift in CI.
+
+<!-- coverage-table:start -->
 | Feature | Rust | Python | Kotlin | JS | Dart | Zig |
-|---------|:----:|:------:|:------:|:--:|:----:|:---:|
-| Reactive graph — Cell / Slot / Signal / Effect / memo / batch | ✅ | ~ᵃ | ✅ | ✅ | ~ᵇ | ~ᶜ |
-| Thread-safe context (lock-backed) | ✅ | ✅ | ✅ | —ᵈ | —ᵈ | ✅ |
-| Async reactive context | ✅ | ✅ | ✅ | ✅ | ✅ | —ᵉ |
+| --------- | :----: | :------: | :------: | :--: | :----: | :---: |
+| Reactive graph — `Cell` / `Slot` / `Signal` / `Effect` / memo / batch | ✅ | ~ | ✅ | ✅ | ~ | ~ |
+| Thread-safe context (lock-backed) | ✅ | ✅ | ✅ | — | — | ✅ |
+| Async reactive context | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Flat state machine | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Harel state charts | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Keyed cell collections (`CellMap` / `CellTree`) + reconcile | ✅ | ✅ | ✅ | ✅ | ✅ | ~ᶠ |
+| Keyed cell collections (`CellMap` / `CellTree`) + reconcile | ✅ | ✅ | ✅ | ✅ | ✅ | ~ |
 | Memoized semantic tree (`SemTree`) | ✅ | — | ✅ | ✅ | — | — |
 | Stable-id alignment (manufactured identity) | ✅ | — | ✅ | ✅ | — | — |
 | Free-text character CRDT (`TextCrdt`) | ✅ | — | ✅ | ✅ | — | — |
@@ -23,14 +29,15 @@ Legend: ✅ shipped · `~` partial · `—` absent or not applicable (see notes)
 | Move-aware sequence CRDT (`SeqCrdt`) | ✅ | — | ✅ | ✅ | — | — |
 | Registers (LWW / MV) + `PnCounter` + `CellCrdt` | ✅ | — | ✅ | ✅ | — | — |
 | IPC wire — `Snapshot` + `Delta` + `CrdtSync` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Shared-memory blob path (`ShmBlobArena`) | ✅ | ✅ | ✅ | ~ᵍ | ~ᵍ | ✅ |
-| Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy) | ✅ | — | ✅ | ✅ | ~ʰ | — |
+| Shared-memory blob path (`ShmBlobArena`) | ✅ | ✅ | ✅ | ~ | ~ | ✅ |
+| Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy) | ✅ | — | ✅ | ✅ | ~ | — |
 | Distributed plane — WebRTC transport + signaling | ✅ | — | ✅ | ✅ | — | — |
 | State projection / mirror | ✅ | — | ✅ | ✅ | — | — |
-| C-ABI FFI boundary | ✅ | ✅ | ✅ | —ⁱ | ✅ | ✅ |
+| C-ABI FFI boundary | ✅ | ✅ | ✅ | — | ✅ | ✅ |
 | Permission boundary (`PeerPermissions` / `RemoteOp`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Capability negotiation (`SessionHandshake`) | ✅ | — | ✅ | ✅ | ✅ | ✅ |
 | Instrumentation / benchmarks | ✅ | — | — | — | — | — |
+<!-- coverage-table:end -->
 
 Convergence and the wire protocol are pinned by the shared conformance fixtures
 and JSON Schemas in this repo and the Lean models in
