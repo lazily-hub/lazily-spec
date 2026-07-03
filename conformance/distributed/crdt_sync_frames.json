@@ -1,0 +1,56 @@
+{
+  "description": "CrdtSync anti-entropy frame variants for cross-language serde conformance. Each frame's `wire` is the externally-tagged {\"CrdtSync\": {frontier, ops}} envelope (the third IpcMessage variant) and validates against schemas/distributed.json. `frontier` is a list of [peer, WireStamp] tuples; WireStamp uses `peer` (never `peer_id`). Each CrdtOp always carries `key` (null when unset). State-based / idempotent: re-delivering a frame applies 0 new ops.",
+  "protocol_version": 1,
+  "kind": "CrdtSyncFrames",
+  "frames": [
+    {
+      "label": "crdt_sync_empty",
+      "assertions": { "frontier_len": 0, "op_count": 0 },
+      "wire": { "CrdtSync": { "frontier": [], "ops": [] } }
+    },
+    {
+      "label": "crdt_sync_keyed_and_keyless",
+      "assertions": { "frontier_len": 1, "op_count": 2, "has_keyed_op": true, "has_keyless_op": true },
+      "wire": {
+        "CrdtSync": {
+          "frontier": [[1, { "wall_time": 5, "logical": 0, "peer": 1 }]],
+          "ops": [
+            {
+              "node": 1,
+              "key": null,
+              "stamp": { "wall_time": 5, "logical": 0, "peer": 1 },
+              "state": { "Inline": [1] }
+            },
+            {
+              "node": 2,
+              "key": "scores/alice",
+              "stamp": { "wall_time": 6, "logical": 1, "peer": 2 },
+              "state": { "SharedBlob": { "offset": 0, "len": 3, "generation": 1, "epoch": 1, "checksum": 9 } }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "crdt_sync_multi_peer_frontier",
+      "assertions": { "frontier_len": 3, "op_count": 1 },
+      "wire": {
+        "CrdtSync": {
+          "frontier": [
+            [1, { "wall_time": 10, "logical": 2, "peer": 1 }],
+            [2, { "wall_time": 9, "logical": 0, "peer": 2 }],
+            [3, { "wall_time": 12, "logical": 4, "peer": 3 }]
+          ],
+          "ops": [
+            {
+              "node": 7,
+              "key": "counter/global",
+              "stamp": { "wall_time": 12, "logical": 4, "peer": 3 },
+              "state": { "Inline": [42] }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

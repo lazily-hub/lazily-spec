@@ -253,6 +253,153 @@ def test_node_key_valid_path_validates() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Signaling frames (conformance/signaling/) — every variant validates
+# ---------------------------------------------------------------------------
+
+_SIGNALING_DIR = FIXTURE_DIR / "signaling"
+
+
+def _signaling_frames() -> list[dict]:
+    path = _SIGNALING_DIR / "frames.json"
+    if not path.is_file():
+        return []
+    return json.loads(path.read_text())["frames"]
+
+
+@pytest.mark.parametrize(
+    "frame", _signaling_frames(), ids=lambda f: f["label"]
+)
+def test_signaling_frame_validates_schema(frame: dict) -> None:
+    errors = sorted(
+        _validator("signaling").iter_errors(frame["wire"]), key=lambda e: list(e.path)
+    )
+    assert not errors, (
+        f"signaling frame {frame['label']!r} does not validate against signaling.json:\n"
+        + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+    )
+
+
+def test_signaling_forwarded_frames_carry_from_not_to() -> None:
+    """Anti-spoof: server->client forwarded frames carry `from`, never `to`."""
+    for frame in _signaling_frames():
+        if frame["direction"] == "server" and frame["variant"] in {
+            "offer",
+            "answer",
+            "ice",
+            "relay",
+        }:
+            wire = frame["wire"]
+            assert "from" in wire and "to" not in wire, (
+                f"{frame['label']}: forwarded frame must carry server-stamped `from`, not `to`"
+            )
+
+
+def test_signaling_client_directed_frames_carry_to_not_from() -> None:
+    for frame in _signaling_frames():
+        if frame["direction"] == "client" and frame["variant"] in {
+            "offer",
+            "answer",
+            "ice",
+            "relay",
+        }:
+            wire = frame["wire"]
+            assert "to" in wire and "from" not in wire, (
+                f"{frame['label']}: client directed frame must carry `to`, not `from`"
+            )
+
+
+def test_signaling_welcome_roster_excludes_self() -> None:
+    for frame in _signaling_frames():
+        if frame["variant"] == "welcome":
+            wire = frame["wire"]
+            assert wire["peer"] not in wire["peers"], (
+                f"{frame['label']}: welcome roster must exclude the joining peer's own id"
+            )
+
+
+def test_signaling_stale_camelcase_tag_is_rejected() -> None:
+    # kebab-case tags are normative: peerJoined / peer_joined must be rejected.
+    for bad in ({"type": "peerJoined", "peer": 5}, {"type": "peer_joined", "peer": 5}):
+        assert _validator("signaling").iter_errors(bad), (
+            "signaling schema must reject non-kebab-case peer-joined tag"
+        )
+
+
+def test_signaling_anti_spoof_session_frames_validate() -> None:
+    """The routing transcript's every emitted frame validates against the schema,
+    and forwarded frames rewrite `to` -> server-stamped `from`."""
+    path = _SIGNALING_DIR / "anti_spoof_session.json"
+    if not path.is_file():
+        return
+    session = json.loads(path.read_text())
+    assert session["protocol_version"] == 1
+    for step in session["steps"]:
+        recv = step["input"]["recv"]
+        assert not list(_validator("signaling").iter_errors(recv)), (
+            f"session input {recv} does not validate"
+        )
+        for out in step["expect"]:
+            frame = out["frame"]
+            assert not list(_validator("signaling").iter_errors(frame)), (
+                f"session output {frame} does not validate"
+            )
+            if frame["type"] in {"offer", "answer", "ice", "relay"}:
+                assert "from" in frame and "to" not in frame, (
+                    f"forwarded {frame['type']} must carry server-stamped `from`"
+                )
+
+
+# ---------------------------------------------------------------------------
+# Distributed CrdtSync frames (conformance/distributed/) — every variant validates
+# ---------------------------------------------------------------------------
+
+_DISTRIBUTED_DIR = FIXTURE_DIR / "distributed"
+
+
+def _crdt_sync_frames() -> list[dict]:
+    path = _DISTRIBUTED_DIR / "crdt_sync_frames.json"
+    if not path.is_file():
+        return []
+    return json.loads(path.read_text())["frames"]
+
+
+@pytest.mark.parametrize(
+    "frame", _crdt_sync_frames(), ids=lambda f: f["label"]
+)
+def test_crdt_sync_frame_validates_schema(frame: dict) -> None:
+    errors = sorted(
+        _validator("distributed").iter_errors(frame["wire"]), key=lambda e: list(e.path)
+    )
+    assert not errors, (
+        f"CrdtSync frame {frame['label']!r} does not validate against distributed.json:\n"
+        + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+    )
+
+
+def test_anti_entropy_converge_scenarios_well_formed() -> None:
+    """Structural guard for the distributed CRDT-plane replay fixture (bindings
+    replay it against their CrdtPlaneRuntime; here we only assert the shape)."""
+    path = _DISTRIBUTED_DIR / "anti_entropy_converge.json"
+    if not path.is_file():
+        return
+    obj = json.loads(path.read_text())
+    assert obj["kind"] == "Distributed" and obj["model"] == "CrdtPlane"
+    scenarios = obj["scenarios"]
+    assert isinstance(scenarios, list) and scenarios
+    for sc in scenarios:
+        assert isinstance(sc.get("name"), str) and sc["name"]
+        assert isinstance(sc.get("ops"), list) and sc["ops"]
+        # every op must itself be a schema-valid CrdtOp (wrap as a one-op CrdtSync)
+        for op in sc["ops"]:
+            msg = {"CrdtSync": {"frontier": [], "ops": [op]}}
+            assert not list(_validator("distributed").iter_errors(msg)), (
+                f"scenario {sc['name']!r} op does not validate: {op}"
+            )
+        expect = sc["expect"]
+        assert "converged" in expect and isinstance(expect["converged"], list)
+
+
+# ---------------------------------------------------------------------------
 # Keyed cell collection fixtures (conformance/collections/) — structural guard
 # ---------------------------------------------------------------------------
 

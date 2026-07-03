@@ -1,0 +1,126 @@
+{
+  "description": "Every signaling frame variant, client->server and server->client, for cross-language serde conformance. Each frame's `wire` field is the canonical JSON a binding MUST encode a typed message to and decode back from. Frames validate against schemas/signaling.json. Tags are kebab-case; `peer` ids are bare JSON numbers <= 2^53-1. Client-directed frames carry `to`; server-forwarded frames carry a server-stamped `from` (never client-supplied).",
+  "protocol_version": 1,
+  "kind": "SignalingFrames",
+  "frames": [
+    {
+      "label": "client_join",
+      "direction": "client",
+      "variant": "join",
+      "assertions": { "peer": 1, "has_capabilities": false },
+      "wire": { "type": "join", "peer": 1 }
+    },
+    {
+      "label": "client_join_capabilities",
+      "direction": "client",
+      "variant": "join",
+      "assertions": { "peer": 7, "has_capabilities": true, "capabilities": ["crdt"] },
+      "wire": { "type": "join", "peer": 7, "capabilities": ["crdt"] }
+    },
+    {
+      "label": "client_offer",
+      "direction": "client",
+      "variant": "offer",
+      "assertions": { "to": 2 },
+      "wire": { "type": "offer", "to": 2, "sdp": "v=0\r\no=- 12345 2 IN IP4 127.0.0.1\r\n..." }
+    },
+    {
+      "label": "client_answer",
+      "direction": "client",
+      "variant": "answer",
+      "assertions": { "to": 2 },
+      "wire": { "type": "answer", "to": 2, "sdp": "v=0\r\no=- 67890 2 IN IP4 127.0.0.1\r\n..." }
+    },
+    {
+      "label": "client_ice",
+      "direction": "client",
+      "variant": "ice",
+      "assertions": { "to": 2 },
+      "wire": { "type": "ice", "to": 2, "candidate": "candidate:1 1 udp 2130706431 192.168.1.1 5000 typ host" }
+    },
+    {
+      "label": "client_relay",
+      "direction": "client",
+      "variant": "relay",
+      "assertions": { "to": 2 },
+      "wire": { "type": "relay", "to": 2, "payload": { "type": "delta", "base_epoch": 0, "epoch": 1, "ops": [] } }
+    },
+    {
+      "label": "client_leave",
+      "direction": "client",
+      "variant": "leave",
+      "assertions": {},
+      "wire": { "type": "leave" }
+    },
+    {
+      "label": "server_welcome",
+      "direction": "server",
+      "variant": "welcome",
+      "assertions": { "peer": 2, "peers": [1], "roster_excludes_self": true },
+      "wire": { "type": "welcome", "peer": 2, "peers": [1] }
+    },
+    {
+      "label": "server_welcome_empty_roster",
+      "direction": "server",
+      "variant": "welcome",
+      "assertions": { "peer": 1, "peers": [], "roster_excludes_self": true },
+      "wire": { "type": "welcome", "peer": 1, "peers": [] }
+    },
+    {
+      "label": "server_peer_joined",
+      "direction": "server",
+      "variant": "peer-joined",
+      "assertions": { "peer": 5 },
+      "wire": { "type": "peer-joined", "peer": 5 }
+    },
+    {
+      "label": "server_peer_left",
+      "direction": "server",
+      "variant": "peer-left",
+      "assertions": { "peer": 5 },
+      "wire": { "type": "peer-left", "peer": 5 }
+    },
+    {
+      "label": "server_offer_forwarded",
+      "direction": "server",
+      "variant": "offer",
+      "assertions": { "from": 1, "server_stamped_from": true },
+      "wire": { "type": "offer", "from": 1, "sdp": "v=0\r\no=- 12345 2 IN IP4 127.0.0.1\r\n..." }
+    },
+    {
+      "label": "server_answer_forwarded",
+      "direction": "server",
+      "variant": "answer",
+      "assertions": { "from": 2, "server_stamped_from": true },
+      "wire": { "type": "answer", "from": 2, "sdp": "v=0\r\no=- 67890 2 IN IP4 127.0.0.1\r\n..." }
+    },
+    {
+      "label": "server_ice_forwarded",
+      "direction": "server",
+      "variant": "ice",
+      "assertions": { "from": 2, "server_stamped_from": true },
+      "wire": { "type": "ice", "from": 2, "candidate": "candidate:1 1 udp 2130706431 192.168.1.2 5001 typ host" }
+    },
+    {
+      "label": "server_relay_forwarded",
+      "direction": "server",
+      "variant": "relay",
+      "assertions": { "from": 1, "server_stamped_from": true },
+      "wire": { "type": "relay", "from": 1, "payload": { "type": "delta", "base_epoch": 0, "epoch": 1, "ops": [] } }
+    },
+    {
+      "label": "server_error_permission_denied",
+      "direction": "server",
+      "variant": "error",
+      "assertions": { "code": "permission_denied" },
+      "wire": { "type": "error", "code": "permission_denied", "message": "peer 9 is not allowed to signal peer 2" }
+    },
+    {
+      "label": "server_error_unknown_target",
+      "direction": "server",
+      "variant": "error",
+      "assertions": { "code": "unknown_target" },
+      "wire": { "type": "error", "code": "unknown_target", "message": "peer 42 is not in this session" }
+    }
+  ]
+}

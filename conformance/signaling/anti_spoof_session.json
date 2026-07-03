@@ -1,0 +1,44 @@
+{
+  "description": "Signaling room routing transcript. A binding that implements the server room (RoomCore) replays `inputs` and MUST produce `expect` frames. The load-bearing invariant is anti-spoof: a client sends a directed frame carrying `to`; the server forwards it to the target carrying `from` set to the SENDER's server-registered peer id, never a client-supplied value. The roster in `welcome` excludes the joining peer's own id. `to`/`from` are never both present on one frame.",
+  "protocol_version": 1,
+  "kind": "SignalingSession",
+  "mode": "open",
+  "assertions": {
+    "roster_excludes_self": true,
+    "forwarded_from_is_server_registered": true,
+    "roster_sorted_ascending": true
+  },
+  "steps": [
+    {
+      "input": { "conn": "a", "recv": { "type": "join", "peer": 1 } },
+      "expect": [ { "to": "a", "frame": { "type": "welcome", "peer": 1, "peers": [] } } ]
+    },
+    {
+      "input": { "conn": "b", "recv": { "type": "join", "peer": 2 } },
+      "expect": [
+        { "to": "b", "frame": { "type": "welcome", "peer": 2, "peers": [1] } },
+        { "to": "a", "frame": { "type": "peer-joined", "peer": 2 } }
+      ]
+    },
+    {
+      "input": { "conn": "a", "recv": { "type": "offer", "to": 2, "sdp": "SDP-A" } },
+      "expect": [ { "to": "b", "frame": { "type": "offer", "from": 1, "sdp": "SDP-A" } } ]
+    },
+    {
+      "input": { "conn": "b", "recv": { "type": "answer", "to": 1, "sdp": "SDP-B" } },
+      "expect": [ { "to": "a", "frame": { "type": "answer", "from": 2, "sdp": "SDP-B" } } ]
+    },
+    {
+      "input": { "conn": "a", "recv": { "type": "ice", "to": 2, "candidate": "CAND-A" } },
+      "expect": [ { "to": "b", "frame": { "type": "ice", "from": 1, "candidate": "CAND-A" } } ]
+    },
+    {
+      "input": { "conn": "a", "recv": { "type": "offer", "to": 99, "sdp": "SDP-X" } },
+      "expect": [ { "to": "a", "frame": { "type": "error", "code": "unknown_target", "message": "peer 99 is not in this session" } } ]
+    },
+    {
+      "input": { "conn": "b", "recv": { "type": "leave" } },
+      "expect": [ { "to": "a", "frame": { "type": "peer-left", "peer": 2 } } ]
+    }
+  ]
+}

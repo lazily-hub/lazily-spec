@@ -1,0 +1,62 @@
+{
+  "description": "Distributed CRDT-plane anti-entropy replay. A binding's CrdtPlaneRuntime ingests each scenario's `ops` (each a state-based CrdtOp) and MUST converge to `expect.converged` regardless of delivery order, and re-ingesting an already-seen frame MUST apply 0 new ops (state-based CvRDT idempotence). This fixture models LWW cells where the plane WireStamp IS the register's decisive stamp: for a given node the winning state is the op with the greatest WireStamp under lexicographic (wall_time, logical, peer) order. Op-log dedup is keyed by (node, stamp).",
+  "protocol_version": 1,
+  "kind": "Distributed",
+  "model": "CrdtPlane",
+  "scenarios": [
+    {
+      "name": "lww_last_writer_wins",
+      "description": "Highest WireStamp wins per node; peer id is the final tie-break (node/count exercises the (wall,logical) tie -> higher peer wins).",
+      "ops": [
+        { "node": 1, "key": "doc/title", "stamp": { "wall_time": 10, "logical": 0, "peer": 1 }, "state": { "Inline": [65] } },
+        { "node": 1, "key": "doc/title", "stamp": { "wall_time": 12, "logical": 0, "peer": 2 }, "state": { "Inline": [66] } },
+        { "node": 1, "key": "doc/title", "stamp": { "wall_time": 11, "logical": 0, "peer": 1 }, "state": { "Inline": [67] } },
+        { "node": 2, "key": "doc/count", "stamp": { "wall_time": 5, "logical": 3, "peer": 1 }, "state": { "Inline": [9] } },
+        { "node": 2, "key": "doc/count", "stamp": { "wall_time": 5, "logical": 3, "peer": 2 }, "state": { "Inline": [7] } }
+      ],
+      "expect": {
+        "resolution": "max_stamp",
+        "applied_count": 5,
+        "converged": [
+          { "node": 1, "key": "doc/title", "state": { "Inline": [66] } },
+          { "node": 2, "key": "doc/count", "state": { "Inline": [7] } }
+        ]
+      }
+    },
+    {
+      "name": "idempotent_redelivery",
+      "description": "Re-ingesting the same frame applies 0 new ops and leaves the converged state unchanged.",
+      "ops": [
+        { "node": 1, "key": "doc/title", "stamp": { "wall_time": 10, "logical": 0, "peer": 1 }, "state": { "Inline": [65] } },
+        { "node": 1, "key": "doc/title", "stamp": { "wall_time": 12, "logical": 0, "peer": 2 }, "state": { "Inline": [66] } }
+      ],
+      "redeliver": true,
+      "expect": {
+        "resolution": "max_stamp",
+        "applied_count": 2,
+        "redeliver_applied_count": 0,
+        "converged": [
+          { "node": 1, "key": "doc/title", "state": { "Inline": [66] } }
+        ]
+      }
+    },
+    {
+      "name": "out_of_order_converges",
+      "description": "Delivering the same op set in reverse order converges to the identical winner.",
+      "ops": [
+        { "node": 1, "key": "doc/title", "stamp": { "wall_time": 10, "logical": 0, "peer": 1 }, "state": { "Inline": [65] } },
+        { "node": 1, "key": "doc/title", "stamp": { "wall_time": 12, "logical": 0, "peer": 2 }, "state": { "Inline": [66] } },
+        { "node": 1, "key": "doc/title", "stamp": { "wall_time": 11, "logical": 0, "peer": 1 }, "state": { "Inline": [67] } }
+      ],
+      "reverse_order_equivalent": true,
+      "expect": {
+        "resolution": "max_stamp",
+        "applied_count": 3,
+        "order_independent": true,
+        "converged": [
+          { "node": 1, "key": "doc/title", "state": { "Inline": [66] } }
+        ]
+      }
+    }
+  ]
+}

@@ -57,6 +57,40 @@ assert the emitted minimal op set.
 | `collections/textcrdt_convergence.json` | Fugue/RGA character CRDT: concurrent same-point inserts, sticky tombstone, commutative/idempotent merge, GC |
 | `collections/stableid_alignment.json` | manufactured text identity: anchors / content hashes / word-LCS similarity alignment |
 
+## Signaling conformance
+
+The `conformance/signaling/` directory pins the WebSocket signaling wire protocol
+(see [protocol.md § Signaling Protocol](protocol.md#signaling-protocol-websocket)),
+the cross-language contract shared by every distributed-plane binding and the
+reference TypeScript signaling server.
+
+- `signaling/frames.json` is a **wire** fixture: each entry's `wire` field is the
+  canonical JSON for one `ClientMessage` / `ServerMessage` variant and validates
+  against `schemas/signaling.json`. A binding encodes its typed message to the same
+  JSON and decodes the JSON back. Tags are kebab-case (`peer-joined`, `peer-left`);
+  `peer` ids are bare numbers ≤ 2⁵³−1. Client-directed frames carry `to`;
+  server-forwarded frames carry a server-stamped `from`.
+- `signaling/anti_spoof_session.json` is a **compute** fixture: a binding that
+  implements the server room replays each `input` and asserts the emitted `expect`
+  frames. It pins the load-bearing invariants — the `welcome` roster excludes the
+  joining peer, a forwarded frame's `from` is the sender's server-registered id
+  (never client-supplied), and an unknown target yields an `error` frame.
+
+## Distributed (CRDT plane) conformance
+
+The `conformance/distributed/` directory pins the CRDT anti-entropy plane
+(see [protocol.md § Distributed](protocol.md#distributed-crdt-cell-plane)).
+
+- `distributed/crdt_sync_frames.json` is a **wire** fixture: each `wire` is a
+  `{"CrdtSync": {frontier, ops}}` envelope validating against
+  `schemas/distributed.json` (empty, keyed+keyless ops, and a multi-peer frontier).
+- `distributed/anti_entropy_converge.json` is a **compute** fixture: a binding
+  replays each scenario's `ops` through its `CrdtPlaneRuntime` and asserts
+  convergence to `expect.converged` independent of delivery order, plus state-based
+  idempotence (re-ingesting a seen frame applies 0 new ops). It models LWW cells
+  where the plane `WireStamp` is the decisive stamp under lexicographic
+  `(wall_time, logical, peer)` order.
+
 ## Examples
 
 ### `snapshot_minimal.json`

@@ -7,6 +7,7 @@
 - [State Machine](state-machine.md)
 - [State Charts](state-charts.md)
 - [Async Reactive Context](async.md)
+- [Cross-Language Coverage](coverage.md)
 - [Wire Protocol](protocol.md)
 - [Conformance Fixtures](conformance.md)
 - [JSON Schemas](schemas.md)
