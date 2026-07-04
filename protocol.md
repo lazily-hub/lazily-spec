@@ -188,6 +188,15 @@ plane and see Signals as slots whose changed values are reliably materialized.
 - **Value-mirror (default)**: At flush, the sender resolves each invalidated allowlisted slot so the delta carries concrete `SlotValue`s. The receiver holds no compute closures.
 - **Mirror-lazy**: The sender emits bare `Invalidate`; the receiver keeps a stale marker. Requires compute closure replication. Deferred to `lazily-distributed`.
 
+> **Wire shape.** The value-mirror default means an allowlisted dirty slot
+> appears in a flush `Delta` as a concrete `SlotValue`, never a bare
+> `Invalidate` (the latter is the mirror-lazy form). This invariant — and the
+> eager-Signal rule that a changed Signal publishes a `SlotValue` for its backing
+> slot, not an `Invalidate` — is pinned by the IPC fixtures
+> [`delta_sequential.json`](conformance/delta_sequential.json) and
+> [`delta_shared_blob.json`](conformance/delta_shared_blob.json), both of which
+> carry `SlotValue` ops for resolved slots.
+
 ### Resync / gap handling
 
 On a `Delta` whose `base_epoch != last_epoch`:

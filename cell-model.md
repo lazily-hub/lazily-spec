@@ -299,6 +299,11 @@ without duplication — unlike re-parsing the text, which would mint fresh ids a
 on the next merge. This is what lets a canonical replica fork per-member replicas from an
 encoded snapshot and keep them converged by bidirectional `delta_since`/`apply_delta`.
 
+The three operations and their convergence/idempotence/identity invariants are pinned by the
+compute fixture [`conformance/collections/textcrdt_delta_sync.json`](conformance/collections/textcrdt_delta_sync.json)
+(`#lztextsync`): version-vector shape, bidirectional exchange, whole-snapshot fork identity, and
+no-op re-apply.
+
 ### Move-aware sequence order
 
 Sibling order under concurrency is a separate **composition** above per-cell value merge: a

@@ -13,26 +13,39 @@ This repo defines the canonical message schemas shared across all lazily impleme
 
 ## Feature Set
 
-The full `lazily` capability set and its cross-language coverage (`lazily-rs`,
-`lazily-kt`, `lazily-js`). `✅` shipped, `~` partial, `—` not applicable/absent.
+The full `lazily` capability set and its cross-language coverage across every
+binding (`lazily-rs`, `lazily-py`, `lazily-kt`, `lazily-js`, `lazily-dart`,
+`lazily-zig`). Legend: ✅ shipped · `~` partial · `—` absent or not applicable.
+This table is generated from [`coverage.json`](coverage.json) — the canonical
+matrix with per-cell notes and platform carve-outs lives in
+[Cross-Language Coverage](docs/coverage.md). Edit `coverage.json` and run
+`make coverage-sync` to update it in one shot; `make coverage-check` guards drift.
 
-| Feature | Rust | Kotlin | JS |
-|---------|:----:|:------:|:--:|
-| Reactive graph — `Context`, `Slot`, `Cell`, `memo`, `Signal` (eager), `Effect`, `batch` | ✅ | ✅ | ✅ |
-| Thread-safe `Context` (`Send + Sync`, lock-backed) | ✅ | ✅ | — |
-| Async reactive `Context` | ✅ | ✅ | — |
-| Statechart (Harel) + state machine | ✅ | ✅ | ✅ |
-| Keyed cell collections + `reconcile` + `SemTree` (keyed tree) | ✅ | ✅ | ✅ |
-| Stable-id alignment (manufactured identity) | ✅ | ✅ | ✅ |
-| Free-text character CRDT (`TextCrdt`) | ✅ | ✅ | ✅ |
-| **`TextCrdt` delta sync — `version_vector` / `delta_since` / `apply_delta` (`#lztextsync`)** | ✅ | ✅ | ✅ |
-| Move-aware sequence CRDT (`SeqCrdt`) | ✅ | ✅ | ✅ |
-| Registers (LWW / MV), `PnCounter`, `CellCrdt` | ✅ | ✅ | ✅ |
-| IPC wire — `Snapshot` + `Delta` + `CrdtSync` + shared-memory blobs | ✅ | ✅ | ~ |
-| State projection / mirror | ✅ | ✅ | ✅ |
-| FFI boundary | ✅ | ✅ | n/a |
-| Distributed plane (WebRTC transport + signaling) | ✅ | — | — |
-| Instrumentation / benchmarks | ✅ | — | — |
+<!-- coverage-table:start -->
+| Feature | Rust | Python | Kotlin | JS | Dart | Zig |
+| --------- | :----: | :------: | :------: | :--: | :----: | :---: |
+| Reactive graph — `Cell` / `Slot` / `Signal` / `Effect` / memo / batch | ✅ | ~ | ✅ | ✅ | ~ | ~ |
+| Thread-safe context (lock-backed) | ✅ | ✅ | ✅ | — | — | ✅ |
+| Async reactive context | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| Flat state machine | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Harel state charts | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Keyed cell collections (`CellMap` / `CellTree`) + reconcile | ✅ | ✅ | ✅ | ✅ | ✅ | ~ |
+| Memoized semantic tree (`SemTree`) | ✅ | — | ✅ | ✅ | — | — |
+| Stable-id alignment (manufactured identity) | ✅ | — | ✅ | ✅ | — | — |
+| Free-text character CRDT (`TextCrdt`) | ✅ | — | ✅ | ✅ | — | — |
+| `TextCrdt` delta sync (`version_vector` / `delta_since` / `apply_delta`) | ✅ | — | ✅ | ✅ | — | — |
+| Move-aware sequence CRDT (`SeqCrdt`) | ✅ | — | ✅ | ✅ | — | — |
+| Registers (LWW / MV) + `PnCounter` + `CellCrdt` | ✅ | — | ✅ | ✅ | — | — |
+| IPC wire — `Snapshot` + `Delta` + `CrdtSync` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Shared-memory blob path (`ShmBlobArena`) | ✅ | ✅ | ✅ | ~ | ~ | ✅ |
+| Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy) | ✅ | — | ✅ | ✅ | ~ | — |
+| Distributed plane — WebRTC transport + signaling | ✅ | — | ✅ | ✅ | — | — |
+| State projection / mirror | ✅ | — | ✅ | ✅ | — | — |
+| C-ABI FFI boundary | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| Permission boundary (`PeerPermissions` / `RemoteOp`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Capability negotiation (`SessionHandshake`) | ✅ | — | ✅ | ✅ | ✅ | ✅ |
+| Instrumentation / benchmarks | ✅ | — | — | — | — | — |
+<!-- coverage-table:end -->
 
 CRDT convergence and the wire protocol are pinned by the shared conformance fixtures
 and JSON Schemas in `lazily-spec` and the Lean models in `lazily-formal`.
@@ -139,6 +152,7 @@ The `conformance/collections/` directory contains canonical fixtures for the [ke
 | `collections/semtree_incremental.json` | memoized semantic tree: ancestor-chain-only recompute, sibling isolation, memo equality guard |
 | `collections/seqcrdt_convergence.json` | move-aware sequence CRDT: single-LWW move, concurrent-move/value-edit independence, tombstone convergence |
 | `collections/textcrdt_convergence.json` | Fugue/RGA character CRDT: concurrent same-point inserts, sticky tombstone, commutative/idempotent merge, GC |
+| `collections/textcrdt_delta_sync.json` | `TextCrdt` delta sync (`#lztextsync`): `version_vector` / `delta_since` / `apply_delta`; bidirectional exchange convergence, whole-snapshot fork identity preservation, idempotent apply |
 | `collections/stableid_alignment.json` | manufactured text identity: anchors / content hashes / word-LCS similarity alignment |
 
 ## State Chart Conformance

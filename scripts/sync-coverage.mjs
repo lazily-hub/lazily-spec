@@ -8,9 +8,9 @@
 //     <!-- coverage-table:start -->
 //     <!-- coverage-table:end -->
 //
-// in this repo's `docs/coverage.md` and in every sibling binding README
-// (`../lazily-{rs,py,kt,js,dart,zig}/README.md`). Edit coverage.json, then run
-// `node scripts/sync-coverage.mjs` to update every table in one shot.
+// in this repo's `README.md`, `docs/coverage.md`, and every sibling binding
+// README (`../lazily-{rs,py,kt,js,dart,zig}/README.md`). Edit coverage.json,
+// then run `node scripts/sync-coverage.mjs` to update every table in one shot.
 //
 //   node scripts/sync-coverage.mjs          # write/update all present targets
 //   node scripts/sync-coverage.mjs --check  # exit 1 if any present target is stale
@@ -28,6 +28,7 @@ const START = "<!-- coverage-table:start -->";
 const END = "<!-- coverage-table:end -->";
 
 const TARGETS = [
+  join(ROOT, "README.md"),
   join(ROOT, "docs", "coverage.md"),
   join(ROOT, "..", "lazily-rs", "README.md"),
   join(ROOT, "..", "lazily-py", "README.md"),

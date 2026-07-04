@@ -145,6 +145,35 @@ A reactive context conforms when:
 8. A `Signal` is materialized by the time the invalidating `set_cell`/`batch`
    returns (eager push).
 
+### Thread-safe context conformance
+
+The lock-backed context ([Context layers](#context-layers)) is **required of any
+binding whose platform exposes preemptive multi-threading or shared-memory
+concurrency**. A binding's thread-safe context conforms when it holds these
+deterministic properties under concurrent access:
+
+1. Handles are **clonable**, and the transition function and cell/slot state are
+   `Send + Sync`; one reactive graph is shared across OS threads.
+2. **Observers fire synchronously within the invalidating `send`/`batch`**,
+   preserving the same glitch-free pull-based ordering as the single-threaded
+   context — a concurrent reader never observes a half-updated graph.
+3. The `==` (PartialEq) cell guard and the `memo` equality guard both hold under
+   concurrent mutation: an equal write invalidates nothing, an equal recompute
+   suppresses downstream work.
+4. The graph lock is **released before user compute/effect/cleanup callbacks**
+   run, so callbacks may re-enter the same context without deadlock.
+5. An **in-flight recompute is parked on a per-slot generation/condvar sidecar**;
+   a stale completion (the slot was invalidated during compute) is discarded and
+   the waiter retried against a fresh value rather than observing a mixed state.
+
+> **Verification form.** Concurrent interleaving is **not** a deterministic
+> load/replay sequence, so it is not pinned by a portable conformance fixture in
+> `lazily-spec`. Each binding verifies its lock-backed context with a
+> **synchronization-model checker** over the same semantics above — lazily-rs
+> uses Loom (`tests/thread_safe_loom.rs`, behind the `loom` feature). The five
+> properties above are the contract that model check exercises; a binding with no
+> such tooling MUST at minimum exercise 1–4 under a threaded stress harness.
+
 ## Implementation status
 
 The single-threaded reactive context is required of every binding that

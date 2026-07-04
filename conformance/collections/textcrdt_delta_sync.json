@@ -1,0 +1,68 @@
+{
+  "description": "TextCrdt delta synchronization (#lztextsync, cell-model.md § Delta sync). Pins the three load-bearing operations over the same Fugue/RGA element set as textcrdt_convergence.json: `version_vector()` (greatest OpId counter per peer, taken over BOTH insert ids and tombstone delete ids), `delta_since(their_vv)` (the ops a partner has not observed), and `apply_delta(ops)` (same commutative/associative/idempotent algebra as merge). A whole-state snapshot is `delta_since({})`, and rebuilding a replica by `apply_delta`-ing it preserves every character's OpId so a later concurrent edit still merges conflict-free — unlike re-parsing, which mints fresh ids and duplicates on merge. Identity preservation is the linchpin: scenarios 2-3 fail (content duplication) if `apply_delta` does not retain OpIds.",
+  "kind": "Collection",
+  "model": "TextCrdt",
+  "scenarios": [
+    {
+      "name": "version vector covers inserts and tombstone delete ids",
+      "seed": { "peer": 1, "text": "abc" },
+      "steps": [
+        { "on": "a", "op": "delete", "index": 1 },
+        { "fork": "b", "peer": 2 },
+        { "on": "b", "op": "insert", "index": 2, "ch": "!" }
+      ],
+      "expect": {
+        "version_vector_on": {
+          "a": { "1": 4 },
+          "b": { "1": 4, "2": 5 }
+        }
+      }
+    },
+    {
+      "name": "bidirectional delta exchange converges (concurrent insert + delete)",
+      "seed": { "peer": 0, "text": "hello\n" },
+      "steps": [
+        { "fork": "a1", "peer": 1 },
+        { "fork": "b", "peer": 2 },
+        { "on": "a1", "op": "insert_str", "index": 6, "str": "world\n" },
+        { "on": "b", "op": "delete", "index": 0 },
+        { "exchange": ["a1", "b"] }
+      ],
+      "expect": {
+        "texts_equal": [["a1", "b"]],
+        "text_on": { "a1": "ello\nworld\n" },
+        "version_vector_on": {
+          "a1": { "0": 6, "1": 12, "2": 7 },
+          "b": { "0": 6, "1": 12, "2": 7 }
+        }
+      }
+    },
+    {
+      "name": "whole-snapshot fork preserves identity; concurrent edit still merges",
+      "seed": { "peer": 1, "text": "base\n" },
+      "steps": [
+        { "snapshot": { "from": "a", "into": "member", "peer": 2 }, "expect_changed": true },
+        { "on": "a", "op": "insert_str", "index": 5, "str": "A\n" },
+        { "on": "member", "op": "insert_str", "index": 5, "str": "B\n" },
+        { "exchange": ["a", "member"] }
+      ],
+      "expect": {
+        "texts_equal": [["a", "member"]],
+        "text_on": { "a": "base\nB\nA\n" }
+      }
+    },
+    {
+      "name": "delta apply is idempotent (re-applying a delta is a no-op)",
+      "seed": { "peer": 1, "text": "abc\n" },
+      "steps": [
+        { "new": "b", "peer": 2 },
+        { "delta": { "into": "b", "from": "a" }, "expect_changed": true },
+        { "delta": { "into": "b", "from": "a" }, "expect_changed": false }
+      ],
+      "expect": {
+        "texts_equal": [["a", "b"]],
+        "text_on": { "a": "abc\n", "b": "abc\n" }
+      }
+    }
+  ]
+}
