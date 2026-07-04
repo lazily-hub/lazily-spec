@@ -33,6 +33,7 @@ _SCHEMA_NAMES = [
     "ffi",
     "signaling",
     "statechart",
+    "receipts",
 ]
 
 
@@ -397,6 +398,53 @@ def test_anti_entropy_converge_scenarios_well_formed() -> None:
             )
         expect = sc["expect"]
         assert "converged" in expect and isinstance(expect["converged"], list)
+
+
+# ---------------------------------------------------------------------------
+# Causal receipt fixtures — generic outcome projection, not transport ACKs
+# ---------------------------------------------------------------------------
+
+_RECEIPT_DIR = FIXTURE_DIR / "receipts"
+
+
+def _receipt_fixtures() -> list[Path]:
+    if not _RECEIPT_DIR.is_dir():
+        return []
+    return sorted(_RECEIPT_DIR.glob("*.json"))
+
+
+@pytest.mark.parametrize("path", _receipt_fixtures(), ids=lambda p: p.name)
+def test_receipt_fixture_validates_schema(path: Path) -> None:
+    fixture = json.loads(path.read_text())
+    assert fixture["protocol_version"] == 1
+    errors = sorted(
+        _validator("receipts").iter_errors(fixture["wire"]), key=lambda e: list(e.path)
+    )
+    assert not errors, (
+        f"receipt fixture {path.name!r} does not validate against receipts.json:\n"
+        + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+    )
+
+
+def test_receipt_schema_rejects_ack_outcome() -> None:
+    bad = {
+        "CausalReceipts": {
+            "receipts": [
+                {
+                    "receipt_id": "receipt-ack",
+                    "causation_id": "patch-123",
+                    "observer": "editor",
+                    "generation": 7,
+                    "outcome": "ack",
+                    "reason": None,
+                    "payload_hash": None,
+                }
+            ]
+        }
+    }
+    assert _validator("receipts").iter_errors(bad), (
+        "transport ACK must not be a terminal lazily receipt outcome"
+    )
 
 
 # ---------------------------------------------------------------------------

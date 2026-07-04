@@ -249,6 +249,46 @@ Each non-local session starts with a compatibility handshake:
 
 If peers disagree on `protocol_major_version`, `codec`, `ordered_reliable`, or required features, they fail closed before applying any `Snapshot` or `Delta`.
 
+## Causal Receipts
+
+Some integrations send a command or publish an effectful request and need a durable, queryable outcome for that causation id. lazily supplies a generic **causal receipt** primitive for that use case; it is not a transport ACK and does not make delivery success authoritative.
+
+```json
+{
+  "CausalReceipts": {
+    "receipts": [
+      {
+        "receipt_id": "receipt-1",
+        "causation_id": "patch-123",
+        "observer": "editor",
+        "generation": 7,
+        "outcome": "applied",
+        "reason": null,
+        "payload_hash": "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+      }
+    ]
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `receipt_id` | Idempotency key for this receipt event. Duplicate `receipt_id`s are no-ops. |
+| `causation_id` | Stable id of the command, event, or effect request the receipt observes. |
+| `observer` | Peer, process, or subsystem that produced the receipt. |
+| `generation` | Monotonic producer/editor generation. Consumers discard receipts whose generation does not match the current authority generation for the causation id. |
+| `outcome` | `"observed"`, `"accepted"`, `"applied"`, or `"rejected"`. |
+| `reason` | Optional human/debug rejection reason; `null` when absent. |
+| `payload_hash` | Optional hash of the state/payload the receipt observed; `null` when absent. |
+
+Receipt projection rules:
+
+- `observed` and `accepted` are **non-terminal**. They may model ACK-like transport or queue admission observations, but a domain MUST NOT treat them as proof that an effect happened.
+- `applied` and `rejected` are **terminal**. They are the generic outcome vocabulary that domain-specific facts refine (for example an editor may publish `EditorPatchApplied` / `EditorPatchRejected` facts keyed by the same `causation_id`).
+- A stale-generation receipt is ignored by the current projection and may be retained only as audit/debug data.
+- A second terminal receipt for the same `causation_id` and generation with a different terminal outcome is a terminal conflict; consumers fail closed instead of selecting a winner.
+- The primitive is state/projection data. Transports may still provide their own delivery acknowledgements internally, but lazily does not expose delivery ACKs as authority.
+
 ## Cross-language Channel Compatibility
 
 All channels carry the same `IpcMessage` state plane:
@@ -286,6 +326,7 @@ via [Capability Negotiation](#capability-negotiation) rather than failing silent
 | **Shared-memory payload path** (`ShmBlobArena` / `ShmBlobRef`) | MUST³ | [§ Shared-memory IPC](#shared-memory-ipc) | [`conformance/`](conformance/) shared-blob fixtures (`snapshot_shared_blob`, `delta_shared_blob`) |
 | **C-ABI FFI boundary** (`LazilyFfiBytes`, `LazilyFfiStatus`, `LazilyFfiMessageKind`) | MUST¹ | [§ FFI Boundary](#ffi-boundary), [`ffi.json`](schemas.md#ffijson) | every binding decodes the FFI frame to `IpcMessage` and re-encodes canonical JSON bytes |
 | **Distributed CRDT plane** (`CrdtSync` / `WireStamp`) | MUST | [§ Distributed: CRDT Cell Plane](#distributed-crdt-cell-plane), [`distributed.json`](schemas.md#distributedjson) | [`conformance/`](conformance/) `CrdtSync` round-trip |
+| **Causal receipts** (`CausalReceipt`, terminal outcome projection) | MUST | [§ Causal Receipts](#causal-receipts), [`receipts.json`](schemas.md#receiptsjson) | [`conformance/receipts/causal_receipts.json`](conformance/receipts/causal_receipts.json) |
 | Permission boundary (`RemoteOp` / `PeerPermissions`) | MUST | [§ Permission Boundary](#permission-boundary-remoteop) | — |
 | Capability negotiation | MUST | [§ Capability Negotiation](#capability-negotiation) | — |
 | Signaling (WebSocket) | MAY | [§ Signaling](#signaling-protocol-websocket) | only for bindings that bridge browser/runtime peers |

@@ -1,0 +1,56 @@
+{
+  "description": "Causal receipts fold by causation id and generation. observed/accepted are non-terminal; applied/rejected are terminal; stale generations are ignored by the current projection.",
+  "protocol_version": 1,
+  "kind": "Receipt",
+  "model": "CausalReceipt",
+  "assertions": {
+    "receipt_count": 4,
+    "current_generation": 7,
+    "causation_id": "patch-123",
+    "terminal_outcome": "applied",
+    "stale_receipt_ids": ["receipt-stale"],
+    "nonterminal_outcomes": ["observed", "accepted"]
+  },
+  "wire": {
+    "CausalReceipts": {
+      "receipts": [
+        {
+          "receipt_id": "receipt-observed",
+          "causation_id": "patch-123",
+          "observer": "editor",
+          "generation": 7,
+          "outcome": "observed",
+          "reason": null,
+          "payload_hash": null
+        },
+        {
+          "receipt_id": "receipt-accepted",
+          "causation_id": "patch-123",
+          "observer": "editor",
+          "generation": 7,
+          "outcome": "accepted",
+          "reason": null,
+          "payload_hash": null
+        },
+        {
+          "receipt_id": "receipt-applied",
+          "causation_id": "patch-123",
+          "observer": "editor",
+          "generation": 7,
+          "outcome": "applied",
+          "reason": null,
+          "payload_hash": "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        },
+        {
+          "receipt_id": "receipt-stale",
+          "causation_id": "patch-123",
+          "observer": "editor",
+          "generation": 6,
+          "outcome": "rejected",
+          "reason": "stale generation",
+          "payload_hash": null
+        }
+      ]
+    }
+  }
+}

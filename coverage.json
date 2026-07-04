@@ -21,6 +21,7 @@
     { "feature": "Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy)", "marks": ["✅", "—", "✅", "✅", "~", "—"] },
     { "feature": "Distributed plane — WebRTC transport + signaling", "marks": ["✅", "—", "✅", "✅", "—", "—"] },
     { "feature": "State projection / mirror", "marks": ["✅", "—", "✅", "✅", "—", "—"] },
+    { "feature": "Causal receipts (`CausalReceipts` outcome projection)", "marks": ["✅", "—", "✅", "✅", "—", "—"] },
     { "feature": "C-ABI FFI boundary", "marks": ["✅", "✅", "✅", "—", "✅", "✅"] },
     { "feature": "Permission boundary (`PeerPermissions` / `RemoteOp`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Capability negotiation (`SessionHandshake`)", "marks": ["✅", "—", "✅", "✅", "✅", "✅"] },

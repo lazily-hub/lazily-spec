@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/receipts.json",
+  "title": "Causal Receipts",
+  "description": "Generic receipt/outcome projection for causally-linked commands or effect requests. This is not a transport ACK plane; observed/accepted are non-terminal, applied/rejected are terminal.",
+  "type": "object",
+  "required": ["CausalReceipts"],
+  "additionalProperties": false,
+  "properties": {
+    "CausalReceipts": {
+      "type": "object",
+      "required": ["receipts"],
+      "additionalProperties": false,
+      "properties": {
+        "receipts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/CausalReceipt" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ReceiptOutcome": {
+      "type": "string",
+      "enum": ["observed", "accepted", "applied", "rejected"],
+      "description": "Outcome vocabulary. observed/accepted are non-terminal; applied/rejected are terminal."
+    },
+    "OptionalString": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string" }
+      ]
+    },
+    "CausalReceipt": {
+      "type": "object",
+      "required": [
+        "receipt_id",
+        "causation_id",
+        "observer",
+        "generation",
+        "outcome",
+        "reason",
+        "payload_hash"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "receipt_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Idempotency key for this receipt event."
+        },
+        "causation_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable id of the command, event, or effect request this receipt observes."
+        },
+        "observer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Peer, process, or subsystem that produced the receipt."
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Producer/editor generation. Consumers discard receipts outside the current generation for the causation id."
+        },
+        "outcome": { "$ref": "#/$defs/ReceiptOutcome" },
+        "reason": { "$ref": "#/$defs/OptionalString" },
+        "payload_hash": { "$ref": "#/$defs/OptionalString" }
+      }
+    }
+  }
+}

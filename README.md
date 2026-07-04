@@ -41,6 +41,7 @@ matrix with per-cell notes and platform carve-outs lives in
 | Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy) | ✅ | — | ✅ | ✅ | ~ | — |
 | Distributed plane — WebRTC transport + signaling | ✅ | — | ✅ | ✅ | — | — |
 | State projection / mirror | ✅ | — | ✅ | ✅ | — | — |
+| Causal receipts (`CausalReceipts` outcome projection) | ✅ | — | ✅ | ✅ | — | — |
 | C-ABI FFI boundary | ✅ | ✅ | ✅ | — | ✅ | ✅ |
 | Permission boundary (`PeerPermissions` / `RemoteOp`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Capability negotiation (`SessionHandshake`) | ✅ | — | ✅ | ✅ | ✅ | ✅ |
@@ -78,6 +79,7 @@ Any omitted `MUST` row MUST be advertised rather than fail silently.
 | Cross-language FFI | [protocol.md](protocol.md) § FFI | [schemas/ffi.json](schemas/ffi.json) |
 | Signaling (WebSocket) | [protocol.md](protocol.md) § Signaling | [schemas/signaling.json](schemas/signaling.json) |
 | Distributed (CRDT) | [protocol.md](protocol.md) § Distributed | [schemas/distributed.json](schemas/distributed.json) |
+| Causal receipts | [protocol.md](protocol.md) § Causal Receipts | [schemas/receipts.json](schemas/receipts.json) |
 | Capability negotiation | [protocol.md](protocol.md) § Capability Negotiation | inline |
 
 ## Wire Format
@@ -121,9 +123,9 @@ The `conformance/` directory contains canonical test fixtures that all IPC-capab
 {
   "description": "Human-readable summary",
   "protocol_version": 1,
-  "kind": "Snapshot" | "Delta",
+  "kind": "Snapshot" | "Delta" | "Receipt",
   "assertions": { "…language-agnostic field checks…" },
-  "wire": { "…IpcMessage as serde_json…" }
+  "wire": { "…canonical protocol JSON…" }
 }
 ```
 
@@ -137,6 +139,7 @@ The `conformance/` directory contains canonical test fixtures that all IPC-capab
 | `delta_sequential.json` | Delta | All 7 DeltaOp variants, sequential |
 | `delta_non_sequential.json` | Delta | Non-sequential delta with gap |
 | `delta_shared_blob.json` | Delta | CellSet/SlotValue with SharedBlob |
+| `receipts/causal_receipts.json` | Receipt | Generic causal receipt projection with terminal `applied` / `rejected` outcomes |
 
 **Adding a new binding:** Copy the fixture-loading pattern from `lazily-rs/tests/conformance.rs`. Each test should (1) load the fixture, (2) parse the `wire` field into the binding's native `IpcMessage` type, (3) assert the `assertions` fields, (4) re-serialize and compare.
 

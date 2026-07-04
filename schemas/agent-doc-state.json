@@ -3,7 +3,7 @@
   "$id": "https://lazily.dev/schemas/agent-doc-state.json",
   "title": "agent-doc state projection vocabulary",
   "description": "Canonical type_tag vocabulary for the agent-doc state projection mirrored over the lazily-IPC snapshot/delta wire format. Pins the eight agent-doc state node kinds (and their per-node phase vocabularies) so the kt / js / rs mirrors address the same nodes and decode the same phases. Derived from agent-doc-orchestration/src/state_backbone.rs (DocumentStateProjection + the *Projection structs and *Phase enums) and cycle_state.rs (CyclePhase). Each node maps to one lazily-spec NodeSnapshot whose `type_tag` is the stable cross-process key and whose base64 `payload` decodes to the named source struct. slot_id = fnv1a(document_hash, type_tag, entity_key).",
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "protocol_version": 1,
 
   "$defs": {
@@ -43,7 +43,8 @@
       "description": "TransportPatchProjection.phase (state_backbone.rs::TransportPatchPhase, serde snake_case).",
       "enum": [
         "queued",
-        "acked",
+        "applied",
+        "rejected",
         "insufficient_proof",
         "retrying",
         "force_disk_fallback"

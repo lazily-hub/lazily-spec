@@ -12,6 +12,7 @@ codecs encode the same shapes.
 | `ffi.json` | Cross-language FFI boundary |
 | `signaling.json` | Signaling (WebSocket) |
 | `distributed.json` | Distributed — CrdtSync message (`{"CrdtSync": …}`) + CRDT/cell-model types |
+| `receipts.json` | Causal receipts (`{"CausalReceipts": …}`) + terminal outcome projection |
 | `statechart.json` | Compute (Harel/SCXML chart form — not a wire message) |
 
 The IPC schemas describe the **normative externally-tagged envelope** that
@@ -56,6 +57,12 @@ by `make test-schemas` (see `tests/test_schema_conformance.py`).
 
 ```json
 {{#include ../schemas/distributed.json}}
+```
+
+## `receipts.json`
+
+```json
+{{#include ../schemas/receipts.json}}
 ```
 
 ## `statechart.json`

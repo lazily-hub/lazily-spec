@@ -10,9 +10,9 @@ re-serialize to confirm round-trip fidelity.
 {
   "description": "Human-readable summary",
   "protocol_version": 1,
-  "kind": "Snapshot" | "Delta",
+  "kind": "Snapshot" | "Delta" | "Receipt",
   "assertions": { "…language-agnostic field checks…" },
-  "wire": { "…IpcMessage as serde_json…" }
+  "wire": { "…canonical protocol JSON…" }
 }
 ```
 
@@ -26,6 +26,7 @@ re-serialize to confirm round-trip fidelity.
 | `delta_sequential.json` | Delta | All 7 DeltaOp variants, sequential |
 | `delta_non_sequential.json` | Delta | Non-sequential delta with gap |
 | `delta_shared_blob.json` | Delta | CellSet/SlotValue with SharedBlob |
+| `receipts/causal_receipts.json` | Receipt | Causal receipt projection with non-terminal and terminal outcomes |
 
 ## Adding a new binding
 
@@ -91,6 +92,18 @@ The `conformance/distributed/` directory pins the CRDT anti-entropy plane
   idempotence (re-ingesting a seen frame applies 0 new ops). It models LWW cells
   where the plane `WireStamp` is the decisive stamp under lexicographic
   `(wall_time, logical, peer)` order.
+
+## Causal receipt conformance
+
+The `conformance/receipts/` directory pins lazily's generic outcome vocabulary
+for commands and effect requests (see
+[protocol.md § Causal Receipts](protocol.md#causal-receipts)).
+
+- `receipts/causal_receipts.json` is a **wire + compute** fixture: its `wire`
+  field validates against `schemas/receipts.json`, and bindings replay the
+  receipts into their projection. The stale-generation receipt is ignored by the
+  current projection; `observed` / `accepted` remain non-terminal; `applied` is
+  the terminal outcome.
 
 ## Examples
 

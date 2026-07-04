@@ -9,6 +9,7 @@
 - [Async Reactive Context](async.md)
 - [Cross-Language Coverage](coverage.md)
 - [Wire Protocol](protocol.md)
+- [Causal Receipts](receipts.md)
 - [Conformance Fixtures](conformance.md)
 - [JSON Schemas](schemas.md)
 - [Lean Formal Model](formal-model.md)
