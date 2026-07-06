@@ -36,6 +36,7 @@ const TARGETS = [
   join(ROOT, "..", "lazily-js", "README.md"),
   join(ROOT, "..", "lazily-dart", "README.md"),
   join(ROOT, "..", "lazily-zig", "README.md"),
+  join(ROOT, "..", "lazily-go", "README.md"),
 ];
 
 function renderTable() {

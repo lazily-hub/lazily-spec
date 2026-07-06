@@ -25,7 +25,7 @@ An **optional, wire-stable keyed address** for a collection entry (a `CellMap` /
 
 Bounds (reject on construction and on the wire): path ≤ 1024 bytes; ≤ 32 `/`-separated segments; empty path and empty segments (leading/trailing/double `/`) are rejected.
 
-**Serialization is format-aware.** Self-describing codecs (JSON, MessagePack) **omit** the `key` field when absent, so pre-`key` encoders/decoders and existing conformance fixtures round-trip unchanged; positional Postcard always carries the optional discriminant for binary schema stability. A decoder that sees no `key` field treats it as absent (`null`). Cross-language implementations (lazily-py, lazily-zig, lazily-js, lazily-kt) add the optional nullable `key` field; they need not emit it when no key is set. Multi-producer key uniqueness (last-writer rule) is owned by the distributed CRDT plane, not this protocol.
+**Serialization is format-aware.** Self-describing codecs (JSON, MessagePack) **omit** the `key` field when absent, so pre-`key` encoders/decoders and existing conformance fixtures round-trip unchanged; positional Postcard always carries the optional discriminant for binary schema stability. A decoder that sees no `key` field treats it as absent (`null`). Cross-language implementations (lazily-py, lazily-zig, lazily-js, lazily-kt, lazily-go) add the optional nullable `key` field; they need not emit it when no key is set. Multi-producer key uniqueness (last-writer rule) is owned by the distributed CRDT plane, not this protocol.
 
 ### IpcValue (payload)
 
@@ -309,7 +309,7 @@ All channels carry the same `IpcMessage` state plane:
 ## Binding Conformance Matrix
 
 A lazily **binding** is a language port that intends to interoperate with the wider lazily
-ecosystem (lazily-rs, lazily-py, lazily-zig, lazily-js, lazily-kt, lazily-dart, …). The
+ecosystem (lazily-rs, lazily-py, lazily-zig, lazily-js, lazily-kt, lazily-dart, lazily-go, …). The
 layers below are **required of every binding**; none is an optional lazily-rs extension.
 A binding that omits a `MUST` row is non-conforming and MUST advertise its missing surface
 via [Capability Negotiation](#capability-negotiation) rather than failing silently.
