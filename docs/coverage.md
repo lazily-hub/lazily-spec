@@ -16,28 +16,28 @@ Legend: ✅ shipped · `~` partial · `—` absent or not applicable (see notes)
 <!-- coverage-table:start -->
 | Feature | Rust | Python | Kotlin | JS | Dart | Zig |
 | --------- | :----: | :------: | :------: | :--: | :----: | :---: |
-| Reactive graph — `Cell` / `Slot` / `Signal` / `Effect` / memo / batch | ✅ | ~ | ✅ | ✅ | ✅ | ✅ |
+| Reactive graph — `Cell` / `Slot` / `Signal` / `Effect` / memo / batch | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Thread-safe context (lock-backed) | ✅ | ✅ | ✅ | — | — | ✅ |
 | Async reactive context | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Flat state machine | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Harel state charts | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Keyed cell collections (`CellMap` / `CellTree`) + reconcile | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Memoized semantic tree (`SemTree`) | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| Stable-id alignment (manufactured identity) | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| Free-text character CRDT (`TextCrdt`) | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| `TextCrdt` delta sync (`version_vector` / `delta_since` / `apply_delta`) | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| Move-aware sequence CRDT (`SeqCrdt`) | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| Registers (LWW / MV) + `PnCounter` + `CellCrdt` | ✅ | — | ✅ | ✅ | ✅ | ✅ |
+| Memoized semantic tree (`SemTree`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Stable-id alignment (manufactured identity) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Free-text character CRDT (`TextCrdt`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `TextCrdt` delta sync (`version_vector` / `delta_since` / `apply_delta`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Move-aware sequence CRDT (`SeqCrdt`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Registers (LWW / MV) + `PnCounter` + `CellCrdt` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | IPC wire — `Snapshot` + `Delta` + `CrdtSync` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Shared-memory blob path (`ShmBlobArena`) | ✅ | ✅ | ✅ | ~ | ~ | ✅ |
-| Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy) | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| Distributed plane — WebRTC transport + signaling | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| State projection / mirror | ✅ | — | ✅ | ✅ | ✅ | ✅ |
+| Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Distributed plane — WebRTC transport + signaling | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| State projection / mirror | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Causal receipts (`CausalReceipts` outcome projection) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | C-ABI FFI boundary | ✅ | ✅ | ✅ | — | ✅ | ✅ |
 | Permission boundary (`PeerPermissions` / `RemoteOp`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Capability negotiation (`SessionHandshake`) | ✅ | — | ✅ | ✅ | ✅ | ✅ |
-| Instrumentation / benchmarks | ✅ | — | — | — | ✅ | ✅ |
+| Capability negotiation (`SessionHandshake`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Instrumentation / benchmarks | ✅ | ✅ | — | — | ✅ | ✅ |
 <!-- coverage-table:end -->
 
 Convergence and the wire protocol are pinned by the shared conformance fixtures
@@ -46,8 +46,10 @@ and JSON Schemas in this repo and the Lean models in
 
 ## Notes
 
-- **ᵃ Python reactive graph:** `Cell` / `Slot` / `Signal` and the memo guard ship;
-  `Effect` is async-only and `batch` is provided through the thread-safe context.
+- **ᵃ Python reactive graph:** `Cell` / `Slot` / `Signal` / `Effect` (sync) and
+  the top-level `batch(run)` boundary ship; the `!=` PartialEq memo guard applies
+  to cells, slots, and signals. The async counterpart (`AsyncEffect`) queues
+  reruns at the batch boundary for `asyncio` reactors.
 - **ᵇ Dart reactive graph:** `Context` / `Slot` / `Cell` / `Signal` ship; there is
   no standalone `Effect` type (observers subscribe on cells) and `batch` is
   scoped to the async context.
