@@ -1,0 +1,36 @@
+{
+  "description": "Two replicas concurrently insert a new leaf into the same parent gap. Both survive with no duplication, order is deterministic (equal fractional key tiebroken by minting peer), and both replicas converge to identical rendered text.",
+  "kind": "LosslessTree",
+  "model": "LosslessTreeCrdt",
+  "scenarios": [
+    {
+      "name": "both_insert_after_base",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "para",
+              "element": "para",
+              "children": [
+                { "label": "base", "leaf": { "kind": "trivia", "text": "base" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "create", "parent": "para", "after": "base", "label": "from_a", "leaf": { "kind": "raw", "text": "A" } },
+        { "on": "b", "op": "create", "parent": "para", "after": "base", "label": "from_b", "leaf": { "kind": "raw", "text": "B" } },
+        { "sync": { "from": "a", "to": "b" } },
+        { "sync": { "from": "b", "to": "a" } }
+      ],
+      "expect": {
+        "render_on": { "a": "baseAB", "b": "baseAB" },
+        "converged": ["a", "b"],
+        "live_nodes": 4
+      }
+    }
+  ]
+}

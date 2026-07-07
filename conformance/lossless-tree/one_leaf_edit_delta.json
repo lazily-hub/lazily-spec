@@ -1,0 +1,59 @@
+{
+  "description": "A one-leaf edit at a UTF-8 byte offset inside multi-byte text ships as a bounded per-leaf text delta; a second replica applies it via anti-entropy and converges. The edit touches only one leaf's text CRDT, not the whole document.",
+  "kind": "LosslessTree",
+  "model": "LosslessTreeCrdt",
+  "scenarios": [
+    {
+      "name": "insert_after_multibyte_char",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "para",
+              "element": "para",
+              "children": [
+                { "label": "body", "leaf": { "kind": "raw", "text": "héllo" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "edit_leaf", "node": "body", "at_byte": 3, "delete_bytes": 0, "insert": "X" },
+        { "sync": { "from": "a", "to": "b" } }
+      ],
+      "expect": {
+        "render_on": { "a": "héXllo", "b": "héXllo" },
+        "converged": ["a", "b"]
+      }
+    },
+    {
+      "name": "delete_multibyte_char",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "para",
+              "element": "para",
+              "children": [
+                { "label": "body", "leaf": { "kind": "raw", "text": "héllo" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "edit_leaf", "node": "body", "at_byte": 1, "delete_bytes": 2, "insert": "e" },
+        { "sync": { "from": "a", "to": "b" } }
+      ],
+      "expect": {
+        "render_on": { "a": "hello", "b": "hello" },
+        "converged": ["a", "b"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "description": "Lossless round-trip: an element tree with Token/Trivia/Raw/Error leaves — including an invalid unclosed-fence span kept as an Error leaf and multi-byte (non-ASCII) text — renders exactly to its source string. render(tree) == source_text.",
+  "kind": "LosslessTree",
+  "model": "LosslessTreeCrdt",
+  "scenarios": [
+    {
+      "name": "token_trivia_raw_error_multibyte",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "heading",
+              "element": "heading",
+              "children": [
+                { "label": "h_marker", "leaf": { "kind": "token", "text": "# " } },
+                { "label": "h_title", "leaf": { "kind": "raw", "text": "Título café" } }
+              ]
+            },
+            { "label": "gap", "leaf": { "kind": "trivia", "text": "\n\n" } },
+            {
+              "label": "para",
+              "element": "para",
+              "children": [
+                { "label": "p_text", "leaf": { "kind": "raw", "text": "prix: 12€ " } },
+                { "label": "p_bad", "leaf": { "kind": "error", "text": "```rust" } },
+                { "label": "p_nl", "leaf": { "kind": "trivia", "text": "\n" } }
+              ]
+            }
+          ]
+        }
+      },
+      "expect": {
+        "render": "# Título café\n\nprix: 12€ ```rust\n",
+        "live_nodes": 8
+      }
+    }
+  ]
+}

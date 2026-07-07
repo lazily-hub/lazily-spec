@@ -1,0 +1,63 @@
+{
+  "description": "Anti-entropy with a non-contiguous delivery gap. Replica a emits three ops; b receives the first and third (a hole where the second should be). The dotted frontier keeps the hole representable, so the follow-up diff re-requests exactly the missing op and the replicas converge. A per-peer-max version vector would record the highest delivered dot and wrongly believe the hole was already filled, so it could never converge here.",
+  "kind": "LosslessTree",
+  "model": "LosslessTreeCrdt",
+  "scenarios": [
+    {
+      "name": "hole_before_repair",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "para",
+              "element": "para",
+              "children": [
+                { "label": "base", "leaf": { "kind": "trivia", "text": "0" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "create", "parent": "para", "after": "base", "label": "one", "leaf": { "kind": "trivia", "text": "1" } },
+        { "on": "a", "op": "create", "parent": "para", "after": "one", "label": "two", "leaf": { "kind": "trivia", "text": "2" } },
+        { "on": "a", "op": "create", "parent": "para", "after": "two", "label": "three", "leaf": { "kind": "trivia", "text": "3" } },
+        { "deliver": { "from": "a", "to": "b", "only": [0, 2] } }
+      ],
+      "expect": {
+        "render_on": { "a": "0123", "b": "013" }
+      }
+    },
+    {
+      "name": "repair_converges",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "para",
+              "element": "para",
+              "children": [
+                { "label": "base", "leaf": { "kind": "trivia", "text": "0" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "create", "parent": "para", "after": "base", "label": "one", "leaf": { "kind": "trivia", "text": "1" } },
+        { "on": "a", "op": "create", "parent": "para", "after": "one", "label": "two", "leaf": { "kind": "trivia", "text": "2" } },
+        { "on": "a", "op": "create", "parent": "para", "after": "two", "label": "three", "leaf": { "kind": "trivia", "text": "3" } },
+        { "deliver": { "from": "a", "to": "b", "only": [0, 2] } },
+        { "sync": { "from": "a", "to": "b" } }
+      ],
+      "expect": {
+        "render_on": { "a": "0123", "b": "0123" },
+        "converged": ["a", "b"]
+      }
+    }
+  ]
+}

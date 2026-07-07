@@ -1,0 +1,36 @@
+{
+  "description": "One replica reorders a leaf within its parent while another concurrently edits that same leaf's text. Position and text are independent registers, so both operations apply and the replicas converge — a concurrent move + text edit does not conflict.",
+  "kind": "LosslessTree",
+  "model": "LosslessTreeCrdt",
+  "scenarios": [
+    {
+      "name": "reorder_on_a_edit_on_b",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "para",
+              "element": "para",
+              "children": [
+                { "label": "x", "leaf": { "kind": "raw", "text": "x" } },
+                { "label": "y", "leaf": { "kind": "raw", "text": "y" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "reorder", "node": "x", "after": "y" },
+        { "on": "b", "op": "edit_leaf", "node": "x", "at_byte": 1, "delete_bytes": 0, "insert": "!" },
+        { "sync": { "from": "a", "to": "b" } },
+        { "sync": { "from": "b", "to": "a" } }
+      ],
+      "expect": {
+        "render_on": { "a": "yx!", "b": "yx!" },
+        "converged": ["a", "b"]
+      }
+    }
+  ]
+}

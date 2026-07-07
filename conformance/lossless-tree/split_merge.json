@@ -1,0 +1,56 @@
+{
+  "description": "Split a leaf at a UTF-8 byte offset into two adjacent leaves of the same kind, then merge them back. Both operations preserve the full rendered text exactly; live-node count grows by one on split and is restored on merge.",
+  "kind": "LosslessTree",
+  "model": "LosslessTreeCrdt",
+  "scenarios": [
+    {
+      "name": "split_grows_live_nodes",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "para",
+              "element": "para",
+              "children": [
+                { "label": "body", "leaf": { "kind": "raw", "text": "héllo world" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "on": "a", "op": "split", "node": "body", "at_byte": 3, "new_label": "tail" }
+      ],
+      "expect": {
+        "render": "héllo world",
+        "live_nodes": 3
+      }
+    },
+    {
+      "name": "split_then_merge_restores",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "para",
+              "element": "para",
+              "children": [
+                { "label": "body", "leaf": { "kind": "raw", "text": "héllo world" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "on": "a", "op": "split", "node": "body", "at_byte": 6, "new_label": "tail" },
+        { "on": "a", "op": "merge_leaves", "left": "body", "right": "tail" }
+      ],
+      "expect": {
+        "render": "héllo world",
+        "live_nodes": 2
+      }
+    }
+  ]
+}

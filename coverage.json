@@ -15,6 +15,8 @@
     { "feature": "Free-text character CRDT (`TextCrdt`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "`TextCrdt` delta sync (`version_vector` / `delta_since` / `apply_delta`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Move-aware sequence CRDT (`SeqCrdt`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
+    { "feature": "Lossless tree CRDT core (`LosslessTreeCrdt`, M1)", "marks": ["✅", "—", "—", "—", "—", "—", "—"] },
+    { "feature": "Lossless tree — dotted-frontier anti-entropy", "marks": ["✅", "—", "—", "—", "—", "—", "—"] },
     { "feature": "Registers (LWW / MV) + `PnCounter` + `CellCrdt`", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "IPC wire — `Snapshot` + `Delta` + `CrdtSync`", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Shared-memory blob path (`ShmBlobArena`)", "marks": ["✅", "✅", "✅", "~", "~", "✅", "✅"] },
