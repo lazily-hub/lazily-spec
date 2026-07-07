@@ -1,0 +1,65 @@
+{
+  "description": "Invalid / unclosed syntax is carried in Error leaves, never discarded: a document with an unterminated HTML comment marker and an unclosed code fence renders back byte-for-byte, and editing an adjacent Raw leaf leaves the Error spans verbatim. render(tree) == source_text for invalid source.",
+  "kind": "LosslessTree",
+  "model": "LosslessTreeCrdt",
+  "scenarios": [
+    {
+      "name": "unclosed_fence_and_comment_roundtrip",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "p1",
+              "element": "para",
+              "children": [
+                { "label": "txt", "leaf": { "kind": "raw", "text": "before " } },
+                { "label": "bad", "leaf": { "kind": "error", "text": "<!-- agent:oops" } },
+                { "label": "nl1", "leaf": { "kind": "trivia", "text": "\n" } }
+              ]
+            },
+            {
+              "label": "fence",
+              "element": "para",
+              "children": [
+                { "label": "open", "leaf": { "kind": "error", "text": "```rust" } },
+                { "label": "nl2", "leaf": { "kind": "trivia", "text": "\n" } },
+                { "label": "code", "leaf": { "kind": "raw", "text": "fn main() {}" } }
+              ]
+            }
+          ]
+        }
+      },
+      "expect": {
+        "render": "before <!-- agent:oops\n```rust\nfn main() {}",
+        "live_nodes": 8
+      }
+    },
+    {
+      "name": "edit_adjacent_raw_keeps_error_spans",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "p1",
+              "element": "para",
+              "children": [
+                { "label": "txt", "leaf": { "kind": "raw", "text": "before " } },
+                { "label": "bad", "leaf": { "kind": "error", "text": "<!-- agent:oops" } },
+                { "label": "nl1", "leaf": { "kind": "trivia", "text": "\n" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "on": "a", "op": "edit_leaf", "node": "txt", "at_byte": 7, "delete_bytes": 0, "insert": "X" }
+      ],
+      "expect": {
+        "render": "before X<!-- agent:oops\n",
+        "live_nodes": 4
+      }
+    }
+  ]
+}

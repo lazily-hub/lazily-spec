@@ -18,11 +18,13 @@ lives in `lazily-formal` (`LazilyFormal.LosslessTree`,
 `LazilyFormal.LosslessTreeSync`).
 
 > **M1 scope.** Create / tombstone / intra-parent reorder / leaf-edit / split-leaf
-> / merge-adjacent-leaves, plus op-based delta sync. Deferred to later milestones:
-> cross-parent move (single-parent + acyclicity enforcement), metadata/kind
-> mutation, subtree replace, snapshot/GC, wire schemas, capability negotiation,
-> and the Kotlin/JS bindings. In the create-only + intra-parent-reorder algebra,
-> single-parent and acyclicity hold by construction.
+> / merge-adjacent-leaves, plus op-based delta sync, plus the op-delta wire schema
+> (see [Wire schemas](#wire-schemas)). Deferred to later milestones: cross-parent
+> move (single-parent + acyclicity enforcement), metadata/kind mutation, subtree
+> replace, snapshot/GC and its wire schema, and full `SessionHandshake` capability
+> negotiation (the capability *name* is reserved below). The Kotlin and JS bindings
+> land in M2. In the create-only + intra-parent-reorder algebra, single-parent and
+> acyclicity hold by construction.
 
 ## Tree state model
 
@@ -125,7 +127,38 @@ live-node counts, and convergence across delivery orders:
 - `concurrent_insert_same_parent` — two replicas insert into the same gap; both
   survive, deterministic order;
 - `concurrent_reorder_and_leaf_edit` — a concurrent move + text edit both apply;
-- `non_contiguous_anti_entropy` — a delivery hole is re-requested and converges.
+- `non_contiguous_anti_entropy` — a delivery hole is re-requested and converges;
+- `token_trivia_preservation` — a leaf edit leaves adjacent Token/Trivia leaves
+  byte-for-byte unchanged;
+- `invalid_source_roundtrip` — unclosed fence / comment carried as Error leaves
+  round-trips exactly, and editing an adjacent Raw leaf keeps the Error spans;
+- `concurrent_conflict_preserves_text` — incompatible concurrent shapes (element
+  wrap vs bare leaf) both survive with no bytes dropped (text preservation wins
+  over semantic shape; adapter-level raw/error degradation layers above the core).
 
 See [Conformance Fixtures](conformance.md) for the fixture format and the binding
 replay contract.
+
+## Wire schemas
+
+The op-delta wire form is pinned by two JSON Schemas, derived from the lazily-rs
+reference's serde output (which is the normative form):
+
+- `schemas/lossless-tree.json` — the shared vocabulary `$defs`: `OpId`, `SortKey`
+  (`frac` is a u8 array, never base64), `LeafKind` (PascalCase on the wire),
+  `NodeSeed`, `TextOp`, the externally-tagged `TreeOpKind` / `TreeOp`, and the
+  dotted `TreeVersionFrontier` / `DotRange`.
+- `schemas/lossless-tree-delta.json` — the `TreeUpdate` message: `{ "ops": [TreeOp,
+  …] }`, the output of `diff` and the input to `apply_update`.
+
+The reference validates its own `TreeUpdate` and frontier serde output against
+these schemas (`lazily-rs/tests/lossless_tree_schema.rs`), and the M2 Kotlin/JS
+ports validate their emitted frames against the same files. The snapshot/checkpoint
+wire schema is deferred with snapshot/GC.
+
+## Capability
+
+A binding that implements this chapter advertises the capability name
+`lossless_tree_crdt_v1` (reserved here; wired into `SessionHandshake` capability
+negotiation in a later milestone). A peer that lacks it falls back to the flat
+text CRDT floor.

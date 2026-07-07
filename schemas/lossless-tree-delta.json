@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/lossless-tree-delta.json",
+  "title": "LosslessTreeDelta",
+  "description": "A batch of lossless-tree ops to ship — the serde form of lazily-rs `TreeUpdate`, the output of `diff(their_frontier)` and the input to `apply_update`. Ops are ordered by dotted id; dependencies (parent/target/`prev`) are buffered on apply until they arrive, so delivery need not be contiguous. Op / seed vocabulary is defined in lossless-tree.json.",
+  "type": "object",
+  "required": ["ops"],
+  "additionalProperties": false,
+  "properties": {
+    "ops": {
+      "type": "array",
+      "description": "Ops ordered by dotted id.",
+      "items": { "$ref": "https://lazily.dev/schemas/lossless-tree.json#/$defs/TreeOp" }
+    }
+  }
+}

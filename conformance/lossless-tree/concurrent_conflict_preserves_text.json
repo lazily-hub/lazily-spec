@@ -1,0 +1,37 @@
+{
+  "description": "Text preservation wins over semantic shape. Two replicas concurrently grow the same parent gap with incompatible structures — one wraps its text in a new Element subtree, the other inserts a bare Raw leaf. Rather than one shape overwriting the other, both survive in a deterministic order and every leaf's text round-trips; the replicas converge with no bytes dropped. This is the syntax-agnostic core's expression of the 'incompatible shapes degrade while preserving render' invariant (semantic classification into raw/error is an adapter concern layered above the core).",
+  "kind": "LosslessTree",
+  "model": "LosslessTreeCrdt",
+  "scenarios": [
+    {
+      "name": "element_wrap_vs_raw_leaf_both_survive",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "para",
+              "element": "para",
+              "children": [
+                { "label": "base", "leaf": { "kind": "raw", "text": "x" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "create", "parent": "para", "after": "base", "label": "a_strong", "element": "strong" },
+        { "on": "a", "op": "create", "parent": "a_strong", "after": null, "label": "a_body", "leaf": { "kind": "raw", "text": "A" } },
+        { "on": "b", "op": "create", "parent": "para", "after": "base", "label": "b_body", "leaf": { "kind": "raw", "text": "B" } },
+        { "sync": { "from": "a", "to": "b" } },
+        { "sync": { "from": "b", "to": "a" } }
+      ],
+      "expect": {
+        "render_on": { "a": "xAB", "b": "xAB" },
+        "converged": ["a", "b"],
+        "live_nodes": 5
+      }
+    }
+  ]
+}

@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/lossless-tree.json",
+  "title": "LosslessTree",
+  "description": "Shared wire vocabulary for the lossless full-document tree CRDT (#lzlosstree, M1 syntax-agnostic core). Normative form is lazily-rs's serde output: dotted `{counter, peer}` op ids, externally-tagged op / seed variants, PascalCase leaf kinds, and `frac` sort keys as JSON u8 arrays (never base64). Node ids serialize as bare op ids (newtype transparent). `lossless-tree-delta.json` composes these $defs into the `TreeUpdate` message. Snapshot/GC wire shapes are a later milestone.",
+  "$defs": {
+    "OpId": {
+      "type": "object",
+      "description": "A dotted, totally-ordered operation id (Lamport counter tiebroken by peer). Also the transparent wire form of a TreeNodeId; the document root is {counter: 0, peer: 0}.",
+      "required": ["counter", "peer"],
+      "additionalProperties": false,
+      "properties": {
+        "counter": { "type": "integer", "minimum": 0 },
+        "peer": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "SortKey": {
+      "type": "object",
+      "description": "A fractional-index child position: orderable bytes tiebroken by the minting peer. `frac` is a JSON array of u8, not base64.",
+      "required": ["frac", "peer"],
+      "additionalProperties": false,
+      "properties": {
+        "frac": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 255 }
+        },
+        "peer": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "LeafKind": {
+      "description": "Classification of a leaf's exact source span. Every rendered byte belongs to a leaf; unknown/invalid spans are Raw/Error so nothing is discarded.",
+      "type": "string",
+      "enum": ["Token", "Trivia", "Raw", "Error"]
+    },
+    "NodeSeed": {
+      "description": "What a CreateNode materializes: an element shell or a text leaf seeded from exact text. Externally tagged (single-key object).",
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "Element",
+          "required": ["Element"],
+          "additionalProperties": false,
+          "properties": {
+            "Element": {
+              "type": "object",
+              "required": ["kind"],
+              "additionalProperties": false,
+              "properties": { "kind": { "type": "string" } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "title": "Leaf",
+          "required": ["Leaf"],
+          "additionalProperties": false,
+          "properties": {
+            "Leaf": {
+              "type": "object",
+              "required": ["kind", "text"],
+              "additionalProperties": false,
+              "properties": {
+                "kind": { "$ref": "#/$defs/LeafKind" },
+                "text": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TextOp": {
+      "type": "object",
+      "description": "One embedded text-CRDT element (the leaf-text delta unit shipped inside LeafEdit). Mirrors `schemas`-less TextCrdt wire form: id/origin/deleted are op ids, `ch` a single character; `origin`/`deleted` are present as null when absent.",
+      "required": ["id", "ch", "origin", "deleted"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/OpId" },
+        "ch": { "type": "string", "minLength": 1, "maxLength": 2 },
+        "origin": { "oneOf": [{ "$ref": "#/$defs/OpId" }, { "type": "null" }] },
+        "deleted": { "oneOf": [{ "$ref": "#/$defs/OpId" }, { "type": "null" }] }
+      }
+    },
+    "TreeOpKind": {
+      "description": "The M1 op vocabulary. Externally tagged (single-key object). Positions (`sort`) and seed text travel inside the op so both replicas store byte-identical keys and converge without consulting local clocks.",
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "CreateNode",
+          "required": ["CreateNode"],
+          "additionalProperties": false,
+          "properties": {
+            "CreateNode": {
+              "type": "object",
+              "required": ["id", "parent", "sort", "seed"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "$ref": "#/$defs/OpId" },
+                "parent": { "$ref": "#/$defs/OpId" },
+                "sort": { "$ref": "#/$defs/SortKey" },
+                "seed": { "$ref": "#/$defs/NodeSeed" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "title": "Tombstone",
+          "required": ["Tombstone"],
+          "additionalProperties": false,
+          "properties": {
+            "Tombstone": {
+              "type": "object",
+              "required": ["node"],
+              "additionalProperties": false,
+              "properties": { "node": { "$ref": "#/$defs/OpId" } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "title": "Reorder",
+          "required": ["Reorder"],
+          "additionalProperties": false,
+          "properties": {
+            "Reorder": {
+              "type": "object",
+              "required": ["node", "sort"],
+              "additionalProperties": false,
+              "properties": {
+                "node": { "$ref": "#/$defs/OpId" },
+                "sort": { "$ref": "#/$defs/SortKey" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "title": "LeafEdit",
+          "required": ["LeafEdit"],
+          "additionalProperties": false,
+          "properties": {
+            "LeafEdit": {
+              "type": "object",
+              "required": ["node", "prev", "ops"],
+              "additionalProperties": false,
+              "properties": {
+                "node": { "$ref": "#/$defs/OpId" },
+                "prev": { "$ref": "#/$defs/OpId" },
+                "ops": { "type": "array", "items": { "$ref": "#/$defs/TextOp" } }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "title": "SplitLeaf",
+          "required": ["SplitLeaf"],
+          "additionalProperties": false,
+          "properties": {
+            "SplitLeaf": {
+              "type": "object",
+              "required": ["node", "new", "sort", "at_char", "prev"],
+              "additionalProperties": false,
+              "properties": {
+                "node": { "$ref": "#/$defs/OpId" },
+                "new": { "$ref": "#/$defs/OpId" },
+                "sort": { "$ref": "#/$defs/SortKey" },
+                "at_char": { "type": "integer", "minimum": 0 },
+                "prev": { "$ref": "#/$defs/OpId" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "title": "MergeLeaves",
+          "required": ["MergeLeaves"],
+          "additionalProperties": false,
+          "properties": {
+            "MergeLeaves": {
+              "type": "object",
+              "required": ["left", "right", "prev_left", "prev_right"],
+              "additionalProperties": false,
+              "properties": {
+                "left": { "$ref": "#/$defs/OpId" },
+                "right": { "$ref": "#/$defs/OpId" },
+                "prev_left": { "$ref": "#/$defs/OpId" },
+                "prev_right": { "$ref": "#/$defs/OpId" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TreeOp": {
+      "type": "object",
+      "description": "A transport-ready tree operation: its dotted id plus the change it encodes.",
+      "required": ["id", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/OpId" },
+        "kind": { "$ref": "#/$defs/TreeOpKind" }
+      }
+    },
+    "DotRange": {
+      "type": "object",
+      "description": "The observed dots for one peer: a contiguous prefix plus out-of-order holes. Never a per-peer max — a hole above `contiguous` stays representable in `sparse` so it is re-requested rather than skipped.",
+      "required": ["contiguous", "sparse"],
+      "additionalProperties": false,
+      "properties": {
+        "contiguous": { "type": "integer", "minimum": 0 },
+        "sparse": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "TreeVersionFrontier": {
+      "type": "object",
+      "description": "A dotted version frontier: per peer (string-encoded u64 key), exactly which op dots are held.",
+      "required": ["dots"],
+      "additionalProperties": false,
+      "properties": {
+        "dots": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[0-9]+$" },
+          "additionalProperties": { "$ref": "#/$defs/DotRange" }
+        }
+      }
+    }
+  }
+}

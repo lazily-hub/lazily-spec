@@ -93,6 +93,36 @@ The `conformance/distributed/` directory pins the CRDT anti-entropy plane
   where the plane `WireStamp` is the decisive stamp under lexicographic
   `(wall_time, logical, peer)` order.
 
+## Lossless tree conformance
+
+The `conformance/lossless-tree/` directory pins the lossless full-document tree
+CRDT (see [Lossless Tree CRDT](lossless-tree-crdt.md), `#lzlosstree`). These are
+**compute** fixtures with the same `{scenarios: [{seed, steps, expect}]}` shape as
+the collections fixtures: a binding builds the `seed.tree` on replica `a`
+(addressing nodes by stable string `label`s), replays each `step` (`fork` /
+`clone` / `sync` / `deliver` an op subset / `on` a replica an op — `create`,
+`edit_leaf`, `split`, `merge_leaves`, `reorder`, `tombstone`), and asserts the
+`expect` fields: `render` / `render_on` (exact rendered text per replica),
+`live_nodes` (live element+leaf count, excluding the root), and `converged` (a set
+of replicas that must render identically). Byte offsets in ops (`at_byte`) are
+**UTF-8** and must land on a char boundary.
+
+| Fixture | Covers |
+|---------|--------|
+| `lossless-tree/exact_roundtrip.json` | Token/Trivia/Raw/Error leaves incl. an invalid span + multi-byte text; `render == source` |
+| `lossless-tree/one_leaf_edit_delta.json` | one-leaf edit at a UTF-8 byte offset in multi-byte text, delivered by anti-entropy |
+| `lossless-tree/split_merge.json` | split a leaf then merge back; render preserved; live-node count grows then restores |
+| `lossless-tree/concurrent_insert_same_parent.json` | two replicas insert into the same gap; both survive, deterministic order, converge |
+| `lossless-tree/concurrent_reorder_and_leaf_edit.json` | concurrent reorder + text edit both apply (position/text are independent registers) |
+| `lossless-tree/non_contiguous_anti_entropy.json` | a delivery hole is representable in the dotted frontier, re-requested, and converges |
+| `lossless-tree/token_trivia_preservation.json` | a leaf edit leaves adjacent Token/Trivia leaves byte-for-byte unchanged |
+| `lossless-tree/invalid_source_roundtrip.json` | unclosed fence/comment kept as Error leaves round-trips exactly; editing an adjacent Raw leaf keeps the Error spans |
+| `lossless-tree/concurrent_conflict_preserves_text.json` | incompatible concurrent shapes both survive with no bytes dropped (text preservation wins over semantic shape) |
+
+The op-delta **wire** form additionally validates against `schemas/lossless-tree.json`
+(vocabulary) + `schemas/lossless-tree-delta.json` (the `TreeUpdate` message); the
+Rust reference and each port validate their serialized `TreeUpdate` against these.
+
 ## Causal receipt conformance
 
 The `conformance/receipts/` directory pins lazily's generic outcome vocabulary

@@ -1,0 +1,62 @@
+{
+  "description": "A one-leaf edit touches only its own leaf's text: adjacent Token and Trivia leaves round-trip byte-for-byte unchanged, and the full render preserves the surrounding markers and whitespace. Proves leaf-local editing does not disturb neighbouring token/trivia spans.",
+  "kind": "LosslessTree",
+  "model": "LosslessTreeCrdt",
+  "scenarios": [
+    {
+      "name": "edit_body_preserves_marker_and_newline",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "item",
+              "element": "list_item",
+              "children": [
+                { "label": "marker", "leaf": { "kind": "token", "text": "- " } },
+                { "label": "body", "leaf": { "kind": "raw", "text": "item one" } },
+                { "label": "nl", "leaf": { "kind": "trivia", "text": "\n" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "on": "a", "op": "edit_leaf", "node": "body", "at_byte": 8, "delete_bytes": 0, "insert": "!" }
+      ],
+      "expect": {
+        "render": "- item one!\n",
+        "live_nodes": 4
+      }
+    },
+    {
+      "name": "edit_inside_multibyte_body_keeps_token_trivia",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "item",
+              "element": "list_item",
+              "children": [
+                { "label": "marker", "leaf": { "kind": "token", "text": "- " } },
+                { "label": "body", "leaf": { "kind": "raw", "text": "café" } },
+                { "label": "nl", "leaf": { "kind": "trivia", "text": "\n" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "edit_leaf", "node": "body", "at_byte": 3, "delete_bytes": 0, "insert": "X" },
+        { "sync": { "from": "a", "to": "b" } }
+      ],
+      "expect": {
+        "render_on": { "a": "- cafXé\n", "b": "- cafXé\n" },
+        "converged": ["a", "b"],
+        "live_nodes": 4
+      }
+    }
+  ]
+}
