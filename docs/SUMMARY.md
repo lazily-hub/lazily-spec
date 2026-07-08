@@ -15,3 +15,9 @@
 - [Conformance Fixtures](conformance.md)
 - [JSON Schemas](schemas.md)
 - [Lean Formal Model](formal-model.md)
+
+---
+
+# Future Work
+
+- [Native Distributed Queue — PRD](distributed-queue-prd.md)
