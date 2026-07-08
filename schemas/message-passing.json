@@ -1,0 +1,293 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/message-passing.json",
+  "title": "Command / RPC Message Plane",
+  "description": "Evented command message plane (command-plane-v1). CommandSubmit/CommandCancel/CommandEvents/CommandProjection are an additive sibling family to Snapshot/Delta/CrdtSync. RPC is a facade over this plane; transport ACKs and non-terminal events are NOT authority. Terminal command outcomes fold through CausalReceipt (receipts.json).",
+  "oneOf": [
+    { "$ref": "#/$defs/CommandSubmitFrame" },
+    { "$ref": "#/$defs/CommandCancelFrame" },
+    { "$ref": "#/$defs/CommandEventsFrame" },
+    { "$ref": "#/$defs/CommandProjectionFrame" }
+  ],
+  "$defs": {
+    "CommandId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable, replay-safe id for a command. Dedupe and reconnect projection key off this id."
+    },
+    "OptionalString": {
+      "oneOf": [{ "type": "null" }, { "type": "string" }]
+    },
+    "DedupePolicy": {
+      "type": "string",
+      "enum": ["none", "same_idempotency_key", "same_command_id"],
+      "description": "How the admitter collapses concurrent/duplicate submits."
+    },
+    "CommandPolicy": {
+      "type": "object",
+      "required": ["dedupe", "supersede", "cancel_on_preempt"],
+      "additionalProperties": false,
+      "properties": {
+        "dedupe": { "$ref": "#/$defs/DedupePolicy" },
+        "supersede": {
+          "type": "boolean",
+          "description": "If true, a newer submit with the same idempotency key supersedes an older non-terminal command."
+        },
+        "cancel_on_preempt": {
+          "type": "boolean",
+          "description": "If true, the admitter may cancel a still-non-terminal command when it is preempted."
+        }
+      }
+    },
+    "CommandSubmit": {
+      "type": "object",
+      "required": [
+        "command_id",
+        "causation_id",
+        "source",
+        "target",
+        "namespace",
+        "name",
+        "authority_generation",
+        "idempotency_key",
+        "deadline_ms",
+        "policy",
+        "payload_type",
+        "payload_hash",
+        "payload",
+        "required_features"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "causation_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Causal parent id (a command id or event id). Self-caused submits set this equal to command_id."
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Identity of the submitter (e.g. 'vscode-plugin', 'jetbrains-plugin')."
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Identity of the intended handler (e.g. 'project-controller')."
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Domain namespace that owns the payload schema (e.g. 'agent-doc'). Lazily owns the envelope, not the namespace."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Command name within the namespace (e.g. 'editor_route')."
+        },
+        "authority_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Authority/controller generation. Receipts and events outside this generation are stale and never update the projection."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dedupe/supersede key (e.g. 'project-root:doc:run')."
+        },
+        "deadline_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Deadline in milliseconds. 0 means no deadline."
+        },
+        "policy": { "$ref": "#/$defs/CommandPolicy" },
+        "payload_type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Fully-qualified domain payload type (e.g. 'agent-doc.editor_route.v1')."
+        },
+        "payload_hash": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Content hash of the payload body (e.g. 'sha256:...')."
+        },
+        "payload": {
+          "$ref": "https://lazily.dev/schemas/defs.json#/$defs/IpcValue",
+          "description": "Domain payload as inline bytes or shared-memory blob reference. Lazily does not interpret the body."
+        },
+        "required_features": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Features the target must advertise or the submit fails closed."
+        }
+      }
+    },
+    "CommandCancel": {
+      "type": "object",
+      "required": [
+        "command_id",
+        "causation_id",
+        "source",
+        "authority_generation",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "causation_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Id of the cancel request itself (for its own receipt/replay)."
+        },
+        "source": { "type": "string", "minLength": 1 },
+        "authority_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Generation the cancel targets. A stale-generation cancel is ignored."
+        },
+        "reason": { "$ref": "#/$defs/OptionalString" }
+      }
+    },
+    "CommandEventKind": {
+      "type": "string",
+      "enum": [
+        "observed",
+        "accepted",
+        "started",
+        "progress",
+        "cancelled",
+        "superseded",
+        "timed_out"
+      ],
+      "description": "Progress/detail kinds. These are UX/diagnostics only and are NEVER terminal proof; terminal proof folds through CausalReceipt. cancelled/superseded/timed_out are surfaced here for UX but their terminal authority is a matching rejected receipt."
+    },
+    "CommandEvent": {
+      "type": "object",
+      "required": ["event_id", "command_id", "kind", "generation", "detail"],
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Idempotency key for this event. Duplicate event_ids are no-ops."
+        },
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "kind": { "$ref": "#/$defs/CommandEventKind" },
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Authority generation. Events outside the current generation for the command are ignored."
+        },
+        "detail": {
+          "$ref": "#/$defs/OptionalString",
+          "description": "Optional human/diagnostics detail (queue position, retry advice, copied CLI output). Not proof of effect."
+        }
+      }
+    },
+    "CommandEventsFrame": {
+      "type": "object",
+      "required": ["CommandEvents"],
+      "additionalProperties": false,
+      "properties": {
+        "CommandEvents": {
+          "type": "object",
+          "required": ["events"],
+          "additionalProperties": false,
+          "properties": {
+            "events": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/CommandEvent" }
+            }
+          }
+        }
+      }
+    },
+    "CommandStatus": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "accepted",
+        "running",
+        "applied",
+        "rejected",
+        "cancelled",
+        "superseded",
+        "timed_out"
+      ],
+      "description": "Folded projection status. submitted/accepted/running are non-terminal; applied/rejected/cancelled/superseded/timed_out are terminal and backed by a terminal CausalReceipt."
+    },
+    "CommandProjectionEntry": {
+      "type": "object",
+      "required": [
+        "command_id",
+        "status",
+        "terminal",
+        "generation",
+        "reason",
+        "terminal_receipt_id",
+        "last_event_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "command_id": { "$ref": "#/$defs/CommandId" },
+        "status": { "$ref": "#/$defs/CommandStatus" },
+        "terminal": {
+          "type": "boolean",
+          "description": "True iff a terminal CausalReceipt has folded into this command. accepted/queued/admission never sets terminal."
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Current authority generation for the command."
+        },
+        "reason": {
+          "$ref": "#/$defs/OptionalString",
+          "description": "Terminal reason (rejection cause, cancel reason, timeout); null while non-terminal or applied without reason."
+        },
+        "terminal_receipt_id": {
+          "$ref": "#/$defs/OptionalString",
+          "description": "Receipt id that made the command terminal, or null when non-terminal."
+        },
+        "last_event_id": {
+          "$ref": "#/$defs/OptionalString",
+          "description": "Last folded event id for incremental resync, or null when none."
+        }
+      }
+    },
+    "CommandProjectionFrame": {
+      "type": "object",
+      "required": ["CommandProjection"],
+      "additionalProperties": false,
+      "properties": {
+        "CommandProjection": {
+          "type": "object",
+          "required": ["generation", "commands"],
+          "additionalProperties": false,
+          "properties": {
+            "generation": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Authority generation this projection image was taken at."
+            },
+            "commands": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/CommandProjectionEntry" }
+            }
+          }
+        }
+      }
+    },
+    "CommandSubmitFrame": {
+      "type": "object",
+      "required": ["CommandSubmit"],
+      "additionalProperties": false,
+      "properties": { "CommandSubmit": { "$ref": "#/$defs/CommandSubmit" } }
+    },
+    "CommandCancelFrame": {
+      "type": "object",
+      "required": ["CommandCancel"],
+      "additionalProperties": false,
+      "properties": { "CommandCancel": { "$ref": "#/$defs/CommandCancel" } }
+    }
+  }
+}

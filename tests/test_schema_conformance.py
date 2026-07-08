@@ -34,6 +34,9 @@ _SCHEMA_NAMES = [
     "signaling",
     "statechart",
     "receipts",
+    "lossless-tree",
+    "lossless-tree-delta",
+    "message-passing",
 ]
 
 
@@ -500,3 +503,213 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
             assert set(inv) >= {"value", "membership", "order"}, (
                 f"{name}: invalidates must name value/membership/order reader classes"
             )
+
+
+# ---------------------------------------------------------------------------
+# Lossless tree CRDT (conformance/lossless-tree/) — compute fixtures + wire
+# schema for the op delta (#lzlosstree)
+# ---------------------------------------------------------------------------
+
+_LOSSLESS_TREE_DIR = FIXTURE_DIR / "lossless-tree"
+
+
+def _lossless_tree_fixtures() -> list[str]:
+    if not _LOSSLESS_TREE_DIR.is_dir():
+        return []
+    return sorted(p.name for p in _LOSSLESS_TREE_DIR.glob("*.json"))
+
+
+@pytest.mark.parametrize("name", _lossless_tree_fixtures())
+def test_lossless_tree_fixture_is_well_formed(name: str) -> None:
+    """Structural guard for the lossless-tree compute fixtures. Every binding
+    (Rust reference + Kotlin/JS ports) replays these `{seed, steps, expect}`
+    scenarios and asserts exact rendered text, live-node counts, and convergence;
+    here we only pin the language-agnostic top-level shape."""
+    obj = json.loads((_LOSSLESS_TREE_DIR / name).read_text())
+    assert obj["kind"] == "LosslessTree", f"{name}: kind must be 'LosslessTree'"
+    assert obj["model"] == "LosslessTreeCrdt", f"{name}: model must be 'LosslessTreeCrdt'"
+    assert isinstance(obj["description"], str) and obj["description"], f"{name}: missing description"
+    scenarios = obj.get("scenarios")
+    assert isinstance(scenarios, list) and scenarios, f"{name}: needs non-empty 'scenarios'"
+    for sc in scenarios:
+        assert isinstance(sc.get("name"), str) and sc["name"], f"{name}: scenario missing name"
+        seed = sc.get("seed")
+        assert isinstance(seed, dict) and "peer" in seed and "tree" in seed, (
+            f"{name}: scenario {sc.get('name')!r} needs seed.peer + seed.tree"
+        )
+        assert "expect" in sc, f"{name}: scenario {sc['name']!r} missing 'expect'"
+
+
+def _canonical_tree_delta() -> dict:
+    """A hand-authored `TreeUpdate` covering every M1 op variant, in the exact
+    serde form lazily-rs emits (PascalCase externally-tagged ops/seeds, `frac`
+    as a u8 array, dotted `{counter, peer}` ids). The Rust reference validates
+    its *own* serde output against this schema in `lazily-rs`; this pins the
+    same wire shape from the spec side so a drift on either side fails."""
+    op = lambda counter, kind: {"id": {"counter": counter, "peer": 1}, "kind": kind}
+    node = lambda counter: {"counter": counter, "peer": 1}
+    sort = {"frac": [128], "peer": 1}
+    return {
+        "ops": [
+            op(1, {"CreateNode": {"id": node(1), "parent": {"counter": 0, "peer": 0}, "sort": sort, "seed": {"Element": {"kind": "para"}}}}),
+            op(2, {"CreateNode": {"id": node(2), "parent": node(1), "sort": sort, "seed": {"Leaf": {"kind": "Raw", "text": "hello"}}}}),
+            op(3, {"LeafEdit": {"node": node(2), "prev": node(2), "ops": [{"id": node(9), "ch": "X", "origin": node(5), "deleted": None}]}}),
+            op(4, {"SplitLeaf": {"node": node(2), "new": node(4), "sort": sort, "at_char": 3, "prev": node(3)}}),
+            op(5, {"MergeLeaves": {"left": node(2), "right": node(4), "prev_left": node(4), "prev_right": node(4)}}),
+            op(6, {"Reorder": {"node": node(2), "sort": {"frac": [64], "peer": 1}}}),
+            op(7, {"Tombstone": {"node": node(2)}}),
+        ]
+    }
+
+
+def test_canonical_tree_delta_validates_schema() -> None:
+    delta = _canonical_tree_delta()
+    errors = sorted(
+        _validator("lossless-tree-delta").iter_errors(delta), key=lambda e: list(e.path)
+    )
+    assert not errors, (
+        "canonical TreeUpdate does not validate against lossless-tree-delta.json:\n"
+        + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+    )
+
+
+def test_lossless_tree_delta_rejects_base64_frac() -> None:
+    # `frac` is a u8 array on the wire, never base64 (the drift this repo guards
+    # against for every CRDT payload).
+    bad = _canonical_tree_delta()
+    bad["ops"][0]["kind"]["CreateNode"]["sort"] = {"frac": "gA==", "peer": 1}
+    assert _validator("lossless-tree-delta").iter_errors(bad), (
+        "schema must reject a base64 `frac` sort key"
+    )
+
+
+def test_lossless_tree_delta_rejects_lowercase_leaf_kind() -> None:
+    # Leaf kind is PascalCase on the wire; the lowercase fixture-DSL form must not
+    # validate as a wire value.
+    bad = _canonical_tree_delta()
+    bad["ops"][1]["kind"]["CreateNode"]["seed"]["Leaf"]["kind"] = "raw"
+    assert _validator("lossless-tree-delta").iter_errors(bad), (
+        "schema must reject a lowercase leaf kind on the wire"
+    )
+
+
+def test_lossless_tree_frontier_rejects_per_peer_max_shortcut() -> None:
+    # A dotted frontier keeps holes representable; a bare per-peer integer max
+    # (the version-vector shortcut the design explicitly rejects) is not a valid
+    # frontier shape.
+    validator = _validator("lossless-tree")
+    frontier_schema = {"$ref": "https://lazily.dev/schemas/lossless-tree.json#/$defs/TreeVersionFrontier"}
+    v = jsonschema.Draft202012Validator(frontier_schema, registry=_registry())
+    assert v.iter_errors({"dots": {"1": 3}}), (
+        "a per-peer integer max must not validate as a dotted DotRange"
+    )
+    assert not list(v.iter_errors({"dots": {"1": {"contiguous": 2, "sparse": [4]}}})), (
+        "a proper dotted frontier with a hole must validate"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Command / RPC message plane (conformance/message-passing/) — every frame in
+# every fixture validates against its declared schema, and the stale
+# "accepted-is-terminal" / "ack" forms are rejected.
+# ---------------------------------------------------------------------------
+
+_MSG_PASSING_DIR = FIXTURE_DIR / "message-passing"
+
+
+def _message_passing_fixtures() -> list[Path]:
+    if not _MSG_PASSING_DIR.is_dir():
+        return []
+    return sorted(_MSG_PASSING_DIR.glob("*.json"))
+
+
+def _iter_frames(obj: dict) -> list[dict]:
+    """Frames live either at top-level `frames` or under each `scenarios[*].frames`."""
+    frames: list[dict] = []
+    frames.extend(obj.get("frames", []))
+    for sc in obj.get("scenarios", []):
+        frames.extend(sc.get("frames", []))
+    return frames
+
+
+@pytest.mark.parametrize(
+    "path", _message_passing_fixtures(), ids=lambda p: p.name
+)
+def test_message_passing_fixture_frames_validate(path: Path) -> None:
+    fixture = json.loads(path.read_text())
+    assert fixture["protocol_version"] == 1
+    assert fixture["kind"] == "Command", f"{path.name}: kind must be 'Command'"
+    frames = _iter_frames(fixture)
+    assert frames, f"{path.name}: fixture defines no frames"
+    for i, fr in enumerate(frames):
+        schema = fr["schema"]
+        assert schema in {"message-passing", "receipts"}, (
+            f"{path.name}: frame {i} names unknown schema {schema!r}"
+        )
+        errors = sorted(
+            _validator(schema).iter_errors(fr["wire"]), key=lambda e: list(e.path)
+        )
+        assert not errors, (
+            f"{path.name}: frame {i} does not validate against {schema}.json:\n"
+            + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+        )
+
+
+def test_message_passing_rejects_ack_event_kind() -> None:
+    # Command events carry progress kinds only; a transport "ack" is not one and
+    # must never be smuggled in as a command event.
+    bad = {
+        "CommandEvents": {
+            "events": [
+                {
+                    "event_id": "ev-1",
+                    "command_id": "cmd-1",
+                    "kind": "ack",
+                    "generation": 1,
+                    "detail": None,
+                }
+            ]
+        }
+    }
+    assert _validator("message-passing").iter_errors(bad), (
+        "message-passing schema must reject a transport 'ack' command-event kind"
+    )
+
+
+def test_message_passing_rejects_applied_projection_without_terminal_flag_field() -> None:
+    # A projection entry MUST carry the terminal flag; accepted/queued must not be
+    # able to omit it and imply completion.
+    bad = {
+        "CommandProjection": {
+            "generation": 1,
+            "commands": [
+                {"command_id": "cmd-1", "status": "applied", "generation": 1, "reason": None}
+            ],
+        }
+    }
+    assert _validator("message-passing").iter_errors(bad), (
+        "CommandProjectionEntry must require the explicit `terminal` flag"
+    )
+
+
+def test_message_passing_submit_requires_payload_hash() -> None:
+    incomplete = {
+        "CommandSubmit": {
+            "command_id": "cmd-1",
+            "causation_id": "cmd-1",
+            "source": "vscode-plugin",
+            "target": "project-controller",
+            "namespace": "agent-doc",
+            "name": "editor_route",
+            "authority_generation": 1,
+            "idempotency_key": "k",
+            "deadline_ms": 0,
+            "policy": {"dedupe": "none", "supersede": False, "cancel_on_preempt": False},
+            "payload_type": "agent-doc.editor_route.v1",
+            "payload": {"Inline": [1, 2, 3]},
+            "required_features": [],
+        }
+    }
+    assert _validator("message-passing").iter_errors(incomplete), (
+        "CommandSubmit must require payload_hash"
+    )

@@ -1,0 +1,61 @@
+{
+  "protocol_version": 1,
+  "kind": "Command",
+  "model": "CommandProjection",
+  "description": "After a controller handoff/recycle a plugin resyncs with a CommandProjection frame. Folding the projection directly is equivalent to having folded the underlying events+receipts.",
+  "frames": [
+    {
+      "schema": "message-passing",
+      "wire": {
+        "CommandProjection": {
+          "generation": 43,
+          "commands": [
+            {
+              "command_id": "cmd-run-1",
+              "status": "applied",
+              "terminal": true,
+              "generation": 43,
+              "reason": null,
+              "terminal_receipt_id": "rcpt-1",
+              "last_event_id": "ev-3"
+            },
+            {
+              "command_id": "cmd-run-2",
+              "status": "running",
+              "terminal": false,
+              "generation": 43,
+              "reason": null,
+              "terminal_receipt_id": null,
+              "last_event_id": "ev-9"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "expect": {
+    "projection": {
+      "generation": 43,
+      "commands": [
+        {
+          "command_id": "cmd-run-1",
+          "status": "applied",
+          "terminal": true,
+          "generation": 43,
+          "reason": null,
+          "terminal_receipt_id": "rcpt-1",
+          "last_event_id": "ev-3"
+        },
+        {
+          "command_id": "cmd-run-2",
+          "status": "running",
+          "terminal": false,
+          "generation": 43,
+          "reason": null,
+          "terminal_receipt_id": null,
+          "last_event_id": "ev-9"
+        }
+      ]
+    }
+  }
+}

@@ -289,6 +289,120 @@ Receipt projection rules:
 - A second terminal receipt for the same `causation_id` and generation with a different terminal outcome is a terminal conflict; consumers fail closed instead of selecting a winner.
 - The primitive is state/projection data. Transports may still provide their own delivery acknowledgements internally, but lazily does not expose delivery ACKs as authority.
 
+## Command / RPC Message Plane
+
+Editor and runtime integrations issue **commands** — `Run Agent Doc`, sync,
+focus, save, session operations — and need one reusable admission, dedupe,
+cancellation, generation-guard, progress, and reconnect story instead of a
+per-caller ad hoc request/response contract. lazily supplies an evented command
+message plane for that use case. It is an **additive sibling family** to
+`Snapshot` / `Delta` / `CrdtSync`; it does not add new state-plane variants.
+
+The plane is feature-gated. Peers advertise `command-plane-v1` in the
+[Capability Negotiation](#capability-negotiation) `features` array. A peer that
+lacks `command-plane-v1` fails closed before accepting command traffic; a
+command that requires the plane is not silently downgraded.
+
+Four externally-tagged frames make up the family:
+
+### CommandSubmit
+
+```json
+{
+  "CommandSubmit": {
+    "command_id": "cmd-run-1",
+    "causation_id": "cmd-run-1",
+    "source": "vscode-plugin",
+    "target": "project-controller",
+    "namespace": "agent-doc",
+    "name": "editor_route",
+    "authority_generation": 42,
+    "idempotency_key": "project-root:plan.md:run",
+    "deadline_ms": 120000,
+    "policy": { "dedupe": "same_idempotency_key", "supersede": false, "cancel_on_preempt": true },
+    "payload_type": "agent-doc.editor_route.v1",
+    "payload_hash": "sha256:…",
+    "payload": { "Inline": [123, 34, 102, 34, 58, 34, 46, 34, 125] },
+    "required_features": ["causal-receipts", "command-events"]
+  }
+}
+```
+
+lazily owns the envelope (`command_id`, correlation, idempotency, generation,
+policy, payload framing). The **namespace owns the payload**: lazily never
+interprets the `payload` body, which is a normal [`IpcValue`](#ipcvalue-payload)
+(inline bytes or a shared-memory blob). `payload_type` and `payload_hash`
+identify and pin the domain body.
+
+### CommandCancel
+
+`CommandCancel` preempts a still-non-terminal command by `command_id` at a given
+`authority_generation`, with an optional `reason`. A stale-generation cancel is
+ignored. A cancel after a terminal outcome never rewrites it.
+
+### CommandEvents
+
+`CommandEvents` batches progress/detail events keyed by `command_id`. Event
+kinds are `observed`, `accepted`, `started`, `progress`, `cancelled`,
+`superseded`, `timed_out`. Events are **UX and diagnostics only** — queue
+position, retry advice, copied CLI output. They are never terminal proof. Even
+`cancelled` / `superseded` / `timed_out` events are surfaced for UX; their
+terminal authority is a matching `rejected` [causal receipt](#causal-receipts).
+
+### CommandProjection
+
+`CommandProjection` is the folded, queryable image of known command state:
+per-command `status`, an explicit `terminal` flag, `generation`, terminal
+`reason`, and the `terminal_receipt_id` / `last_event_id` that produced it. It is
+also the reconnect resync frame: after a controller handoff/recycle a plugin
+folds a fresh `CommandProjection` and recovers in-flight and terminal state
+without replaying the underlying events.
+
+### Projection rules
+
+- **Terminal authority is the causal receipt, not the event or the transport.**
+  A command becomes terminal (`applied` / `rejected` / `cancelled` /
+  `superseded` / `timed_out`) only when a terminal `CausalReceipt` for its
+  `command_id` folds in. `observed` / `accepted` / `started` / queued admission
+  are non-terminal progress. A network ACK is never terminal.
+- **Generation guards.** Events and receipts whose `generation` does not match
+  the command's current authority generation are ignored by the projection and
+  retained only as audit data.
+- **Idempotency.** A replayed `CommandSubmit`, event, or receipt (same
+  `command_id` / `event_id` / `receipt_id`) is a no-op; the projection is
+  unchanged.
+- **Cancel before terminal only.** A cancel terminally rejects a non-terminal
+  command; a cancel after `applied` is ignored.
+- **Terminal conflict fails closed.** Two terminal receipts at the same
+  generation with different outcomes is a conflict; consumers fail closed rather
+  than pick a winner (the same rule as [Causal Receipts](#causal-receipts)).
+- **Reconnect equivalence.** Folding a `CommandProjection` image is equivalent
+  to folding the events and receipts it summarizes.
+
+### RPC facade
+
+Bindings expose an RPC-style API (`call` / `submit` / `cancel` / `observe` /
+`projection`) implemented entirely over these frames:
+
+- `call` builds and sends a `CommandSubmit`, observes events and receipts, and
+  resolves **only** when the command projection reaches a terminal causal
+  receipt. A transport ACK, controller admission, or `accepted` / queued event
+  never resolves a unary `call`.
+- `submit` returns the `command_id` immediately for callers that manage events
+  and projection themselves.
+- `cancel` sends `CommandCancel` and returns the resulting projection.
+- `observe` / `stream` exposes `CommandEvents` and projection updates for UI
+  progress.
+- Reconnect uses `CommandProjection`; callers replay a `call` only when the
+  idempotency policy says replay is safe.
+- The terminal-result error shape exposes the terminal command projection
+  (`status`, `reason`), not a collapsed boolean.
+
+Unary RPC completion means command **effect** completion, proven by a terminal
+causal receipt — not network delivery. The schema is
+[`schemas/message-passing.json`](schemas.md#message-passingjson); fixtures live
+in [`conformance/message-passing/`](conformance.md).
+
 ## Cross-language Channel Compatibility
 
 All channels carry the same `IpcMessage` state plane:

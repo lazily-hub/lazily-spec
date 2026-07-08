@@ -1,0 +1,60 @@
+{
+  "protocol_version": 1,
+  "kind": "Command",
+  "model": "CommandSubmit",
+  "description": "Sync Tmux Layout submit using a shared-memory blob payload (SharedBlob) rather than inline bytes; proves the envelope carries either IpcValue arm.",
+  "frames": [
+    {
+      "schema": "message-passing",
+      "wire": {
+        "CommandSubmit": {
+          "command_id": "cmd-sync-1",
+          "causation_id": "cmd-sync-1",
+          "source": "jetbrains-plugin",
+          "target": "project-controller",
+          "namespace": "agent-doc",
+          "name": "sync_tmux_layout",
+          "authority_generation": 42,
+          "idempotency_key": "project-root:sync",
+          "deadline_ms": 120000,
+          "policy": {
+            "dedupe": "same_idempotency_key",
+            "supersede": false,
+            "cancel_on_preempt": true
+          },
+          "payload_type": "agent-doc.sync_tmux_layout.v1",
+          "payload_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "payload": {
+            "SharedBlob": {
+              "offset": 0,
+              "len": 96,
+              "generation": 1,
+              "epoch": 1,
+              "checksum": 4242
+            }
+          },
+          "required_features": [
+            "causal-receipts",
+            "command-events"
+          ]
+        }
+      }
+    }
+  ],
+  "expect": {
+    "projection": {
+      "generation": 42,
+      "commands": [
+        {
+          "command_id": "cmd-sync-1",
+          "status": "submitted",
+          "terminal": false,
+          "generation": 42,
+          "reason": null,
+          "terminal_receipt_id": null,
+          "last_event_id": null
+        }
+      ]
+    }
+  }
+}

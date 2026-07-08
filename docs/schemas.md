@@ -13,6 +13,7 @@ codecs encode the same shapes.
 | `signaling.json` | Signaling (WebSocket) |
 | `distributed.json` | Distributed — CrdtSync message (`{"CrdtSync": …}`) + CRDT/cell-model types |
 | `receipts.json` | Causal receipts (`{"CausalReceipts": …}`) + terminal outcome projection |
+| `message-passing.json` | Command / RPC message plane (`CommandSubmit` / `CommandCancel` / `CommandEvents` / `CommandProjection`) |
 | `statechart.json` | Compute (Harel/SCXML chart form — not a wire message) |
 
 The IPC schemas describe the **normative externally-tagged envelope** that
@@ -63,6 +64,12 @@ by `make test-schemas` (see `tests/test_schema_conformance.py`).
 
 ```json
 {{#include ../schemas/receipts.json}}
+```
+
+## `message-passing.json`
+
+```json
+{{#include ../schemas/message-passing.json}}
 ```
 
 ## `statechart.json`

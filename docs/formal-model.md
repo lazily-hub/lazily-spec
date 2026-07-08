@@ -12,7 +12,13 @@ bindings:
 - equal memo recomputes suppress `slot_value` and downstream invalidation;
 - eager Signal changes publish concrete `slot_value` ops rather than bare
   `invalidate` ops for their backing slot;
-- batch flushes carry a coalesced frontier and advance the IPC epoch once.
+- batch flushes carry a coalesced frontier and advance the IPC epoch once;
+- command-plane projection (`LazilyFormal.Command`): progress events never
+  complete a command, only a terminal receipt does; stale generations are
+  discarded; duplicate submits are idempotent; a cancel cannot override an
+  applied command; conflicting terminal outcomes fail closed; reconnect
+  projection is fold-equivalent; and an RPC `call` cannot resolve before a
+  terminal receipt. This mirrors the standalone `lazily-formal` model.
 
 Run it through the local check target:
 
