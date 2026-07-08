@@ -1,0 +1,83 @@
+{
+  "description": "QueueCell MPSC — multiple producers pushing inside batch() boundaries. Per-producer FIFO is preserved (producer 1's pushes arrive in order; producer 2's pushes arrive in order). Inter-producer interleaving is deterministic within a batch but the cross-batch order is batch-sequential. All pushes in one batch appear atomically to concurrent observers.",
+  "kind": "Collection",
+  "model": "QueueCell",
+  "initial": {
+    "elements": [],
+    "capacity": null,
+    "closed": false
+  },
+  "steps": [
+    {
+      "op": { "type": "batch", "ops": [
+        { "type": "push", "value": "a1", "producer": 1 },
+        { "type": "push", "value": "a2", "producer": 1 }
+      ]},
+      "expected": {
+        "elements": ["a1", "a2"],
+        "head": "a1",
+        "len": 2,
+        "is_empty": false,
+        "invalidates": { "head": true, "len": true, "is_empty": true, "is_full": false, "closed": false }
+      }
+    },
+    {
+      "op": { "type": "batch", "ops": [
+        { "type": "push", "value": "b1", "producer": 2 },
+        { "type": "push", "value": "b2", "producer": 2 }
+      ]},
+      "expected": {
+        "elements": ["a1", "a2", "b1", "b2"],
+        "head": "a1",
+        "len": 4,
+        "is_empty": false,
+        "invalidates": { "head": false, "len": true, "is_empty": false, "is_full": false, "closed": false }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "a1",
+      "expected": {
+        "elements": ["a2", "b1", "b2"],
+        "head": "a2",
+        "len": 3,
+        "invalidates": { "head": true, "len": true }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "a2",
+      "expected": {
+        "elements": ["b1", "b2"],
+        "head": "b1",
+        "len": 2,
+        "invalidates": { "head": true, "len": true }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "b1",
+      "expected": {
+        "elements": ["b2"],
+        "head": "b2",
+        "len": 1,
+        "invalidates": { "head": true, "len": true }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "b2",
+      "expected": {
+        "elements": [],
+        "head": null,
+        "len": 0,
+        "is_empty": true,
+        "invalidates": { "head": true, "len": true, "is_empty": true }
+      }
+    }
+  ],
+  "invariants": {
+    "per_producer_fifo": "producer 1: a1 before a2 ✓; producer 2: b1 before b2 ✓",
+    "batch_atomicity": "all pushes in a batch are observable as one atomic transition"
+  }
+}

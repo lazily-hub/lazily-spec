@@ -1,0 +1,67 @@
+{
+  "description": "QueueCell bounded queue — reactive backpressure via is_full. When the queue is at capacity, try_push returns Full. A pop that transitions from full to not-full MUST invalidate is_full readers (true → false), enabling push-side effects to react to capacity recovery. Overflow policy (reject) is the default VecDequeStorage behavior; other backends may choose block/drop-oldest/drop-newest.",
+  "kind": "Collection",
+  "model": "QueueCell",
+  "initial": {
+    "elements": [],
+    "capacity": 2,
+    "closed": false
+  },
+  "steps": [
+    {
+      "op": { "type": "push", "value": "a" },
+      "expected": {
+        "elements": ["a"],
+        "len": 1,
+        "is_empty": false,
+        "is_full": false,
+        "invalidates": { "head": true, "len": true, "is_empty": true, "is_full": false }
+      }
+    },
+    {
+      "op": { "type": "push", "value": "b" },
+      "expected": {
+        "elements": ["a", "b"],
+        "len": 2,
+        "is_empty": false,
+        "is_full": true,
+        "invalidates": { "head": false, "len": true, "is_empty": false, "is_full": true }
+      }
+    },
+    {
+      "op": { "type": "try_push", "value": "c" },
+      "returns": "Full",
+      "expected": {
+        "elements": ["a", "b"],
+        "len": 2,
+        "is_full": true,
+        "invalidates": { "head": false, "len": false, "is_empty": false, "is_full": false }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "a",
+      "expected": {
+        "elements": ["b"],
+        "head": "b",
+        "len": 1,
+        "is_empty": false,
+        "is_full": false,
+        "invalidates": { "head": true, "len": true, "is_empty": false, "is_full": true }
+      }
+    },
+    {
+      "op": { "type": "push", "value": "c" },
+      "expected": {
+        "elements": ["b", "c"],
+        "len": 2,
+        "is_full": true,
+        "invalidates": { "head": false, "len": true, "is_empty": false, "is_full": true }
+      }
+    }
+  ],
+  "invariants": {
+    "backpressure_reactivity": "pop at full → is_full reader invalidated (true → false)",
+    "overflow_observable": "try_push at capacity returns Full (distinct from Empty/Closed)"
+  }
+}

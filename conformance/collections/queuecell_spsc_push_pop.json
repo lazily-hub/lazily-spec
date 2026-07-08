@@ -1,0 +1,75 @@
+{
+  "description": "QueueCell SPSC push/pop — head reader invalidation and reader-kind independence. Push invalidates len/is_empty (and head when transitioning from empty); pop invalidates head/len/is_empty. Neither invalidates is_full (unbounded) or closed.",
+  "kind": "Collection",
+  "model": "QueueCell",
+  "initial": {
+    "elements": [],
+    "capacity": null,
+    "closed": false
+  },
+  "steps": [
+    {
+      "op": { "type": "push", "value": "a" },
+      "expected": {
+        "elements": ["a"],
+        "head": "a",
+        "len": 1,
+        "is_empty": false,
+        "is_full": false,
+        "closed": false,
+        "invalidates": { "head": true, "len": true, "is_empty": true, "is_full": false, "closed": false }
+      }
+    },
+    {
+      "op": { "type": "push", "value": "b" },
+      "expected": {
+        "elements": ["a", "b"],
+        "head": "a",
+        "len": 2,
+        "is_empty": false,
+        "is_full": false,
+        "closed": false,
+        "invalidates": { "head": false, "len": true, "is_empty": false, "is_full": false, "closed": false }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "a",
+      "expected": {
+        "elements": ["b"],
+        "head": "b",
+        "len": 1,
+        "is_empty": false,
+        "is_full": false,
+        "closed": false,
+        "invalidates": { "head": true, "len": true, "is_empty": false, "is_full": false, "closed": false }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "b",
+      "expected": {
+        "elements": [],
+        "head": null,
+        "len": 0,
+        "is_empty": true,
+        "is_full": false,
+        "closed": false,
+        "invalidates": { "head": true, "len": true, "is_empty": true, "is_full": false, "closed": false }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "Empty",
+      "expected": {
+        "elements": [],
+        "head": null,
+        "len": 0,
+        "is_empty": true,
+        "is_full": false,
+        "closed": false,
+        "invalidates": { "head": false, "len": false, "is_empty": false, "is_full": false, "closed": false }
+      }
+    }
+  ]
+}

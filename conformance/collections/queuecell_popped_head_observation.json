@@ -1,0 +1,79 @@
+{
+  "description": "QueueCell popped-head observation — the head reader sees the current head value, which changes on pop. After pop, the head reader observes the next element (or null if empty). The head reader is invalidated on every pop because the head value changes. A push that doesn't change the head (queue was non-empty) does NOT invalidate the head reader.",
+  "kind": "Collection",
+  "model": "QueueCell",
+  "initial": {
+    "elements": [],
+    "capacity": null,
+    "closed": false
+  },
+  "steps": [
+    {
+      "op": { "type": "push", "value": "a" },
+      "expected": {
+        "elements": ["a"],
+        "head": "a",
+        "invalidates": { "head": true }
+      }
+    },
+    {
+      "op": { "type": "push", "value": "b" },
+      "expected": {
+        "elements": ["a", "b"],
+        "head": "a",
+        "invalidates": { "head": false }
+      }
+    },
+    {
+      "op": { "type": "push", "value": "c" },
+      "expected": {
+        "elements": ["a", "b", "c"],
+        "head": "a",
+        "invalidates": { "head": false }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "a",
+      "expected": {
+        "elements": ["b", "c"],
+        "head": "b",
+        "invalidates": { "head": true }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "b",
+      "expected": {
+        "elements": ["c"],
+        "head": "c",
+        "invalidates": { "head": true }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "c",
+      "expected": {
+        "elements": [],
+        "head": null,
+        "is_empty": true,
+        "invalidates": { "head": true, "is_empty": true }
+      }
+    },
+    {
+      "op": { "type": "push", "value": "d" },
+      "expected": {
+        "elements": ["d"],
+        "head": "d",
+        "is_empty": false,
+        "invalidates": { "head": true, "is_empty": true }
+      }
+    }
+  ],
+  "invariants": {
+    "head_reader_invalidated_on_pop": "every pop changes the head value → head reader invalidated",
+    "head_reader_not_invalidated_on_push_to_nonempty": "push when head exists does not change head → head reader NOT invalidated",
+    "head_reader_invalidated_on_push_to_empty": "push to empty queue sets head for the first time → head reader invalidated",
+    "head_value_after_pop": "head reader observes the new head, not the popped value"
+  }
+}

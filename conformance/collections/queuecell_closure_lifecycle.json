@@ -1,0 +1,92 @@
+{
+  "description": "QueueCell closure lifecycle — observable contract. Pop on closed+non-empty drains (returns next element). Pop on closed+empty returns Closed (distinct from Empty). Push on closed is an error. Close is idempotent and terminal.",
+  "kind": "Collection",
+  "model": "QueueCell",
+  "initial": {
+    "elements": [],
+    "capacity": null,
+    "closed": false
+  },
+  "steps": [
+    {
+      "op": { "type": "push", "value": "a" },
+      "expected": {
+        "elements": ["a"],
+        "closed": false,
+        "invalidates": { "head": true, "len": true, "is_empty": true, "closed": false }
+      }
+    },
+    {
+      "op": { "type": "push", "value": "b" },
+      "expected": {
+        "elements": ["a", "b"],
+        "closed": false,
+        "invalidates": { "len": true }
+      }
+    },
+    {
+      "op": { "type": "close" },
+      "expected": {
+        "closed": true,
+        "invalidates": { "closed": true }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "a",
+      "expected": {
+        "elements": ["b"],
+        "head": "b",
+        "len": 1,
+        "closed": true,
+        "invalidates": { "head": true, "len": true }
+      }
+    },
+    {
+      "op": { "type": "pop" },
+      "returns": "b",
+      "expected": {
+        "elements": [],
+        "head": null,
+        "len": 0,
+        "is_empty": true,
+        "closed": true,
+        "invalidates": { "head": true, "len": true, "is_empty": true }
+      }
+    },
+    {
+      "op": { "type": "try_pop" },
+      "returns": "Closed",
+      "expected": {
+        "elements": [],
+        "len": 0,
+        "is_empty": true,
+        "closed": true,
+        "invalidates": {}
+      }
+    },
+    {
+      "op": { "type": "try_push", "value": "c" },
+      "returns": "Closed",
+      "expected": {
+        "elements": [],
+        "closed": true,
+        "invalidates": {}
+      }
+    },
+    {
+      "op": { "type": "close" },
+      "expected": {
+        "closed": true,
+        "invalidates": { "closed": false }
+      }
+    }
+  ],
+  "invariants": {
+    "drain_on_closed": "pop on closed+non-empty returns the next element",
+    "closed_distinct_from_empty": "pop on closed+empty returns Closed, not Empty",
+    "push_after_close_error": "push on closed returns Closed (error)",
+    "close_idempotent": "second close is a no-op (no invalidation)",
+    "close_terminal": "once closed, cannot reopen"
+  }
+}

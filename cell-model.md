@@ -187,6 +187,11 @@ An implementation conforms to the cell model when:
 10. **Keyed reconciliation** emits the move-minimized `{insert, remove, move, update}`
     op set (LIS over prior indices preserved), and a stable entry is not invalidated by a
     sibling reorder (required of every binding).
+11. A **reactive queue** (`QueueCell`) is implemented — a FIFO collection whose reactive
+    shell invalidates by *reader kind* (head / length / empty / full / closed), backed by
+    a pluggable `QueueStorage` backend. The shell / storage split, closure observable
+    contract, bounded-queue backpressure, and ordering guarantees below hold (required of
+    every binding).
 
 ## Keyed cell collections
 
@@ -327,3 +332,206 @@ it as a tombstone, a genuine resurrection wins by LWW). The character layer is c
 it collects a stable deleted element only when nothing references it as a left origin, so
 removal never orphans a survivor; interior tombstones are reclaimed bottom-up. Bloat is
 bounded to the multi-writer plane — the single-producer Snapshot/Delta mirror accrues none.
+
+## Reactive queues
+
+A *reactive queue* (`QueueCell`) is a FIFO collection composed of cells — **not a new cell
+kind** — that adds queue semantics (push to tail, pop from head) to the reactive graph. Like
+the keyed collections above, it adds no new merge unit; each element's value is an ordinary
+cell subject to the same single-writer / multi-write classification.
+
+The distinguishing property of a reactive queue is that invalidation is scoped to **reader
+kind**, not to individual positions: a push invalidates length/empty/full readers (and the
+tail signal); a pop invalidates head/length/empty/full readers. The head reader observes the
+*current* head value — after a pop, the head reader sees the next element (or empty), not a
+stale value. There is no random-access `queue[N]` reader; per-position reactivity is the
+domain of `CellMap`, not `QueueCell`.
+
+### QueueCell — SPSC primitive with MPSC usage rule
+
+`QueueCell` is specified as a **single-producer, single-consumer** (SPSC) primitive: one
+writer owns the tail, one reader owns the head. The producer is the natural FIFO sequencer
+(push order = delivery order).
+
+**MPSC** (multi-producer, single-consumer) is a *usage rule on the same primitive*, not a
+separate type. Multiple producers push to the same tail inside a `batch()`; the batch
+boundary serializes the pushes into a deterministic order. A conforming implementation
+MUST document the MPSC usage rule and MUST NOT introduce a separate `MPSCQueueCell` type.
+
+> **Naming discipline.** The cardinality of producers/consumers is not a type parameter.
+`SPSCQueueCell` would imply `MPSCQueueCell` / `SPMCQueueCell` / `MPMCQueueCell` siblings —
+but those shapes differ in *semantics* (invalidation model, handoff exclusivity), not
+cardinality. See [§ Future queue primitives](#future-queue-primitives) for the genuinely
+distinct primitives (`TopicCell`, `WorkQueueCell`).
+
+### Reactive shell vs storage backend
+
+A `QueueCell` factors into two layers:
+
+```
+  ┌─────────────────────────────────────────────────────────┐
+  │                   Reactive shell                         │
+  │  head version cell │ tail version cell │ closed cell     │
+  │  len / is_empty / is_full / head — reactive reads       │
+  │  invalidation scoped by reader kind                     │
+  └────────────────────────┬────────────────────────────────┘
+                           │ QueueStorage trait
+                           │  try_push(v) → Result<(), Full|Closed>
+                           │  try_pop() → Result<T, Empty|Closed>
+                           │  len() → usize
+                           │  capacity() → Option<usize>
+                           │  is_closed() → bool
+   ┌───────────────────────┼───────────────────────────────┐
+   │                       │                               │
+   ▼                       ▼                               ▼
+ VecDequeStorage      RaftQueueStorage              KafkaStorage
+ (local default)      (embedded consensus;          (external broker;
+                       per distributed-queue PRD)    via adapter)
+```
+
+The **reactive shell** owns the version cells and invalidation logic; it is
+storage-agnostic and is what the formal model ([`QueueCell.lean`](formal-model.md)) pins.
+The **storage backend** owns the actual FIFO data structure and is pluggable via the
+`QueueStorage` trait (Rust) / concept (C++) / interface (Py/JS/etc.).
+
+An implementation MUST split the shell from the storage. The shell MUST NOT assume a
+specific storage type (VecDeque, ring buffer, broker client). A binding MAY ship multiple
+backends; the default MUST be an unbounded `VecDeque`-backed storage.
+
+### Storage backend contract
+
+A `QueueStorage` backend conforms when:
+
+1. **FIFO order**: `try_pop` returns elements in the order they were `try_push`-ed. A
+   backend that reorders or silently drops elements is non-conforming.
+2. **Cardinality compatibility**: the backend's native producer/consumer shape MUST be a
+   superset of the shell's required shape. (SPSC shell = any backend; MPSC usage requires
+   a backend that accepts multi-writer pushes.)
+3. **Bounded contract** (optional): a bounded backend exposes `capacity() → Some(n)` and
+   `try_push` returns `Full` when at capacity. The **overflow policy** (block / drop-oldest
+   / drop-newest / reject) is a backend property — the shell's observable contract only
+   distinguishes `Full` from `Empty`/`Closed`.
+4. **Position identity**: invalidation is phrased over reader kind (head/len/empty/full),
+   *not* over storage indices. A ring-buffer backend whose slot index wraps MUST NOT cause
+   spurious invalidations; the shell layers its own logical version counters above the
+   storage.
+
+### Closure and lifecycle
+
+Closure is an **observable contract**, not a mechanism:
+
+1. `try_pop` on a closed, non-empty queue returns the next element (drain continues).
+2. `try_pop` on a closed, empty queue returns `Closed` — a signal distinct from `Empty`.
+3. `try_push` on a closed queue is an error, regardless of capacity.
+4. Close is **idempotent** (closing an already-closed queue is a no-op) and **terminal**
+   (once closed, a queue cannot be reopened).
+
+The *mechanism* (a dedicated closed cell, a flag in storage, a sentinel value) is a
+binding-level choice. The formal model pins closure as a monotonic flag:
+[`Closed_then_stays_Closed`](formal-model.md).
+
+### Bounded queue and reactive backpressure
+
+When the storage backend is bounded (`capacity() → Some(n)`), the reactive shell exposes
+`is_full` as a **reactive read**. A consumer's pop that transitions the queue from full to
+not-full MUST invalidate `is_full` readers (true → false), enabling push-side effects to
+react to capacity recovery without polling. This is the backpressure signal: a producer
+observes `is_full` and backs off; a consumer's pop invalidates the producer's `is_full`
+subscription and the producer resumes.
+
+An implementation MUST expose `is_full` as a reactive cell when the backend is bounded.
+The unbounded default (`capacity() → None`) has no `is_full` reader to invalidate.
+
+### Ordering guarantee
+
+| Shape | Guarantee |
+|-------|-----------|
+| SPSC | **Total FIFO** — pop order exactly matches push order. The producer is the single sequencer. |
+| MPSC | **Per-producer FIFO** — messages from each producer arrive in that producer's push order. **Inter-producer interleaving** is deterministic within a `batch()` but implementation-defined across batches; under distribution it converges. |
+
+A consumer MUST NOT assume total-FIFO across multiple producers. If total order across
+producers is required, route all pushes through a single producer or use a consensus-backed
+storage backend (per the [distributed-queue PRD](distributed-queue-prd.md)).
+
+### Wire and snapshot shape
+
+The `QueueCell` shell has **no own IPC schema** — the head/tail/closed version cells are
+trivial counters, not independently serialized. Queue state on the wire is the **storage
+backend's snapshot form**. Cross-backend interop (e.g., `VecDeque`-backed on one peer,
+`RaftQueueStorage` on another) requires explicit storage-format agreement between the
+peers; the shell does not mandate a canonical storage snapshot.
+
+The reference `VecDequeStorage` backend serializes as a JSON array (element order = FIFO
+order) for conformance fixture purposes. Bindings MAY choose a more efficient binary
+encoding (bincode, postcard) for production use.
+
+### Distribution
+
+Distribution of a `QueueCell` is a **storage-backend property**, not a shell property. A
+`QueueCell` is distributable iff its storage backend provides a distributed synchronization
+mechanism. The shell itself is sync-mechanism-agnostic.
+
+v1 does **not** specify any distributed backend. The
+[Native Distributed Queue PRD](distributed-queue-prd.md) covers the future consensus-based
+`RaftQueueStorage` backend (Phase 1+) and the positioning relative to external brokers
+(Kafka, RabbitMQ, Redis Streams, SQS) via the `QueueStorage` adapter. CRDT-based
+distribution is explicitly out of scope for queues — destructive pop requires agreement,
+not merge (see the PRD's § "Background: Why Consensus, Not CRDT").
+
+### Threading, permissions, and instrumentation
+
+- **Threading contract**: `QueueCell` inherits the `Context` threading model. MPSC on the
+  same `Context` uses `batch()`; cross-thread MPSC requires `ThreadSafeContext`;
+  cross-process requires a distributed storage backend.
+- **Permissions**: over the distributed plane, push and pop are distinct capabilities under
+  `PeerPermissions` (`distributed.json`). A peer MAY be granted push-only, pop-only, or
+  both.
+- **Atomicity**: `push` and `pop` are individually atomic. Multi-op transactions (e.g.,
+  "enqueue N items then close") MUST use `batch()` so a concurrent observer never sees a
+  partial state.
+- **Instrumentation**: a binding SHOULD expose depth / push-count / pop-count metrics via
+  the standard instrumentation surface (parallel to `effect_queue_pushes` /
+  `max_effect_queue_depth`).
+- **Named observables**: `is_empty` and `len` are reactive reads dual to `is_full`. All
+  three (`is_empty` / `len` / `is_full`) MUST be reactive when their respective conditions
+  can change.
+
+## Future queue primitives
+
+`QueueCell` covers SPSC and MPSC. Two genuinely distinct primitives are reserved for
+future work — they differ in **invalidation model and handoff semantics**, not in producer/
+consumer cardinality:
+
+### TopicCell (broadcast)
+
+A *broadcast topic* where every subscriber receives every pushed element. Invalidation is
+"all subscribers," not "head reader." Each subscriber maintains its own cursor; the topic
+retains elements until all cursors have advanced past them (or a TTL expires).
+
+**Semantics**: SPMC broadcast / MPMC pub-sub. **Delivery**: each subscriber sees the full
+sequence independently. **GC**: bounded by the slowest subscriber's cursor.
+
+**Relationship to QueueCell**: a `TopicCell` is not a multi-consumer `QueueCell`. A
+`QueueCell` has one consumer that destructively pops; a `TopicCell` has N subscribers that
+each independently read. The invalidation models are different in kind.
+
+**Status**: future work — not in v1 conformance. See the
+[distributed-queue PRD](distributed-queue-prd.md) Phase 3.
+
+### WorkQueueCell (competing consumers)
+
+A *work queue* where N consumers compete for elements from a shared FIFO. Each element is
+delivered to **exactly one** consumer (exclusive handoff). This requires an authority
+(designated leader peer) to serialize pop-assignment — pure CRDT cannot provide exclusive
+handoff (concurrent pops both survive merge → duplicate delivery).
+
+**Semantics**: true MPMC with exclusive handoff. **Delivery**: exactly-once via
+leader-assigned delivery IDs + consumer ack/nack. Unacked entries are redelivered (pending
+entries list). Dead-letter queue for poison messages.
+
+**Deferred features** (land with `WorkQueueCell`, not `QueueCell`): ack/nack,
+visibility-timeout / lease with TTL, dead-letter queue, producer/consumer deduplication,
+fairness policy.
+
+**Status**: future work — not in v1 conformance. Requires the consensus core from the
+[distributed-queue PRD](distributed-queue-prd.md) Phase 2.

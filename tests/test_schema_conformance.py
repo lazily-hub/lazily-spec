@@ -465,9 +465,11 @@ def _collection_fixtures() -> list[str]:
 
 # Keyed-collection models: top-level `steps`/`reconcile` keyed reactivity.
 _KEYED_MODELS = {"CellMap", "CellTree"}
+# Queue models: reactive queue shell + storage backend.
+_QUEUE_MODELS = {"QueueCell"}
 # Compute/convergence models: `scenarios`-based CRDT / semantic-tree fixtures.
 _SCENARIO_MODELS = {"SemTree", "SeqCrdt", "StableId", "TextCrdt"}
-_KNOWN_MODELS = _KEYED_MODELS | _SCENARIO_MODELS
+_KNOWN_MODELS = _KEYED_MODELS | _QUEUE_MODELS | _SCENARIO_MODELS
 
 
 @pytest.mark.parametrize("name", _collection_fixtures())
@@ -500,9 +502,15 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
             assert "op" in step and "expected" in step, f"{name}: step missing op/expected"
             assert "invalidates" in step["expected"], f"{name}: expected missing 'invalidates'"
             inv = step["expected"]["invalidates"]
-            assert set(inv) >= {"value", "membership", "order"}, (
-                f"{name}: invalidates must name value/membership/order reader classes"
-            )
+            if obj["model"] in _QUEUE_MODELS:
+                valid_kinds = {"head", "len", "is_empty", "is_full", "closed"}
+                assert set(inv) <= valid_kinds, (
+                    f"{name}: invalidates keys must be in {valid_kinds}"
+                )
+            else:
+                assert set(inv) >= {"value", "membership", "order"}, (
+                    f"{name}: invalidates must name value/membership/order reader classes"
+                )
 
 
 # ---------------------------------------------------------------------------
