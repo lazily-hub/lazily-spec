@@ -1,3 +1,19 @@
+# lazily-spec
+
+Canonical wire protocol, JSON Schemas, conformance fixtures, and the
+cross-language feature-coverage matrix for the lazily reactive-signals family.
+
+## Commit & Push
+
+Commit and push completed work at the end of every turn that changed code,
+schemas, fixtures, docs, or the coverage matrix — do not leave finished work
+uncommitted. Run `make check` first and ensure it is green; stage only the
+files that belong to the change (never secrets or private customer names — see
+the workspace `runbooks/private-name-hygiene.md`); write a concise commit
+message in the repo's existing style; push to the current branch on `origin`.
+This standing rule overrides the harness default of "commit only when
+explicitly asked" for this repo.
+
 <!-- tsift:code-navigation v=0.1.74 -->
 ## Code Navigation
 
