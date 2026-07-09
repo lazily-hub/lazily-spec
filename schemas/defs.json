@@ -24,7 +24,7 @@
     },
     "ShmBlobRef": {
       "type": "object",
-      "description": "Descriptor into a shared-memory blob arena.",
+      "description": "Descriptor into a blob backend (zero-copy transport). The standard fields locate and integrity-check a byte range within the backend's resolved buffer; `backend` selects which pluggable backend resolves it ('shm' = POSIX shared memory, the default for backward compatibility; 'arrow' = Apache Arrow IPC/Flight; 'in_process' = an in-process arena). See protocol.md § Zero-copy transport. `backend` is optional and defaults to 'shm' so legacy descriptors validate unchanged.",
       "required": ["offset", "len", "generation", "epoch", "checksum"],
       "additionalProperties": false,
       "properties": {
@@ -32,7 +32,8 @@
         "len": { "type": "integer", "minimum": 0 },
         "generation": { "type": "integer", "minimum": 0 },
         "epoch": { "type": "integer", "minimum": 0 },
-        "checksum": { "type": "integer", "minimum": 0 }
+        "checksum": { "type": "integer", "minimum": 0 },
+        "backend": { "type": "string", "enum": ["shm", "arrow", "in_process"], "default": "shm", "description": "Which pluggable backend holds the blob. Optional; defaults to 'shm' (POSIX shared memory) for backward compatibility. The receiver routes resolution by this discriminator." }
       }
     },
     "NodeState": {

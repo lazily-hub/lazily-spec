@@ -88,6 +88,7 @@ _FIXTURE_TO_SCHEMA = [
     ("delta_sequential.json", "delta"),
     ("delta_non_sequential.json", "delta"),
     ("delta_shared_blob.json", "delta"),
+    ("delta_zero_copy_arrow.json", "delta"),
 ]
 
 

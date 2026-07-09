@@ -12,6 +12,7 @@
 - [Wire Protocol](protocol.md)
 - [Causal Receipts](receipts.md)
 - [Command / RPC Message Plane](message-passing.md)
+- [Cross-Process Zero-Copy Transport](zero-copy-transport.md)
 - [Conformance Fixtures](conformance.md)
 - [JSON Schemas](schemas.md)
 - [Lean Formal Model](formal-model.md)
