@@ -12,7 +12,7 @@
     { "feature": "Keyed cell collections (`CellMap` / `CellTree`) + reconcile", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Memoized semantic tree (`SemTree`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Stable-id alignment (manufactured identity)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter)", "marks": ["✅", "—", "✅", "✅", "—", "✅", "✅", "✅"] },
+    { "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter)", "marks": ["✅", "✅", "✅", "✅", "—", "✅", "✅", "✅"] },
     { "feature": "Free-text character CRDT (`TextCrdt`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "`TextCrdt` delta sync (`version_vector` / `delta_since` / `apply_delta`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Move-aware sequence CRDT (`SeqCrdt`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
