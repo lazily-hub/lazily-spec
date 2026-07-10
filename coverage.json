@@ -22,7 +22,7 @@
     { "feature": "Registers (LWW / MV) + `PnCounter` + `CellCrdt`", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "IPC wire — `Snapshot` + `Delta` + `CrdtSync`", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Shared-memory blob path (`ShmBlobArena`)", "marks": ["✅", "✅", "✅", "~", "~", "✅", "✅", "✅"] },
-    { "feature": "Cross-process zero-copy transport (`BlobBackend` / shm / arrow)", "marks": ["—", "—", "—", "—", "—", "—", "—", "✅"] },
+    { "feature": "Cross-process zero-copy transport (`BlobBackend` / shm / arrow)", "marks": ["✅", "—", "—", "—", "—", "—", "—", "✅"] },
     { "feature": "Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Distributed plane — WebRTC transport + signaling", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "State projection / mirror", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
