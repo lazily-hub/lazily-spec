@@ -192,6 +192,69 @@ An implementation conforms to the cell model when:
     a pluggable `QueueStorage` backend. The shell / storage split, closure observable
     contract, bounded-queue backpressure, and ordering guarantees below hold (required of
     every binding).
+12. **Materialization mode** is exposed with **eager as the default**; any **lazy** mode is
+    opt-in, keyed, and **observationally transparent** — identical read values, allocation
+    deferred only (see [Materialization mode](#materialization-mode)). *Lazy evaluation*
+    (bounded-viewport recompute) is provided in **both** modes and is never conflated with
+    *lazy materialization*.
+
+## Materialization mode
+
+Cell kind (above) fixes *how a cell converges*. **Materialization mode** is an
+**orthogonal** axis: it fixes *when a derived cell's backing node is allocated* — not what
+it computes, not how it converges, not how it merges. It trades **memory and first-touch
+latency** against **cold full-scan cost**, and it MUST NOT be observable through the value
+of any cell.
+
+There are two modes:
+
+- **Eager (default).** Every derived cell's node is allocated when the graph is
+  constructed. This is the shared high-performance core: a read is a direct node access,
+  and a full recompute pays only compute (allocation already happened at build). An
+  implementation MUST make eager the **default**.
+- **Lazy (opt-in).** A derived cell's node is allocated on its **first read**
+  ("materialize on pull"), addressed by a **key** rather than a held handle. A never-read
+  derived cell is never allocated. Lazy is a **keyed overlay on the eager core**, not a
+  second graph engine: the first read of key `k` constructs the *same* node the eager
+  build would have, then caches it. An implementation that offers lazy MUST expose it as an
+  explicit opt-in (e.g. a keyed-context constructor), **never as the default** and **never
+  as a per-read toggle** on an eager handle.
+
+### Observational transparency (normative)
+
+For every node and every read, the observed value MUST be identical under either mode.
+Materialization mode is **not observable on the value axis** — it changes allocation timing
+and memory, never results:
+
+```
+observe(build(eager, spec), id) = observe(build(lazy, spec), id) = spec.val(id)   ∀ id
+```
+
+This is proved in `lazily-formal`'s `Materialization` module
+(`observe_canonical`, `eager_lazy_observationally_equivalent`). An implementation MUST
+preserve these consequences:
+
+1. **Same values.** A lazy read returns the value an eager read would (`observe_canonical`).
+2. **No churn from allocation.** Materializing one node MUST NOT change any other node's
+   observed value (`materialize_preserves_observe`).
+3. **Deferral, not de-allocation.** Lazy materialization only *grows* the materialized set;
+   a materialized node is never silently dropped, and the lazy set is a subset of the eager
+   set (`materialize_present_monotone`, `lazy_present_subset_eager`).
+4. **Reactivity is orthogonal.** *Lazy evaluation* — leaving off-viewport derived cells
+   dirty and never recomputing them (the microsecond bounded-viewport read) — is required
+   of **both** modes and is independent of materialization. Eager materialization still
+   evaluates lazily; lazy materialization *additionally* defers allocation. An
+   implementation MUST NOT conflate the two.
+
+### When to opt into lazy
+
+Lazy pays off only for **sparsely-touched large keyed address spaces** — e.g. a
+10,000,000-cell spreadsheet where a session reads ~1% of the derived cells: it lowers peak
+memory and makes "open" cost `O(inputs)` rather than `O(derived cells)`. It costs a
+keyed-cache lookup per read instead of a handle dereference, and a cold full scan pays
+allocation and compute together (`eager_materializes_all` vs `lazy_defers_slots`).
+Handle-based graphs that read most of what they build SHOULD stay eager. The choice is a
+**per-context construction decision**, not a per-cell or per-read one.
 
 ## Keyed cell collections
 
