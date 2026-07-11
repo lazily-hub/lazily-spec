@@ -736,6 +736,42 @@ frontier to compute a sound watermark.
 > ingress merge) and `BridgeHub` fan-out of `CrdtSync` is the runtime-integration slice
 > (`#lzcrdtplane5b`).
 
+### Reactive family sync (`#lzfamilysync`)
+
+A `ReactiveFamily` (`cell-model.md` § "Materialization mode") is a *local* keyed reactive
+collection. This section fixes its **distributed** contract: what a peer does with a keyed
+`CrdtOp` (`NodeKey = namespace/suffix`) for a family entry it has **not** registered locally.
+
+The base plane, given such an op, resolves the node by `NodeKey`; if no cell is registered
+under that key the op is **dropped**. For a *family* that is wrong: a key added on one replica
+would never appear on another, and any derived aggregate over the family (a count of entries)
+would diverge.
+
+Family-granularity sync closes the gap with **materialize-on-ingest**: a replica registers a
+family under a `namespace`; an inbound keyed op whose first `NodeKey` segment matches a
+registered family **materializes** a fresh entry (a new local `NodeId`, indexed by the wire
+`NodeKey`) seeded from the op's converged register, then merges. Because the materialized
+entry is seeded from the op state, materialize-on-ingest is *exactly* the pointwise CRDT
+merge, so it inherits the full semilattice convergence.
+
+Contract (proven in `lazily-formal` `FamilySync.lean`):
+
+- **Materialize, never drop.** A keyed op for an absent family entry makes that key present
+  and adopts the op's value (`applyOp_present`, `applyOp_absent_adopts`).
+- **Membership propagation.** After sync a key is present iff it was present on *either*
+  replica — the union (`present_merge`). The present set only grows (deferral-not-dealloc); a
+  removed entry is a value-level tombstone, not a dropped key.
+- **Convergence + idempotence.** Materialize-on-ingest equals merging the op's single-entry
+  state (`applyOp_eq_merge`), so op delivery is order-independent (`applyOp_comm`) and
+  re-delivery is a no-op (`applyOp_idem`).
+- **Derived-aggregate transparency.** Once two replicas converge, any derived count over the
+  family agrees regardless of sync direction/batching (`aggregate_converges`,
+  `aggregate_batch_invariant`) — e.g. a live-editor / open-document count converges across
+  editors. A `NodeId`-churn-stable membership signal drives the recompute so a
+  remote-materialized key is picked up by the derived aggregate.
+
+Conformance: `conformance/familysync/materialize_on_ingest.json`.
+
 ### Single-writer effect authority
 
 CRDT convergence covers *state*. For **irreversible external actions** (send email, charge card, fire webhook), gate the effect behind a single-writer authority — a designated peer (or small Raft group) decides when the effect fires, at-most-once.
