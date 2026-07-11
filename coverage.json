@@ -6,9 +6,9 @@
   "rows": [
     { "feature": "Reactive graph — `Cell` / `Slot` / `Signal` / `Effect` / memo / batch", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Reactive family (`ReactiveFamily`) — keyed cell/slot family + materialization mode (`#lzmatmode`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Thread-safe reactive family (`ThreadSafeReactiveFamily`) — `Send + Sync` keyed family + materialization confluence (`#lzmatmode`)", "marks": ["✅", "—", "—", "✅", "—", "✅", "✅", "✅"] },
-    { "feature": "Async reactive family (`AsyncReactiveFamily`) — keyed family + eventual transparency (`#lzmatmode`)", "marks": ["✅", "—", "—", "✅", "—", "✅", "✅", "✅"] },
-    { "feature": "Reactive family sync — membership propagation + materialize-on-ingest + derived-aggregate transparency (`#lzfamilysync`)", "marks": ["✅", "—", "✅", "✅", "—", "✅", "✅", "✅"] },
+    { "feature": "Thread-safe reactive family (`ThreadSafeReactiveFamily`) — `Send + Sync` keyed family + materialization confluence (`#lzmatmode`)", "marks": ["✅", "✅", "—", "✅", "—", "✅", "✅", "✅"] },
+    { "feature": "Async reactive family (`AsyncReactiveFamily`) — keyed family + eventual transparency (`#lzmatmode`)", "marks": ["✅", "✅", "—", "✅", "—", "✅", "✅", "✅"] },
+    { "feature": "Reactive family sync — membership propagation + materialize-on-ingest + derived-aggregate transparency (`#lzfamilysync`)", "marks": ["✅", "✅", "✅", "✅", "—", "✅", "✅", "✅"] },
     { "feature": "Thread-safe context (lock-backed)", "marks": ["✅", "✅", "✅", "✅", "—", "✅", "✅", "✅"] },
     { "feature": "Async reactive context", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Flat state machine", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
