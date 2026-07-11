@@ -9,7 +9,7 @@
 //     <!-- coverage-table:end -->
 //
 // in this repo's `README.md`, `docs/coverage.md`, and every sibling binding
-// README (`../lazily-{rs,py,kt,js,dart,zig}/README.md`). Edit coverage.json,
+// README (`../lazily-{rs,py,kt,js,dart,zig,go,cpp,formal}/README.md`). Edit coverage.json,
 // then run `node scripts/sync-coverage.mjs` to update every table in one shot.
 //
 //   node scripts/sync-coverage.mjs          # write/update all present targets
@@ -38,6 +38,7 @@ const TARGETS = [
   join(ROOT, "..", "lazily-zig", "README.md"),
   join(ROOT, "..", "lazily-go", "README.md"),
   join(ROOT, "..", "lazily-cpp", "README.md"),
+  join(ROOT, "..", "lazily-formal", "README.md"),
 ];
 
 function renderTable() {
