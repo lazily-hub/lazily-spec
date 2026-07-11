@@ -5,7 +5,7 @@
   "align": ["Feature", ":----:", ":------:", ":------:", ":--:", ":----:", ":---:", ":--:", ":---:"],
   "rows": [
     { "feature": "Reactive graph — `Cell` / `Slot` / `Signal` / `Effect` / memo / batch", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Materialization mode — eager default + lazy opt-in (`#lzmatmode`)", "marks": ["—", "—", "—", "—", "—", "—", "—", "—"] },
+    { "feature": "Materialization mode — eager default + lazy opt-in (`#lzmatmode`)", "marks": ["✅", "—", "—", "—", "—", "—", "—", "—"] },
     { "feature": "Thread-safe context (lock-backed)", "marks": ["✅", "✅", "✅", "—", "—", "✅", "✅", "✅"] },
     { "feature": "Async reactive context", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Flat state machine", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },

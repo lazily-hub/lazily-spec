@@ -59,6 +59,22 @@ assert the emitted minimal op set.
 | `collections/textcrdt_delta_sync.json` | `TextCrdt` delta sync (`#lztextsync`): `version_vector` (insert + tombstone ids), `delta_since` / `apply_delta`; bidirectional exchange convergence, whole-snapshot fork identity preservation, idempotent apply |
 | `collections/stableid_alignment.json` | manufactured text identity: anchors / content hashes / word-LCS similarity alignment |
 
+## Materialization mode conformance
+
+The `conformance/materialization/` directory pins the eager-default / lazy-opt-in
+[materialization mode](cell-model.md#materialization-mode) axis (`#lzmatmode`),
+proved in [lazily-formal](formal-model.md)'s `Materialization` module. These are
+**compute** fixtures: a binding reads `spec.val` (each derived key's canonical
+value), builds the keyed family under *both* modes, replays the `reads` sequence
+against the lazy build, and asserts observational transparency plus the memory
+laws. Because materialization is *not observable on the value axis*, there is no
+wire schema — only the compute effects below.
+
+| Fixture | Covers |
+|---------|--------|
+| `materialization/observational_transparency.json` | identical `observe` values under eager vs. lazy; eager materializes all keys; lazy materializes only read keys; default mode eager (`observe_canonical`, `eager_materializes_all`, `lazy_defers_slots`, `default_mode_eager`) |
+| `materialization/deferral_not_deallocation.json` | lazy present set grows monotonically and is unchanged by re-reads; final lazy set is a subset of the eager set; no churn from allocation (`materialize_present_monotone`, `lazy_present_subset_eager`, `materialize_preserves_observe`) |
+
 ## Signaling conformance
 
 The `conformance/signaling/` directory pins the WebSocket signaling wire protocol

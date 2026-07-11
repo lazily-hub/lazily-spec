@@ -17,7 +17,7 @@ Legend: ✅ shipped · `~` partial · `—` absent or not applicable (see notes)
 | Feature | Rust | Python | Kotlin | JS | Dart | Zig | Go | C++ |
 | --------- | :----: | :------: | :------: | :--: | :----: | :---: | :--: | :---: |
 | Reactive graph — `Cell` / `Slot` / `Signal` / `Effect` / memo / batch | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Materialization mode — eager default + lazy opt-in (`#lzmatmode`) | — | — | — | — | — | — | — | — |
+| Materialization mode — eager default + lazy opt-in (`#lzmatmode`) | ✅ | — | — | — | — | — | — | — |
 | Thread-safe context (lock-backed) | ✅ | ✅ | ✅ | — | — | ✅ | ✅ | ✅ |
 | Async reactive context | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Flat state machine | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
