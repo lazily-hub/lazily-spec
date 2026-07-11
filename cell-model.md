@@ -206,6 +206,26 @@ it computes, not how it converges, not how it merges. It trades **memory and fir
 latency** against **cold full-scan cost**, and it MUST NOT be observable through the value
 of any cell.
 
+### The `ReactiveFamily` vehicle
+
+Materialization mode is a property of a **`ReactiveFamily`** — the unified keyed reactive
+family, of which the keyed cell collection ([`CellFamily`](#keyed-cell-collections)) is the
+input-cell specialization. A `ReactiveFamily` maps keys `K` to per-entry reactive nodes and
+abstracts over the entry's **handle kind**, the axis a binding can express as a type
+parameter (`ReactiveFamily<K, V, H>`):
+
+- **Cell entries** (`H = CellHandle`) are **input** nodes. They are **always materialized**
+  regardless of mode — an input has no derivation to defer. Lazily *minting* an input on
+  first `get` (as `CellFamily` does today) is a collection concern, not the materialization
+  axis.
+- **Slot entries** (`H = SlotHandle`) are **derived** nodes. These are what materialization
+  mode governs: eager allocates them up front, lazy defers each to first read.
+
+Entry kind is **orthogonal to mode** (proved in `lazily-formal`'s `Materialization` module
+as `cell_entries_materialized_in_every_mode` / `slot_entries_deferred_under_lazy`): choosing
+lazy defers only slot entries, never cell entries. The two modes below therefore describe how
+a `ReactiveFamily`'s **derived (slot)** entries are allocated.
+
 There are two modes:
 
 - **Eager (default).** Every derived cell's node is allocated when the graph is
