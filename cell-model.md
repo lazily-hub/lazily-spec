@@ -266,6 +266,38 @@ preserve these consequences:
    evaluates lazily; lazy materialization *additionally* defers allocation. An
    implementation MUST NOT conflate the two.
 
+### Execution-context flavors (thread-safe / async)
+
+A `ReactiveFamily` runs against a **context**, and the context is a third axis
+orthogonal to both entry kind and materialization mode: it fixes *where and how* the
+graph executes, not *what* it computes. The keyed-family vehicle is defined over each
+context a binding provides:
+
+- **Single-threaded** (`ReactiveFamily`, over the base `Context`) — the reference
+  semantics above.
+- **Thread-safe** (`ThreadSafeReactiveFamily`, over a lock-backed context) — a
+  `Send + Sync` family that can live in a cross-thread owner (e.g. a hub behind a
+  global mutex, where an `Rc`-based family cannot go). It carries the *same*
+  materialization laws, plus **materialization confluence**: the present set and
+  every observed value are independent of the order in which keys are materialized.
+  This is what makes lock-serialized concurrent materialization safe — any order the
+  lock admits yields the same observable family. Proved in `lazily-formal`'s
+  `Materialization` module (`materialize_present_comm` / `materialize_observe_comm`).
+- **Async** (`AsyncReactiveFamily`, over an async context) — derived (slot) entries
+  resolve **asynchronously**, so a non-blocking read returns an optional value
+  (`None` while pending, `Some(v)` once resolved). Observational transparency weakens
+  to **eventual transparency**: once a node resolves, its observed value is the
+  canonical value — identical to what the synchronous family observes. Input cells
+  are resolved at build. Proved in `lazily-formal`'s `AsyncMaterialization` module
+  (`eventual_transparency`, `async_resolved_matches_sync`; a pending read is never a
+  stale value, `observe_pending_is_none`).
+
+A binding SHOULD keep the per-key factory uniform across flavors (the same
+`Fn(&K) -> V`), so the flavors differ only in execution context — a derived async
+slot wraps that factory in a ready computation. A flavor MUST preserve the entry-kind
+and materialization laws above; it only adds the context-specific guarantee
+(confluence for thread-safe, eventual transparency for async).
+
 ### When to opt into lazy
 
 Lazy pays off only for **sparsely-touched large keyed address spaces** — e.g. a
