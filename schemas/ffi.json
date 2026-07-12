@@ -30,13 +30,15 @@
     },
     "LazilyFfiMessageKind": {
       "type": "integer",
-      "enum": [0, 1, 2, 3],
-      "description": "IPC message kind discriminator",
+      "enum": [0, 1, 2, 3, 4, 5],
+      "description": "IPC message kind discriminator. 4/5 are the reliable-sync (#lzsync) reverse-channel control-frame variants ResyncRequest/OutboxAck (protocol.md § Reliable Sync).",
       "oneOf": [
         { "const": 0, "title": "Unknown" },
         { "const": 1, "title": "Snapshot" },
         { "const": 2, "title": "Delta" },
-        { "const": 3, "title": "CrdtSync" }
+        { "const": 3, "title": "CrdtSync" },
+        { "const": 4, "title": "ResyncRequest" },
+        { "const": 5, "title": "OutboxAck" }
       ]
     }
   }
