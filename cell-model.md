@@ -164,7 +164,7 @@ boundary — "editor pid X has doc Y open", "pid X holds the owner lease" — it
 ordinary multi-write cell on the CRDT plane, not as out-of-band state: an **OR-set** for open-set
 membership (observed-remove, so a re-open wins over a lagging close) and an **LWW register** for the
 per-pid `alive` flag / lease. The derived "is this doc live" aggregate is then a plain reactive
-memo over that liveness family (the `#lzfamilysync` derived-aggregate contract), and an OS
+memo over that liveness keyed map (the `#lzfamilysync` derived-aggregate contract), and an OS
 process-exit event is just the highest-stamp write to `alive[pid]`. This keeps liveness on the same
 convergent, idempotent, frontier-resumable substrate as every other replicated cell. Normative
 semantics: [protocol.md § Liveness cells](protocol.md#liveness-cells-or-set-and-lww-lzsync-liveness).
@@ -202,11 +202,12 @@ An implementation conforms to the cell model when:
     a pluggable `QueueStorage` backend. The shell / storage split, closure observable
     contract, bounded-queue backpressure, and ordering guarantees below hold (required of
     every binding).
-12. **Materialization mode** is exposed with **eager as the default**; any **lazy** mode is
-    opt-in, keyed, and **observationally transparent** — identical read values, allocation
-    deferred only (see [Materialization mode](#materialization-mode)). *Lazy evaluation*
-    (bounded-viewport recompute) is provided in **both** modes and is never conflated with
-    *lazy materialization*.
+12. **Materialization** is **eager by default** — a `SlotMap`'s derived entries are pre-minted
+    over the keyset; **lazy** materialization (`get_or_insert_with` mint-on-access) is opt-in,
+    keyed, and **observationally transparent** — identical read values, allocation deferred only
+    (see [Materialization](#materialization-a-caller-provided-recipe)). It is a **behavior, not a
+    mode flag**. *Lazy evaluation* (bounded-viewport recompute) is provided **either way** and is
+    never conflated with *lazy materialization*.
 
 ## Materialization (a caller-provided recipe)
 
@@ -313,7 +314,7 @@ one flavor per context, and each carries the context-specific law below:
   resolve **asynchronously**, so a non-blocking read returns an optional value
   (`None` while pending, `Some(v)` once resolved). Observational transparency weakens
   to **eventual transparency**: once a node resolves, its observed value is the
-  canonical value — identical to what the synchronous family observes. Input cells
+  canonical value — identical to what the synchronous `SlotMap` observes. Input cells
   are resolved at build. Proved in `lazily-formal`'s `AsyncMaterialization` module
   (`eventual_transparency`, `async_resolved_matches_sync`; a pending read is never a
   stale value, `observe_pending_is_none`).

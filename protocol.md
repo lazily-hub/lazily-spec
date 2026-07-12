@@ -19,7 +19,7 @@ Wire-stable identifiers decoupled from internal `SlotId`. Serialized as bare JSO
 NodeKey = string   // a "/"-joined path, e.g. "scores/alice", "outer/k1/inner/k2"
 ```
 
-An **optional, wire-stable keyed address** for a collection entry (a `CellMap` / `CellFamily` entry). Unlike `NodeId` — the volatile internal handle a producer may re-mint after a resync or remove-then-readd — a `NodeKey` is producer-defined and **stable across NodeId churn**, so a peer can subscribe to "entry `scores/alice`" without an out-of-band key→NodeId map. A multi-segment path addresses nested collections (an entry of a `CellMap` inside a `CellMap` entry) with no extra machinery.
+An **optional, wire-stable keyed address** for a collection entry (a `CellMap` / `SlotMap` entry). Unlike `NodeId` — the volatile internal handle a producer may re-mint after a resync or remove-then-readd — a `NodeKey` is producer-defined and **stable across NodeId churn**, so a peer can subscribe to "entry `scores/alice`" without an out-of-band key→NodeId map. A multi-segment path addresses nested collections (an entry of a `CellMap` inside a `CellMap` entry) with no extra machinery.
 
 `NodeKey` is **additive** — it never changes `NodeId` semantics. It appears only as the optional `key` field on `NodeSnapshot` and the `NodeAdd` delta op.
 
@@ -860,20 +860,21 @@ frontier to compute a sound watermark.
 > ingress merge) and `BridgeHub` fan-out of `CrdtSync` is the runtime-integration slice
 > (`#lzcrdtplane5b`).
 
-### Reactive family sync (`#lzfamilysync`)
+### Reactive keyed-map sync (`#lzfamilysync`)
 
-A `ReactiveFamily` (`cell-model.md` § "Materialization mode") is a *local* keyed reactive
+A keyed reactive map (`ReactiveMap` — its `CellMap` / `SlotMap` specializations;
+`cell-model.md` § "Keyed cell collections") is a *local* keyed reactive
 collection. This section fixes its **distributed** contract: what a peer does with a keyed
-`CrdtOp` (`NodeKey = namespace/suffix`) for a family entry it has **not** registered locally.
+`CrdtOp` (`NodeKey = namespace/suffix`) for a map entry it has **not** registered locally.
 
 The base plane, given such an op, resolves the node by `NodeKey`; if no cell is registered
-under that key the op is **dropped**. For a *family* that is wrong: a key added on one replica
-would never appear on another, and any derived aggregate over the family (a count of entries)
+under that key the op is **dropped**. For a *keyed map* that is wrong: a key added on one replica
+would never appear on another, and any derived aggregate over the map (a count of entries)
 would diverge.
 
-Family-granularity sync closes the gap with **materialize-on-ingest**: a replica registers a
-family under a `namespace`; an inbound keyed op whose first `NodeKey` segment matches a
-registered family **materializes** a fresh entry (a new local `NodeId`, indexed by the wire
+Map-granularity sync closes the gap with **materialize-on-ingest**: a replica registers a
+keyed map under a `namespace`; an inbound keyed op whose first `NodeKey` segment matches a
+registered map **materializes** a fresh entry (a new local `NodeId`, indexed by the wire
 `NodeKey`) seeded from the op's converged register, then merges. Because the materialized
 entry is seeded from the op state, materialize-on-ingest is *exactly* the pointwise CRDT
 merge, so it inherits the full semilattice convergence.
@@ -889,7 +890,7 @@ Contract (proven in `lazily-formal` `FamilySync.lean`):
   state (`applyOp_eq_merge`), so op delivery is order-independent (`applyOp_comm`) and
   re-delivery is a no-op (`applyOp_idem`).
 - **Derived-aggregate transparency.** Once two replicas converge, any derived count over the
-  family agrees regardless of sync direction/batching (`aggregate_converges`,
+  keyed map agrees regardless of sync direction/batching (`aggregate_converges`,
   `aggregate_batch_invariant`) — e.g. a live-editor / open-document count converges across
   editors. A `NodeId`-churn-stable membership signal drives the recompute so a
   remote-materialized key is picked up by the derived aggregate.
@@ -1243,7 +1244,7 @@ Normative semantics:
   is lost across a disconnect. This is what lets the open-set/lease survive a controller recycle
   without the editor re-announcing.
 - **Derived authority is reactive.** "Is doc Y live" = *any present `(doc, pid)` in the OR-set whose
-  `alive[pid]` is true* — a derived aggregate over the liveness family (the `#lzfamilysync`
+  `alive[pid]` is true* — a derived aggregate over the liveness keyed map (the `#lzfamilysync`
   materialize-on-ingest + derived-count contract). One `alive[pid] = false` write fans out to every
   doc that pid held (whole-editor death cascade), reactively.
 - **Idempotent + convergent.** OR-set join and LWW join are semilattice joins, so out-of-order,

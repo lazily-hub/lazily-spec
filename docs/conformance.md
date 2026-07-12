@@ -59,15 +59,16 @@ assert the emitted minimal op set.
 | `collections/textcrdt_delta_sync.json` | `TextCrdt` delta sync (`#lztextsync`): `version_vector` (insert + tombstone ids), `delta_since` / `apply_delta`; bidirectional exchange convergence, whole-snapshot fork identity preservation, idempotent apply |
 | `collections/stableid_alignment.json` | manufactured text identity: anchors / content hashes / word-LCS similarity alignment |
 
-## ReactiveFamily materialization conformance
+## SlotMap materialization conformance
 
-The `conformance/materialization/` directory pins the eager-default / lazy-opt-in
-[materialization mode](cell-model.md#materialization-mode) axis (`#lzmatmode`) of a
-[`ReactiveFamily`](cell-model.md#the-reactivefamily-vehicle), proved in
+The `conformance/materialization/` directory pins the eager-vs-lazy
+[materialization behavior](cell-model.md#materialization-a-caller-provided-recipe) (`#lzmatmode`) of a
+[`SlotMap`](cell-model.md#keyed-cell-collections) — eager is a pre-mint loop over the
+keyset; lazy is `get_or_insert_with` mint-on-access — proved in
 [lazily-formal](formal-model.md)'s `Materialization` module. These are **compute**
 fixtures: a binding reads the `spec` (each key's canonical value, and — for the
-mixed fixture — its cell/slot entry kind), builds the keyed family under *both*
-modes, replays the `reads` sequence against the lazy build, and asserts
+mixed fixture — its cell/slot entry kind), builds the keyed map under *both*
+strategies, replays the `reads` sequence against the lazy build, and asserts
 observational transparency plus the memory / entry-kind laws. Because
 materialization is *not observable on the value axis*, there is no wire schema —
 only the compute effects below.
