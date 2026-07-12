@@ -740,6 +740,7 @@ _RELIABLE_SYNC_MODELS = {
     "DurableOutbox",
     "LivenessCells",
     "OutboxCoalesce",
+    "PartitionEviction",
 }
 
 # Which schema a fixture's top-level `wire` frame (when present) validates against,

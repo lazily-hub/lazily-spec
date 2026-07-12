@@ -1,0 +1,62 @@
+{
+  "description": "Partition & eviction escalation (protocol.md § Partition & eviction, #lzsync-partition-eviction). A slow, a partitioned, and a dead peer are distinct states; dropping a peer is the LAST rung of an escalation ladder (backpressure → coalesce/suspend/shed → retain+replay → evict), never the first response to a missed ack. Eviction is gated on the OR-set/LWW liveness LEASE, not on missed acks. Each peer has its OWN DurableOutbox + cursor (per-peer isolation), so one slow/partitioned peer pressures only its own channel, never the network. A returning evicted peer rejoins FRESH (last_epoch 0) and full-resyncs by adopting a Snapshot — lossless (ReliableSync.evicted_peer_resyncs_fresh, a corollary of resync_convergence); add-wins-over-stale-remove (ReliableSync.orset_add_wins_over_stale_remove) protects the peer that returns as its lease expires. A distributed (consensus-backed) queue favors CP under partition — the minority blocks writes rather than dropping the peer — because a queue's total order cannot losslessly AP-converge; state cells (LWW/OR-set) MAY stay AP.",
+  "protocol_version": 1,
+  "kind": "ReliableSync",
+  "model": "PartitionEviction",
+  "scenarios": [
+    {
+      "name": "slow_peer_backpressured_not_evicted",
+      "description": "Peer B is behind (has not acked past epoch 0) but its liveness lease is fresh (alive). Its own outbox fills (retained depth 3) and is_full throttles B's producer — rung 1. B is NOT evicted: a fresh lease means slow, not dead. Peer A (a fast peer on its own outbox) is unaffected — per-peer isolation.",
+      "peers": {
+        "A": { "lease_fresh": true, "acked_through": 3, "retained": 0 },
+        "B": { "lease_fresh": true, "acked_through": 0, "retained": 3 }
+      },
+      "expect": {
+        "B_evicted": false,
+        "B_is_full": true,
+        "A_stalled_by_B": false,
+        "rung": "backpressure"
+      }
+    },
+    {
+      "name": "lease_expiry_evicts_and_reclaims",
+      "description": "Peer B partitions and its liveness lease EXPIRES (LWW alive[B] = false at a fresh stamp, or the OR-set (doc,B) presence lease lapses). B is evicted — rung 4: its OR-set presence is removed (observable) and its outbox suffix is reclaimed. Eviction is gated on lease expiry, NOT on B's earlier missed acks. Retain+replay (rung 3) was attempted first while the lease was still fresh.",
+      "peers": {
+        "B": { "lease_fresh": false, "acked_through": 0, "retained_before": 3 }
+      },
+      "expect": {
+        "B_evicted": true,
+        "orset_presence_removed": true,
+        "outbox_reclaimed": true,
+        "eviction_gated_on": "lease_expiry",
+        "rung": "evict"
+      }
+    },
+    {
+      "name": "evicted_peer_rejoins_fresh_full_resync",
+      "description": "Evicted peer B reconnects. It is a FRESH receiver (last_epoch 0, empty state) — its retained frames were reclaimed, so it cannot replay from a stale cursor. B adopts a covering Snapshot at the sender's final epoch and reaches the SAME graph as a peer that saw every delta (evicted_peer_resyncs_fresh). The rejoin add-tag is not shadowed by the lagging eviction remove (add-wins-over-stale-remove), so a peer coming back is not re-dropped.",
+      "sender_final_epoch": 5,
+      "returning_peer_last_epoch": 0,
+      "expect": {
+        "action": "Apply",
+        "adopts_snapshot": true,
+        "replays_stale_cursor": false,
+        "receiver_last_epoch_after": 5,
+        "graph_equals_full_run": true,
+        "add_wins_over_stale_remove": true
+      }
+    },
+    {
+      "name": "distributed_queue_minority_blocks_writes_cap",
+      "description": "A consensus-backed distributed QueueCell partitions into a majority (has quorum) and a minority (no quorum). Because a queue's total order is authoritative and has no idempotent join, divergent order cannot losslessly AP-converge — so the queue is CP under partition: the MINORITY side BLOCKS writes (declines what it cannot later reconcile) rather than dropping the peer; it rejoins the majority order on heal. Contrast a state cell (LWW/OR-set), whose join converges, so it MAY stay AP — accept writes on both sides and merge on heal.",
+      "queue": { "majority_has_quorum": true, "minority_has_quorum": false },
+      "expect": {
+        "minority_writes_blocked": true,
+        "minority_reads_may_be_stale": true,
+        "peer_dropped_on_partition": false,
+        "queue_convergence_model": "CP",
+        "state_cell_convergence_model": "AP"
+      }
+    }
+  ]
+}

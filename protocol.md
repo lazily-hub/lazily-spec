@@ -1253,6 +1253,61 @@ Normative semantics:
 - **Per-doc isolation.** Liveness keys are namespaced `(document_hash, …)` like every other keyed
   op, so a stale overlay for doc B cannot flip doc A's authority.
 
+### Partition & eviction (`#lzsync-partition-eviction`)
+
+A **slow** peer, a **partitioned** peer, and a **dead** peer are three different states, and dropping a
+peer is the **last rung of an escalation ladder — never the first response to a missed ack**. This
+section fixes when a peer is dropped, how the network is isolated from one bad peer, and how a dropped
+peer rejoins.
+
+**Per-peer outbox isolation (normative).** In a multi-peer fan-out each peer MUST have its **own**
+[`DurableOutbox`](#durableoutbox-durable-outbox) and ack cursor. A single shared outbox would make the
+**slowest** peer the network's pace-setter (head-of-line blocking) and let one partition stall every
+peer. With a per-peer outbox, a slow or partitioned peer fills **only its own** cursor-queue; fast
+peers are untouched, and the drop decision is **per-peer, not network-wide**. This is what lets
+backpressure ([§ Backpressure & outbox coalescing](#backpressure--outbox-coalescing-lzsync-backpressure))
+be contained rather than contagious.
+
+**Escalation ladder.** A degraded peer is handled in this order; each rung is exhausted before the
+next:
+
+| Rung | Trigger | Action | Drops data? |
+|------|---------|--------|-------------|
+| 1. Backpressure | consumer behind, outbox filling | `is_full` throttles the producer on that peer's channel | no |
+| 2. Coalesce / suspend / shed | outbox at watermark | state cell → collapse suffix to one frame; op-log queue → suspend the producer, or shed (`drop-oldest`/`drop-newest`) if the source can't stop | state: no; queue: only on explicit shed |
+| 3. Retain + replay | send/`recv` error (partition) | keep the unacked suffix; replay from the peer cursor on `on_reconnect` | no |
+| 4. Evict | liveness **lease expiry**, or bounded outbox exceeded by an un-coalescible op-log with an un-stoppable source | remove the peer's OR-set presence, reclaim its outbox | reclaims retained frames; peer full-resyncs on return |
+
+**Eviction is gated on the liveness lease, not on missed acks.** A peer is dropped only when its
+[OR-set / LWW liveness](#liveness-cells-or-set-and-lww-lzsync-liveness) **lease expires** (the
+partition/death signal) — or, for a persistently-slow *op-log* peer, when its own bounded outbox is
+exceeded and neither coalescing (a queue cannot state-supersede coalesce) nor producer-suspension
+(the source cannot stop) can bound it. Eviction MUST be observable (it removes the peer's `(doc, pid)`
+presence, a visible OR-set remove), never silent. A **state** peer effectively never reaches rung 4 on
+slowness alone: coalescing collapses its backlog to one frame, so a slow state peer costs one snapshot,
+not an eviction.
+
+**A returning peer rejoins as fresh.** An evicted peer that reconnects is a **fresh** receiver (state
+empty, `last_epoch = 0`): it MUST full-resync by adopting a `Snapshot`, not replay from a stale cursor
+(its retained frames were reclaimed on eviction). Convergence is lossless — the fresh receiver reaches
+the sender's full state (`ReliableSync.evicted_peer_resyncs_fresh`, a corollary of
+`resync_convergence`). The OR-set **add-wins-over-stale-remove** bias
+(`ReliableSync.orset_add_wins_over_stale_remove`) protects the race where a peer returns just as its
+lease expires: the rejoin add is not shadowed by the lagging eviction remove, so a peer that is coming
+back is not wrongly dropped.
+
+**Partition rule differs for queues (CAP).** Because a queue's total order is authoritative (a single
+sequencer in SPSC) and has no idempotent join, **divergent queue order across a partition cannot
+losslessly converge** — a queue cannot be AP-and-lossless. So a *distributed* (consensus-backed) queue
+favors **CP under partition**: the **minority** side (no quorum) **blocks writes** rather than dropping
+the peer — it refuses writes it could not later reconcile, and rejoins the majority order on heal. You
+do not "drop the partition"; you decline minority writes and evict individual peers only on lease
+expiry. **State** cells (LWW/OR-set) are the opposite: their join converges, so they MAY stay **AP** —
+accept writes on both sides of the partition and merge on heal. This is why distribution of a
+`QueueCell` is a consensus **storage-backend** property (the
+[distributed-queue PRD](distributed-queue-prd.md) / `RaftQueueStorage`), while liveness/register cells
+distribute on the plain CrdtSync plane. See [§ QueueCell op-log delta form](#queuecell-op-log-delta-form-queue-oplog).
+
 ### Conformance
 
 New fixtures under [`conformance/reliable-sync/`](conformance/reliable-sync/) pin the protocol
@@ -1266,6 +1321,7 @@ cross-language (rs/js/kt):
 | `multi_epoch_delta.json` | a `Delta` with `epoch > base_epoch + 1` applies equal to the unit-delta fold; atomic `last_epoch` advance |
 | `liveness_orset_lww.json` | OR-set open-set membership + LWW `alive`/lease; whole-editor-death cascade; derived live-doc aggregate converges under retry/re-delivery |
 | `coalesce_bounds_outbox.json` | state outbox collapses an unacked delta suffix to one `Snapshot` (retained depth → 1) with the receiver reaching the same graph as the full-run receiver; op-log outbox declines snapshot-coalesce and fuses a run into one `batch` (order-preserving); non-ack fill / ack drain of the cursor-queue (`#lzsync-backpressure`) |
+| `liveness_lease_eviction.json` | escalation ladder (backpressure → coalesce/suspend/shed → retain+replay → evict); per-peer outbox isolation; eviction gated on liveness-lease expiry not missed acks; evicted peer rejoins fresh + full-resync (`evicted_peer_resyncs_fresh`, add-wins race); distributed-queue CP minority-blocks-writes vs state-cell AP (`#lzsync-partition-eviction`) |
 
 Every fixture's frames MUST round-trip through both `json` and `msgpack`. The `ResyncCoordinator`,
 `DurableOutbox`, and liveness models are the shared cross-language pins; `lazily-formal`
