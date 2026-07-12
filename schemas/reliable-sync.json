@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lazily.dev/schemas/reliable-sync.json",
   "title": "Reliable Sync control frames",
-  "description": "Reliable-sync control frames (protocol.md § Reliable Sync, #lzsync). Two new externally-tagged IpcMessage variants carry the receiver→sender control channel that makes delivery gap-recoverable and at-least-once: ResyncRequest (the ResyncCoordinator asks for a covering Snapshot on a detected gap) and OutboxAck (the receiver advances the sender's DurableOutbox retention cursor and carries the reconnect resume cursor). Both are ordinary framed messages on the negotiated codec (json reference + msgpack cross-language default). The liveness OR-set/LWW cells ride the existing CrdtSync plane (schemas/distributed.json), not a new frame.",
+  "description": "Reliable-sync control frames (protocol.md § Reliable Sync, #lzsync). ResyncRequest and OutboxAck are two new externally-tagged IpcMessage VARIANTS (FFI message kinds 4/5), the reverse (receiver→sender) direction of the same bidirectional IpcMessage plane as Snapshot/Delta/CrdtSync — NOT a side channel. ResyncRequest: the ResyncCoordinator asks for a covering Snapshot on a detected gap. OutboxAck: the receiver advances the sender's DurableOutbox retention cursor and carries the reconnect resume cursor. Both are ordinary framed messages on the negotiated codec (json reference + msgpack cross-language default) and MUST be added to a binding's IpcMessage enum + FFI message-kind mapping. The liveness OR-set/LWW cells ride the existing CrdtSync plane (schemas/distributed.json), not a new frame.",
   "oneOf": [
     { "$ref": "#/$defs/ResyncRequest" },
     { "$ref": "#/$defs/OutboxAck" }

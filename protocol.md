@@ -548,8 +548,9 @@ the [C-ABI FFI boundary](#ffi-boundary): the `LazilyFfiBytes` / `LazilyFfiStatus
 `LazilyFfiMessageKind` contract with explicit allocation ownership, panics caught before
 crossing the C ABI, and a channel that decodes each accepted frame as `IpcMessage` and
 re-encodes canonical JSON bytes. The FFI message kind discriminant MUST include
-`CrdtSync = 3`. This is the lingua franca that lets any binding embed any other without a
-language-specific bridge.
+`CrdtSync = 3` and the reliable-sync control frames `ResyncRequest = 4` / `OutboxAck = 5`
+([§ Reliable Sync](#reliable-sync-lzsync)). This is the lingua franca that lets any binding embed
+any other without a language-specific bridge.
 
 **Platform carve-out.** A binding whose runtime structurally cannot host a native C ABI
 declares the `ffi` capability as `none`; otherwise it declares `host`. `none` is reserved
@@ -675,9 +676,12 @@ typedef enum {
 } LazilyFfiStatus;
 
 typedef enum {
-    LazilyFfiMessageKind_Unknown  = 0,
-    LazilyFfiMessageKind_Snapshot = 1,
-    LazilyFfiMessageKind_Delta    = 2,
+    LazilyFfiMessageKind_Unknown       = 0,
+    LazilyFfiMessageKind_Snapshot      = 1,
+    LazilyFfiMessageKind_Delta         = 2,
+    LazilyFfiMessageKind_CrdtSync      = 3,
+    LazilyFfiMessageKind_ResyncRequest = 4,  /* #lzsync control frame */
+    LazilyFfiMessageKind_OutboxAck     = 5,  /* #lzsync control frame */
 } LazilyFfiMessageKind;
 ```
 
@@ -773,7 +777,10 @@ The plane rides the same `lazily-ipc` transport as `Snapshot`/`Delta`. Alongside
 single-producer mirror, a third `IpcMessage` variant carries multi-writer plane traffic:
 
 ```
+# Snapshot/Delta/CrdtSync are the forward (state) plane; ResyncRequest/OutboxAck
+# are the reverse-channel reliable-sync control frames (§ Reliable Sync, #lzsync).
 IpcMessage = Snapshot(Snapshot) | Delta(Delta) | CrdtSync(CrdtSync)
+           | ResyncRequest(ResyncRequest) | OutboxAck(OutboxAck)
 
 WireStamp = { wall_time: u64, logical: u64, peer: u64 }   # total order (wall, logical, peer)
 
@@ -882,13 +889,23 @@ by the host application behind the named seams (`SnapshotProvider`, `DurableOutb
 `Clock`/scheduler, the `IpcSink`/`IpcSource` transport). A binding ships the protocol and a default
 in-memory backend; the host plugs durable storage and a real transport.
 
-**Codec.** Every reliable-sync frame defined here (`ResyncRequest`, `OutboxAck`, and the liveness
-`CrdtOp`s) is an ordinary framed message on the negotiated codec. Per
-[§ Frame codecs](#frame-codecs) the cross-language boundary negotiates **`msgpack`** (self-describing,
-evolution-safe, named-field), with `json` as the required reference codec; `postcard` stays the
-Rust-only fast path. Conformance requires every new frame to round-trip through **both `json` and
-`msgpack`** (semantic round-trip, not byte-identical, for the map codecs), the same discipline the
-three existing `IpcMessage` variants already hold.
+**Control frames are `IpcMessage` variants, not a side channel.** `ResyncRequest` and `OutboxAck`
+are two new externally-tagged **`IpcMessage` variants** (FFI message kinds `4` / `5`), riding the
+same framed, codec-negotiated, **bidirectional** message plane as `Snapshot`/`Delta`/`CrdtSync` —
+the reverse (receiver → sender) direction of that plane. This is deliberate over a separate control
+type: they share one encode/decode path, one demux point, one FFI kind discriminant, and — because
+they interleave in the *same ordered stream* as the deltas — a well-defined in-band position (an
+`OutboxAck { through_epoch: N }` is meaningful relative to the deltas already sent on that channel).
+The liveness ops are `CrdtOp`s on the existing `CrdtSync` variant. A binding MUST add both variants
+to its `IpcMessage` enum and its FFI message-kind mapping.
+
+**Codec.** Every reliable-sync frame (the two control variants and the liveness `CrdtOp`s) is an
+ordinary framed message on the negotiated codec. Per [§ Frame codecs](#frame-codecs) the
+cross-language boundary negotiates **`msgpack`** (self-describing, evolution-safe, named-field),
+with `json` as the required reference codec; `postcard` stays the Rust-only fast path. Conformance
+requires every new frame to round-trip through **both `json` and `msgpack`** (semantic round-trip,
+not byte-identical, for the map codecs), the same discipline the three prior `IpcMessage` variants
+already hold.
 
 ### ResyncCoordinator (`#resync-coord`)
 
