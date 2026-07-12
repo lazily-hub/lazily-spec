@@ -1,0 +1,90 @@
+{
+  "description": "Outbox coalescing keeps the unacked cursor-queue bounded under a persistently-slow (non-acking) peer WITHOUT dropping an op (protocol.md § Backpressure & outbox coalescing, #lzsync-backpressure). The unacked outbox is a bounded cursor-queue: append pushes the tail, OutboxAck.through_epoch dequeues the acked front (FIFO), retained depth is the fill level. How the suffix coalesces is dispatched by the element's merge algebra: a state cell (LWW → last value, OR-set → union, graph → Snapshot) has an idempotent join and collapses its suffix to one frame (memory-bounded, ReliableSync.coalesce_by_join_sound / coalesce_to_snapshot_state_equiv); an op-log cell (QueueCell) has no idempotent join and only fuses a run of same-direction ops into one batch (frame-bounded, order-preserving, ReliableSync.batch_fusion_state). Coalescing is a retention optimization only: the receiver observes identical effects. Non-ack IS backpressure; liveness cells disambiguate slow (fill, wait) from dead (drain, reconnect+replay).",
+  "protocol_version": 1,
+  "kind": "ReliableSync",
+  "model": "OutboxCoalesce",
+  "scenarios": [
+    {
+      "name": "state_suffix_collapses_to_snapshot",
+      "description": "Sender appends deltas at epochs 1,2,3 (graph/state frames); the peer is stalled at last_epoch=0 and never acks, so retained depth is 3. At the host watermark the outbox coalesces the unacked suffix (1..3) into one Snapshot at epoch 3 carrying the merged state — retained depth drops to 1. A receiver at last_epoch=0 that adopts that Snapshot reaches the same graph and last_epoch=3 as a receiver that applied all three deltas. Memory bounded to one frame regardless of how far the peer is behind.",
+      "peer_acked_through": 0,
+      "appended": [
+        { "base_epoch": 0, "epoch": 1, "ops": [ { "CellSet": { "node": 1, "payload": { "Inline": [10] } } } ] },
+        { "base_epoch": 1, "epoch": 2, "ops": [ { "CellSet": { "node": 2, "payload": { "Inline": [20] } } } ] },
+        { "base_epoch": 2, "epoch": 3, "ops": [ { "CellSet": { "node": 1, "payload": { "Inline": [11] } } } ] }
+      ],
+      "retained_before": 3,
+      "coalesce": {
+        "mode": "snapshot_supersede",
+        "declined": false,
+        "wire": {
+          "Snapshot": {
+            "epoch": 3,
+            "nodes": [
+              { "node": 1, "payload": { "Inline": [11] } },
+              { "node": 2, "payload": { "Inline": [20] } }
+            ],
+            "edges": []
+          }
+        }
+      },
+      "retained_after": 1,
+      "expect": {
+        "receiver_from_last_epoch": 0,
+        "action": "Apply",
+        "receiver_last_epoch_after": 3,
+        "graph_equals_full_run": true,
+        "effects_observed_identical": true
+      }
+    },
+    {
+      "name": "oplog_declines_snapshot_fuses_batch",
+      "description": "A QueueCell (op-log) outbox holds a run of same-direction push ops at epochs 1,2,3 (each queue element materializes as a distinct cell op — nodes 7,8,9 — so the run is append-like, not same-node overwrite; the concrete op-log frame encoding is deferred to the op-log frame spec). It DECLINES snapshot-coalesce (coalesce_to_snapshot returns false — a queue snapshot would discard the receiver's independent consumption position). Instead it fuses the run into one multi-epoch batch Delta (base_epoch 0 → epoch 3) carrying the ops in order. Lossless and order-preserving: the fused batch applies equal to the three unit deltas (multi_epoch_apply_eq_fold / batch_fusion_state). Frame count drops 3 → 1; retained PAYLOAD volume is unchanged (a queue cannot drop elements), so memory is still bounded by source-side QueueCell.is_full, not by this fusion.",
+      "peer_acked_through": 0,
+      "appended": [
+        { "base_epoch": 0, "epoch": 1, "ops": [ { "CellSet": { "node": 7, "payload": { "Inline": [97] } } } ] },
+        { "base_epoch": 1, "epoch": 2, "ops": [ { "CellSet": { "node": 8, "payload": { "Inline": [98] } } } ] },
+        { "base_epoch": 2, "epoch": 3, "ops": [ { "CellSet": { "node": 9, "payload": { "Inline": [99] } } } ] }
+      ],
+      "retained_before": 3,
+      "coalesce": {
+        "mode": "batch_fusion",
+        "declined_snapshot": true,
+        "op_form": "illustrative",
+        "wire": {
+          "Delta": {
+            "base_epoch": 0,
+            "epoch": 3,
+            "ops": [
+              { "CellSet": { "node": 7, "payload": { "Inline": [97] } } },
+              { "CellSet": { "node": 8, "payload": { "Inline": [98] } } },
+              { "CellSet": { "node": 9, "payload": { "Inline": [99] } } }
+            ]
+          }
+        }
+      },
+      "frames_after": 1,
+      "expect": {
+        "receiver_from_last_epoch": 0,
+        "action": "Apply",
+        "receiver_last_epoch_after": 3,
+        "order_preserved": true,
+        "fold_equivalent": true,
+        "memory_bounded_by": "source_is_full",
+        "element_multiset_preserved": true
+      }
+    },
+    {
+      "name": "non_ack_fills_then_ack_drains_cursor_queue",
+      "description": "Backpressure as a queue property. With the peer not acking, three appends leave retained depth 3 (queue fills toward is_full). An OutboxAck { through_epoch: 2 } dequeues the acked front (epochs 1,2) FIFO, leaving only epoch 3 — retained depth 1 (queue drains below watermark; is_full clears; producer may resume). Formalized ReliableSync.outbox_is_bounded_queue (enqueue grows depth by one; ack dequeues the front; coalesced suffix is one frame).",
+      "appended_epochs": [1, 2, 3],
+      "retained_before_ack": 3,
+      "outbox_ack": { "through_epoch": 2 },
+      "expect": {
+        "retained_after_ack": 1,
+        "retained_epochs_after": [3],
+        "dequeue_is_fifo_front": true
+      }
+    }
+  ]
+}

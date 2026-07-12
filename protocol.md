@@ -960,6 +960,8 @@ trait DurableOutbox {
     fn append(&mut self, epoch: u64, msg: &IpcMessage);          // MUST persist before the send is attempted
     fn ack_through(&mut self, epoch: u64);                        // peer proved receipt through `epoch`; retained frames <= epoch may be pruned
     fn replay_from(&self, cursor: u64) -> impl Iterator<Item = (u64, IpcMessage)>;  // frames with epoch > cursor, in epoch order
+    fn retained_depth(&self) -> usize;                           // unacked queue depth — the backpressure fill level (Progress.retained)
+    fn coalesce_to_snapshot(&mut self, epoch: u64, snapshot: &IpcMessage) -> bool { false }  // state cells: replace the unacked suffix with one snapshot; op-log frames decline (false)
 }
 ```
 
@@ -985,6 +987,15 @@ Normative contract:
 - **`OutboxAck` frame.** The receiver periodically (or on request) sends
   `OutboxAck { through_epoch: u64 }` — a new framed `IpcMessage` — so the sender can advance
   retention and so a reconnect handshake can carry the resume cursor.
+- **Coalescing (optional, element-algebra-gated).** An outbox MAY bound its retained depth without
+  dropping an op, per [§ Backpressure & outbox coalescing](#backpressure--outbox-coalescing-lzsync-backpressure).
+  A **state** outbox (LWW/OR-set/counter/graph frames) collapses the unacked suffix to one `Snapshot`
+  via `coalesce_to_snapshot` (memory-bounded — the coalesce is the cell's own join, e.g. LWW → last
+  value, proven `ReliableSync.coalesce_by_join_sound` / `coalesce_to_snapshot_state_equiv`). An
+  **op-log** outbox (QueueCell frames) declines snapshot-coalesce (returns `false`) and instead fuses
+  a run of same-direction ops into one `batch` frame (framing-bounded, order-preserving,
+  `ReliableSync.batch_fusion_state`); it relies on source-side `QueueCell.is_full` for memory bounding.
+  Coalescing is a retention optimization only — it never changes which effects the receiver observes.
 
 Bindings ship an `InMemoryOutbox` (default; correct within a process lifetime) and a **reference
 file-backed impl for tests/conformance** (proves the crash-replay path deterministically). The host
@@ -1037,9 +1048,9 @@ Contract:
   (`Progress.retained`). A host bounds memory by (a) rate-limiting or coalescing enqueues off those
   signals — a re-emit at an already-accepted epoch is an idempotent no-op delta, so coalescing is the
   natural limiter — and (b) choosing a `DurableOutbox` that spills to durable storage rather than RAM
-  (e.g. a SQLite-backed outbox), so a long-stalled peer grows disk, not heap. Enforcing a bounded
-  staging queue (e.g. via a `QueueCell`-style `is_full`) is a deliberate non-goal of the core loop;
-  add it in the host if a hard cap is required.
+  (e.g. a SQLite-backed outbox), so a long-stalled peer grows disk, not heap. A bounded outbox with an
+  `is_full` / high-watermark cap, and the per-item coalesce modes that keep it bounded *without*
+  shedding an op, are specified in [§ Backpressure & outbox coalescing](#backpressure--outbox-coalescing-lzsync-backpressure).
 
 `IpcSink`/`IpcSource` are the existing abstract transport traits (feature `ipc`); the byte carrier
 is any `DataChannel`. **Un-gating:** the driver and the `BridgeHub` fan-out it can wrap depend only
@@ -1048,6 +1059,98 @@ supplying a Unix-domain-socket `DataChannel` gets reliable sync with no WebRTC d
 per-document channel decision (one driver/transport per document vs one hub with
 `document_hash`+`NodeKey` namespacing) is a host concern; the pull-only consumer path may not need
 `BridgeHub` fan-out at all.
+
+#### Backpressure & outbox coalescing (`#lzsync-backpressure`)
+
+The unacked outbox **is a bounded cursor-queue**, and that framing makes backpressure a queue
+property rather than a bolt-on: `append` is a push to the tail, `OutboxAck.through_epoch` is the
+consumer cursor, `replay_from` is a FIFO peek of the unacked suffix, and the retained depth
+(`Progress.retained`) is the fill level. A peer that stops acking is a consumer that stops advancing
+its cursor, so the queue fills — and a **bounded** outbox surfaces that as an `is_full` /
+high-watermark signal a host uses to throttle the producer. Recovery is the reactive dual: an
+`OutboxAck` advances the cursor, the queue drains below the watermark, and the fill signal clears so
+the producer resumes — the same reactive backpressure the `QueueCell` model pins
+([`queuecell_bounded_backpressure`](conformance/collections/queuecell_bounded_backpressure.json)),
+applied to the outbox. **Non-ack _is_ backpressure**; the [liveness cells](#liveness-cells-or-set-and-lww-lzsync-liveness)
+disambiguate a *slow* consumer (queue fills — wait) from a *dead* one (queue drains — reconnect +
+replay). Formalized as `ReliableSync.outbox_is_bounded_queue` (`enqueue` grows depth by one, `ack`
+dequeues the acked front FIFO, a coalesced suffix is one frame).
+
+A bounded queue must not grow unbounded under a persistently-slow peer, and the outbox stays bounded
+by **coalescing its unacked suffix — never by dropping an op**. *How* it coalesces is **dispatched by
+the element's merge algebra**, not by a single global switch. Every cell type supplies its own
+coalesce, and each falls into one of two families by whether the type has an idempotent join:
+
+| Element | Coalesce | Bounds | Basis |
+|---|---|---|---|
+| LWW register | keep the **last (max-stamp) value** | memory | `WireLwwRegister::join` folded over the suffix |
+| OR-set | **union** of adds/removes | memory | `OrSet::join` folded |
+| Counter / PN-counter | **sum** the deltas | memory | additive monoid |
+| Sequence CRDT / graph projection | **merged `Snapshot`** | memory | `SnapshotProvider` |
+| QueueCell (op-log) | **batch-fuse** a run of same-direction ops | frames only | op concatenation |
+
+The unifying law: **coalesce = the element's semilattice join folded over the unacked suffix.**
+
+- **Join / snapshot coalesce (idempotent cells: LWW, OR-set, counter, graph).** The suffix collapses
+  to one merged value — order-, regroup-, and retry-independent (`ReliableSync.coalesce_by_join_sound`;
+  for the whole-graph frame, adopting the snapshot subsumes the dropped deltas —
+  `ReliableSync.coalesce_to_snapshot_state_equiv`). This **bounds memory**: a peer arbitrarily far
+  behind costs one frame, not the whole backlog. It is the CRDT answer to "don't block the producer" —
+  the producer keeps appending; the queue keeps collapsing. LWW-to-last-value is exactly the join
+  being max-stamp.
+- **Batch-fusion coalesce (op-log cells: QueueCell).** A queue has no idempotent join — order and
+  multiplicity *are* the value — so it cannot collapse; it only **fuses** a run of same-direction ops
+  (`push(a); push(b); push(c)` → one atomic `batch`). Lossless and order-preserving
+  (`ReliableSync.batch_fusion_state`; a fused multi-epoch delta equals its expanded unit run,
+  `multi_epoch_apply_eq_fold`). This bounds **frame count and per-frame overhead** (one header, one
+  codec envelope, one reactive invalidation on apply), **not memory** — a queue cannot drop elements
+  and stay a queue. An op-log sync therefore still needs source-side `try_push → Full`
+  (`QueueCell.is_full`) to bound memory; batch-fusion complements it, it does not replace it. Fuse only
+  runs of same-direction ops; do not fuse across a `pop` in a bidirectional log.
+
+Rule of thumb: a **state** sync (LWW/OR-set/counter/graph) absorbs pressure by *collapsing*
+(memory-bounded, never blocks the producer); an **op-log** sync (QueueCell) absorbs it by *rejecting at
+the source* (`is_full`, blocks the producer) and may *fuse* frames to cut overhead. Both keep every
+accepted op's effect; neither sheds load silently.
+
+**Bounding _producer_ memory (op-log).** `is_full` / `try_push → Full` bounds the *queue*, not the
+producer: if the producer answers `Full` by stashing the rejected item in an unbounded side-buffer,
+the queue is bounded but memory is not — the backlog just moved up one hop. A QueueCell sync bounds
+producer memory only when the `Full` signal terminates at a **stoppable or sheddable source**, and no
+hop in between holds an unbounded buffer:
+- **Suspend (the lazily-native path).** The producer is a reactive effect that *reads* `is_full`;
+  while full it does not run, and the pop that clears full (true→false) invalidates the reader and
+  re-fires it. Producer memory is bounded because a not-running effect holds no backlog — it generates
+  on demand, gated by the queue. This is the `queuecell_bounded_backpressure` loop used as a producer
+  gate rather than a mere status read.
+- **Propagate upstream.** An imperative producer fed by its own bounded input returns `Full`/pending to
+  *its* source, recursively, until the chain reaches something that can actually stop (a pull-based
+  reader; a socket whose reads pause, so TCP advertises a zero window and the *remote* sender stops).
+  Every hop is bounded-and-backpressuring; the stop propagates to the origin.
+- **Shed.** When the source *cannot* stop (a real-time feed, an external peer that will not slow), the
+  only way to bound memory is an overflow **drop** policy — `drop-oldest` / `drop-newest`, the
+  non-`reject` `QueueStorage` backends the [QueueCell model](cell-model.md) names — or a lossy summary.
+  Dropping is a deliberate, observable choice, not silent truncation.
+
+The invariant: **backpressure bounds memory only if it ends at a stoppable or sheddable source; an
+unbounded buffer at any hop defeats it.** The queue supplies the signal and the bound *at the queue*;
+the producer must convert that signal into actually-not-generating (suspend/propagate) or
+actually-discarding (shed) — never into unbounded local absorption. (A state cell escapes this because
+its coalesce *is* an unbounded-absorption-that-stays-bounded: churn collapses into the join. A queue
+has no such join, which is exactly why its producer must pause or drop.)
+
+Two seam refinements this makes explicit, both host-invisible in the current traits:
+
+- **Ack-as-credit.** For non-ack to *mean* consumer backpressure (not merely non-receipt), a receiver
+  SHOULD gate its `OutboxAck.through_epoch` on its consumer's **drain** cursor, not on mere
+  fold-into-projection — otherwise a backed-up consumer keeps acking and the credit signal never
+  forms. The unacked depth then behaves as a sliding credit window; withholding the ack pushes back
+  end-to-end onto the sender's outbox.
+- **Sink would-block.** `IpcSink::send` returning only `Ok`/`Err` cannot express a transport that is
+  *up but momentarily full* (kernel socket buffer, `DataChannel.bufferedAmount`); that fullness is a
+  distinct layer from consumer-slowness and is invisible to the ack. A binding MAY widen the sink
+  outcome to distinguish `Full` (re-stage the frame + back off — **not** a reconnect) from a hard
+  failure. This is the one backpressure axis the ack cursor structurally cannot cover.
 
 #### Transport seam (`IpcSink` / `IpcSource`, `#lzsync-transport-seam`)
 
@@ -1133,6 +1236,7 @@ cross-language (rs/js/kt):
 | `idempotent_redelivery.json` | a re-delivered (`base_epoch < last_epoch`) delta is `Ignore`d; net state unchanged |
 | `multi_epoch_delta.json` | a `Delta` with `epoch > base_epoch + 1` applies equal to the unit-delta fold; atomic `last_epoch` advance |
 | `liveness_orset_lww.json` | OR-set open-set membership + LWW `alive`/lease; whole-editor-death cascade; derived live-doc aggregate converges under retry/re-delivery |
+| `coalesce_bounds_outbox.json` | state outbox collapses an unacked delta suffix to one `Snapshot` (retained depth → 1) with the receiver reaching the same graph as the full-run receiver; op-log outbox declines snapshot-coalesce and fuses a run into one `batch` (order-preserving); non-ack fill / ack drain of the cursor-queue (`#lzsync-backpressure`) |
 
 Every fixture's frames MUST round-trip through both `json` and `msgpack`. The `ResyncCoordinator`,
 `DurableOutbox`, and liveness models are the shared cross-language pins; `lazily-formal`

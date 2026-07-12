@@ -739,6 +739,7 @@ _RELIABLE_SYNC_MODELS = {
     "ResyncCoordinator",
     "DurableOutbox",
     "LivenessCells",
+    "OutboxCoalesce",
 }
 
 # Which schema a fixture's top-level `wire` frame (when present) validates against,
