@@ -489,6 +489,84 @@ but those shapes differ in *semantics* (invalidation model, handoff exclusivity)
 cardinality. See [§ Future queue primitives](#future-queue-primitives) for the genuinely
 distinct primitives (`TopicCell`, `WorkQueueCell`).
 
+### The queue family — two axes (semantics defines the primitive)
+
+`QueueCell`, `TopicCell`, and `WorkQueueCell` are one family of reactive cursor-stream cells,
+separated by **two orthogonal axes**. Only the first defines the primitive; the second is a usage
+tier every primitive shares.
+
+**Axis 1 — consumer delivery semantics (the primitive axis).** Where does each pushed element go?
+
+| Delivery semantics | Each element goes to | Consumption | Primitive |
+|---|---|---|---|
+| single | the one consumer | destructive pop | `QueueCell` |
+| competing | **exactly one** of N consumers | destructive, exclusive handoff | `WorkQueueCell` |
+| broadcast | **every** subscriber | non-destructive cursor read | `TopicCell` |
+
+**Axis 2 — topology / ordering (a usage tier, not a type).** Producer and consumer *counts* —
+fan-in and fan-out — never change *which* primitive you have; they only set the ordering guarantee
+and its cost. Opt into exactly the tier you need:
+
+| Ordering tier | Guarantee | Mechanism | Cost |
+|---|---|---|---|
+| per-producer FIFO (default) | each producer's substream in push order; interleave arbitrary | none — ≡ multiplexing N single-producer channels at the consumer | free |
+| agreed total order | one global order across producers | a single leader sequencer | one hop, single point of failure |
+| agreed total order + HA | total order surviving node death / partition | consensus (Raft/Paxos) | quorum latency |
+
+**Why not name by cardinality or by fan-in/fan-out.** Both are the *same mistake* — naming a
+primitive by topology instead of by delivery semantics:
+
+- **`SP*`/`MP*`** mixes two axes: `QueueCell` already covers SPSC *and* MPSC (both single-consumer;
+  MPSC is the multi-producer *usage*). `WorkQueueCell` and `TopicCell` are each usable single- or
+  multi-producer, so `SPMC`/`MPMC` cannot tell them apart.
+- **`FanOutCell`/`FanInCell`** fails identically. **Fan-in** (many producers → one consumer) is just
+  `QueueCell` used multi-producer — the ordering tier, *not* a distinct primitive; a `FanInCell`
+  collapses back into `QueueCell`. **Fan-out** (one → many consumers) is **ambiguous** between
+  broadcast and competing — `TopicCell` *and* `WorkQueueCell` both fan out, and one `FanOutCell` name
+  cannot say whether an element goes to *all* or to *one*. And fan-in and fan-out are **not mutually
+  exclusive** (a topic or work queue may be many-producer *and* many-consumer at once), so they are
+  orthogonal *descriptors of wiring*, not primitive identities.
+
+So fan-in and fan-out are real and useful — but as the **topology axes** describing how a primitive
+is wired, not as names: **fan-in = the multi-producer ordering tier** (Axis 2); **fan-out =
+multi-consumer, which subdivides into broadcast (`TopicCell`) vs competing (`WorkQueueCell`)** by
+Axis 1. A primitive is always named by its Axis-1 delivery semantics, which carries meaning a
+topology name cannot.
+
+**Naming rationale (suffix).** The shared family suffix is **`Cell`**; `Queue` appears only where
+consumption is **destructive and exclusive** — `QueueCell` and `WorkQueueCell`. A `TopicCell` is a
+**non-destructive broadcast log** (reading removes nothing; every subscriber reads every element),
+so it carries no `Queue` — `TopicQueueCell` would conflate the deliberately contrasting messaging
+terms *queue* (consumed once) and *topic* (delivered to all). Parity is the `Cell` suffix + this
+family section, not a forced `Queue` infix.
+
+**What multi-producer actually buys** (fan-in): a single merged **fan-in aggregation** stream, one
+**shared backpressure / capacity bound**, and — only at the total-order tier — an **agreed order**.
+Consensus is the price of *agreed total order under partition only*, never of multi-producer itself;
+per-producer FIFO needs no sequencer (it *is* multiplexed single-producer channels). Full
+cross-replica **retention** (every replica holds each item until all consumers ack + compaction) is
+a **replication/HA cost**, orthogonal to producer count — a non-replicated queue retains each item
+once.
+
+**Distribution cost differs by primitive** (Axis 1 decides it):
+
+| Property | `QueueCell` | `WorkQueueCell` | `TopicCell` |
+|---|---|---|---|
+| Each element → | the one consumer | exactly one of N | every subscriber |
+| Consumption | destructive pop | destructive, exclusive handoff | non-destructive cursor read |
+| Distribution cost | leader-election HA (fence one consumer) | **assignment consensus** (quorum) | per-subscriber cursors, **no** consensus¹ |
+| Slow consumer | fills queue → backpressure | routed to others; fine until all saturated | grows *its* retention; evict on lease expiry |
+| Consumer death | queue **stalls** until failover | in-flight **reassigned**; no stall | that subscription grows; others fine |
+| Ordering | total FIFO | assignment-FIFO; processing unordered | per-subscriber FIFO¹ |
+| Delivery | exactly-once local / effectively-once distributed | at-least-once + idempotency = effectively-once | at-least-once per subscriber |
+| Consensus? | only for HA | **yes** (assignment) | only for agreed-order broadcast¹ |
+
+¹ A topic is consensus-free only at the per-producer-FIFO tier; **total-order broadcast (all
+subscribers agreeing on one order) is atomic broadcast ≡ consensus** — the same cost as an ordered
+`WorkQueueCell`. Quorum-intersection safety for `WorkQueueCell` assignment is proven
+`ReliableSync.majorities_intersect`. Detailed semantics follow in
+[§ Future queue primitives](#future-queue-primitives).
+
 ### Reactive shell vs storage backend
 
 A `QueueCell` factors into two layers:
@@ -638,34 +716,119 @@ consumer cardinality:
 
 ### TopicCell (broadcast)
 
-A *broadcast topic* where every subscriber receives every pushed element. Invalidation is
-"all subscribers," not "head reader." Each subscriber maintains its own cursor; the topic
-retains elements until all cursors have advanced past them (or a TTL expires).
+A *broadcast topic*: every subscriber receives every pushed element. Invalidation is "all
+subscribers," not "head reader." Each subscriber holds its **own cursor**; the topic retains an
+element until all durable cursors pass it (or a TTL expires). Reading is **non-destructive** — a
+subscriber's advance never removes the element for others.
 
-**Semantics**: SPMC broadcast / MPMC pub-sub. **Delivery**: each subscriber sees the full
-sequence independently. **GC**: bounded by the slowest subscriber's cursor.
+**Relationship to `QueueCell`**: not a multi-consumer queue. A `QueueCell` consumer destructively
+pops; a `TopicCell` subscriber reads by cursor and removes nothing. Different invalidation models in
+kind.
 
-**Relationship to QueueCell**: a `TopicCell` is not a multi-consumer `QueueCell`. A
-`QueueCell` has one consumer that destructively pops; a `TopicCell` has N subscribers that
-each independently read. The invalidation models are different in kind.
+**Distribution is cheap — no assignment consensus.** Every subscriber gets every element, so there is
+**no "who gets this" decision to arbitrate**. A distributed topic is N independent per-subscriber
+cursor-queues — the [per-peer `DurableOutbox`](protocol.md) fan-out already pinned for reliable sync.
+At-least-once fan-out + idempotent apply per subscriber = effectively-once, no quorum. *Caveat:* this
+holds only at the per-producer-FIFO tier; **total-order broadcast** (all subscribers agree on one
+order) is **atomic broadcast ≡ consensus**.
+
+**Durable vs ephemeral subscriptions.** A *durable* subscription persists its cursor and replays
+elements missed while offline; an *ephemeral* subscription sees only elements published while
+connected (fire-and-forget). Durable subscriptions drive retention.
+
+**Backpressure is per-subscriber, and the answer is the state-vs-event split.** Each subscriber's
+delivery buffer is itself a bounded `QueueCell`, so a slow subscriber's `is_full` fires *locally*;
+what happens then is a **per-subscription policy**, and the right one depends on message semantics —
+the same dichotomy as [outbox coalescing](protocol.md):
+
+- **State topic (broadcasting a value)** — old elements are worthless once superseded, so a lagging
+  subscriber **conflates to latest** (drop intermediates, keep the newest): the LWW/last-value
+  coalesce applied to a subscriber. Memory-bounded and **effect-lossless** — the laggard simply gets
+  current state, and the producer feels nothing.
+- **Event/log topic (each element a distinct event)** — no conflation is possible (order and
+  multiplicity are meaning), so a lagging subscriber resolves overflow one of three ways:
+  - **Drop (lossy, isolated)** — `drop-oldest` / `drop-newest` for *that* subscription; fast
+    subscribers and the producer are unaffected. This is the broadcast **default** — coupling defeats
+    fan-out.
+  - **Couple + backpressure (lossless, slowest-paces)** — the subscriber withholds ack, retention
+    grows, and the **producer throttles to the slowest durable subscriber**. Opt-in, for
+    "all-must-receive-losslessly" topics; the operator accepts one slow subscriber pacing the whole
+    topic.
+  - **Evict (bounded)** — on sustained lag past a liveness lease, drop the whole subscription
+    ([§ Partition & eviction](protocol.md)); it full-resyncs (durable) or resumes from now
+    (ephemeral) on return.
+
+So a `TopicCell` producer **feels backpressure only if a subscription opts into coupling**; by default
+a slow subscriber conflates (state) or drops/evicts (event), and **failure is isolated** — a dead
+subscriber grows only *its* retention, never stalling other subscribers or the producer. This is the
+opposite of `QueueCell`, where the single consumer *is* the backpressure path.
+
+**Consumer groups = a topic of work queues.** The "Kafka consumer group" shape is a *composition*,
+not a fourth primitive: `WorkQueueCell` semantics *within* a group (competing) and `TopicCell`
+semantics *across* groups (each group gets the full stream). Model it as a `TopicCell` whose
+subscribers are `WorkQueueCell`s.
 
 **Status**: future work — not in v1 conformance. See the
 [distributed-queue PRD](distributed-queue-prd.md) Phase 3.
 
 ### WorkQueueCell (competing consumers)
 
-A *work queue* where N consumers compete for elements from a shared FIFO. Each element is
-delivered to **exactly one** consumer (exclusive handoff). This requires an authority
-(designated leader peer) to serialize pop-assignment — pure CRDT cannot provide exclusive
-handoff (concurrent pops both survive merge → duplicate delivery).
+A *work queue*: N consumers compete for elements from a shared FIFO; each element is delivered to
+**exactly one** consumer (exclusive handoff).
 
-**Semantics**: true MPMC with exclusive handoff. **Delivery**: exactly-once via
-leader-assigned delivery IDs + consumer ack/nack. Unacked entries are redelivered (pending
-entries list). Dead-letter queue for poison messages.
+**Why pure CRDT cannot do this.** A queue pop is **not idempotent-commutative**: two consumers
+concurrently popping the same head both survive a CRDT merge → duplicate delivery, and there is no
+"un-pop." Exclusive handoff therefore needs a **single serialization point** for the assignment
+decision — a designated leader assigning each element to one consumer, or a consensus-committed
+assignment log. This is the queue's CP nature made concrete.
 
-**Deferred features** (land with `WorkQueueCell`, not `QueueCell`): ack/nack,
-visibility-timeout / lease with TTL, dead-letter queue, producer/consumer deduplication,
-fairness policy.
+**Safety via quorum intersection.** With consensus-committed assignment, "element X → consumer W" is
+a majority-committed log entry. Because **any two majorities of an `n`-voter set intersect in ≥1
+voter** (`ReliableSync.majorities_intersect` / `majorities_overcount`), two conflicting assignments of
+the same element can never both commit — no double-delivery, ever — and a minority (no quorum) cannot
+commit an assignment, so it blocks rather than risking a duplicate.
+
+**Three populations — do not conflate.**
+- **Workers/consumers** — any count; clients of the queue, not voters. Scale freely.
+- **Replication peers** (per-peer outbox) — any count; transport, not voting.
+- **Voting replicas** (order + commit assignments) — want an **odd** count: `2f+1` replicas tolerate
+  `f` failures; odd maximizes tolerance-per-node and keeps quorum unambiguous. Make an even data set
+  odd with a **witness/arbiter** (votes, holds no data).
+
+**Partition behavior.** Only a partition holding a majority makes progress; the rest block (safe, no
+double-pop). A **2–2** split of 4 voters gives neither side a majority → *both* stall (the even-group
+hazard, fixed by a witness). A **2–2–1** split of 5 voters leaves no side with 3 → *all* block until
+partitions heal enough for some side to reach a majority. Odd counts protect *two-way* splits; they
+never guarantee a majority under multi-way fragmentation. Halting is correct — safety over liveness.
+
+**Delivery & lifecycle** (deferred features — land with `WorkQueueCell`, not `QueueCell`):
+- **Assignment IDs + ack/nack.** Each handoff carries a delivery ID; the worker **acks** (done,
+  remove) or **nacks** (requeue). Exactly-once *commit* is the consensus assignment; exactly-once
+  *effect* needs an idempotent worker or a [causal receipt](protocol.md) on completion; delivery is
+  **at-least-once** (redelivery on failure) — so effectively-once = at-least-once + idempotency.
+- **Visibility-timeout / lease.** An assigned-but-unacked element is leased with a TTL; on expiry it
+  reassigns (worker presumed dead) — the per-item analog of the liveness lease.
+- **Dead-letter queue + poison detection.** An element exceeding a max-redelivery count (repeatedly
+  crashing its worker) routes to a DLQ instead of redelivering forever.
+- **Fairness / dedup.** Assignment policy (round-robin, weighted, pull-based) + producer/consumer
+  dedup keys.
+
+**Assignment-FIFO ≠ processing-FIFO.** Competing consumers trade ordering for parallelism: even if
+elements are *assigned* FIFO, N workers process concurrently, so **completion order is unordered**. A
+slow worker holding element 1 does **not** block element 2 (it routes to another worker) — the point
+of the primitive — but a consumer MUST NOT assume total processing order. For total order, use one
+consumer (`QueueCell`) or route through a single worker.
+
+**Pull beats push for balancing.** A **pull** model (workers request when ready) is naturally
+load-balancing and backpressure-friendly — a fast worker pulls more, a saturated worker stops pulling.
+A **push** model needs the assigner to track worker capacity. Pull-based competing consumers are the
+simpler, self-throttling default.
+
+**Backpressure & failure — most resilient of the three.** A single slow worker does *not* fill the
+queue (its items route to others); the queue backpressures only when **all** workers are saturated and
+depth grows. A worker death does not stall the queue — its in-flight (unacked) items reassign on lease
+expiry; throughput degrades, delivery continues. Opposite of `QueueCell`, whose single consumer dying
+stalls until failover.
 
 **Status**: future work — not in v1 conformance. Requires the consensus core from the
 [distributed-queue PRD](distributed-queue-prd.md) Phase 2.
