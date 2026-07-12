@@ -239,7 +239,7 @@ Each non-local session starts with a compatibility handshake:
 |-------|-------------|
 | `protocol_id` | Must be `"lazily-ipc"` |
 | `protocol_major_version` | Breaking change indicator |
-| `codec` | `"json"` (default); future: `"bincode"`, `"postcard"` |
+| `codec` | `"json"`, `"msgpack"` (cross-language binary default), or `"postcard"` (Rust/same-schema fast path) — see [§ Frame codecs](#frame-codecs) |
 | `max_frame_size` | Maximum frame size in bytes |
 | `fragmentation_supported` | Whether frame fragmentation is supported |
 | `ordered_reliable` | Delivery guarantee requirement |
@@ -248,6 +248,39 @@ Each non-local session starts with a compatibility handshake:
 | `features` | Supported feature flags |
 
 If peers disagree on `protocol_major_version`, `codec`, `ordered_reliable`, or required features, they fail closed before applying any `Snapshot` or `Delta`.
+
+### Frame codecs
+
+Every serialized `IpcMessage` frame (`Snapshot`, `Delta`, `CrdtSync`) carries the **same
+logical wire schema**; the `codec` handshake field selects only how those fields are bytes-encoded.
+Three codecs are defined; a binding advertises the set it can encode/decode and the peers
+negotiate one.
+
+| Codec token | Self-describing | Role | Required of a binding |
+|-------------|-----------------|------|-----------------------|
+| `json` | yes | Canonical, human-inspectable form; the **FFI-boundary canonical encoding** (§ FFI Boundary re-encodes canonical JSON bytes). Blob bytes travel as arrays of integers `0..255`. | **MUST** |
+| `msgpack` | yes | The **negotiated cross-language binary default** on any binary boundary (IPC / WebSocket / WebRTC) between differing languages. Compact binary, self-describing, and evolution-safe — the portable binary codec every binding can host. | **MUST** |
+| `postcard` | no | A compact, positional Rust/same-schema fast path for two peers that share the exact Rust struct layout. Smallest and fastest on the wire, but not cross-language. | **MAY** |
+
+**Default selection.** A local, same-process, same-language pairing MAY default to `postcard`.
+A boundary that crosses languages (the plugin⇄controller boundary, browser peers) negotiates
+`msgpack`; `json` is the interoperable fallback and the required FFI/canonical form. Peers never
+apply a frame under a codec they did not negotiate.
+
+**MessagePack encoding is named-field.** `msgpack` frames encode each struct as a MessagePack
+**map keyed by the JSON field name** (Rust: `rmp_serde::to_vec_named`), not as a positional array.
+This keeps the field names identical to the `json` schema, so the *omit-when-absent* rule for
+optional fields (the nullable `key` on `NodeSnapshot`/`NodeAdd`/`CrdtOp`, § NodeKey) holds
+uniformly across `json` and `msgpack`, and a decoder that predates a later optional field ignores
+it. Positional `postcard` instead always carries the optional discriminant for binary schema
+stability.
+
+**Conformance is semantic round-trip, not byte-identical, for the map codecs.** Because a
+MessagePack map's key order is encoder-defined, two conforming bindings MAY emit byte-different
+`msgpack` frames for the same `IpcMessage`; conformance requires only that
+`decode(encode(m)) == m` and that decoding a peer's frame yields the equal `IpcMessage`. Only
+`postcard` (positional) is byte-canonical across encoders. Cross-language `msgpack` fixtures
+therefore pin the *decoded value*, never a golden byte string.
 
 ## Causal Receipts
 
@@ -437,6 +470,7 @@ via [Capability Negotiation](#capability-negotiation) rather than failing silent
 | Thread-safe reactive context | MUST² | [Reactive Graph § Context layers](reactive-graph.md#context-layers) | — |
 | Async reactive context | MUST² | [Async Reactive Context](async.md) | — |
 | IPC (`Snapshot` + `Delta`) | MUST | [§ IPC](#ipc-snapshot--incremental-update-protocol) | [`conformance/`](conformance/) IPC fixtures |
+| **Frame codecs** (`json` canonical + `msgpack` cross-language binary; `postcard` optional) | MUST | [§ Frame codecs](#frame-codecs) | [`conformance/`](conformance/) IPC fixtures round-trip through `json` **and** `msgpack` for all three `IpcMessage` variants (`Snapshot`/`Delta`/`CrdtSync`) |
 | **Shared-memory payload path** (`ShmBlobArena` / `ShmBlobRef`) | MUST³ | [§ Shared-memory IPC](#shared-memory-ipc) | [`conformance/`](conformance/) shared-blob fixtures (`snapshot_shared_blob`, `delta_shared_blob`) |
 | **C-ABI FFI boundary** (`LazilyFfiBytes`, `LazilyFfiStatus`, `LazilyFfiMessageKind`) | MUST¹ | [§ FFI Boundary](#ffi-boundary), [`ffi.json`](schemas.md#ffijson) | every binding decodes the FFI frame to `IpcMessage` and re-encodes canonical JSON bytes |
 | **Distributed CRDT plane** (`CrdtSync` / `WireStamp`) | MUST | [§ Distributed: CRDT Cell Plane](#distributed-crdt-cell-plane), [`distributed.json`](schemas.md#distributedjson) | [`conformance/`](conformance/) `CrdtSync` round-trip |
