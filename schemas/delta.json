@@ -12,8 +12,8 @@
       "required": ["base_epoch", "epoch", "ops"],
       "additionalProperties": false,
       "properties": {
-        "base_epoch": { "type": "integer", "minimum": 0, "description": "Epoch this delta applies to." },
-        "epoch": { "type": "integer", "minimum": 0, "description": "New epoch (must equal base_epoch + 1)." },
+        "base_epoch": { "type": "integer", "minimum": 0, "description": "Epoch this delta applies to (must equal the receiver's last_epoch)." },
+        "epoch": { "type": "integer", "minimum": 0, "description": "New epoch, >= base_epoch + 1. Usually base_epoch + 1; a multi-epoch-span delta has epoch > base_epoch + 1 (epoch - base_epoch = accepted-event span). See protocol.md § Multi-epoch-span delta." },
         "ops": { "type": "array", "items": { "$ref": "#/$defs/DeltaOp" }, "description": "Ordered operations." }
       }
     }

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/reliable-sync.json",
+  "title": "Reliable Sync control frames",
+  "description": "Reliable-sync control frames (protocol.md § Reliable Sync, #lzsync). Two new externally-tagged IpcMessage variants carry the receiver→sender control channel that makes delivery gap-recoverable and at-least-once: ResyncRequest (the ResyncCoordinator asks for a covering Snapshot on a detected gap) and OutboxAck (the receiver advances the sender's DurableOutbox retention cursor and carries the reconnect resume cursor). Both are ordinary framed messages on the negotiated codec (json reference + msgpack cross-language default). The liveness OR-set/LWW cells ride the existing CrdtSync plane (schemas/distributed.json), not a new frame.",
+  "oneOf": [
+    { "$ref": "#/$defs/ResyncRequest" },
+    { "$ref": "#/$defs/OutboxAck" }
+  ],
+  "$defs": {
+    "ResyncRequest": {
+      "type": "object",
+      "title": "ResyncRequest",
+      "description": "Emitted by a ResyncCoordinator that detected a gap (an inbound Delta with base_epoch > last_epoch). Requests a fresh Snapshot covering `from_epoch`. At most one is outstanding per detected gap (the coordinator stays in its resyncing sub-state until a covering Snapshot lands).",
+      "required": ["ResyncRequest"],
+      "additionalProperties": false,
+      "properties": {
+        "ResyncRequest": {
+          "type": "object",
+          "required": ["from_epoch"],
+          "additionalProperties": false,
+          "properties": {
+            "from_epoch": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "The receiver's current last_epoch; the sender's SnapshotProvider returns Snapshot { epoch >= from_epoch }."
+            }
+          }
+        }
+      }
+    },
+    "OutboxAck": {
+      "type": "object",
+      "title": "OutboxAck",
+      "description": "Emitted by a receiver to prove receipt through `through_epoch`. The sender's DurableOutbox may prune retained frames with epoch <= through_epoch (ack_through). On a reconnect handshake this doubles as the resume cursor: the sender replay_from(through_epoch) re-sends every retained frame with epoch > through_epoch. This is a retention/cursor signal, NOT a domain delivery-success authority (that is a CausalReceipt).",
+      "required": ["OutboxAck"],
+      "additionalProperties": false,
+      "properties": {
+        "OutboxAck": {
+          "type": "object",
+          "required": ["through_epoch"],
+          "additionalProperties": false,
+          "properties": {
+            "through_epoch": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Highest epoch the receiver has fully applied (its ResyncCoordinator.last_epoch)."
+            }
+          }
+        }
+      }
+    }
+  }
+}

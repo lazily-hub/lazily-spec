@@ -66,8 +66,15 @@ lazily-IPC transmits a reactive graph's state to a remote observer and keeps it 
 A context-level monotonic `ipc_epoch: u64` advances **once per outermost batch flush**, not per write.
 
 - `Snapshot` carries `epoch`.
-- Each `Delta` carries `{ base_epoch, epoch }` with `epoch == base_epoch + 1`.
-- Deltas are strictly sequential. A receiver detects gaps, reorders, or sender restarts by checking `base_epoch == last_epoch`.
+- Each `Delta` carries `{ base_epoch, epoch }` with `epoch >= base_epoch + 1`. The common
+  single-flush case is `epoch == base_epoch + 1`; a **multi-epoch-span** delta
+  (`epoch > base_epoch + 1`) coalesces several accepted-event epochs into one op batch (see
+  [§ Multi-epoch-span delta](#multi-epoch-span-delta)). The span `epoch - base_epoch` is the count
+  of accepted (deduped) events this batch advances past — a re-emit that dedups to a no-op adds no
+  span. `epoch < base_epoch + 1` (empty or backward) is never valid.
+- Deltas are **contiguous by base**, not strictly unit-stepped. A receiver detects gaps, reorders,
+  or sender restarts by checking `base_epoch == last_epoch`: a delta whose `base_epoch != last_epoch`
+  is a gap and triggers resync ([§ Reliable Sync](#reliable-sync-lzsync)) regardless of its span.
 
 ### Snapshot
 
@@ -134,9 +141,9 @@ A context-level monotonic `ipc_epoch: u64` advances **once per outermost batch f
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `base_epoch` | `u64` | Epoch this delta applies to |
-| `epoch` | `u64` | New epoch (`base_epoch + 1`) |
-| `ops` | `DeltaOp[]` | Ordered operations |
+| `base_epoch` | `u64` | Epoch this delta applies to (must equal the receiver's `last_epoch`) |
+| `epoch` | `u64` | New epoch, `>= base_epoch + 1`; `epoch - base_epoch` is the accepted-event span (usually 1, `> 1` for a [multi-epoch-span delta](#multi-epoch-span-delta)) |
+| `ops` | `DeltaOp[]` | Ordered operations; applied as an ordered fold, atomically advancing `last_epoch` from `base_epoch` to `epoch` |
 
 #### DeltaOp variants
 
@@ -205,7 +212,40 @@ On a `Delta` whose `base_epoch != last_epoch`:
 3. Sender replies with `Snapshot { epoch }`.
 4. Deltas resume from the new epoch.
 
+This narrative is the informal shape; the normative decision function (inbound frame →
+`Apply` / `RequestSnapshot` / `Ignore`) is the **`ResyncCoordinator`** state machine specified in
+[§ Reliable Sync](#reliable-sync-lzsync), which also fixes the durable-outbox replay and
+sync-driver loop that make gap recovery, reconnect backfill, and at-least-once delivery a
+*protocol* rather than an each-consumer hand-roll.
+
 Messages are length-prefixed and tagged `Snapshot` / `Delta`. The protocol is transport-agnostic (unix socket, pipe, WebSocket, shared memory).
+
+### Multi-epoch-span delta
+
+A `Delta` MAY advance more than one epoch in a single frame: `epoch > base_epoch + 1`. This models
+a producer whose epoch is a **cumulative count of accepted (deduped) events** and who coalesces
+several such events into one flush (agent-doc's `WireDelta` is exactly this: a delta "may span
+multiple epochs", epoch = per-document accepted-event count). The op list is still the ordered
+change set; `epoch - base_epoch` records how many accepted events the batch folds.
+
+Normative apply semantics:
+
+- **Batch = fold.** Applying one `Delta { base_epoch, epoch, ops }` MUST equal applying the same
+  `ops` in order as a run of unit deltas that advances `last_epoch` from `base_epoch` to `epoch`.
+  The receiver observes only the endpoints (`base_epoch`, `epoch`); intermediate epochs are not
+  separately materialized. Proven equivalent in `lazily-formal`
+  (`ReliableSync.multi_epoch_apply_eq_fold`).
+- **Atomic advance.** The receiver advances `last_epoch` to `epoch` only after the whole op list
+  applies; a partial application never leaves `last_epoch` at an intermediate value.
+- **Gap rule unchanged.** Acceptance still requires `base_epoch == last_epoch`; the span does not
+  relax gap detection. A delta with `base_epoch != last_epoch` is a gap at any span.
+- **Idempotent re-emit adds no span.** A re-emitted delta that dedups to no accepted change carries
+  `epoch == base_epoch` worth of *new* effect and is either omitted or applied as a no-op; it never
+  advances `last_epoch`.
+
+Wire-compat: the unit-step case (`epoch == base_epoch + 1`) is the span-1 special case, so every
+existing `Delta` fixture remains valid. Conformance:
+[`conformance/reliable-sync/multi_epoch_delta.json`](conformance/reliable-sync/multi_epoch_delta.json).
 
 ### Shared-memory IPC
 
@@ -824,6 +864,213 @@ Conformance: `conformance/familysync/materialize_on_ingest.json`.
 ### Single-writer effect authority
 
 CRDT convergence covers *state*. For **irreversible external actions** (send email, charge card, fire webhook), gate the effect behind a single-writer authority — a designated peer (or small Raft group) decides when the effect fires, at-most-once.
+
+## Reliable Sync (`#lzsync`)
+
+The `Snapshot`/`Delta` and `CrdtSync` planes above define *what* is on the wire and *how state
+converges once delivered*. They do **not** define delivery reliability: what a receiver does with a
+gap, what a sender does with a send that failed, or how a reconnected peer catches up. Today each
+consumer hand-rolls that loop (and `Delta::apply_status → ResyncRequired` is a signal with no
+production handler). This section fixes the reliable-sync protocol so gap recovery, reconnect
+backfill, and at-least-once delivery are *specified* and cross-language-conformant, not
+re-invented per integration.
+
+**Layering — mechanism here, policy injected.** The three components below are pure protocol:
+identical logic in every binding, no I/O, no clock, no storage engine. The environment-specific
+choices — which byte transport, which persistence backend, retry cadence, threading — are supplied
+by the host application behind the named seams (`SnapshotProvider`, `DurableOutbox` store,
+`Clock`/scheduler, the `IpcSink`/`IpcSource` transport). A binding ships the protocol and a default
+in-memory backend; the host plugs durable storage and a real transport.
+
+**Codec.** Every reliable-sync frame defined here (`ResyncRequest`, `OutboxAck`, and the liveness
+`CrdtOp`s) is an ordinary framed message on the negotiated codec. Per
+[§ Frame codecs](#frame-codecs) the cross-language boundary negotiates **`msgpack`** (self-describing,
+evolution-safe, named-field), with `json` as the required reference codec; `postcard` stays the
+Rust-only fast path. Conformance requires every new frame to round-trip through **both `json` and
+`msgpack`** (semantic round-trip, not byte-identical, for the map codecs), the same discipline the
+three existing `IpcMessage` variants already hold.
+
+### ResyncCoordinator (`#resync-coord`)
+
+A pure receiver-side decision function over the inbound frame stream. It holds one piece of state
+per source — `last_epoch` (the highest epoch this receiver has fully applied) — and classifies each
+inbound `Snapshot`/`Delta`:
+
+```
+enum ResyncAction { Apply, RequestSnapshot { from: u64 }, Ignore }
+
+// pure; no I/O. `ingest` inspects a frame and returns the action; the caller performs it.
+fn ingest(&mut self, msg: &IpcMessage) -> ResyncAction
+```
+
+Decision table (given receiver `last_epoch = L`):
+
+| Inbound | Condition | Action | Effect on `L` |
+|---|---|---|---|
+| `Snapshot { epoch: e }` | always | `Apply` | `L := e` (adopt snapshot state) |
+| `Delta { base_epoch: b, epoch: e }` | `b == L` and `e >= b + 1` | `Apply` | `L := e` after fold |
+| `Delta { base_epoch: b }` | `b < L` | `Ignore` (already applied / re-delivery) | unchanged |
+| `Delta { base_epoch: b }` | `b > L` | `RequestSnapshot { from: L }` | unchanged until snapshot |
+| `Delta { epoch: e, base_epoch: b }` | `e < b + 1` | `Ignore` (malformed/empty) | unchanged |
+
+- **`RequestSnapshot { from }`** is emitted at most once per detected gap; a coordinator that has
+  already requested and not yet applied a covering `Snapshot` suppresses duplicate requests for the
+  same gap (it stays in a `resyncing` sub-state, `Ignore`-ing further deltas until the snapshot
+  lands). This bounds request storms under a burst of ahead-of-cursor deltas.
+- **Convergence guarantee.** A receiver that drops an arbitrary suffix of deltas, then applies the
+  resync `Snapshot`, reaches the *same* graph state as one that saw every delta — gap recovery is
+  state-equivalent, not lossy (proven `ReliableSync.resync_convergence`). This holds because a
+  `Snapshot` is a full-state frame, not an incremental one.
+- **Idempotent re-delivery.** A `Delta` with `base_epoch < L` (a frame the receiver already folded,
+  re-sent by the outbox) is `Ignore`d, so at-least-once delivery yields exactly-once effect.
+
+The application supplies snapshots for the sender side of a resync via:
+
+```
+trait SnapshotProvider { fn snapshot(&self, from_epoch: u64) -> IpcMessage; }  // returns Snapshot { epoch >= from_epoch }
+```
+
+### DurableOutbox (`#durable-outbox`)
+
+The sender-side contract that makes delivery **at-least-once across a crash/reconnect**. Today a
+failed send leaves a permanent gap (the out-epoch is bumped before the send; a reconnect is a fresh
+peer at epoch 0 with no backfill). The outbox closes that: every frame is durably recorded
+*before* it is sent, retained until the peer proves receipt, and replayed from the peer's cursor on
+reconnect.
+
+```
+trait DurableOutbox {
+    fn append(&mut self, epoch: u64, msg: &IpcMessage);          // MUST persist before the send is attempted
+    fn ack_through(&mut self, epoch: u64);                        // peer proved receipt through `epoch`; retained frames <= epoch may be pruned
+    fn replay_from(&self, cursor: u64) -> impl Iterator<Item = (u64, IpcMessage)>;  // frames with epoch > cursor, in epoch order
+}
+```
+
+Normative contract:
+
+- **Append-before-send.** A frame MUST be durably appended before it is handed to the transport.
+  If the process dies between append and a confirmed send, the frame is still in the outbox and is
+  replayed on reconnect. (The pre-send epoch bump that caused the permanent-gap bug is replaced by:
+  append at `epoch`, send, and only `ack_through` retires it.)
+- **Replay-from-cursor.** On (re)connect the peer advertises the highest epoch it has applied
+  (its `ResyncCoordinator.last_epoch`, carried in the reconnect handshake or an `OutboxAck`); the
+  sender `replay_from(cursor)` re-sends every retained frame with `epoch > cursor` in order. A frame
+  the peer already applied (`base_epoch < last_epoch`) is `Ignore`d by the coordinator — replay is
+  safe.
+- **At-least-once ⇒ exactly-once effect.** Replay delivers every op at least once; idempotent apply
+  (the coordinator's re-delivery `Ignore` + the CRDT/PartialEq guards) makes the net effect
+  exactly-once — no lost op, no doubled op (proven
+  `ReliableSync.outbox_at_least_once_exactly_once_effect`).
+- **Ack semantics.** `ack_through(e)` is a *retention* signal (safe to prune `<= e`), never a
+  delivery-success authority for a domain effect (that is a [causal receipt](#causal-receipts)). An
+  outbox MAY prune lazily; correctness does not depend on prompt pruning, only on not pruning
+  *un-acked* frames.
+- **`OutboxAck` frame.** The receiver periodically (or on request) sends
+  `OutboxAck { through_epoch: u64 }` — a new framed `IpcMessage` — so the sender can advance
+  retention and so a reconnect handshake can carry the resume cursor.
+
+Bindings ship an `InMemoryOutbox` (default; correct within a process lifetime) and a **reference
+file-backed impl for tests/conformance** (proves the crash-replay path deterministically). The host
+plugs its own durable store (agent-doc: SQLite) behind the same trait; the cursor math is protocol,
+the storage is not.
+
+### SyncDriver (`#sync-driver`)
+
+The loop **shape** that wires an outbound producer to a transport through the outbox, and drives
+resync on reconnect. It owns no clock and no runtime: the host calls `tick()` from its own
+scheduler, so the driver stays a pure state machine with injected seams.
+
+```
+struct SyncDriver<S: IpcSink, R: IpcSource, O: DurableOutbox, C: Clock> { /* transport, outbox, coordinator, clock */ }
+
+impl SyncDriver {
+    // One scheduler-driven step. Returns Progress (sent N, applied M, resynced) or a DriverError.
+    fn tick(&mut self) -> Result<Progress, DriverError>;
+}
+```
+
+`tick()` performs, in order:
+
+1. **Drain inbound.** Pull available frames from `IpcSource`; feed each to `ResyncCoordinator.ingest`
+   and perform the returned action (`Apply` into the local graph, emit a `ResyncRequest` /
+   `OutboxAck`, or drop). Advance `last_epoch` on applied frames.
+2. **Send outbound.** For each new local flush, `outbox.append(epoch, frame)` **then**
+   `IpcSink.send(frame)`. A send error does **not** unwind the driver and does **not** lose the
+   frame: the frame stays in the outbox, the driver records the transport as degraded, and the send
+   is retried from the outbox on a later `tick` (cadence/backoff is the injected `Clock`'s policy).
+3. **Resync on reconnect.** When the transport reports a fresh/reopened peer, exchange cursors
+   (peer's `OutboxAck.through_epoch`) and `replay_from(cursor)`; if the local receiver is behind,
+   emit its `ResyncRequest`.
+4. **Retention.** On an inbound `OutboxAck`, `outbox.ack_through(through_epoch)`.
+
+Contract:
+
+- **No frame lost on send failure.** The append-before-send + retain-on-error rule means a frame is
+  delivered on a subsequent tick once the transport recovers (the exact bug the current
+  `?`-propagating `poll` has, where a failed send bumps the epoch and unwinds).
+- **Bounded work per tick.** `tick()` does a bounded amount of drain/send work and returns; the host
+  controls cadence. No internal blocking, no async runtime baked in.
+- **Injected clock/transport.** Retry cadence, backoff, and "is the peer fresh" come from the
+  injected `Clock` and transport signals — policy stays in the host, mechanism in the driver.
+
+`IpcSink`/`IpcSource` are the existing abstract transport traits (feature `ipc`); the byte carrier
+is any `DataChannel`. **Un-gating:** the driver and the `BridgeHub` fan-out it can wrap depend only
+on these abstract `ipc` traits, so they MUST be usable without the `webrtc` feature (a caller
+supplying a Unix-domain-socket `DataChannel` gets reliable sync with no WebRTC dependency). The
+per-document channel decision (one driver/transport per document vs one hub with
+`document_hash`+`NodeKey` namespacing) is a host concern; the pull-only consumer path may not need
+`BridgeHub` fan-out at all.
+
+### Liveness cells: OR-set and LWW (`#lzsync-liveness`)
+
+Cross-process **liveness** — "editor pid X has doc Y open", "pid X holds the owner lease" — is
+carried as CRDT cells on the [CrdtSync plane](#distributed-crdt-cell-plane), not as a bespoke frame,
+so it inherits that plane's idempotent, frontier-resumable, re-delivery-safe convergence. Two
+register shapes cover the liveness needs:
+
+- **OR-set membership** — the **open-set** of `(doc, pid)` presence. An observed-remove set: a
+  `(doc, pid)` is *present* iff some add-tag for it is not shadowed by a remove-tag that observed
+  that add. This gives the exact "add wins over a concurrent stale remove" bias liveness needs (a
+  re-open concurrent with a lagging close keeps the doc open), and re-delivery of an add/remove is a
+  lattice join → idempotent. Whole-editor death removes every `(doc, pid)` for that pid.
+- **LWW liveness flag** — a per-pid `alive: bool` and the owner **lease** as HLC-stamped
+  last-writer-wins registers (the CRDT plane's default register, § Cell register types). The OS
+  process-exit event writes `alive[pid] = false`; the highest-stamp write wins, and a stale
+  re-assert is dominated.
+
+Normative semantics:
+
+- **Frontier-resumable.** A liveness op that fails to send while the peer is down is re-sent on
+  reconnect from the `CrdtSync.frontier` (the plane is already "safe to resend"); no liveness state
+  is lost across a disconnect. This is what lets the open-set/lease survive a controller recycle
+  without the editor re-announcing.
+- **Derived authority is reactive.** "Is doc Y live" = *any present `(doc, pid)` in the OR-set whose
+  `alive[pid]` is true* — a derived aggregate over the liveness family (the `#lzfamilysync`
+  materialize-on-ingest + derived-count contract). One `alive[pid] = false` write fans out to every
+  doc that pid held (whole-editor death cascade), reactively.
+- **Idempotent + convergent.** OR-set join and LWW join are semilattice joins, so out-of-order,
+  duplicated, or batched delivery all converge and re-delivery is a no-op (proven
+  `ReliableSync.crdt_liveness_convergence_under_retry`, building on the existing CRDT lattice
+  proofs).
+- **Per-doc isolation.** Liveness keys are namespaced `(document_hash, …)` like every other keyed
+  op, so a stale overlay for doc B cannot flip doc A's authority.
+
+### Conformance
+
+New fixtures under [`conformance/reliable-sync/`](conformance/reliable-sync/) pin the protocol
+cross-language (rs/js/kt):
+
+| Fixture | Pins |
+|---|---|
+| `resync_gap_converge.json` | drop a delta suffix → `RequestSnapshot` → apply `Snapshot` → same graph as the no-drop receiver (`ResyncCoordinator` decision table + convergence) |
+| `outbox_replay_after_crash.json` | append-before-send, replay-from-cursor after a simulated crash, `ack_through` retention, exactly-once effect under replay |
+| `idempotent_redelivery.json` | a re-delivered (`base_epoch < last_epoch`) delta is `Ignore`d; net state unchanged |
+| `multi_epoch_delta.json` | a `Delta` with `epoch > base_epoch + 1` applies equal to the unit-delta fold; atomic `last_epoch` advance |
+| `liveness_orset_lww.json` | OR-set open-set membership + LWW `alive`/lease; whole-editor-death cascade; derived live-doc aggregate converges under retry/re-delivery |
+
+Every fixture's frames MUST round-trip through both `json` and `msgpack`. The `ResyncCoordinator`,
+`DurableOutbox`, and liveness models are the shared cross-language pins; `lazily-formal`
+`ReliableSync.lean` is the correctness backstop the implementations must match.
 
 ## Permission Boundary (RemoteOp)
 

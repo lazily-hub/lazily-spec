@@ -184,6 +184,35 @@ The `conformance/statechart/` directory contains canonical Harel/SCXML state-cha
 | `statechart/history_deep.json` | deep history: resume full nested leaf configuration |
 | `statechart/entry_exit_actions.json` | entry/exit/transition action ordering across LCA boundaries |
 
+## Reliable Sync Conformance
+
+The `conformance/reliable-sync/` directory contains canonical fixtures for the
+[Reliable Sync protocol](protocol.md#reliable-sync-lzsync) (`#lzsync`) — the delivery-reliability
+layer over the `Snapshot`/`Delta`/`CrdtSync` planes. These are **compute** fixtures: a binding
+replays each scenario against its `ResyncCoordinator` / `DurableOutbox` / liveness implementation and
+asserts the `expect` fields identically. Fixtures that carry a top-level `wire` frame also pin the
+serde round-trip of the two new control frames (`ResyncRequest`, `OutboxAck`, schema
+[`schemas/reliable-sync.json`](schemas/reliable-sync.json)) and the multi-epoch `Delta`. The two
+control frames MUST round-trip through both `json` and `msgpack`, the same discipline the three
+`IpcMessage` variants hold.
+
+| Fixture | Model | Covers |
+|---------|-------|--------|
+| `reliable-sync/multi_epoch_delta.json` | MultiEpochDelta | a `Delta` with `epoch > base_epoch + 1` applies equal to the unit-delta fold; atomic `last_epoch` advance; gap rule unchanged under span |
+| `reliable-sync/resync_gap_converge.json` | ResyncCoordinator | drop a delta suffix → `RequestSnapshot` → apply `Snapshot` → same graph as the no-drop receiver; single request per gap |
+| `reliable-sync/idempotent_redelivery.json` | ResyncCoordinator | a re-delivered (`base_epoch < last_epoch`) delta is `Ignore`d; net state unchanged (at-least-once ⇒ exactly-once effect, receiver half) |
+| `reliable-sync/outbox_replay_after_crash.json` | DurableOutbox | append-before-send, replay-from-cursor after a simulated crash, `ack_through` retention, send-failure retain; exactly-once effect under replay |
+| `reliable-sync/liveness_orset_lww.json` | LivenessCells | OR-set open-set membership + LWW `alive`/lease; whole-editor-death cascade; derived live-doc aggregate converges under retry/re-delivery; per-doc isolation |
+
+The correctness backstop is `lazily-formal` `ReliableSync.lean`; the fixtures are the cross-language
+(rs/js/kt) drift catch pinned to that model.
+
 ## Versioning
 
 Protocol versioning follows the IPC capability negotiation: each session exchanges `{ protocol_id, protocol_major_version, codec }` before any graph state flows. A major version bump is a breaking change; minor additions are additive.
+
+The **Reliable Sync** layer (`#lzsync`) is an **additive, non-breaking** extension: it introduces two
+new externally-tagged control frames (`ResyncRequest`, `OutboxAck`) and relaxes the `Delta` epoch
+invariant to `epoch >= base_epoch + 1` (the prior `== base_epoch + 1` is the span-1 special case, so
+every existing `Delta` frame stays valid). No `protocol_major_version` bump; a peer that does not
+advertise a reliable-sync feature flag simply never receives the new control frames.

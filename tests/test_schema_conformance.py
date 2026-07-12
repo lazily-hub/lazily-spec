@@ -37,6 +37,7 @@ _SCHEMA_NAMES = [
     "lossless-tree",
     "lossless-tree-delta",
     "message-passing",
+    "reliable-sync",
 ]
 
 
@@ -721,4 +722,100 @@ def test_message_passing_submit_requires_payload_hash() -> None:
     }
     assert _validator("message-passing").iter_errors(incomplete), (
         "CommandSubmit must require payload_hash"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Reliable Sync (conformance/reliable-sync/) — ResyncCoordinator / DurableOutbox
+# / SyncDriver / OR-set-LWW liveness compute fixtures + control-frame wire
+# schema (#lzsync). These are replayed by each binding (Rust reference +
+# Kotlin/JS ports) as the cross-language pins for the reliable-sync protocol.
+# ---------------------------------------------------------------------------
+
+_RELIABLE_SYNC_DIR = FIXTURE_DIR / "reliable-sync"
+
+_RELIABLE_SYNC_MODELS = {
+    "MultiEpochDelta",
+    "ResyncCoordinator",
+    "DurableOutbox",
+    "LivenessCells",
+}
+
+# Which schema a fixture's top-level `wire` frame (when present) validates against,
+# by the externally-tagged envelope key.
+_WIRE_ENVELOPE_SCHEMA = {
+    "Snapshot": "snapshot",
+    "Delta": "delta",
+    "CrdtSync": "distributed",
+    "ResyncRequest": "reliable-sync",
+    "OutboxAck": "reliable-sync",
+}
+
+
+def _reliable_sync_fixtures() -> list[str]:
+    if not _RELIABLE_SYNC_DIR.is_dir():
+        return []
+    return sorted(p.name for p in _RELIABLE_SYNC_DIR.glob("*.json"))
+
+
+@pytest.mark.parametrize("name", _reliable_sync_fixtures())
+def test_reliable_sync_fixture_is_well_formed(name: str) -> None:
+    """Structural guard for the reliable-sync compute fixtures. Every binding
+    replays these `{scenarios: [{name, expect}]}` models against its
+    ResyncCoordinator / DurableOutbox / liveness implementation. This asserts
+    only the language-agnostic top-level shape."""
+    obj = json.loads((_RELIABLE_SYNC_DIR / name).read_text())
+    assert obj["protocol_version"] == 1, f"{name}: protocol_version must be 1"
+    assert obj["kind"] == "ReliableSync", f"{name}: kind must be 'ReliableSync'"
+    assert obj["model"] in _RELIABLE_SYNC_MODELS, f"{name}: unknown model {obj['model']!r}"
+    assert isinstance(obj["description"], str) and obj["description"], f"{name}: missing description"
+
+    scenarios = obj.get("scenarios")
+    assert isinstance(scenarios, list) and scenarios, f"{name}: needs non-empty 'scenarios'"
+    for sc in scenarios:
+        assert isinstance(sc.get("name"), str) and sc["name"], f"{name}: scenario missing name"
+        assert "expect" in sc, f"{name}: scenario {sc['name']!r} missing 'expect'"
+
+
+@pytest.mark.parametrize("name", _reliable_sync_fixtures())
+def test_reliable_sync_wire_frame_validates_schema(name: str) -> None:
+    """When a reliable-sync fixture carries a top-level `wire` frame, it MUST be
+    the externally-tagged IpcMessage envelope and validate against the schema
+    for its variant (Snapshot/Delta/CrdtSync/ResyncRequest/OutboxAck)."""
+    obj = json.loads((_RELIABLE_SYNC_DIR / name).read_text())
+    wire = obj.get("wire")
+    if wire is None:
+        return
+    assert isinstance(wire, dict) and len(wire) == 1, (
+        f"{name}: `wire` must be a single-key externally-tagged envelope"
+    )
+    (tag,) = wire.keys()
+    assert tag in _WIRE_ENVELOPE_SCHEMA, f"{name}: unknown wire envelope tag {tag!r}"
+    schema = _WIRE_ENVELOPE_SCHEMA[tag]
+    errors = sorted(_validator(schema).iter_errors(wire), key=lambda e: list(e.path))
+    assert not errors, (
+        f"{name} wire {tag} does not validate against {schema}.json:\n"
+        + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+    )
+
+
+def test_reliable_sync_resync_request_frame_validates() -> None:
+    """The ResyncRequest control frame validates against reliable-sync.json."""
+    frame = {"ResyncRequest": {"from_epoch": 7}}
+    errors = list(_validator("reliable-sync").iter_errors(frame))
+    assert not errors, f"ResyncRequest frame should validate: {[e.message for e in errors]}"
+
+
+def test_reliable_sync_outbox_ack_frame_validates() -> None:
+    """The OutboxAck control frame validates against reliable-sync.json."""
+    frame = {"OutboxAck": {"through_epoch": 41}}
+    errors = list(_validator("reliable-sync").iter_errors(frame))
+    assert not errors, f"OutboxAck frame should validate: {[e.message for e in errors]}"
+
+
+def test_reliable_sync_control_frame_rejects_unknown_field() -> None:
+    """additionalProperties:false — a control frame with an unknown field is rejected."""
+    bad = {"OutboxAck": {"through_epoch": 41, "bogus": 1}}
+    assert list(_validator("reliable-sync").iter_errors(bad)), (
+        "OutboxAck with an unknown field must be rejected"
     )

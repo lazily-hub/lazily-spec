@@ -159,6 +159,16 @@ SM governs only *liveness* — it never changes a cell's kind or mechanism:
 Mechanism is a property of the cell's **meaning**; liveness is a property of the current
 **session**. Conforming implementations MUST keep these independent.
 
+**Cross-process liveness as a CRDT cell.** When *session liveness itself* must cross a process
+boundary — "editor pid X has doc Y open", "pid X holds the owner lease" — it is modeled as an
+ordinary multi-write cell on the CRDT plane, not as out-of-band state: an **OR-set** for open-set
+membership (observed-remove, so a re-open wins over a lagging close) and an **LWW register** for the
+per-pid `alive` flag / lease. The derived "is this doc live" aggregate is then a plain reactive
+memo over that liveness family (the `#lzfamilysync` derived-aggregate contract), and an OS
+process-exit event is just the highest-stamp write to `alive[pid]`. This keeps liveness on the same
+convergent, idempotent, frontier-resumable substrate as every other replicated cell. Normative
+semantics: [protocol.md § Liveness cells](protocol.md#liveness-cells-or-set-and-lww-lzsync-liveness).
+
 ## Conformance summary
 
 An implementation conforms to the cell model when:
