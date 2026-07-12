@@ -1029,6 +1029,17 @@ Contract:
   controls cadence. No internal blocking, no async runtime baked in.
 - **Injected clock/transport.** Retry cadence, backoff, and "is the peer fresh" come from the
   injected `Clock` and transport signals — policy stays in the host, mechanism in the driver.
+- **Backpressure is host policy, not driver mechanism.** The driver does **not** bound its outbound
+  staging or block the producer: `enqueue` is unbounded and the `DurableOutbox` retains every unacked
+  frame until the peer's `OutboxAck` (this is the at-least-once durability guarantee — a frame is not
+  dropped to relieve pressure). Instead the driver exposes the signals a host uses to apply
+  backpressure itself: the stall state (`is_stalled` / `stalled_for`) and the retained-outbox depth
+  (`Progress.retained`). A host bounds memory by (a) rate-limiting or coalescing enqueues off those
+  signals — a re-emit at an already-accepted epoch is an idempotent no-op delta, so coalescing is the
+  natural limiter — and (b) choosing a `DurableOutbox` that spills to durable storage rather than RAM
+  (e.g. a SQLite-backed outbox), so a long-stalled peer grows disk, not heap. Enforcing a bounded
+  staging queue (e.g. via a `QueueCell`-style `is_full`) is a deliberate non-goal of the core loop;
+  add it in the host if a hard cap is required.
 
 `IpcSink`/`IpcSource` are the existing abstract transport traits (feature `ipc`); the byte carrier
 is any `DataChannel`. **Un-gating:** the driver and the `BridgeHub` fan-out it can wrap depend only
@@ -1037,6 +1048,44 @@ supplying a Unix-domain-socket `DataChannel` gets reliable sync with no WebRTC d
 per-document channel decision (one driver/transport per document vs one hub with
 `document_hash`+`NodeKey` namespacing) is a host concern; the pull-only consumer path may not need
 `BridgeHub` fan-out at all.
+
+#### Transport seam (`IpcSink` / `IpcSource`, `#lzsync-transport-seam`)
+
+The `SyncDriver` is generic over exactly two host-supplied seams. Every binding that ports the
+driver MUST provide the same two-method contract so the loop above is **identical** across
+languages; the seams are the injected boundary the design assigns to the host ("which socket" is a
+deployment choice), so they carry **no wire form of their own** — what crosses the wire is the
+codec-encoded `IpcMessage` frame (msgpack is the cross-language default; see § Frame codecs). A
+binding names them idiomatically (Rust traits, Kotlin/TS interfaces); the semantics are normative:
+
+```
+// Outbound: deliver exactly one already-encoded protocol frame.
+trait IpcSink   { fn send(&mut self, msg: &IpcMessage) -> Result<(), SinkError>; }
+// Inbound: poll for the next frame without blocking.
+trait IpcSource { fn recv(&mut self) -> Result<Option<IpcMessage>, SourceError>; }
+```
+
+- **`send` MAY fail and MAY be lossy.** A `send` error means the frame was *not* durably handed to
+  the peer. At-least-once is a **driver** property, not a sink property: on a send error the driver
+  keeps the frame in the `DurableOutbox` and replays it after the next reconnect. A sink is therefore
+  free to be a plain best-effort write (one connect-send-receipt on a Unix socket, one `DataChannel`
+  frame, …) — it never has to buffer or retry, because the outbox already does.
+- **`recv` is poll, not block.** `Ok(None)` means the source is *currently exhausted or closed*; the
+  driver treats it as "no inbound progress this tick" and returns — it never parks a thread on the
+  source (cadence is the host's `Clock`/scheduler policy). `Ok(Some(frame))` yields one frame.
+- **A `recv` `Err` is the reconnect signal.** A source read failure surfaces from `tick()` as
+  `DriverError::Source`; the host re-establishes the byte carrier and calls `on_reconnect()`, after
+  which the next `tick()` replays the unacked outbox suffix from the peer ack cursor and re-advertises
+  the receiver cursor. (A *sink* failure, by contrast, is retain-and-stall, **not** a `DriverError` —
+  it is reported through `Progress`/stall signals so the host can back off.)
+
+Because the seam has no wire representation, it adds **no conformance fixture**: the reliable-sync
+fixtures already pin the driver's observable behavior (gap→resync convergence, outbox replay,
+idempotent redelivery) at the message-sequence level, which is the correct abstraction — the seam
+sits deliberately *below* it. This is also why the seam is **not** formalized in `ReliableSync.lean`:
+"send/receive a frame" has no algebraic content to prove; the invariants that matter
+(`resync_convergence`, `outbox_at_least_once_exactly_once_effect`, the liveness lattice joins) are
+proven over frame sequences, above the transport.
 
 ### Liveness cells: OR-set and LWW (`#lzsync-liveness`)
 
