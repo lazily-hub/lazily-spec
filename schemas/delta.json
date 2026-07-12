@@ -70,6 +70,30 @@
           "required": ["EdgeRemove"],
           "additionalProperties": false,
           "properties": { "EdgeRemove": { "$ref": "#/$defs/EdgeBody" } }
+        },
+        {
+          "type": "object",
+          "title": "QueuePush",
+          "description": "Op-log delta form for a QueueCell node: append `payload` to the tail. The op-log delta is the incremental counterpart to the storage-snapshot form (cell-model.md § Wire and snapshot shape); a run of same-direction QueuePush ops fuses into one multi-epoch batch Delta (protocol.md § Backpressure & outbox coalescing).",
+          "required": ["QueuePush"],
+          "additionalProperties": false,
+          "properties": { "QueuePush": { "$ref": "#/$defs/CellSetBody" } }
+        },
+        {
+          "type": "object",
+          "title": "QueuePop",
+          "description": "Op-log delta form for a QueueCell node: remove the head. Carries no value (the popped element is determined by ordered replay); a re-delivered pop is Ignored by the epoch gap rule. Crosses the wire only when consumption is authoritatively replicated (mirror sync); in the default producer→consumer sync the remote consumer's pops are local. A QueuePop/QueueClose is a fusion boundary (order-sensitive).",
+          "required": ["QueuePop"],
+          "additionalProperties": false,
+          "properties": { "QueuePop": { "$ref": "#/$defs/NodeBody" } }
+        },
+        {
+          "type": "object",
+          "title": "QueueClose",
+          "description": "Op-log delta form for a QueueCell node: mark closed (idempotent, terminal — Closed is distinct from Empty). A fusion boundary.",
+          "required": ["QueueClose"],
+          "additionalProperties": false,
+          "properties": { "QueueClose": { "$ref": "#/$defs/NodeBody" } }
         }
       ]
     },

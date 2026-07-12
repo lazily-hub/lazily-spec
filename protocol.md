@@ -158,6 +158,34 @@ All `DeltaOp`, `IpcValue`, `NodeState`, and `IpcMessage` variants are **external
 | `NodeRemove` | `node` | Removed node (free-list reuse: Remove then Add) |
 | `EdgeAdd` | `dependent`, `dependency` | New dependency edge |
 | `EdgeRemove` | `dependent`, `dependency` | Removed dependency edge |
+| `QueuePush` | `node`, `payload: IpcValue` | Op-log: append to a `QueueCell` tail |
+| `QueuePop` | `node` | Op-log: remove a `QueueCell` head (no value; determined by replay) |
+| `QueueClose` | `node` | Op-log: close a `QueueCell` (idempotent, terminal) |
+
+##### QueueCell op-log delta form (`#queue-oplog`)
+
+A `QueueCell` reconciles by **two complementary wire forms**, chosen by plane:
+
+- **Snapshot plane → storage-snapshot form.** The full queue state is the storage backend's
+  snapshot (the reference `VecDequeStorage` serializes as a FIFO-ordered JSON array — cell-model.md
+  § Wire and snapshot shape). This is the *state* form.
+- **Delta plane → op-log form.** Incremental change is the ordered op-log of `QueuePush` / `QueuePop`
+  / `QueueClose` shell ops above, carried in a `Delta` exactly like any other `DeltaOp` (same
+  `base_epoch`/`epoch` span, gap rule, and `batch = fold` semantics). This is the *op-log* form.
+
+Why a queue needs the op-log form and cannot use state-supersede coalescing: a queue's order and
+multiplicity **are** its value, and the consumer's pop position is receiver-side state a sender
+snapshot cannot see — so collapsing the unacked suffix to a state snapshot would break exactly-once
+FIFO consumption. Instead the op-log **fuses** a maximal run of same-direction `QueuePush` ops into
+one multi-epoch batch `Delta` (order-preserving, lossless; a `QueuePop`/`QueueClose` is a fusion
+boundary). Fusion bounds frame count, **not** memory — see [§ Backpressure & outbox coalescing](#backpressure--outbox-coalescing-lzsync-backpressure).
+
+**SPSC crossing rule.** In the default producer→consumer sync the producer's op-log carries
+`QueuePush`/`QueueClose`; the remote consumer owns consumption, so its `QueuePop` is **local and does
+not cross**. Only a mirror sync (an authoritatively-replicated consumer) also carries `QueuePop` so
+mirrors converge on the consumption position. A re-delivered queue op (`base_epoch < last_epoch`) is
+`Ignore`d by the `ResyncCoordinator`, so at-least-once replay neither drops nor double-applies a push
+or pop.
 
 ### Consistency invariants
 
@@ -1100,7 +1128,8 @@ The unifying law: **coalesce = the element's semilattice join folded over the un
   being max-stamp.
 - **Batch-fusion coalesce (op-log cells: QueueCell).** A queue has no idempotent join — order and
   multiplicity *are* the value — so it cannot collapse; it only **fuses** a run of same-direction ops
-  (`push(a); push(b); push(c)` → one atomic `batch`). Lossless and order-preserving
+  (`QueuePush(a); QueuePush(b); QueuePush(c)` → one atomic batch `Delta`, the op-log delta form of
+  [§ QueueCell op-log delta form](#queuecell-op-log-delta-form-queue-oplog)). Lossless and order-preserving
   (`ReliableSync.batch_fusion_state`; a fused multi-epoch delta equals its expanded unit run,
   `multi_epoch_apply_eq_fold`). This bounds **frame count and per-frame overhead** (one header, one
   codec envelope, one reactive invalidation on apply), **not memory** — a queue cannot drop elements

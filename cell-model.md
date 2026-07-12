@@ -580,15 +580,24 @@ storage backend (per the [distributed-queue PRD](distributed-queue-prd.md)).
 
 ### Wire and snapshot shape
 
-The `QueueCell` shell has **no own IPC schema** — the head/tail/closed version cells are
-trivial counters, not independently serialized. Queue state on the wire is the **storage
-backend's snapshot form**. Cross-backend interop (e.g., `VecDeque`-backed on one peer,
-`RaftQueueStorage` on another) requires explicit storage-format agreement between the
-peers; the shell does not mandate a canonical storage snapshot.
+The `QueueCell` shell's **version cells have no own IPC schema** — the head/tail/closed
+counters are trivial and not independently serialized. A queue reconciles by two
+complementary wire forms, chosen by plane:
 
-The reference `VecDequeStorage` backend serializes as a JSON array (element order = FIFO
-order) for conformance fixture purposes. Bindings MAY choose a more efficient binary
-encoding (bincode, postcard) for production use.
+- **Snapshot plane → storage-snapshot form.** Full queue state is the **storage backend's
+  snapshot form**. The reference `VecDequeStorage` backend serializes as a JSON array
+  (element order = FIFO order) for conformance fixtures; bindings MAY choose a more
+  efficient binary encoding (bincode, postcard) for production. Cross-backend interop (e.g.
+  `VecDeque`-backed on one peer, `RaftQueueStorage` on another) requires explicit
+  storage-format agreement; the shell does not mandate a canonical storage snapshot.
+- **Delta plane → op-log form.** Incremental change is the ordered shell op-log —
+  `QueuePush` / `QueuePop` / `QueueClose` — carried in a `Delta` like any other `DeltaOp`
+  ([protocol.md § QueueCell op-log delta form](protocol.md)). These are **shell** ops
+  (storage-agnostic append/remove-head/close), so they need no storage-format agreement; the
+  op-log is the form reliable-sync fuses under backpressure (a queue cannot state-supersede
+  coalesce — order, multiplicity, and the receiver's pop position forbid it). The op-log
+  delta form is normative here; a distributed *storage* backend (per the
+  [distributed-queue PRD](distributed-queue-prd.md)) remains a separate v1 non-goal.
 
 ### Distribution
 

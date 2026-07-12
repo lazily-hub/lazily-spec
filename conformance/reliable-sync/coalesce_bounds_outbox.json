@@ -39,26 +39,25 @@
     },
     {
       "name": "oplog_declines_snapshot_fuses_batch",
-      "description": "A QueueCell (op-log) outbox holds a run of same-direction push ops at epochs 1,2,3 (each queue element materializes as a distinct cell op — nodes 7,8,9 — so the run is append-like, not same-node overwrite; the concrete op-log frame encoding is deferred to the op-log frame spec). It DECLINES snapshot-coalesce (coalesce_to_snapshot returns false — a queue snapshot would discard the receiver's independent consumption position). Instead it fuses the run into one multi-epoch batch Delta (base_epoch 0 → epoch 3) carrying the ops in order. Lossless and order-preserving: the fused batch applies equal to the three unit deltas (multi_epoch_apply_eq_fold / batch_fusion_state). Frame count drops 3 → 1; retained PAYLOAD volume is unchanged (a queue cannot drop elements), so memory is still bounded by source-side QueueCell.is_full, not by this fusion.",
+      "description": "A QueueCell (op-log) outbox holds a run of same-direction QueuePush ops on queue node 7 at epochs 1,2,3 (the normative op-log delta form, protocol.md § QueueCell op-log delta form — appends to the tail, so order and multiplicity are the value). It DECLINES snapshot-coalesce (coalesce_to_snapshot returns false — a queue snapshot would discard the receiver's independent consumption position). Instead it fuses the run into one multi-epoch batch Delta (base_epoch 0 → epoch 3) carrying the QueuePush ops in order. Lossless and order-preserving: the fused batch applies equal to the three unit deltas (multi_epoch_apply_eq_fold / batch_fusion_state). Frame count drops 3 → 1; retained PAYLOAD volume is unchanged (a queue cannot drop elements), so memory is still bounded by source-side QueueCell.is_full, not by this fusion. A QueuePop/QueueClose would be a fusion boundary.",
       "peer_acked_through": 0,
       "appended": [
-        { "base_epoch": 0, "epoch": 1, "ops": [ { "CellSet": { "node": 7, "payload": { "Inline": [97] } } } ] },
-        { "base_epoch": 1, "epoch": 2, "ops": [ { "CellSet": { "node": 8, "payload": { "Inline": [98] } } } ] },
-        { "base_epoch": 2, "epoch": 3, "ops": [ { "CellSet": { "node": 9, "payload": { "Inline": [99] } } } ] }
+        { "base_epoch": 0, "epoch": 1, "ops": [ { "QueuePush": { "node": 7, "payload": { "Inline": [97] } } } ] },
+        { "base_epoch": 1, "epoch": 2, "ops": [ { "QueuePush": { "node": 7, "payload": { "Inline": [98] } } } ] },
+        { "base_epoch": 2, "epoch": 3, "ops": [ { "QueuePush": { "node": 7, "payload": { "Inline": [99] } } } ] }
       ],
       "retained_before": 3,
       "coalesce": {
         "mode": "batch_fusion",
         "declined_snapshot": true,
-        "op_form": "illustrative",
         "wire": {
           "Delta": {
             "base_epoch": 0,
             "epoch": 3,
             "ops": [
-              { "CellSet": { "node": 7, "payload": { "Inline": [97] } } },
-              { "CellSet": { "node": 8, "payload": { "Inline": [98] } } },
-              { "CellSet": { "node": 9, "payload": { "Inline": [99] } } }
+              { "QueuePush": { "node": 7, "payload": { "Inline": [97] } } },
+              { "QueuePush": { "node": 7, "payload": { "Inline": [98] } } },
+              { "QueuePush": { "node": 7, "payload": { "Inline": [99] } } }
             ]
           }
         }
@@ -86,5 +85,16 @@
         "dequeue_is_fifo_front": true
       }
     }
-  ]
+  ],
+  "wire": {
+    "Delta": {
+      "base_epoch": 0,
+      "epoch": 3,
+      "ops": [
+        { "QueuePush": { "node": 7, "payload": { "Inline": [97] } } },
+        { "QueuePush": { "node": 7, "payload": { "Inline": [98] } } },
+        { "QueuePush": { "node": 7, "payload": { "Inline": [99] } } }
+      ]
+    }
+  }
 }
