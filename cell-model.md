@@ -208,47 +208,64 @@ An implementation conforms to the cell model when:
     (bounded-viewport recompute) is provided in **both** modes and is never conflated with
     *lazy materialization*.
 
-## Materialization mode
+## Materialization (a caller-provided recipe)
 
-Cell kind (above) fixes *how a cell converges*. **Materialization mode** is an
-**orthogonal** axis: it fixes *when a derived cell's backing node is allocated* — not what
-it computes, not how it converges, not how it merges. It trades **memory and first-touch
-latency** against **cold full-scan cost**, and it MUST NOT be observable through the value
-of any cell.
+Cell kind (above) fixes *how a cell converges*. **Materialization** is an **orthogonal**
+axis: it fixes *when a derived cell's backing node is allocated* — not what it computes, not
+how it converges, not how it merges. It trades **memory and first-touch latency** against
+**cold full-scan cost**, and it MUST NOT be observable through the value of any cell.
 
-### The `ReactiveFamily` vehicle
+> **Why a recipe, not a primitive.** Materialization was first pinned as a bespoke
+> `ReactiveFamily` type carrying an eager/lazy *mode* — a reaction to one binding
+> (`lazily-zig`) implementing lazy materialization in the spreadsheet benchmark and thereby
+> diverging from the others. Standardizing the *type* invites re-divergence: each binding
+> builds the type slightly differently, and most bindings never need it. What must agree is
+> the **observable behavior** the benchmark actually measures — *transparency* (a lazy read
+> equals an eager read) and *deferral* (an unread lazy entry costs nothing) — not any type.
+> So materialization is normative as a **pattern recipe over existing primitives**, pinned by
+> the fixtures below; a bespoke keyed-family type (`ReactiveFamily` / its `CellFamily`
+> specialization) is a **non-normative convenience** a binding MAY offer, never a required
+> primitive.
 
-Materialization mode is a property of a **`ReactiveFamily`** — the unified keyed reactive
-family, of which the keyed cell collection ([`CellFamily`](#keyed-cell-collections)) is the
-input-cell specialization. A `ReactiveFamily` maps keys `K` to per-entry reactive nodes and
-abstracts over the entry's **handle kind**, the axis a binding can express as a type
-parameter (`ReactiveFamily<K, V, H>`):
+### The materialization recipe
 
-- **Cell entries** (`H = CellHandle`) are **input** nodes. They are **always materialized**
-  regardless of mode — an input has no derivation to defer. Lazily *minting* an input on
-  first `get` (as `CellFamily` does today) is a collection concern, not the materialization
-  axis.
-- **Slot entries** (`H = SlotHandle`) are **derived** nodes. These are what materialization
-  mode governs: eager allocates them up front, lazy defers each to first read.
+Materialization is **caller-provided**: a keyed collection (a
+[`CellMap`](#keyed-cell-collections) or any keyed address space) plus a **per-key factory
+whose return type is the materialization choice**. Nothing new is required beyond the
+cell/slot/signal primitives a binding already has:
 
-Entry kind is **orthogonal to mode** (proved in `lazily-formal`'s `Materialization` module
-as `cell_entries_materialized_in_every_mode` / `slot_entries_deferred_under_lazy`): choosing
-lazy defers only slot entries, never cell entries. The two modes below therefore describe how
-a `ReactiveFamily`'s **derived (slot)** entries are allocated.
+- **Eager entry** — the factory yields an **input cell** or an **eager `signal`** (a
+  memo-slot + puller effect): the node is allocated/pulled up front; a read is a direct node
+  access.
+- **Lazy entry** — the factory yields a **lazy `slot`**: the node is allocated on its
+  **first observe**, addressed by **key**. A never-observed lazy entry is never allocated.
 
-There are two modes:
+So the caller provides materialization through two levers it already owns — *whether it
+observes a key* (unread lazy entries stay unallocated) and *what the factory returns* (slot ⇒
+lazy, signal ⇒ eager) — with **no mode flag** and **no per-read toggle**. This is the same
+"lazy by default, eager when asked (via `signal`)" model lazily already uses at the single-cell
+level, applied per key. Entry kind is the pinned axis:
 
-- **Eager (default).** Every derived cell's node is allocated when the graph is
-  constructed. This is the shared high-performance core: a read is a direct node access,
-  and a full recompute pays only compute (allocation already happened at build). An
-  implementation MUST make eager the **default**.
-- **Lazy (opt-in).** A derived cell's node is allocated on its **first read**
-  ("materialize on pull"), addressed by a **key** rather than a held handle. A never-read
-  derived cell is never allocated. Lazy is a **keyed overlay on the eager core**, not a
-  second graph engine: the first read of key `k` constructs the *same* node the eager
-  build would have, then caches it. An implementation that offers lazy MUST expose it as an
-  explicit opt-in (e.g. a keyed-context constructor), **never as the default** and **never
-  as a per-read toggle** on an eager handle.
+- **Cell entries** (`H = CellHandle`) are **input** nodes — **always materialized**; an input
+  has no derivation to defer. Minting an input on first `get` is a collection concern, not
+  materialization.
+- **Slot entries** (`H = SlotHandle`) are **derived** — the ones deferral governs: an eager
+  factory allocates them up front, a lazy factory defers each to first observe.
+
+Entry kind is **orthogonal to the materialization choice** (proved in `lazily-formal`'s
+`Materialization` module as `cell_entries_materialized_in_every_mode` /
+`slot_entries_deferred_under_lazy`): lazy defers only slot entries, never cell entries.
+
+Normative rules on the recipe:
+
+- **Eager is the default.** Absent an explicit lazy opt-in, derived entries are eager — a read
+  is a direct node access and a full recompute pays only compute. A binding MUST make eager the
+  **default**.
+- **Lazy is an explicit opt-in overlay on the eager core**, addressed by **key**, **never**
+  the default and **never** a per-read toggle on an eager handle. The first observe of key `k`
+  constructs the *same* node the eager build would have, then caches it — a keyed overlay, not
+  a second graph engine. A binding that offers lazy MUST expose it as an explicit opt-in (e.g.
+  a keyed factory / keyed-context constructor).
 
 ### Observational transparency (normative)
 
@@ -278,10 +295,12 @@ preserve these consequences:
 
 ### Execution-context flavors (thread-safe / async)
 
-A `ReactiveFamily` runs against a **context**, and the context is a third axis
-orthogonal to both entry kind and materialization mode: it fixes *where and how* the
-graph executes, not *what* it computes. The keyed-family vehicle is defined over each
-context a binding provides:
+The recipe runs against a **context**, and the context is a third axis orthogonal to both
+entry kind and materialization: it fixes *where and how* the graph executes, not *what* it
+computes. The materialization laws hold over each context a binding provides; a binding that
+packages the recipe as a convenience type (`ReactiveFamily` and its thread-safe/async
+variants — all **non-normative**) does so per context, and each such type carries the
+context-specific law below:
 
 - **Single-threaded** (`ReactiveFamily`, over the base `Context`) — the reference
   semantics above.
@@ -320,9 +339,13 @@ Handle-based graphs that read most of what they build SHOULD stay eager. The cho
 
 ## Keyed cell collections
 
-A *keyed cell collection* (`CellMap`, and the `CellFamily` factory over it) is a
-**composition of cells**, not a new cell kind. It maps keys `K` to per-entry cells and
-adds a dedicated **membership cell** tracking the set of keys.
+A *keyed cell collection* (`CellMap`) is a **composition of cells**, not a new cell kind. It
+maps keys `K` to per-entry cells and adds a dedicated **membership cell** tracking the set of
+keys. `CellMap` is the one **required** keyed primitive here; `CellFamily` (`CellMap` plus an
+auto-mint factory) and the materialization family (`ReactiveFamily`) are **recipes** over it —
+non-normative conveniences a binding MAY offer, never required primitives (see
+[§ Materialization](#materialization-a-caller-provided-recipe)). The auto-mint recipe is
+equivalently a `CellMap` method (`get_or_insert_with(key, factory)`); it needs no separate type.
 
 > **Required.** The keyed cell collections layer is normative for **every** lazily
 > binding — it is not an optional lazily-rs extension. A conforming binding MUST implement
