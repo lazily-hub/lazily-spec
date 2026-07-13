@@ -797,6 +797,7 @@ _RELIABLE_SYNC_MODELS = {
     "MultiEpochDelta",
     "ResyncCoordinator",
     "DurableOutbox",
+    "OutboxStore",
     "LivenessCells",
     "OutboxCoalesce",
     "PartitionEviction",

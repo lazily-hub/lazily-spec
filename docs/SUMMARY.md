@@ -9,6 +9,8 @@
 - [State Charts](state-charts.md)
 - [Async Reactive Context](async.md)
 - [Lossless Tree CRDT](lossless-tree-crdt.md)
+- [CrdtTree Contract](crdt-tree.md)
+- [Durable Outbox Stores](durable-outbox.md)
 - [Cross-Language Coverage](coverage.md)
 - [Wire Protocol](protocol.md)
 - [Causal Receipts](receipts.md)
