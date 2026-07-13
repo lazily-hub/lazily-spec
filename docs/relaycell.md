@@ -11,16 +11,16 @@ in [`relaycell-backpressure-analysis.md`](relaycell-backpressure-analysis.md); t
 (`LazilyFormal.Merge`, `LazilyFormal.Relay`) is the executable reference for the
 invariants below.
 
-> **Status.** Phases 1–7 have a **lazily-rs reference implementation** + Lean
-> pins, so the API shapes below are validated by those spikes: Phase 1–4 (merge
-> algebra, RelayCell core, SpillStore, Transport — `merge.rs`, `relay.rs`,
-> `spill.rs`, `relay_transport.rs`), Phase 5 (Inbox/Outbox role facades —
-> `relay_roles.rs`), Phase 6 (the extra `Rate`/`Window`/`Expiry`/`Priority`/keyed
-> policies — `relay_policy.rs`), and Phase 7 (example systems as integration
-> tests — `relay_examples.rs`). The Phase 6 policies are formally corollaries of
-> the core theorems (window → flush-grouping, priority/sharding → reorder). Phase 8
-> (ports to the remaining bindings + full conformance parity) is in progress:
-> Phase 1 is ported across all bindings; Phases 2–7 are the lazily-rs reference.
+> **Status.** Phases 1–8 are complete across all eight bindings. The
+> **lazily-rs reference implementation** and Lean pins validate the API shapes:
+> Phase 1–4 (merge algebra, RelayCell core, SpillStore, Transport — `merge.rs`,
+> `relay.rs`, `spill.rs`, `relay_transport.rs`), Phase 5 (Inbox/Outbox role
+> facades — `relay_roles.rs`), Phase 6 (the extra
+> `Rate`/`Window`/`Expiry`/`Priority`/keyed policies — `relay_policy.rs`), and
+> Phase 7 (example systems as integration tests — `relay_examples.rs`). The
+> Phase 6 policies are formally corollaries of the core theorems (window →
+> flush-grouping, priority/sharding → reorder), and every binding exercises the
+> Phase 2–6 behavior in its relay tests.
 
 > **Invariant above all else (§9).** Policy and transport are *local mechanism*;
 > the **converged egress state is independent of binding and mechanism whenever
