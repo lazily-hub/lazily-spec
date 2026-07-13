@@ -144,6 +144,14 @@ snapshot, whole document) is permitted only as an *optimization* that is observa
 equivalent to per-cell merge; if it can produce a result no sequence of per-cell merges
 could, it is non-conforming.
 
+The per-cell merge `⊕` is characterized as an **associative fold** by the
+[merge algebra](reactive-graph.md#mergecell-and-the-merge-algebra-relaycell)
+(`#relaycell`): a `MergeCell<T, M>` is a cell whose write folds under a
+`MergePolicy` `M`, and a plain `Cell` is `MergeCell<KeepLatest>`. The
+[merge mechanisms](#merge-mechanisms) below are the semilattice policies
+(`CrdtJoin<C>`) of that algebra; associativity is the invariant that lets a
+bounded relay flush at any watermark and still converge (Phase 2+).
+
 ## Liveness vs mechanism
 
 Whether a cell is multi-write (`merge:` present) is **static**. How many writers are

@@ -1,0 +1,43 @@
+{
+  "description": "MergeCell merge algebra (#relaycell, Phase 1). A binding creates a MergeCell under each policy, replays the `merge` ops, and asserts (a) the converged value after each op and (b) whether the op changed state — `invalidates` false means ⊕(old,op) == old, so the ==-guard suppresses the cascade (free dedup for an idempotent ⊕, and the identity element for any policy). KeepLatest is the band behind a plain Cell (Cell ≡ MergeCell<KeepLatest>); Sum is a commutative monoid (not idempotent); Max is a semilattice (idempotent — merging at/below the current max is a no-op). Associativity and the commutativity/idempotency flags per policy are pinned separately by each binding's property-based law-tests.",
+  "kind": "Collection",
+  "model": "MergeCell",
+  "scenarios": [
+    {
+      "policy": "KeepLatest",
+      "flags": { "commutative": false, "idempotent": true },
+      "initial": 0,
+      "steps": [
+        { "merge": 3, "expected": { "value": 3, "invalidates": true } },
+        { "merge": 3, "expected": { "value": 3, "invalidates": false } },
+        { "merge": 7, "expected": { "value": 7, "invalidates": true } },
+        { "merge": 7, "expected": { "value": 7, "invalidates": false } },
+        { "merge": 1, "expected": { "value": 1, "invalidates": true } }
+      ]
+    },
+    {
+      "policy": "Sum",
+      "flags": { "commutative": true, "idempotent": false },
+      "initial": 0,
+      "steps": [
+        { "merge": 5, "expected": { "value": 5, "invalidates": true } },
+        { "merge": -3, "expected": { "value": 2, "invalidates": true } },
+        { "merge": 8, "expected": { "value": 10, "invalidates": true } },
+        { "merge": 2, "expected": { "value": 12, "invalidates": true } },
+        { "merge": 0, "expected": { "value": 12, "invalidates": false } }
+      ]
+    },
+    {
+      "policy": "Max",
+      "flags": { "commutative": true, "idempotent": true },
+      "initial": 10,
+      "steps": [
+        { "merge": 5, "expected": { "value": 10, "invalidates": false } },
+        { "merge": 10, "expected": { "value": 10, "invalidates": false } },
+        { "merge": 42, "expected": { "value": 42, "invalidates": true } },
+        { "merge": 0, "expected": { "value": 42, "invalidates": false } },
+        { "merge": 42, "expected": { "value": 42, "invalidates": false } }
+      ]
+    }
+  ]
+}

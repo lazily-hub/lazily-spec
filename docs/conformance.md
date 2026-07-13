@@ -55,6 +55,7 @@ assert the emitted minimal op set.
 | `collections/keyed_reconciliation_lis.json` | LIS move-minimized reconciliation; stable entries not invalidated |
 | `collections/semtree_incremental.json` | memoized semantic tree: ancestor-chain-only recompute, sibling isolation, memo guard |
 | `collections/seqcrdt_convergence.json` | move-aware sequence CRDT: single-LWW move, concurrent-move/value-edit independence, tombstone convergence, commutativity |
+| `collections/mergecell_algebra.json` | MergeCell merge algebra (`#relaycell`): KeepLatest/Sum/Max policies; per-op converged value + whether `⊕(old,op)==old` suppresses the cascade (idempotent/identity no-op = free dedup); `Cell ≡ MergeCell<KeepLatest>` |
 | `collections/textcrdt_convergence.json` | Fugue/RGA character CRDT: concurrent same-point inserts, sticky tombstone, commutative/idempotent merge, GC |
 | `collections/textcrdt_delta_sync.json` | `TextCrdt` delta sync (`#lztextsync`): `version_vector` (insert + tombstone ids), `delta_since` / `apply_delta`; bidirectional exchange convergence, whole-snapshot fork identity preservation, idempotent apply |
 | `collections/stableid_alignment.json` | manufactured text identity: anchors / content hashes / word-LCS similarity alignment |

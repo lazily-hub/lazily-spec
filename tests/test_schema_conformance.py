@@ -471,7 +471,9 @@ _KEYED_MODELS = {"CellMap", "CellTree"}
 _QUEUE_MODELS = {"QueueCell"}
 # Compute/convergence models: `scenarios`-based CRDT / semantic-tree fixtures.
 _SCENARIO_MODELS = {"SemTree", "SeqCrdt", "StableId", "TextCrdt"}
-_KNOWN_MODELS = _KEYED_MODELS | _QUEUE_MODELS | _SCENARIO_MODELS
+# Merge-algebra models (#relaycell): `scenarios` of {policy, flags, initial, steps}.
+_MERGE_MODELS = {"MergeCell"}
+_KNOWN_MODELS = _KEYED_MODELS | _QUEUE_MODELS | _SCENARIO_MODELS | _MERGE_MODELS
 
 
 @pytest.mark.parametrize("name", _collection_fixtures())
@@ -486,6 +488,26 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
     assert obj["kind"] == "Collection", f"{name}: kind must be 'Collection'"
     assert obj["model"] in _KNOWN_MODELS, f"{name}: unknown model {obj['model']!r}"
     assert isinstance(obj["description"], str) and obj["description"], f"{name}: missing description"
+
+    if obj["model"] in _MERGE_MODELS:
+        scenarios = obj.get("scenarios")
+        assert isinstance(scenarios, list) and scenarios, f"{name}: model {obj['model']!r} needs non-empty 'scenarios'"
+        for sc in scenarios:
+            assert isinstance(sc.get("policy"), str) and sc["policy"], f"{name}: merge scenario missing 'policy'"
+            flags = sc.get("flags")
+            assert isinstance(flags, dict) and {"commutative", "idempotent"} <= set(flags), (
+                f"{name}: scenario {sc['policy']!r} flags must name commutative + idempotent"
+            )
+            assert "initial" in sc, f"{name}: scenario {sc['policy']!r} missing 'initial'"
+            steps = sc.get("steps")
+            assert isinstance(steps, list) and steps, f"{name}: scenario {sc['policy']!r} needs non-empty 'steps'"
+            for step in steps:
+                assert "merge" in step and "expected" in step, f"{name}: merge step missing merge/expected"
+                exp = step["expected"]
+                assert "value" in exp and "invalidates" in exp, (
+                    f"{name}: merge step expected must name value + invalidates"
+                )
+        return
 
     if obj["model"] in _SCENARIO_MODELS:
         scenarios = obj.get("scenarios")

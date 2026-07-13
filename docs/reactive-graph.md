@@ -18,13 +18,24 @@ MUST honor this contract.
 |-----------|------|
 | **Cell** | A mutable source value. `setCell` invalidates dependents on a `==` (PartialEq) change; an equal set is a no-op. |
 | **Slot** | A lazily-computed, memoized derived value. Tracks its dependencies automatically, computes on first read, caches, and recomputes only when read after an upstream invalidation. |
-| **Signal** | An *eager* derived value: a memo Slot plus a puller Effect. The value is materialized by the time the invalidating `setCell`/`batch` returns — observers never see an intermediate unset state. |
+| **Signal** | An *eager* derived value: a memo Slot plus a puller Effect. The value is materialized by the time the invalidating `setCell`/`batch` returns — observers never see an intermediate unset state. Equivalently `Signal ≡ Slot.eager` — a memo Slot with its puller armed (`relaycell-backpressure-analysis.md` §4.0). |
+| **MergeCell** | A source whose write is a **merge** `⊕` under a [`MergePolicy`](#mergecell-and-the-merge-algebra-relaycell) rather than a replace. `Cell ≡ MergeCell<KeepLatest>`: a plain cell is the keep-latest instance. Backed by a cell node, so it inherits the `==` store-guard and store-without-cascade. |
 | **Effect** | A side-effecting observer that reruns whenever a tracked dependency invalidates. An optional cleanup closure runs before each rerun and on dispose. |
 
 Values are **lazy by default**; reach for `Signal` when eager push semantics are
 required. Handles (`SlotHandle` / `CellHandle` / `SignalHandle` /
-`EffectHandle`) are lightweight, copyable ids over a shared node table — they
-are usable only with the owning context.
+`MergeCellHandle` / `EffectHandle`) are lightweight, copyable ids over a shared
+node table — they are usable only with the owning context.
+
+**The read/write type split.** Every primitive above is a **`Reactive<T>`** — the
+read supertype exposing `get` (auto-subscribing) and `subscribe`, nothing more.
+Writability is the sub-interface **`Source<T>: Reactive<T>`**, which adds `set`
+(replace) and `merge` (fold under the source's policy). A derived Slot/Signal is
+`Reactive<T>` only (read-only); `Cell`/`MergeCell` are `Source<T>`. The payoff
+(`relaycell-backpressure-analysis.md` §4.0): a composite reader-kind can be typed
+`Reactive<T>` and the backend chooses the impl — pull-Slot, push-fed Cell, or
+polling-Slot — behind one interface, so ownership of the mutation (not the type)
+decides the invalidation source.
 
 ## API surface
 
@@ -38,6 +49,8 @@ are usable only with the owning context.
 | `get(handle)` | Read a slot, computing/refreshing if necessary (auto-subscribes) |
 | `signal(compute)` | Create an eager derived value (memo slot + puller effect) |
 | `get_signal(handle)` | Read a signal's current (always-materialized) value |
+| `merge_cell<M>(value)` | Create a `MergeCell` whose write folds under policy `M` |
+| `merge(handle, op)` | Fold `op` into a `MergeCell`/`Source` under its policy (`⊕`; routes through `set_cell`, so the `==` guard + store-without-cascade apply) |
 | `effect(run)` | Register an observer; `run` may return a cleanup closure |
 | `dispose_effect(handle)` | Deschedule, drop edges, run cleanup |
 | `batch(run)` | Coalesce several cell updates into one invalidation + effect flush |
@@ -76,6 +89,54 @@ are usable only with the owning context.
   `set_cell`/`batch`'s effect flush, the value is fresh by the time the mutator
   returns. Disposing the puller effect reverts the signal to lazy behavior (the
   backing value stays readable but is no longer eagerly kept fresh).
+
+## MergeCell and the merge algebra (`#relaycell`)
+
+A **`MergeCell<T, M>`** is a `Source<T>` whose write is a *merge* rather than a
+replace: `merge(handle, op)` computes `⊕(current, op)` under `MergePolicy` `M`
+and routes the result through `set_cell` — so the `==` store-guard,
+store-without-cascade, and `batch` all apply unchanged. A plain **`Cell` is
+exactly `MergeCell<KeepLatest>`** (the keep-latest instance); a binding MAY
+implement `Cell` as that instance or keep it as a distinct fast path with
+identical semantics.
+
+A **`MergePolicy`** is an associative fold `⊕ : T × T → T`. The properties it
+satisfies are *selected by the transport contract*, not fixed
+(`relaycell-backpressure-analysis.md` §2):
+
+| Property | Requirement | Purpose |
+|----------|-------------|---------|
+| **Associativity** | **Always** — the irreducible law | Regrouping a run of merged ops never changes the converged state, which is what licenses *variable flush points*: a bounded relay may flush at any post-merge watermark and converge identically. Not a flag; a law every policy MUST satisfy. |
+| **Commutativity** | Per policy (`const COMMUTATIVE`) | The *reordering tax* — required only when ops may be applied out of order (concurrent producers / replicas / pages). |
+| **Idempotency** | Per policy (`const IDEMPOTENT`) | The *durability tax* — required only for at-least-once / crash-replay. For an idempotent `⊕`, re-applying an op is a no-op, which is exactly the `==` store-guard one layer up: **free dedup**. |
+
+The canonical policies (each names its algebraic structure and flags):
+
+| Policy | `⊕` | Structure | Comm | Idem |
+|--------|-----|-----------|:----:|:----:|
+| `KeepLatest` | `old ⊕ op = op` | right-zero band | ✗ | ✓ |
+| `Sum` | `old + op` | commutative monoid | ✓ | ✗ |
+| `Max` | `max(old, op)` | semilattice (total order) | ✓ | ✓ |
+| `SetUnion` | `old ∪ op` | grow-only semilattice | ✓ | ✓ |
+| `RawFifo` | `old ++ op` | free semigroup (concat) | ✗ | ✗ |
+| `CrdtJoin<C>` | `C::merge_from` | join semilattice | ✓ | ✓ |
+
+`KeepLatest` (positional last-writer-wins, **not** commutative) is distinct from
+a timestamped LWW register (`CrdtJoin<LwwRegister>`, commutative): both conflate,
+they differ only on commutativity — the CRDT-vs-LWW branch. `RawFifo` cannot
+conflate (order and multiplicity are meaning); its only bounded-lossless option is
+Spill (Phase 3+). `CrdtJoin<C>` wires the existing cell CRDT units
+([Merge mechanisms](cell-model.md#merge-mechanisms)) into the algebra without
+reimplementing their join.
+
+> **Verification form.** The three properties are algebraic identities over `T`
+> values (`(a⊕b)⊕c == a⊕(b⊕c)`, `(a⊕b)⊕c == (a⊕c)⊕b`, `(a⊕b)⊕b == a⊕b`), so a
+> binding pins them with **property-based law-tests** (associativity for every
+> policy; commutativity/idempotency asserted exactly when the flag is set, plus a
+> counterexample proving a cleared flag does not lie) — lazily-rs uses
+> `tests/merge_laws.rs`. The cross-language **converged-state determinism**
+> invariant (same op multiset, any grouping → same egress) is additionally pinned
+> by the `mergecell_algebra.json` compute fixture.
 
 ## Invalidation propagation
 
@@ -159,6 +220,16 @@ A reactive context conforms when:
    dispose, and disposal unsubscribes edges.
 8. A `Signal` is materialized by the time the invalidating `set_cell`/`batch`
    returns (eager push).
+9. **`Reactive<T>` / `Source<T>` split.** Reads (`get`/`subscribe`) are the
+   `Reactive` supertype; writes (`set`/`merge`) are the `Source` sub-interface. A
+   derived Slot/Signal is `Reactive` only.
+10. **MergeCell + merge algebra (`#relaycell`).** `merge(handle, op)` folds under
+    an associative `MergePolicy` and routes through the `==`-guarded `set_cell`
+    (so an idempotent policy's no-op merge fires no cascade). `Cell ≡
+    MergeCell<KeepLatest>`. Every policy is associative; the `COMMUTATIVE` and
+    `IDEMPOTENT` flags match the policy's algebra (verified by law-tests); the
+    converged egress state is independent of merge grouping/order for a
+    commutative policy (verified by `mergecell_algebra.json`).
 
 ### Thread-safe context conformance
 
