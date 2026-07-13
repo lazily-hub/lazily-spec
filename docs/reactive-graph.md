@@ -93,6 +93,21 @@ This is a push-invalidated, pull-recomputed graph — invalidation travels
 downstream eagerly (so effects fire), but the new value is computed lazily on
 read (so untouched branches do no work).
 
+**Store-without-cascade** (the write-side dual of lazy reads). When `set_cell`
+changes a value whose transitive dependent cone contains **no Effect**, the new
+value is stored (step 1's dirty-marking of lazy Slot dependents still happens, so
+a *future* subscriber reads the current value glitch-free — late-subscribe
+correctness) but **no effect flush is scheduled** — there is no active reactor to
+run. A binding MAY skip the flush machinery entirely in this case. Combined with
+demand-driven derivation on the read side, an **unobserved** reactive node —
+pull-derived or push-populated — costs approximately its raw storage: the merge
+cost law tiers the write cost by dependent kind (none → store only; lazy-only →
+store + O(deps) dirty-mark, no flush; active → store + dirty + flush). A **burst**
+of N value-changing writes with no interleaved active read pays the transitive
+dirty-mark **once** (dirty-marking is idempotent and monotonic — an already-dirty
+Slot is not re-walked), i.e. `N·(==/⊕)` + one dirty-propagation. See
+[`relaycell-backpressure-analysis.md`](relaycell-backpressure-analysis.md) §4.0.
+
 ## Handles and identity
 
 Handles are stable ids minted monotonically and recycled on dispose. A disposed

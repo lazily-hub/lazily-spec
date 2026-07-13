@@ -637,7 +637,24 @@ backends; the default MUST be an unbounded `VecDeque`-backed storage.
 
 ### Storage backend contract
 
-A `QueueStorage` backend conforms when:
+**Minimal required contract.** A `QueueStorage` backend MUST implement exactly
+`try_push` / `try_pop` / `len` / `is_closed` / `close`. `peek` and `capacity` are **optional
+capabilities** with a default of "absent" (`None`): a backend that satisfies only the five
+required methods — a raw channel, a consuming stream, a Go channel — is fully conforming. It
+simply has no `head` reader (no `peek`) and no `is_full` reader (unbounded, `capacity() →
+None`), exactly as an unbounded backend has always had no `is_full`. A backend that *can*
+cheaply inspect its head MAY expose `peek` to gain a reactive `head`; a backend that is
+bounded MUST expose `capacity() → Some(n)`. `head` was never in the MUST-reactive set (see
+"Named observables" below), so removing `peek` from the required contract removes no required
+reader.
+
+> *Footnote — `LookaheadShim`.* A caller that wants a `head` reader over a non-peekable
+> backend MAY opt into a shell-level lookahead shim that prefetches (early-pops) one element
+> into a one-slot buffer. This is **SPSC-local only** — early-popping is incorrect for
+> competing-consumer or consensus backends, where an element must not be committed to one
+> consumer before assignment. The shim is not part of the core contract.
+
+A conforming backend MUST also satisfy:
 
 1. **FIFO order**: `try_pop` returns elements in the order they were `try_push`-ed. A
    backend that reorders or silently drops elements is non-conforming.
@@ -650,7 +667,7 @@ A `QueueStorage` backend conforms when:
    distinguishes `Full` from `Empty`/`Closed`.
 4. **Position identity**: invalidation is phrased over reader kind (head/len/empty/full),
    *not* over storage indices. A ring-buffer backend whose slot index wraps MUST NOT cause
-   spurious invalidations; the shell layers its own logical version counters above the
+   spurious invalidations; the shell layers its own logical reader-kind derivations above the
    storage.
 
 ### Closure and lifecycle
@@ -741,6 +758,16 @@ not merge (see the PRD's § "Background: Why Consensus, Not CRDT").
 - **Named observables**: `is_empty` and `len` are reactive reads dual to `is_full`. All
   three (`is_empty` / `len` / `is_full`) MUST be reactive when their respective conditions
   can change.
+- **Demand-driven derivation** (permitted optimization): a reader-kind MUST be
+  observable-consistent — a `get` returns the value consistent with all preceding ops — but a
+  binding MAY **defer its derivation until it has a subscriber**. A reader-kind is a *derived*
+  value (a `Slot`), not an eagerly-written cell; an op with no subscriber to a given
+  reader-kind MAY only mark it stale (O(1)) and derive it lazily on the next `get`, provided
+  the derived value is consistent with all preceding ops. This preserves the observable
+  contract (conformance fixtures read the values and MUST stay green) while an **unsubscribed**
+  `QueueCell` collapses toward raw-storage cost — the reactive shell is charged only along a
+  path an effect actually observes. See [`docs/relaycell-backpressure-analysis.md`](docs/relaycell-backpressure-analysis.md)
+  §5 (demand-driven reader-kinds) and §4.0 (the merge cost law).
 
 ## Future queue primitives
 
