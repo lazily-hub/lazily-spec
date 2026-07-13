@@ -220,8 +220,9 @@ the distributed story: v1 ships the seam; this PRD ships the consensus backend.
 
 - Local `QueueCell` (SPSC primitive + MPSC usage rule).
 - `QueueStorage` adapter trait + `VecDequeStorage` default.
-- `TopicCell` local semantic contract + conformance + Lean reference; `WorkQueueCell`
-  remains a future distributed-integration placeholder.
+- `TopicCell` local semantic contract + conformance + Lean reference.
+- `WorkQueueCell` portable local-authority lifecycle + conformance + Lean safety reference;
+  distributed/HA claim serialization remains a Phase 2 integration.
 - Reactive shell: closure, bounded/backpressure, ordering contract.
 
 **Deliverable:** a local queue primitive with a pluggable backend seam, ready for
@@ -240,14 +241,16 @@ dependencies. This is the milestone that delivers the PRD's core value propositi
 
 ### Phase 2 — `WorkQueueCell` (exactly-once handoff)
 
+- Reuse the shipped local `push` / `claim` / `ack` / `nack` / `reap_expired` lifecycle and
+  cross-language fixtures unchanged.
 - Leader-based exclusive handoff over the Raft log.
 - Pop = advance cursor **with ack**; unacked entries are redelivered.
 - Pending entries list (consumer failure recovery).
 - Dead-letter queue (poison-message handling).
 - `Receipt` integration for at-most-once effect authority.
 
-**Deliverable:** exactly-once work distribution (competing consumers) — the semantic
-that CRDT cannot provide and the reason production queues use consensus.
+**Deliverable:** distributed exactly-once assignment authority for the shipped competing-consumer
+shell — the semantic that CRDT cannot provide and the reason production queues use consensus.
 
 ### Phase 3 — `TopicCell` (multi-cursor broadcast)
 

@@ -915,7 +915,7 @@ hazard, fixed by a witness). A **2–2–1** split of 5 voters leaves no side wi
 partitions heal enough for some side to reach a majority. Odd counts protect *two-way* splits; they
 never guarantee a majority under multi-way fragmentation. Halting is correct — safety over liveness.
 
-**Delivery & lifecycle** (deferred features — land with `WorkQueueCell`, not `QueueCell`):
+**Delivery & lifecycle** (`#lzworkqueue`):
 - **Assignment IDs + ack/nack.** Each handoff carries a delivery ID; the worker **acks** (done,
   remove) or **nacks** (requeue). Exactly-once *commit* is the consensus assignment; exactly-once
   *effect* needs an idempotent worker or a [causal receipt](protocol.md) on completion; delivery is
@@ -925,7 +925,35 @@ never guarantee a majority under multi-way fragmentation. Halting is correct —
 - **Dead-letter queue + poison detection.** An element exceeding a max-redelivery count (repeatedly
   crashing its worker) routes to a DLQ instead of redelivering forever.
 - **Fairness / dedup.** Assignment policy (round-robin, weighted, pull-based) + producer/consumer
-  dedup keys.
+dedup keys are policy extensions; the portable core uses pull-based FIFO assignment.
+
+**Portable local-authority contract.** Every binding ships the same in-process
+`WorkQueueCell` state machine. The owning instance is the serialization point; hosts MUST
+serialize calls using the binding's ordinary context/threading boundary. A local instance does
+not claim to be a distributed consensus implementation. A cross-process or HA backend MUST put
+the `claim` decision behind a leader or consensus-committed assignment log while preserving these
+operations and outcomes:
+
+- `push(value) -> item_id` appends a fresh, monotonically increasing item to the pending FIFO.
+- `claim(worker, now) -> delivery?` removes the oldest pending item and creates a fresh,
+  monotonically increasing `delivery_id`. The returned lease contains the stable `item_id`, value,
+  worker, 1-based attempt, and `deadline = now + visibility_timeout`. Empty claim is a no-op.
+- `ack(worker, delivery_id) -> bool` removes only that worker's matching in-flight delivery.
+  Unknown, stale, or wrong-worker acknowledgements are no-ops. Re-acking is therefore idempotent.
+- `nack(worker, delivery_id) -> bool` validates ownership, then either appends the item to the
+  pending tail or moves it to the dead-letter list when the configured `max_deliveries` has been
+  reached.
+- `reap_expired(now) -> count` expires leases whose `deadline < now` (the deadline itself remains
+  live), in ascending delivery-ID order. Each expired item is requeued at the pending tail or
+  dead-lettered under the same attempt limit. A redelivery receives a new delivery ID while keeping
+  its item ID and value.
+
+`visibility_timeout` is a positive logical-clock duration and `max_deliveries >= 1`. Requeue-at-tail
+means retries do not block newer work. The portable reactive reader kinds are `pending_len`,
+`is_empty` (pending only), `in_flight_len`, and `dead_letter_len`; a mutation invalidates only readers
+whose values may have changed. The canonical fixtures are
+`conformance/collections/workqueue_competing_delivery.json` and
+`workqueue_lease_deadletter.json`.
 
 **Assignment-FIFO ≠ processing-FIFO.** Competing consumers trade ordering for parallelism: even if
 elements are *assigned* FIFO, N workers process concurrently, so **completion order is unordered**. A
@@ -944,5 +972,7 @@ depth grows. A worker death does not stall the queue — its in-flight (unacked)
 expiry; throughput degrades, delivery continues. Opposite of `QueueCell`, whose single consumer dying
 stalls until failover.
 
-**Status**: future work — not in v1 conformance. Requires the consensus core from the
-[distributed-queue PRD](distributed-queue-prd.md) Phase 2.
+**Status**: the portable local-authority state machine, reactive reader kinds, Lean safety model,
+and cross-language conformance are shipped. Distributed/HA assignment still requires the consensus
+adapter from the [distributed-queue PRD](distributed-queue-prd.md) Phase 2; the local shell must not
+be mistaken for that adapter.

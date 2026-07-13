@@ -471,12 +471,19 @@ _KEYED_MODELS = {"CellMap", "CellTree"}
 _QUEUE_MODELS = {"QueueCell"}
 # Broadcast topic: keyed per-subscriber cursor state and retention.
 _TOPIC_MODELS = {"TopicCell"}
+# Competing-consumer work queue: pending/in-flight/dead-letter lifecycle.
+_WORK_QUEUE_MODELS = {"WorkQueueCell"}
 # Compute/convergence models: `scenarios`-based CRDT / semantic-tree fixtures.
 _SCENARIO_MODELS = {"SemTree", "SeqCrdt", "StableId", "TextCrdt"}
 # Merge-algebra models (#relaycell): `scenarios` of {policy, flags, initial, steps}.
 _MERGE_MODELS = {"MergeCell"}
 _KNOWN_MODELS = (
-    _KEYED_MODELS | _QUEUE_MODELS | _TOPIC_MODELS | _SCENARIO_MODELS | _MERGE_MODELS
+    _KEYED_MODELS
+    | _QUEUE_MODELS
+    | _TOPIC_MODELS
+    | _WORK_QUEUE_MODELS
+    | _SCENARIO_MODELS
+    | _MERGE_MODELS
 )
 
 
@@ -583,6 +590,62 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
                 for sub_id, sub in exp["subscriptions"].items()
                 if sub["connected"]
             }, f"{name}: reads may name only connected subscribers"
+        return
+
+    if obj["model"] in _WORK_QUEUE_MODELS:
+        config = obj.get("config")
+        assert isinstance(config, dict), f"{name}: WorkQueueCell needs config"
+        assert isinstance(config.get("visibility_timeout"), int) and config["visibility_timeout"] > 0, (
+            f"{name}: visibility_timeout must be a positive integer"
+        )
+        assert isinstance(config.get("max_deliveries"), int) and config["max_deliveries"] >= 1, (
+            f"{name}: max_deliveries must be at least one"
+        )
+
+        def assert_workqueue_state(state: dict, label: str) -> None:
+            assert {"pending", "in_flight", "dead_letters", "reads", "invalidates"} <= set(state), (
+                f"{name}: {label} is incomplete"
+            )
+            assert isinstance(state["pending"], list), f"{name}: {label} pending must be an array"
+            assert isinstance(state["in_flight"], list), f"{name}: {label} in_flight must be an array"
+            assert isinstance(state["dead_letters"], list), f"{name}: {label} dead_letters must be an array"
+            reads = state["reads"]
+            assert isinstance(reads, dict) and {
+                "pending_len", "is_empty", "in_flight_len", "dead_letter_len"
+            } <= set(reads), f"{name}: {label} reads are incomplete"
+            assert reads["pending_len"] == len(state["pending"])
+            assert reads["is_empty"] is (len(state["pending"]) == 0)
+            assert reads["in_flight_len"] == len(state["in_flight"])
+            assert reads["dead_letter_len"] == len(state["dead_letters"])
+            invalidates = state["invalidates"]
+            assert isinstance(invalidates, dict) and {
+                "pending_len", "is_empty", "in_flight_len", "dead_letter_len"
+            } <= set(invalidates), f"{name}: {label} invalidates are incomplete"
+            assert all(isinstance(v, bool) for v in invalidates.values())
+
+        initial = obj.get("initial")
+        assert isinstance(initial, dict), f"{name}: WorkQueueCell needs initial state"
+        initial_with_observation = {
+            **initial,
+            "reads": {
+                "pending_len": len(initial.get("pending", [])),
+                "is_empty": len(initial.get("pending", [])) == 0,
+                "in_flight_len": len(initial.get("in_flight", [])),
+                "dead_letter_len": len(initial.get("dead_letters", [])),
+            },
+            "invalidates": {
+                "pending_len": False,
+                "is_empty": False,
+                "in_flight_len": False,
+                "dead_letter_len": False,
+            },
+        }
+        assert_workqueue_state(initial_with_observation, "initial state")
+        steps = obj.get("steps")
+        assert isinstance(steps, list) and steps, f"{name}: WorkQueueCell needs non-empty 'steps'"
+        for step in steps:
+            assert "op" in step and "expected" in step, f"{name}: step missing op/expected"
+            assert_workqueue_state(step["expected"], "expected state")
         return
 
     assert "reconcile" in obj or "steps" in obj, f"{name}: must define 'steps' or 'reconcile'"

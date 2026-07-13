@@ -18,6 +18,7 @@
     { "feature": "Stable-id alignment (manufactured identity)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Broadcast topic (`TopicCell`) — independent cursors + durable replay + safe GC (`#lztopiccell`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
+    { "feature": "Competing-consumer work queue (`WorkQueueCell`) — exclusive leases + ack/nack + redelivery + DLQ (`#lzworkqueue`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Merge algebra + `MergeCell` — associative `MergePolicy` (`KeepLatest`/`Sum`/`Max`/`SetUnion`/`RawFifo`), `Cell ≡ MergeCell<KeepLatest>`, `Reactive`/`Source` split (`#relaycell`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "RelayCell — conflating relay + `BackpressurePolicy` + `SpillStore` + `Transport` + Inbox/Outbox + Rate/Window/Expiry/Priority/keyed policies (`#relaycell`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Free-text character CRDT (`TextCrdt`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },

@@ -1,0 +1,104 @@
+{
+  "description": "WorkQueueCell visibility timeout and poison handling: a lease is live at its deadline, expires strictly after it, preserves the item for at-least-once redelivery, and routes the item to the DLQ once max_deliveries is reached.",
+  "kind": "Collection",
+  "model": "WorkQueueCell",
+  "config": {
+    "visibility_timeout": 10,
+    "max_deliveries": 2
+  },
+  "initial": {
+    "pending": [],
+    "in_flight": [],
+    "dead_letters": []
+  },
+  "steps": [
+    {
+      "op": {"type": "push", "value": "poison"},
+      "returns": 0,
+      "expected": {
+        "pending": [{"item_id": 0, "value": "poison", "attempts": 0}],
+        "in_flight": [],
+        "dead_letters": [],
+        "reads": {"pending_len": 1, "is_empty": false, "in_flight_len": 0, "dead_letter_len": 0},
+        "invalidates": {"pending_len": true, "is_empty": true, "in_flight_len": false, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "claim", "worker": "worker-1", "now": 0},
+      "returns": {"delivery_id": 0, "item_id": 0, "value": "poison", "worker": "worker-1", "attempt": 1, "deadline": 10},
+      "expected": {
+        "pending": [],
+        "in_flight": [{"delivery_id": 0, "item_id": 0, "value": "poison", "worker": "worker-1", "attempt": 1, "deadline": 10}],
+        "dead_letters": [],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 1, "dead_letter_len": 0},
+        "invalidates": {"pending_len": true, "is_empty": true, "in_flight_len": true, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "reap_expired", "now": 10},
+      "returns": 0,
+      "expected": {
+        "pending": [],
+        "in_flight": [{"delivery_id": 0, "item_id": 0, "value": "poison", "worker": "worker-1", "attempt": 1, "deadline": 10}],
+        "dead_letters": [],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 1, "dead_letter_len": 0},
+        "invalidates": {"pending_len": false, "is_empty": false, "in_flight_len": false, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "reap_expired", "now": 11},
+      "returns": 1,
+      "expected": {
+        "pending": [{"item_id": 0, "value": "poison", "attempts": 1}],
+        "in_flight": [],
+        "dead_letters": [],
+        "reads": {"pending_len": 1, "is_empty": false, "in_flight_len": 0, "dead_letter_len": 0},
+        "invalidates": {"pending_len": true, "is_empty": true, "in_flight_len": true, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "claim", "worker": "worker-2", "now": 11},
+      "returns": {"delivery_id": 1, "item_id": 0, "value": "poison", "worker": "worker-2", "attempt": 2, "deadline": 21},
+      "expected": {
+        "pending": [],
+        "in_flight": [{"delivery_id": 1, "item_id": 0, "value": "poison", "worker": "worker-2", "attempt": 2, "deadline": 21}],
+        "dead_letters": [],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 1, "dead_letter_len": 0},
+        "invalidates": {"pending_len": true, "is_empty": true, "in_flight_len": true, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "reap_expired", "now": 21},
+      "returns": 0,
+      "expected": {
+        "pending": [],
+        "in_flight": [{"delivery_id": 1, "item_id": 0, "value": "poison", "worker": "worker-2", "attempt": 2, "deadline": 21}],
+        "dead_letters": [],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 1, "dead_letter_len": 0},
+        "invalidates": {"pending_len": false, "is_empty": false, "in_flight_len": false, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "reap_expired", "now": 22},
+      "returns": 1,
+      "expected": {
+        "pending": [],
+        "in_flight": [],
+        "dead_letters": [{"item_id": 0, "value": "poison", "attempts": 2, "reason": "expired"}],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 0, "dead_letter_len": 1},
+        "invalidates": {"pending_len": false, "is_empty": false, "in_flight_len": true, "dead_letter_len": true}
+      }
+    },
+    {
+      "op": {"type": "claim", "worker": "worker-3", "now": 22},
+      "returns": null,
+      "expected": {
+        "pending": [],
+        "in_flight": [],
+        "dead_letters": [{"item_id": 0, "value": "poison", "attempts": 2, "reason": "expired"}],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 0, "dead_letter_len": 1},
+        "invalidates": {"pending_len": false, "is_empty": false, "in_flight_len": false, "dead_letter_len": false}
+      }
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "description": "WorkQueueCell competing consumers: FIFO claims are exclusive, delivery ownership rejects stale/wrong-worker acknowledgements, nack requeues at the tail, and redelivery keeps the item identity while minting a new delivery identity.",
+  "kind": "Collection",
+  "model": "WorkQueueCell",
+  "config": {
+    "visibility_timeout": 10,
+    "max_deliveries": 3
+  },
+  "initial": {
+    "pending": [],
+    "in_flight": [],
+    "dead_letters": []
+  },
+  "steps": [
+    {
+      "op": {"type": "push", "value": "a"},
+      "returns": 0,
+      "expected": {
+        "pending": [{"item_id": 0, "value": "a", "attempts": 0}],
+        "in_flight": [],
+        "dead_letters": [],
+        "reads": {"pending_len": 1, "is_empty": false, "in_flight_len": 0, "dead_letter_len": 0},
+        "invalidates": {"pending_len": true, "is_empty": true, "in_flight_len": false, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "push", "value": "b"},
+      "returns": 1,
+      "expected": {
+        "pending": [
+          {"item_id": 0, "value": "a", "attempts": 0},
+          {"item_id": 1, "value": "b", "attempts": 0}
+        ],
+        "in_flight": [],
+        "dead_letters": [],
+        "reads": {"pending_len": 2, "is_empty": false, "in_flight_len": 0, "dead_letter_len": 0},
+        "invalidates": {"pending_len": true, "is_empty": false, "in_flight_len": false, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "claim", "worker": "alpha", "now": 100},
+      "returns": {"delivery_id": 0, "item_id": 0, "value": "a", "worker": "alpha", "attempt": 1, "deadline": 110},
+      "expected": {
+        "pending": [{"item_id": 1, "value": "b", "attempts": 0}],
+        "in_flight": [{"delivery_id": 0, "item_id": 0, "value": "a", "worker": "alpha", "attempt": 1, "deadline": 110}],
+        "dead_letters": [],
+        "reads": {"pending_len": 1, "is_empty": false, "in_flight_len": 1, "dead_letter_len": 0},
+        "invalidates": {"pending_len": true, "is_empty": false, "in_flight_len": true, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "claim", "worker": "beta", "now": 100},
+      "returns": {"delivery_id": 1, "item_id": 1, "value": "b", "worker": "beta", "attempt": 1, "deadline": 110},
+      "expected": {
+        "pending": [],
+        "in_flight": [
+          {"delivery_id": 0, "item_id": 0, "value": "a", "worker": "alpha", "attempt": 1, "deadline": 110},
+          {"delivery_id": 1, "item_id": 1, "value": "b", "worker": "beta", "attempt": 1, "deadline": 110}
+        ],
+        "dead_letters": [],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 2, "dead_letter_len": 0},
+        "invalidates": {"pending_len": true, "is_empty": true, "in_flight_len": true, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "claim", "worker": "gamma", "now": 100},
+      "returns": null,
+      "expected": {
+        "pending": [],
+        "in_flight": [
+          {"delivery_id": 0, "item_id": 0, "value": "a", "worker": "alpha", "attempt": 1, "deadline": 110},
+          {"delivery_id": 1, "item_id": 1, "value": "b", "worker": "beta", "attempt": 1, "deadline": 110}
+        ],
+        "dead_letters": [],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 2, "dead_letter_len": 0},
+        "invalidates": {"pending_len": false, "is_empty": false, "in_flight_len": false, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "ack", "worker": "alpha", "delivery_id": 1},
+      "returns": false,
+      "expected": {
+        "pending": [],
+        "in_flight": [
+          {"delivery_id": 0, "item_id": 0, "value": "a", "worker": "alpha", "attempt": 1, "deadline": 110},
+          {"delivery_id": 1, "item_id": 1, "value": "b", "worker": "beta", "attempt": 1, "deadline": 110}
+        ],
+        "dead_letters": [],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 2, "dead_letter_len": 0},
+        "invalidates": {"pending_len": false, "is_empty": false, "in_flight_len": false, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "ack", "worker": "beta", "delivery_id": 1},
+      "returns": true,
+      "expected": {
+        "pending": [],
+        "in_flight": [{"delivery_id": 0, "item_id": 0, "value": "a", "worker": "alpha", "attempt": 1, "deadline": 110}],
+        "dead_letters": [],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 1, "dead_letter_len": 0},
+        "invalidates": {"pending_len": false, "is_empty": false, "in_flight_len": true, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "nack", "worker": "alpha", "delivery_id": 0},
+      "returns": true,
+      "expected": {
+        "pending": [{"item_id": 0, "value": "a", "attempts": 1}],
+        "in_flight": [],
+        "dead_letters": [],
+        "reads": {"pending_len": 1, "is_empty": false, "in_flight_len": 0, "dead_letter_len": 0},
+        "invalidates": {"pending_len": true, "is_empty": true, "in_flight_len": true, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "claim", "worker": "gamma", "now": 105},
+      "returns": {"delivery_id": 2, "item_id": 0, "value": "a", "worker": "gamma", "attempt": 2, "deadline": 115},
+      "expected": {
+        "pending": [],
+        "in_flight": [{"delivery_id": 2, "item_id": 0, "value": "a", "worker": "gamma", "attempt": 2, "deadline": 115}],
+        "dead_letters": [],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 1, "dead_letter_len": 0},
+        "invalidates": {"pending_len": true, "is_empty": true, "in_flight_len": true, "dead_letter_len": false}
+      }
+    },
+    {
+      "op": {"type": "ack", "worker": "gamma", "delivery_id": 2},
+      "returns": true,
+      "expected": {
+        "pending": [],
+        "in_flight": [],
+        "dead_letters": [],
+        "reads": {"pending_len": 0, "is_empty": true, "in_flight_len": 0, "dead_letter_len": 0},
+        "invalidates": {"pending_len": false, "is_empty": false, "in_flight_len": true, "dead_letter_len": false}
+      }
+    }
+  ]
+}
