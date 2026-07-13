@@ -17,6 +17,8 @@
     { "feature": "Memoized semantic tree (`SemTree`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Stable-id alignment (manufactured identity)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
+    { "feature": "Merge algebra + `MergeCell` — associative `MergePolicy` (`KeepLatest`/`Sum`/`Max`/`SetUnion`/`RawFifo`), `Cell ≡ MergeCell<KeepLatest>`, `Reactive`/`Source` split (`#relaycell`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
+    { "feature": "RelayCell — conflating relay + `BackpressurePolicy` + `SpillStore` + `Transport` + Inbox/Outbox + Rate/Window/Expiry/Priority/keyed policies (`#relaycell`)", "marks": ["✅", "—", "—", "—", "—", "—", "—", "—"] },
     { "feature": "Free-text character CRDT (`TextCrdt`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "`TextCrdt` delta sync (`version_vector` / `delta_since` / `apply_delta`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Move-aware sequence CRDT (`SeqCrdt`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
