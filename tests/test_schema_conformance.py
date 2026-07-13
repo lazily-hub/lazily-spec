@@ -530,6 +530,39 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
         assert {"base_offset", "elements", "subscriptions"} <= set(initial), (
             f"{name}: TopicCell initial state must name base_offset/elements/subscriptions"
         )
+
+        def assert_topic_state(state: dict, label: str) -> None:
+            base_offset = state.get("base_offset")
+            elements = state.get("elements")
+            subscriptions = state.get("subscriptions")
+            assert isinstance(base_offset, int) and base_offset >= 0, (
+                f"{name}: {label} needs a non-negative base_offset"
+            )
+            assert isinstance(elements, list), f"{name}: {label} elements must be an array"
+            assert isinstance(subscriptions, dict), (
+                f"{name}: {label} subscriptions must be an object"
+            )
+            end_offset = base_offset + len(elements)
+            for sub_id, sub in subscriptions.items():
+                assert isinstance(sub_id, str) and sub_id, (
+                    f"{name}: subscriber ids must be non-empty"
+                )
+                assert sub.get("durability") in {"durable", "ephemeral"}, (
+                    f"{name}: subscriber {sub_id!r} has invalid durability"
+                )
+                assert isinstance(sub.get("connected"), bool), (
+                    f"{name}: subscriber {sub_id!r} needs boolean connected"
+                )
+                assert isinstance(sub.get("cursor"), int) and (
+                    base_offset <= sub["cursor"] <= end_offset
+                ), (
+                    f"{name}: subscriber {sub_id!r} cursor must be in the retained offset range"
+                )
+                assert sub["durability"] != "ephemeral" or sub["connected"], (
+                    f"{name}: disconnected ephemeral subscriber {sub_id!r} must be removed"
+                )
+
+        assert_topic_state(initial, "initial state")
         steps = obj.get("steps")
         assert isinstance(steps, list) and steps, f"{name}: TopicCell needs non-empty 'steps'"
         for step in steps:
@@ -544,17 +577,12 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
             assert all(isinstance(v, bool) for v in exp["invalidates"].values()), (
                 f"{name}: invalidation values must be booleans"
             )
-            for sub_id, sub in exp["subscriptions"].items():
-                assert isinstance(sub_id, str) and sub_id, f"{name}: subscriber ids must be non-empty"
-                assert sub.get("durability") in {"durable", "ephemeral"}, (
-                    f"{name}: subscriber {sub_id!r} has invalid durability"
-                )
-                assert isinstance(sub.get("connected"), bool), (
-                    f"{name}: subscriber {sub_id!r} needs boolean connected"
-                )
-                assert isinstance(sub.get("cursor"), int) and sub["cursor"] >= 0, (
-                    f"{name}: subscriber {sub_id!r} needs a non-negative cursor"
-                )
+            assert_topic_state(exp, "expected state")
+            assert set(exp["reads"]) <= {
+                sub_id
+                for sub_id, sub in exp["subscriptions"].items()
+                if sub["connected"]
+            }, f"{name}: reads may name only connected subscribers"
         return
 
     assert "reconcile" in obj or "steps" in obj, f"{name}: must define 'steps' or 'reconcile'"

@@ -1,0 +1,128 @@
+{
+  "description": "TopicCell connected-session bounds: advancing at the tail or while a durable subscriber is offline is a no-op; reconnect resumes the frozen absolute cursor and GC preserves it.",
+  "kind": "Collection",
+  "model": "TopicCell",
+  "initial": {
+    "base_offset": 0,
+    "elements": [],
+    "subscriptions": {}
+  },
+  "steps": [
+    {
+      "op": {
+        "type": "subscribe",
+        "subscriber": "worker",
+        "durability": "durable"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": [],
+        "subscriptions": {
+          "worker": {"durability": "durable", "connected": true, "cursor": 0}
+        },
+        "reads": {"worker": []},
+        "invalidates": {"worker": true}
+      }
+    },
+    {
+      "op": {"type": "publish", "value": "a"},
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a"],
+        "subscriptions": {
+          "worker": {"durability": "durable", "connected": true, "cursor": 0}
+        },
+        "reads": {"worker": ["a"]},
+        "invalidates": {"worker": true}
+      }
+    },
+    {
+      "op": {"type": "advance", "subscriber": "worker"},
+      "returns": "a",
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a"],
+        "subscriptions": {
+          "worker": {"durability": "durable", "connected": true, "cursor": 1}
+        },
+        "reads": {"worker": []},
+        "invalidates": {"worker": true}
+      }
+    },
+    {
+      "op": {"type": "advance", "subscriber": "worker"},
+      "returns": null,
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a"],
+        "subscriptions": {
+          "worker": {"durability": "durable", "connected": true, "cursor": 1}
+        },
+        "reads": {"worker": []},
+        "invalidates": {"worker": false}
+      }
+    },
+    {
+      "op": {"type": "disconnect", "subscriber": "worker"},
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a"],
+        "subscriptions": {
+          "worker": {"durability": "durable", "connected": false, "cursor": 1}
+        },
+        "reads": {},
+        "invalidates": {"worker": true}
+      }
+    },
+    {
+      "op": {"type": "publish", "value": "b"},
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b"],
+        "subscriptions": {
+          "worker": {"durability": "durable", "connected": false, "cursor": 1}
+        },
+        "reads": {},
+        "invalidates": {"worker": false}
+      }
+    },
+    {
+      "op": {"type": "advance", "subscriber": "worker"},
+      "returns": null,
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b"],
+        "subscriptions": {
+          "worker": {"durability": "durable", "connected": false, "cursor": 1}
+        },
+        "reads": {},
+        "invalidates": {"worker": false}
+      }
+    },
+    {
+      "op": {"type": "reconnect", "subscriber": "worker"},
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b"],
+        "subscriptions": {
+          "worker": {"durability": "durable", "connected": true, "cursor": 1}
+        },
+        "reads": {"worker": ["b"]},
+        "invalidates": {"worker": true}
+      }
+    },
+    {
+      "op": {"type": "gc"},
+      "returns": 1,
+      "expected": {
+        "base_offset": 1,
+        "elements": ["b"],
+        "subscriptions": {
+          "worker": {"durability": "durable", "connected": true, "cursor": 1}
+        },
+        "reads": {"worker": ["b"]},
+        "invalidates": {"worker": false}
+      }
+    }
+  ]
+}

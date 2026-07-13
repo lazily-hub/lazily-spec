@@ -802,8 +802,10 @@ A `TopicCell<T>` state is the tuple `(base_offset, elements, subscriptions)`:
   `base_offset + elements.len`.
 - `elements: [T]` is the retained append log in per-producer FIFO order.
 - `subscriptions: Map<SubscriberId, Subscription>` is keyed by stable subscriber identity.
-  Each record contains an absolute `cursor` (the next offset to read), `durability`
-  (`durable` or `ephemeral`), and `connected`.
+Each record contains an absolute `cursor` (the next offset to read), `durability`
+(`durable` or `ephemeral`), and `connected`. Every stored cursor MUST remain in
+`base_offset..=end_offset`. An ephemeral record MUST be connected: disconnecting it removes the
+record instead of persisting an offline ephemeral cursor.
 
 The following operations and observables are required:
 
@@ -816,8 +818,10 @@ The following operations and observables are required:
   An offline durable subscriber is not scheduled, but the element remains readable after it
   reconnects.
 - `read(id)` observes the element at that subscriber's cursor without changing the log or any
-  cursor. `advance(id)` moves only that cursor by one and is a no-op at `end_offset`; therefore
-  `base_offset ≤ cursor ≤ end_offset` is preserved by every non-TTL operation.
+cursor. Reads from an unknown or disconnected subscription are unavailable. `advance(id)` moves
+only a connected subscription's cursor by one; it is a no-op for unknown/disconnected
+subscriptions and at `end_offset`. Therefore `base_offset ≤ cursor ≤ end_offset` is preserved by
+every non-TTL operation, and an offline durable cursor is frozen until reconnect.
 - The retention frontier is the minimum cursor across **durable** subscriptions, or
   `end_offset` when there are none. Safe GC removes only offsets below that frontier, advances
   `base_offset`, and leaves absolute subscriber cursors unchanged. It MUST preserve every
@@ -829,7 +833,9 @@ The following operations and observables are required:
 The canonical replay fixtures are
 [`topiccell_broadcast_cursor_isolation.json`](conformance/collections/topiccell_broadcast_cursor_isolation.json),
 [`topiccell_durable_replay_gc.json`](conformance/collections/topiccell_durable_replay_gc.json), and
-[`topiccell_ephemeral_lifecycle.json`](conformance/collections/topiccell_ephemeral_lifecycle.json).
+[`topiccell_ephemeral_lifecycle.json`](conformance/collections/topiccell_ephemeral_lifecycle.json),
+with connected-session boundary behavior pinned by
+[`topiccell_offline_tail_bounds.json`](conformance/collections/topiccell_offline_tail_bounds.json).
 The executable universal reference is `lazily-formal/LazilyFormal/TopicCell.lean`.
 
 **Distribution is cheap — no assignment consensus.** Every subscriber gets every element, so there is
