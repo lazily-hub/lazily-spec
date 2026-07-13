@@ -4,6 +4,7 @@
 
 - [Reactive Graph](reactive-graph.md)
 - [Cell Model](cell-model.md)
+- [RelayCell — Algebra-Backed Backpressure](relaycell.md)
 - [State Machine](state-machine.md)
 - [State Charts](state-charts.md)
 - [Async Reactive Context](async.md)
