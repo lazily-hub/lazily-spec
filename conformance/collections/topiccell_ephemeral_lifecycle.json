@@ -1,0 +1,137 @@
+{
+  "description": "TopicCell ephemeral lifecycle: a session starts at the current tail, receives only connected-time publishes, is removed on disconnect, and never holds the durable retention frontier.",
+  "kind": "Collection",
+  "model": "TopicCell",
+  "initial": {
+    "base_offset": 0,
+    "elements": ["old"],
+    "subscriptions": {}
+  },
+  "steps": [
+    {
+      "op": {
+        "type": "subscribe",
+        "subscriber": "ephemeral",
+        "durability": "ephemeral"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["old"],
+        "subscriptions": {
+          "ephemeral": {"durability": "ephemeral", "connected": true, "cursor": 1}
+        },
+        "reads": {
+          "ephemeral": []
+        },
+        "invalidates": {
+          "ephemeral": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "publish",
+        "value": "live"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["old", "live"],
+        "subscriptions": {
+          "ephemeral": {"durability": "ephemeral", "connected": true, "cursor": 1}
+        },
+        "reads": {
+          "ephemeral": ["live"]
+        },
+        "invalidates": {
+          "ephemeral": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "advance",
+        "subscriber": "ephemeral"
+      },
+      "returns": "live",
+      "expected": {
+        "base_offset": 0,
+        "elements": ["old", "live"],
+        "subscriptions": {
+          "ephemeral": {"durability": "ephemeral", "connected": true, "cursor": 2}
+        },
+        "reads": {
+          "ephemeral": []
+        },
+        "invalidates": {
+          "ephemeral": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "disconnect",
+        "subscriber": "ephemeral"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["old", "live"],
+        "subscriptions": {},
+        "reads": {},
+        "invalidates": {
+          "ephemeral": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "publish",
+        "value": "missed"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["old", "live", "missed"],
+        "subscriptions": {},
+        "reads": {},
+        "invalidates": {}
+      }
+    },
+    {
+      "op": {
+        "type": "subscribe",
+        "subscriber": "ephemeral",
+        "durability": "ephemeral"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["old", "live", "missed"],
+        "subscriptions": {
+          "ephemeral": {"durability": "ephemeral", "connected": true, "cursor": 3}
+        },
+        "reads": {
+          "ephemeral": []
+        },
+        "invalidates": {
+          "ephemeral": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "gc"
+      },
+      "expected": {
+        "base_offset": 3,
+        "elements": [],
+        "subscriptions": {
+          "ephemeral": {"durability": "ephemeral", "connected": true, "cursor": 3}
+        },
+        "reads": {
+          "ephemeral": []
+        },
+        "invalidates": {
+          "ephemeral": false
+        }
+      }
+    }
+  ]
+}

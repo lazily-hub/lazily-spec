@@ -1,6 +1,6 @@
 # PRD: Native Distributed Queue Support
 
-**Status:** Draft — future work (post-v1)
+**Status:** Active — TopicCell semantic core shipped; distributed storage remains post-v1
 **Created:** 2026-07-08
 **Depends on:** v1 [QueueCell](cell-model.md#queuecell) + `QueueStorage` adapter seam
 
@@ -220,7 +220,8 @@ the distributed story: v1 ships the seam; this PRD ships the consensus backend.
 
 - Local `QueueCell` (SPSC primitive + MPSC usage rule).
 - `QueueStorage` adapter trait + `VecDequeStorage` default.
-- `TopicCell` + `WorkQueueCell` spec stubs (future-work placeholders).
+- `TopicCell` local semantic contract + conformance + Lean reference; `WorkQueueCell`
+  remains a future distributed-integration placeholder.
 - Reactive shell: closure, bounded/backpressure, ordering contract.
 
 **Deliverable:** a local queue primitive with a pluggable backend seam, ready for
@@ -256,6 +257,10 @@ that CRDT cannot provide and the reason production queues use consensus.
 - Fan-out semantics (one push → all subscribers receive).
 
 **Deliverable:** pub/sub broadcast — the event-delivery use case.
+
+**Status:** the storage-independent semantic contract, replay fixtures, and universal
+Lean proofs shipped in v0.31.0. Wiring those cursors to a Raft-backed durable log remains
+part of the post-v1 distributed-storage implementation.
 
 ### Phase 4 — Parity features
 

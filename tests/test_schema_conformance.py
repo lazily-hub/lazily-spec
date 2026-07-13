@@ -469,11 +469,15 @@ def _collection_fixtures() -> list[str]:
 _KEYED_MODELS = {"CellMap", "CellTree"}
 # Queue models: reactive queue shell + storage backend.
 _QUEUE_MODELS = {"QueueCell"}
+# Broadcast topic: keyed per-subscriber cursor state and retention.
+_TOPIC_MODELS = {"TopicCell"}
 # Compute/convergence models: `scenarios`-based CRDT / semantic-tree fixtures.
 _SCENARIO_MODELS = {"SemTree", "SeqCrdt", "StableId", "TextCrdt"}
 # Merge-algebra models (#relaycell): `scenarios` of {policy, flags, initial, steps}.
 _MERGE_MODELS = {"MergeCell"}
-_KNOWN_MODELS = _KEYED_MODELS | _QUEUE_MODELS | _SCENARIO_MODELS | _MERGE_MODELS
+_KNOWN_MODELS = (
+    _KEYED_MODELS | _QUEUE_MODELS | _TOPIC_MODELS | _SCENARIO_MODELS | _MERGE_MODELS
+)
 
 
 @pytest.mark.parametrize("name", _collection_fixtures())
@@ -518,6 +522,39 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
                 k in sc for k in ("expect", "expect_initial", "expect_after")
             )
             assert has_expect, f"{name}: scenario {sc['name']!r} missing an expect* field"
+        return
+
+    if obj["model"] in _TOPIC_MODELS:
+        initial = obj.get("initial")
+        assert isinstance(initial, dict), f"{name}: TopicCell needs an initial state"
+        assert {"base_offset", "elements", "subscriptions"} <= set(initial), (
+            f"{name}: TopicCell initial state must name base_offset/elements/subscriptions"
+        )
+        steps = obj.get("steps")
+        assert isinstance(steps, list) and steps, f"{name}: TopicCell needs non-empty 'steps'"
+        for step in steps:
+            assert "op" in step and "expected" in step, f"{name}: step missing op/expected"
+            exp = step["expected"]
+            assert {"base_offset", "elements", "subscriptions", "reads", "invalidates"} <= set(exp), (
+                f"{name}: TopicCell expected state is incomplete"
+            )
+            assert isinstance(exp["subscriptions"], dict), f"{name}: subscriptions must be an object"
+            assert isinstance(exp["reads"], dict), f"{name}: reads must be an object"
+            assert isinstance(exp["invalidates"], dict), f"{name}: invalidates must be an object"
+            assert all(isinstance(v, bool) for v in exp["invalidates"].values()), (
+                f"{name}: invalidation values must be booleans"
+            )
+            for sub_id, sub in exp["subscriptions"].items():
+                assert isinstance(sub_id, str) and sub_id, f"{name}: subscriber ids must be non-empty"
+                assert sub.get("durability") in {"durable", "ephemeral"}, (
+                    f"{name}: subscriber {sub_id!r} has invalid durability"
+                )
+                assert isinstance(sub.get("connected"), bool), (
+                    f"{name}: subscriber {sub_id!r} needs boolean connected"
+                )
+                assert isinstance(sub.get("cursor"), int) and sub["cursor"] >= 0, (
+                    f"{name}: subscriber {sub_id!r} needs a non-negative cursor"
+                )
         return
 
     assert "reconcile" in obj or "steps" in obj, f"{name}: must define 'steps' or 'reconcile'"

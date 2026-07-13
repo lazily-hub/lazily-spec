@@ -1,0 +1,196 @@
+{
+  "description": "TopicCell durable replay and retention: a disconnected durable cursor survives restart, replays offline publishes, and the slowest durable subscriber bounds safe log GC.",
+  "kind": "Collection",
+  "model": "TopicCell",
+  "initial": {
+    "base_offset": 0,
+    "elements": ["a", "b", "c"],
+    "subscriptions": {
+      "fast": {
+        "durability": "durable",
+        "connected": true,
+        "cursor": 3
+      },
+      "slow": {
+        "durability": "durable",
+        "connected": true,
+        "cursor": 0
+      }
+    }
+  },
+  "steps": [
+    {
+      "op": {
+        "type": "disconnect",
+        "subscriber": "slow"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b", "c"],
+        "subscriptions": {
+          "fast": {"durability": "durable", "connected": true, "cursor": 3},
+          "slow": {"durability": "durable", "connected": false, "cursor": 0}
+        },
+        "reads": {
+          "fast": []
+        },
+        "invalidates": {
+          "fast": false,
+          "slow": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "publish",
+        "value": "d"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b", "c", "d"],
+        "subscriptions": {
+          "fast": {"durability": "durable", "connected": true, "cursor": 3},
+          "slow": {"durability": "durable", "connected": false, "cursor": 0}
+        },
+        "reads": {
+          "fast": ["d"]
+        },
+        "invalidates": {
+          "fast": true,
+          "slow": false
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "restart",
+        "subscriber": "slow"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b", "c", "d"],
+        "subscriptions": {
+          "fast": {"durability": "durable", "connected": true, "cursor": 3},
+          "slow": {"durability": "durable", "connected": false, "cursor": 0}
+        },
+        "reads": {
+          "fast": ["d"]
+        },
+        "invalidates": {
+          "fast": false,
+          "slow": false
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "reconnect",
+        "subscriber": "slow"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b", "c", "d"],
+        "subscriptions": {
+          "fast": {"durability": "durable", "connected": true, "cursor": 3},
+          "slow": {"durability": "durable", "connected": true, "cursor": 0}
+        },
+        "reads": {
+          "fast": ["d"],
+          "slow": ["a", "b", "c", "d"]
+        },
+        "invalidates": {
+          "fast": false,
+          "slow": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "gc"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b", "c", "d"],
+        "subscriptions": {
+          "fast": {"durability": "durable", "connected": true, "cursor": 3},
+          "slow": {"durability": "durable", "connected": true, "cursor": 0}
+        },
+        "reads": {
+          "fast": ["d"],
+          "slow": ["a", "b", "c", "d"]
+        },
+        "invalidates": {
+          "fast": false,
+          "slow": false
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "advance",
+        "subscriber": "slow"
+      },
+      "returns": "a",
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b", "c", "d"],
+        "subscriptions": {
+          "fast": {"durability": "durable", "connected": true, "cursor": 3},
+          "slow": {"durability": "durable", "connected": true, "cursor": 1}
+        },
+        "reads": {
+          "fast": ["d"],
+          "slow": ["b", "c", "d"]
+        },
+        "invalidates": {
+          "fast": false,
+          "slow": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "advance",
+        "subscriber": "slow"
+      },
+      "returns": "b",
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b", "c", "d"],
+        "subscriptions": {
+          "fast": {"durability": "durable", "connected": true, "cursor": 3},
+          "slow": {"durability": "durable", "connected": true, "cursor": 2}
+        },
+        "reads": {
+          "fast": ["d"],
+          "slow": ["c", "d"]
+        },
+        "invalidates": {
+          "fast": false,
+          "slow": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "gc"
+      },
+      "expected": {
+        "base_offset": 2,
+        "elements": ["c", "d"],
+        "subscriptions": {
+          "fast": {"durability": "durable", "connected": true, "cursor": 3},
+          "slow": {"durability": "durable", "connected": true, "cursor": 2}
+        },
+        "reads": {
+          "fast": ["d"],
+          "slow": ["c", "d"]
+        },
+        "invalidates": {
+          "fast": false,
+          "slow": false
+        }
+      }
+    }
+  ]
+}

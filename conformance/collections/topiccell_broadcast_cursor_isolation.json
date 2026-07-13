@@ -1,0 +1,136 @@
+{
+  "description": "TopicCell fan-out and cursor isolation: one publish is visible to every subscriber; advancing one durable cursor is non-destructive and does not move or invalidate another subscriber.",
+  "kind": "Collection",
+  "model": "TopicCell",
+  "initial": {
+    "base_offset": 0,
+    "elements": [],
+    "subscriptions": {
+      "alpha": {
+        "durability": "durable",
+        "connected": true,
+        "cursor": 0
+      },
+      "beta": {
+        "durability": "durable",
+        "connected": true,
+        "cursor": 0
+      }
+    }
+  },
+  "steps": [
+    {
+      "op": {
+        "type": "publish",
+        "value": "a"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a"],
+        "subscriptions": {
+          "alpha": {"durability": "durable", "connected": true, "cursor": 0},
+          "beta": {"durability": "durable", "connected": true, "cursor": 0}
+        },
+        "reads": {
+          "alpha": ["a"],
+          "beta": ["a"]
+        },
+        "invalidates": {
+          "alpha": true,
+          "beta": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "advance",
+        "subscriber": "alpha"
+      },
+      "returns": "a",
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a"],
+        "subscriptions": {
+          "alpha": {"durability": "durable", "connected": true, "cursor": 1},
+          "beta": {"durability": "durable", "connected": true, "cursor": 0}
+        },
+        "reads": {
+          "alpha": [],
+          "beta": ["a"]
+        },
+        "invalidates": {
+          "alpha": true,
+          "beta": false
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "publish",
+        "value": "b"
+      },
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b"],
+        "subscriptions": {
+          "alpha": {"durability": "durable", "connected": true, "cursor": 1},
+          "beta": {"durability": "durable", "connected": true, "cursor": 0}
+        },
+        "reads": {
+          "alpha": ["b"],
+          "beta": ["a", "b"]
+        },
+        "invalidates": {
+          "alpha": true,
+          "beta": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "advance",
+        "subscriber": "beta"
+      },
+      "returns": "a",
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b"],
+        "subscriptions": {
+          "alpha": {"durability": "durable", "connected": true, "cursor": 1},
+          "beta": {"durability": "durable", "connected": true, "cursor": 1}
+        },
+        "reads": {
+          "alpha": ["b"],
+          "beta": ["b"]
+        },
+        "invalidates": {
+          "alpha": false,
+          "beta": true
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "advance",
+        "subscriber": "alpha"
+      },
+      "returns": "b",
+      "expected": {
+        "base_offset": 0,
+        "elements": ["a", "b"],
+        "subscriptions": {
+          "alpha": {"durability": "durable", "connected": true, "cursor": 2},
+          "beta": {"durability": "durable", "connected": true, "cursor": 1}
+        },
+        "reads": {
+          "alpha": [],
+          "beta": ["b"]
+        },
+        "invalidates": {
+          "alpha": true,
+          "beta": false
+        }
+      }
+    }
+  ]
+}

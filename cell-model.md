@@ -777,11 +777,11 @@ not merge (see the PRD's § "Background: Why Consensus, Not CRDT").
   path an effect actually observes. See [`docs/relaycell-backpressure-analysis.md`](docs/relaycell-backpressure-analysis.md)
   §5 (demand-driven reader-kinds) and §4.0 (the merge cost law).
 
-## Future queue primitives
+## Queue family extensions
 
-`QueueCell` covers SPSC and MPSC. Two genuinely distinct primitives are reserved for
-future work — they differ in **invalidation model and handoff semantics**, not in producer/
-consumer cardinality:
+`QueueCell` covers SPSC and MPSC. `TopicCell` is the broadcast member of the family;
+`WorkQueueCell` remains the competing-consumer extension. They differ in
+**invalidation model and handoff semantics**, not merely producer/consumer cardinality:
 
 ### TopicCell (broadcast)
 
@@ -793,6 +793,44 @@ subscriber's advance never removes the element for others.
 **Relationship to `QueueCell`**: not a multi-consumer queue. A `QueueCell` consumer destructively
 pops; a `TopicCell` subscriber reads by cursor and removes nothing. Different invalidation models in
 kind.
+
+#### Normative state and operations
+
+A `TopicCell<T>` state is the tuple `(base_offset, elements, subscriptions)`:
+
+- `base_offset: u64` is the absolute offset of `elements[0]`; `end_offset` is
+  `base_offset + elements.len`.
+- `elements: [T]` is the retained append log in per-producer FIFO order.
+- `subscriptions: Map<SubscriberId, Subscription>` is keyed by stable subscriber identity.
+  Each record contains an absolute `cursor` (the next offset to read), `durability`
+  (`durable` or `ephemeral`), and `connected`.
+
+The following operations and observables are required:
+
+- `subscribe(id, durable)` creates a new cursor at `end_offset`. Reconnecting an existing
+  durable `id` MUST reuse its persisted cursor; it MUST NOT silently jump to the tail.
+  Disconnecting an ephemeral subscription removes its record, so a later subscription with
+  that id starts at the then-current tail.
+- `publish(value)` appends exactly one element and leaves every cursor unchanged. Every
+  connected subscriber whose cursor is now behind `end_offset` is invalidated independently.
+  An offline durable subscriber is not scheduled, but the element remains readable after it
+  reconnects.
+- `read(id)` observes the element at that subscriber's cursor without changing the log or any
+  cursor. `advance(id)` moves only that cursor by one and is a no-op at `end_offset`; therefore
+  `base_offset ≤ cursor ≤ end_offset` is preserved by every non-TTL operation.
+- The retention frontier is the minimum cursor across **durable** subscriptions, or
+  `end_offset` when there are none. Safe GC removes only offsets below that frontier, advances
+  `base_offset`, and leaves absolute subscriber cursors unchanged. It MUST preserve every
+  durable subscriber's future read stream. Ephemeral subscriptions never hold the frontier.
+- GC is observational maintenance and invalidates no subscriber when it stays below the
+  frontier. TTL-forced truncation beyond a durable cursor is a separate gap/resync policy and
+  is not part of the v1 semantic core.
+
+The canonical replay fixtures are
+[`topiccell_broadcast_cursor_isolation.json`](conformance/collections/topiccell_broadcast_cursor_isolation.json),
+[`topiccell_durable_replay_gc.json`](conformance/collections/topiccell_durable_replay_gc.json), and
+[`topiccell_ephemeral_lifecycle.json`](conformance/collections/topiccell_ephemeral_lifecycle.json).
+The executable universal reference is `lazily-formal/LazilyFormal/TopicCell.lean`.
 
 **Distribution is cheap — no assignment consensus.** Every subscriber gets every element, so there is
 **no "who gets this" decision to arbitrate**. A distributed topic is N independent per-subscriber
@@ -837,7 +875,8 @@ not a fourth primitive: `WorkQueueCell` semantics *within* a group (competing) a
 semantics *across* groups (each group gets the full stream). Model it as a `TopicCell` whose
 subscribers are `WorkQueueCell`s.
 
-**Status**: future work — not in v1 conformance. See the
+**Status**: the local semantic core, conformance fixtures, and Lean proofs ship in v0.31.0.
+The consensus-backed distributed storage integration remains in the
 [distributed-queue PRD](distributed-queue-prd.md) Phase 3.
 
 ### WorkQueueCell (competing consumers)
