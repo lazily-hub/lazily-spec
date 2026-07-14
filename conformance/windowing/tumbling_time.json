@@ -1,0 +1,14 @@
+{
+  "description": "TumblingWindow (time, Sum aggregate) — accumulate into the current window; at each period boundary (tick with now >= next) emit the window fold and open the next window. An empty window emits nothing. period=2.",
+  "kind": "Windowing",
+  "model": "TumblingWindow",
+  "config": { "mode": "time", "aggregate": "Sum", "period": 2 },
+  "steps": [
+    { "op": { "type": "push", "now": 0, "value": 1 }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "push", "now": 1, "value": 2 }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "tick", "now": 2 }, "returns": 3, "expected": { "output": 3, "invalidates": { "output": true } } },
+    { "op": { "type": "push", "now": 3, "value": 4 }, "returns": null, "expected": { "output": 3, "invalidates": { "output": false } } },
+    { "op": { "type": "tick", "now": 4 }, "returns": 4, "expected": { "output": 4, "invalidates": { "output": true } } },
+    { "op": { "type": "tick", "now": 6 }, "returns": null, "expected": { "output": 4, "invalidates": { "output": false } } }
+  ]
+}

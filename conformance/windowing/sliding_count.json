@@ -1,0 +1,13 @@
+{
+  "description": "SlidingWindow (Sum aggregate) — retain the last `size` elements; every `slide` pushes emit the merge-fold over the current window. size=3, slide=1.",
+  "kind": "Windowing",
+  "model": "SlidingWindow",
+  "config": { "aggregate": "Sum", "size": 3, "slide": 1 },
+  "steps": [
+    { "op": { "type": "push", "value": 1 }, "returns": 1, "expected": { "output": 1, "invalidates": { "output": true } } },
+    { "op": { "type": "push", "value": 2 }, "returns": 3, "expected": { "output": 3, "invalidates": { "output": true } } },
+    { "op": { "type": "push", "value": 3 }, "returns": 6, "expected": { "output": 6, "invalidates": { "output": true } } },
+    { "op": { "type": "push", "value": 4 }, "returns": 9, "expected": { "output": 9, "invalidates": { "output": true } } },
+    { "op": { "type": "push", "value": 5 }, "returns": 12, "expected": { "output": 12, "invalidates": { "output": true } } }
+  ]
+}

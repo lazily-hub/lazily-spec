@@ -1,0 +1,14 @@
+{
+  "description": "TumblingWindow (count, Sum aggregate) — accumulate n elements under the merge; on the n-th emit the window fold and reset. n=3.",
+  "kind": "Windowing",
+  "model": "TumblingWindow",
+  "config": { "mode": "count", "aggregate": "Sum", "n": 3 },
+  "steps": [
+    { "op": { "type": "push", "value": 1 }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "push", "value": 2 }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "push", "value": 3 }, "returns": 6, "expected": { "output": 6, "invalidates": { "output": true } } },
+    { "op": { "type": "push", "value": 4 }, "returns": null, "expected": { "output": 6, "invalidates": { "output": false } } },
+    { "op": { "type": "push", "value": 5 }, "returns": null, "expected": { "output": 6, "invalidates": { "output": false } } },
+    { "op": { "type": "push", "value": 6 }, "returns": 15, "expected": { "output": 15, "invalidates": { "output": true } } }
+  ]
+}
