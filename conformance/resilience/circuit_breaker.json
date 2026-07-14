@@ -1,0 +1,13 @@
+{
+  "description": "CircuitBreakerCell — Closed/Open/HalfOpen state machine over a sliding window. failures reaching failure_threshold in the last N calls trip Closed->Open (open_until = now + reset_timeout); Open fast-fails until the deadline then Open->HalfOpen on the next allow; a HalfOpen success closes the breaker. window N=3, failure_threshold=2, reset_timeout=5.",
+  "kind": "Resilience",
+  "model": "CircuitBreakerCell",
+  "config": { "window": 3, "failure_threshold": 2, "reset_timeout": 5 },
+  "steps": [
+    { "op": { "type": "record", "success": false, "now": 0 }, "expected": { "state": "Closed", "invalidates": { "state": false } } },
+    { "op": { "type": "record", "success": false, "now": 1 }, "expected": { "state": "Open", "invalidates": { "state": true } } },
+    { "op": { "type": "allow", "now": 2 }, "returns": false, "expected": { "state": "Open", "invalidates": { "state": false } } },
+    { "op": { "type": "allow", "now": 6 }, "returns": true, "expected": { "state": "HalfOpen", "invalidates": { "state": true } } },
+    { "op": { "type": "record", "success": true, "now": 6 }, "expected": { "state": "Closed", "invalidates": { "state": true } } }
+  ]
+}

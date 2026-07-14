@@ -1,0 +1,13 @@
+{
+  "description": "BulkheadCell(capacity=2) — bounded isolation pool. acquire succeeds while in_use < capacity and fails at capacity; release frees one. permits_in_use invalidates only when it changes.",
+  "kind": "Resilience",
+  "model": "BulkheadCell",
+  "config": { "capacity": 2 },
+  "steps": [
+    { "op": { "type": "acquire" }, "returns": true, "expected": { "in_use": 1, "invalidates": { "in_use": true } } },
+    { "op": { "type": "acquire" }, "returns": true, "expected": { "in_use": 2, "invalidates": { "in_use": true } } },
+    { "op": { "type": "acquire" }, "returns": false, "expected": { "in_use": 2, "invalidates": { "in_use": false } } },
+    { "op": { "type": "release" }, "returns": null, "expected": { "in_use": 1, "invalidates": { "in_use": true } } },
+    { "op": { "type": "release" }, "returns": null, "expected": { "in_use": 0, "invalidates": { "in_use": true } } }
+  ]
+}

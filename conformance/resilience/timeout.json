@@ -1,0 +1,11 @@
+{
+  "description": "TimeoutCell — deadline-bounded call. arm sets deadline = now + timeout; tick fast-fails (returns the timeout edge, once) at now >= deadline and is idempotent thereafter. is_timed_out invalidates only on the timeout edge.",
+  "kind": "Resilience",
+  "model": "TimeoutCell",
+  "steps": [
+    { "op": { "type": "arm", "now": 0, "timeout": 5 }, "returns": false, "expected": { "is_timed_out": false, "invalidates": { "is_timed_out": false } } },
+    { "op": { "type": "tick", "now": 3 }, "returns": false, "expected": { "is_timed_out": false, "invalidates": { "is_timed_out": false } } },
+    { "op": { "type": "tick", "now": 5 }, "returns": true, "expected": { "is_timed_out": true, "invalidates": { "is_timed_out": true } } },
+    { "op": { "type": "tick", "now": 9 }, "returns": false, "expected": { "is_timed_out": true, "invalidates": { "is_timed_out": false } } }
+  ]
+}

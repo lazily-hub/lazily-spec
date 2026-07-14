@@ -1,0 +1,15 @@
+{
+  "description": "RetryPolicyCell — exponential backoff delay(attempt) = min(cap, base * 2^attempt), saturating to cap. next() yields the current attempt's delay and advances. base=100, cap=2000: 100,200,400,800,1600,2000,2000. The delay reader invalidates only when the delay changes.",
+  "kind": "Resilience",
+  "model": "RetryPolicyCell",
+  "config": { "base": 100, "cap": 2000 },
+  "steps": [
+    { "op": { "type": "next" }, "returns": 100, "expected": { "delay": 100, "invalidates": { "delay": true } } },
+    { "op": { "type": "next" }, "returns": 200, "expected": { "delay": 200, "invalidates": { "delay": true } } },
+    { "op": { "type": "next" }, "returns": 400, "expected": { "delay": 400, "invalidates": { "delay": true } } },
+    { "op": { "type": "next" }, "returns": 800, "expected": { "delay": 800, "invalidates": { "delay": true } } },
+    { "op": { "type": "next" }, "returns": 1600, "expected": { "delay": 1600, "invalidates": { "delay": true } } },
+    { "op": { "type": "next" }, "returns": 2000, "expected": { "delay": 2000, "invalidates": { "delay": true } } },
+    { "op": { "type": "next" }, "returns": 2000, "expected": { "delay": 2000, "invalidates": { "delay": false } } }
+  ]
+}
