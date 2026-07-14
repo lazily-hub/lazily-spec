@@ -4,7 +4,7 @@
   "languages": ["Rust", "Python", "Kotlin", "JS", "Dart", "Zig", "Go", "C++"],
   "align": ["Feature", ":----:", ":------:", ":------:", ":--:", ":----:", ":---:", ":--:", ":---:"],
   "rows": [
-    { "feature": "Reactive graph — `Cell` / `Slot` / `Signal` / `Effect` / memo / batch", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
+    { "feature": "Reactive graph — core `Cell` / `Slot` / `Effect` (+ derived `Signal` = `Slot.eager`) / memo / batch", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Keyed-map materialization (`SlotMap`) — mint-on-access derived slots: transparency + deferral (`#lzmatmode`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Thread-safe keyed map (`ThreadSafeSlotMap`) — `Send + Sync` + materialization confluence (`#lzmatmode`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Async keyed map (`AsyncSlotMap`) — eventual transparency (`#lzmatmode`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
@@ -43,6 +43,14 @@
     { "feature": "C-ABI FFI boundary", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Permission boundary (`PeerPermissions` / `RemoteOp`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
     { "feature": "Capability negotiation (`SessionHandshake`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Instrumentation / benchmarks", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] }
+    { "feature": "Instrumentation / benchmarks", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
+    { "feature": "Temporal sources — `TimerCell` / `IntervalCell` / `CronCell` / `DeadlineCell` over a logical clock (`#lztime`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
+    { "feature": "Rate-shaping operators — `DebounceCell` / `ThrottleCell` / `SampleCell` / `ProbabilisticSampleCell` (`#lzrateshape`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
+    { "feature": "Membership + failure detection — `MembershipCell` (SWIM + Phi-accrual) / `PeerSet` / `PeerChangeEvent` (`#lzmemb`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
+    { "feature": "Distributed coordination — `LeaseCell` / `LeaderCell` / `LockCell` / `SemaphoreCell` / `BarrierCell`+`QuorumCell` (`#lzcoord`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
+    { "feature": "Presence + ephemeral plane — `PresenceCell` / `AwarenessCell` / `EphemeralCell` + `Ephemeral`/`Durable` markers (`#lzpresence`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
+    { "feature": "Stream windowing — `TumblingWindow` / `SlidingWindow` / `SessionWindow` over the merge algebra (`#lzwindow`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
+    { "feature": "Fault tolerance — `CircuitBreakerCell` / `RetryPolicyCell` / `BulkheadCell` / `TimeoutCell` (`#lzresilience`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
+    { "feature": "Embedded-service plane — `HealthCell` / `ReadinessCell` / `DiscoveryCell` / `ServiceRegistry` (`#lzservice`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] }
   ]
 }
