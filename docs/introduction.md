@@ -65,7 +65,7 @@ in the Rust crate and are intentionally out of scope.
 
 | lazily-rs area | Spec |
 |----------------|------|
-| Cell / Slot / Effect / Signal (reactive core) | [Reactive Graph](reactive-graph.md), [Cell Model](cell-model.md), [Wire Protocol § Eager Signals](protocol.md#eager-signal-nodes) |
+| Cell / Slot / Effect (reactive core) + derived Signal (`Slot.eager`) | [Reactive Graph](reactive-graph.md), [Cell Model](cell-model.md), [Wire Protocol § Eager Signals](protocol.md#eager-signal-nodes) |
 | `ReactiveMap` (`CellMap` / `SlotMap`, keyed collections) | [Cell Model § Keyed cell collections](cell-model.md#keyed-cell-collections) |
 | `CellTree` (ordered keyed tree) | [Cell Model § Ordered keyed tree](cell-model.md#ordered-keyed-tree) |
 | `reconcile` (LIS keyed reconciliation) | [Cell Model § Keyed reconciliation](cell-model.md#keyed-reconciliation) |

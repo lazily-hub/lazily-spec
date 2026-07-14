@@ -18,12 +18,22 @@ MUST honor this contract.
 |-----------|------|
 | **Cell** | A mutable source value. `setCell` invalidates dependents on a `==` (PartialEq) change; an equal set is a no-op. |
 | **Slot** | A lazily-computed, memoized derived value. Tracks its dependencies automatically, computes on first read, caches, and recomputes only when read after an upstream invalidation. |
-| **Signal** | An *eager* derived value: a memo Slot plus a puller Effect. The value is materialized by the time the invalidating `setCell`/`batch` returns — observers never see an intermediate unset state. Equivalently `Signal ≡ Slot.eager` — a memo Slot with its puller armed (`relaycell-backpressure-analysis.md` §4.0). |
 | **MergeCell** | A source whose write is a **merge** `⊕` under a [`MergePolicy`](#mergecell-and-the-merge-algebra-relaycell) rather than a replace. `Cell ≡ MergeCell<KeepLatest>`: a plain cell is the keep-latest instance. Backed by a cell node, so it inherits the `==` store-guard and store-without-cascade. |
 | **Effect** | A side-effecting observer that reruns whenever a tracked dependency invalidates. An optional cleanup closure runs before each rerun and on dispose. |
 
-Values are **lazy by default**; reach for `Signal` when eager push semantics are
-required. Handles (`SlotHandle` / `CellHandle` / `SignalHandle` /
+The three core primitives are **`Cell`** / **`Slot`** / **`Effect`** (with
+`MergeCell` the merge-generalized source, `Cell ≡ MergeCell<KeepLatest>`).
+
+**`Signal` is a derived construct, not a core primitive.** It is
+`Signal ≡ Slot.eager` — a memo Slot plus a puller Effect that reads the slot on
+creation and after every invalidation, so its value is materialized by the time
+the invalidating `setCell`/`batch` returns (observers never see an intermediate
+unset state — `relaycell-backpressure-analysis.md` §4.0). It composes the core
+primitives; bindings expose it as a convenience (`signal(compute)`), not as a
+distinct kind of node.
+
+Values are **lazy by default**; reach for the derived `Signal` when eager push
+semantics are required. Handles (`SlotHandle` / `CellHandle` / `SignalHandle` /
 `MergeCellHandle` / `EffectHandle`) are lightweight, copyable ids over a shared
 node table — they are usable only with the owning context.
 
@@ -83,7 +93,8 @@ decides the invalidation source.
   the same tick, at batch exit). A rerun does not start until the previous
   cleanup completes. Disposal removes pending reruns, runs the current cleanup,
   and unsubscribes all dependency edges.
-- **Signal eagerness.** A signal is a `memo` slot plus a puller effect: the
+- **Signal eagerness (derived construct).** A signal is not a core primitive — it
+  is a `memo` slot plus a puller effect: the
   effect reads the slot on creation and after every invalidation, forcing the
   memo to re-materialize. Because the puller runs inside the invalidating
   `set_cell`/`batch`'s effect flush, the value is fresh by the time the mutator
@@ -206,8 +217,9 @@ semantics.
 
 A reactive context conforms when:
 
-1. The four primitives (`Cell` / `Slot` / `Signal` / `Effect`) and the handles
-   above are implemented.
+1. The three core primitives (`Cell` / `Slot` / `Effect`) and the handles above
+   are implemented; `Signal` (the derived `Slot.eager` construct) is exposed as a
+   convenience.
 2. `set_cell` is `==`-guarded (equal value is a no-op); `memo` adds the same
    guard to a recompute.
 3. Refresh is pull-based and glitch-free: a slot observes consistent inputs;
