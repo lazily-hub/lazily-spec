@@ -1,56 +1,651 @@
 {
   "$comment": "Canonical cross-language feature coverage — the single source of truth. Edit THIS file, then run `node scripts/sync-coverage.mjs` to regenerate the table in docs/coverage.md and every sibling binding README (between the coverage-table markers). CI runs `--check` to fail on drift.",
   "legend": "✅ shipped · `~` partial · `—` absent or not applicable",
-  "languages": ["Rust", "Python", "Kotlin", "JS", "Dart", "Zig", "Go", "C++"],
-  "align": ["Feature", ":----:", ":------:", ":------:", ":--:", ":----:", ":---:", ":--:", ":---:"],
+  "languages": [
+    "Rust",
+    "Python",
+    "Kotlin",
+    "JS",
+    "Dart",
+    "Zig",
+    "Go",
+    "C++"
+  ],
+  "align": [
+    "Feature",
+    ":----:",
+    ":------:",
+    ":------:",
+    ":--:",
+    ":----:",
+    ":---:",
+    ":--:",
+    ":---:"
+  ],
   "rows": [
-    { "feature": "Reactive graph — core `Cell` / `Slot` / `Effect` (+ derived `Signal` = `Slot.eager`) / memo / batch", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Keyed-map materialization (`SlotMap`) — mint-on-access derived slots: transparency + deferral (`#lzmatmode`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Thread-safe keyed map (`ThreadSafeSlotMap`) — `Send + Sync` + materialization confluence (`#lzmatmode`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Async keyed map (`AsyncSlotMap`) — eventual transparency (`#lzmatmode`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Keyed-map sync — membership propagation + materialize-on-ingest + derived-aggregate transparency (`#lzfamilysync`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Thread-safe context (lock-backed)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Async reactive context", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Flat state machine", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Harel state charts", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Keyed reactive maps (`ReactiveMap`: `CellMap` / `SlotMap`) + `CellTree` + reconcile", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Memoized semantic tree (`SemTree`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Stable-id alignment (manufactured identity)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Broadcast topic (`TopicCell`) — independent cursors + durable replay + safe GC (`#lztopiccell`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Competing-consumer work queue (`WorkQueueCell`) — exclusive leases + ack/nack + redelivery + DLQ (`#lzworkqueue`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Merge algebra + `MergeCell` — associative `MergePolicy` (`KeepLatest`/`Sum`/`Max`/`SetUnion`/`RawFifo`), `Cell ≡ MergeCell<KeepLatest>`, `Reactive`/`Source` split (`#relaycell`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "RelayCell — conflating relay + `BackpressurePolicy` + `SpillStore` + `Transport` + Inbox/Outbox + Rate/Window/Expiry/Priority/keyed policies (`#relaycell`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Free-text character CRDT (`TextCrdt`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "`TextCrdt` delta sync (`version_vector` / `delta_since` / `apply_delta`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "`CrdtTree` lossless document contract (`#lzcrdttree`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Move-aware sequence CRDT (`SeqCrdt`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Lossless tree CRDT core (`LosslessTreeCrdt`, M1)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Lossless tree — dotted-frontier anti-entropy", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Lossless tree — concurrent merge convergence", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Registers (LWW / MV) + `PnCounter` + `CellCrdt`", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "IPC wire — `Snapshot` + `Delta` + `CrdtSync`", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Shared-memory blob path (`ShmBlobArena`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Cross-process zero-copy transport (`BlobBackend` / shm / arrow)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Reliable sync — resync coordinator + at-least-once durable outbox + OR-set/LWW liveness (`#lzsync`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Storage-independent durable outbox (`OutboxStore` + shared outbox protocol; SQLite/Room/IndexedDB/file adapters)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Reliable-sync transport seam + full-duplex `SyncDriver` loop (`IpcSink`/`IpcSource`, `#sync-driver`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Distributed plane — WebRTC transport + signaling", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "State projection / mirror", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Causal receipts (`CausalReceipts` outcome projection)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Message-passing + RPC command plane (`command-plane-v1`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "C-ABI FFI boundary", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Permission boundary (`PeerPermissions` / `RemoteOp`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Capability negotiation (`SessionHandshake`)", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Instrumentation / benchmarks", "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"] },
-    { "feature": "Temporal sources — `TimerCell` / `IntervalCell` / `CronCell` / `DeadlineCell` over a logical clock (`#lztime`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
-    { "feature": "Rate-shaping operators — `DebounceCell` / `ThrottleCell` / `SampleCell` / `ProbabilisticSampleCell` (`#lzrateshape`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
-    { "feature": "Membership + failure detection — `MembershipCell` (SWIM + Phi-accrual) / `PeerSet` / `PeerChangeEvent` (`#lzmemb`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
-    { "feature": "Distributed coordination — `LeaseCell` / `LeaderCell` / `LockCell` / `SemaphoreCell` / `BarrierCell`+`QuorumCell` (`#lzcoord`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
-    { "feature": "Presence + ephemeral plane — `PresenceCell` / `AwarenessCell` / `EphemeralCell` + `Ephemeral`/`Durable` markers (`#lzpresence`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
-    { "feature": "Stream windowing — `TumblingWindow` / `SlidingWindow` / `SessionWindow` over the merge algebra (`#lzwindow`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
-    { "feature": "Fault tolerance — `CircuitBreakerCell` / `RetryPolicyCell` / `BulkheadCell` / `TimeoutCell` (`#lzresilience`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] },
-    { "feature": "Embedded-service plane — `HealthCell` / `ReadinessCell` / `DiscoveryCell` / `ServiceRegistry` (`#lzservice`)", "marks": ["✅", "—", "✅", "✅", "—", "—", "—", "—"] }
+    {
+      "feature": "Reactive graph — core `Cell` / `Slot` / `Effect` (+ derived `Signal` = `Slot.eager`) / memo / batch",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Keyed-map materialization (`SlotMap`) — mint-on-access derived slots: transparency + deferral (`#lzmatmode`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Thread-safe keyed map (`ThreadSafeSlotMap`) — `Send + Sync` + materialization confluence (`#lzmatmode`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Async keyed map (`AsyncSlotMap`) — eventual transparency (`#lzmatmode`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Keyed-map sync — membership propagation + materialize-on-ingest + derived-aggregate transparency (`#lzfamilysync`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Thread-safe context (lock-backed)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Async reactive context",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Flat state machine",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Harel state charts",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Keyed reactive maps (`ReactiveMap`: `CellMap` / `SlotMap`) + `CellTree` + reconcile",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Memoized semantic tree (`SemTree`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Stable-id alignment (manufactured identity)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Broadcast topic (`TopicCell`) — independent cursors + durable replay + safe GC (`#lztopiccell`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Competing-consumer work queue (`WorkQueueCell`) — exclusive leases + ack/nack + redelivery + DLQ (`#lzworkqueue`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Merge algebra + `MergeCell` — associative `MergePolicy` (`KeepLatest`/`Sum`/`Max`/`SetUnion`/`RawFifo`), `Cell ≡ MergeCell<KeepLatest>`, `Reactive`/`Source` split (`#relaycell`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "RelayCell — conflating relay + `BackpressurePolicy` + `SpillStore` + `Transport` + Inbox/Outbox + Rate/Window/Expiry/Priority/keyed policies (`#relaycell`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Free-text character CRDT (`TextCrdt`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "`TextCrdt` delta sync (`version_vector` / `delta_since` / `apply_delta`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "`CrdtTree` lossless document contract (`#lzcrdttree`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Move-aware sequence CRDT (`SeqCrdt`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Lossless tree CRDT core (`LosslessTreeCrdt`, M1)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Lossless tree — dotted-frontier anti-entropy",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Lossless tree — concurrent merge convergence",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Registers (LWW / MV) + `PnCounter` + `CellCrdt`",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "IPC wire — `Snapshot` + `Delta` + `CrdtSync`",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Shared-memory blob path (`ShmBlobArena`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Cross-process zero-copy transport (`BlobBackend` / shm / arrow)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Reliable sync — resync coordinator + at-least-once durable outbox + OR-set/LWW liveness (`#lzsync`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Storage-independent durable outbox (`OutboxStore` + shared outbox protocol; SQLite/Room/IndexedDB/file adapters)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Reliable-sync transport seam + full-duplex `SyncDriver` loop (`IpcSink`/`IpcSource`, `#sync-driver`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Distributed plane — WebRTC transport + signaling",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "State projection / mirror",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Causal receipts (`CausalReceipts` outcome projection)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Message-passing + RPC command plane (`command-plane-v1`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "C-ABI FFI boundary",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Permission boundary (`PeerPermissions` / `RemoteOp`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Capability negotiation (`SessionHandshake`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Instrumentation / benchmarks",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Temporal sources — `TimerCell` / `IntervalCell` / `CronCell` / `DeadlineCell` over a logical clock (`#lztime`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Rate-shaping operators — `DebounceCell` / `ThrottleCell` / `SampleCell` / `ProbabilisticSampleCell` (`#lzrateshape`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Membership + failure detection — `MembershipCell` (SWIM + Phi-accrual) / `PeerSet` / `PeerChangeEvent` (`#lzmemb`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Distributed coordination — `LeaseCell` / `LeaderCell` / `LockCell` / `SemaphoreCell` / `BarrierCell`+`QuorumCell` (`#lzcoord`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Presence + ephemeral plane — `PresenceCell` / `AwarenessCell` / `EphemeralCell` + `Ephemeral`/`Durable` markers (`#lzpresence`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Stream windowing — `TumblingWindow` / `SlidingWindow` / `SessionWindow` over the merge algebra (`#lzwindow`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Fault tolerance — `CircuitBreakerCell` / `RetryPolicyCell` / `BulkheadCell` / `TimeoutCell` (`#lzresilience`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Embedded-service plane — `HealthCell` / `ReadinessCell` / `DiscoveryCell` / `ServiceRegistry` (`#lzservice`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    }
   ]
 }
