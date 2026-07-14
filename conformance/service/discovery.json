@@ -1,0 +1,12 @@
+{
+  "description": "DiscoveryCell — reactive service->endpoint map fed by registration + membership. Each entry records its owning peer; a peer's departure (evict) removes its endpoints. resolve() reads without changing the map; discovery() is the live map, invalidating only on a change.",
+  "kind": "Service",
+  "model": "DiscoveryCell",
+  "steps": [
+    { "op": { "type": "register", "service": "api", "endpoint": "10.0.0.1", "peer": 1 }, "expected": { "discovery": { "api": "10.0.0.1" }, "invalidates": { "discovery": true } } },
+    { "op": { "type": "register", "service": "db", "endpoint": "10.0.0.2", "peer": 2 }, "expected": { "discovery": { "api": "10.0.0.1", "db": "10.0.0.2" }, "invalidates": { "discovery": true } } },
+    { "op": { "type": "resolve", "service": "api" }, "returns": "10.0.0.1", "expected": { "discovery": { "api": "10.0.0.1", "db": "10.0.0.2" }, "invalidates": { "discovery": false } } },
+    { "op": { "type": "evict", "peer": 2 }, "expected": { "discovery": { "api": "10.0.0.1" }, "invalidates": { "discovery": true } } },
+    { "op": { "type": "deregister", "service": "api" }, "expected": { "discovery": {}, "invalidates": { "discovery": true } } }
+  ]
+}

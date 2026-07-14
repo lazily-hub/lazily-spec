@@ -1,0 +1,12 @@
+{
+  "description": "ServiceRegistry — durable registration table (DurableOutbox pattern) + reactive projection. register/deregister append to an ordered log and update the projection (the left-fold of the log). replay rebuilds the projection from the log unchanged, so the registry survives a restart.",
+  "kind": "Service",
+  "model": "ServiceRegistry",
+  "steps": [
+    { "op": { "type": "register", "service": "api", "endpoint": "v1" }, "expected": { "projection": { "api": "v1" }, "invalidates": { "projection": true } } },
+    { "op": { "type": "register", "service": "db", "endpoint": "v1" }, "expected": { "projection": { "api": "v1", "db": "v1" }, "invalidates": { "projection": true } } },
+    { "op": { "type": "register", "service": "api", "endpoint": "v2" }, "expected": { "projection": { "api": "v2", "db": "v1" }, "invalidates": { "projection": true } } },
+    { "op": { "type": "deregister", "service": "db" }, "expected": { "projection": { "api": "v2" }, "invalidates": { "projection": true } } },
+    { "op": { "type": "replay" }, "expected": { "projection": { "api": "v2" }, "invalidates": { "projection": false } } }
+  ]
+}

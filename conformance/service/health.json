@@ -1,0 +1,12 @@
+{
+  "description": "HealthCell — composed liveness probe. Aggregates named probes (up + critical): Unhealthy if any critical is down, else Degraded if any is down, else Healthy. The worst component dominates. health() invalidates only when the aggregate changes.",
+  "kind": "Service",
+  "model": "HealthCell",
+  "steps": [
+    { "op": { "type": "set", "name": "cache", "up": true, "critical": false }, "expected": { "health": "Healthy", "invalidates": { "health": false } } },
+    { "op": { "type": "set", "name": "cache", "up": false, "critical": false }, "expected": { "health": "Degraded", "invalidates": { "health": true } } },
+    { "op": { "type": "set", "name": "db", "up": false, "critical": true }, "expected": { "health": "Unhealthy", "invalidates": { "health": true } } },
+    { "op": { "type": "set", "name": "db", "up": true, "critical": true }, "expected": { "health": "Degraded", "invalidates": { "health": true } } },
+    { "op": { "type": "set", "name": "cache", "up": true, "critical": false }, "expected": { "health": "Healthy", "invalidates": { "health": true } } }
+  ]
+}

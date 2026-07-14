@@ -1,0 +1,12 @@
+{
+  "description": "ReadinessCell — composed readiness probe. ready() is true iff every condition (deps ready + leader known + lease valid) is true. ready() invalidates only when it flips.",
+  "kind": "Service",
+  "model": "ReadinessCell",
+  "steps": [
+    { "op": { "type": "set", "name": "deps_ready", "ready": false }, "expected": { "ready": false, "invalidates": { "ready": true } } },
+    { "op": { "type": "set", "name": "leader_known", "ready": false }, "expected": { "ready": false, "invalidates": { "ready": false } } },
+    { "op": { "type": "set", "name": "deps_ready", "ready": true }, "expected": { "ready": false, "invalidates": { "ready": false } } },
+    { "op": { "type": "set", "name": "leader_known", "ready": true }, "expected": { "ready": true, "invalidates": { "ready": true } } },
+    { "op": { "type": "set", "name": "lease_valid", "ready": false }, "expected": { "ready": false, "invalidates": { "ready": true } } }
+  ]
+}
