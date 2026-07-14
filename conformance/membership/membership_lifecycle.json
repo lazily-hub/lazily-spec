@@ -1,0 +1,18 @@
+{
+  "description": "MembershipCell full lifecycle — SWIM state machine + Phi-accrual over a logical clock. join -> Alive grows the PeerSet; regular heartbeats keep a peer Alive with no set churn; a large clock gap drives phi past the threshold -> Suspect (leaves the set); suspect_timeout -> Dead (no further set change); a second peer joins then leaves. The PeerSet reader invalidates only when the alive set changes. Phi is probed only far from the threshold so float differences never change a transition.",
+  "kind": "Membership",
+  "model": "MembershipCell",
+  "config": { "phi_threshold": 8.0, "suspect_timeout": 5, "max_samples": 100, "min_std": 0.1 },
+  "initial": { "peers": [] },
+  "steps": [
+    { "op": { "type": "join", "peer": 1, "now": 0 }, "expected": { "states": { "1": "Alive" }, "alive_set": [1], "invalidates": true } },
+    { "op": { "type": "heartbeat", "peer": 1, "now": 1 }, "expected": { "states": { "1": "Alive" }, "alive_set": [1], "invalidates": false } },
+    { "op": { "type": "heartbeat", "peer": 1, "now": 2 }, "expected": { "states": { "1": "Alive" }, "alive_set": [1], "invalidates": false } },
+    { "op": { "type": "heartbeat", "peer": 1, "now": 3 }, "expected": { "states": { "1": "Alive" }, "alive_set": [1], "invalidates": false } },
+    { "op": { "type": "tick", "now": 3 }, "expected": { "states": { "1": "Alive" }, "alive_set": [1], "invalidates": false } },
+    { "op": { "type": "tick", "now": 100 }, "expected": { "states": { "1": "Suspect" }, "alive_set": [], "invalidates": true } },
+    { "op": { "type": "tick", "now": 106 }, "expected": { "states": { "1": "Dead" }, "alive_set": [], "invalidates": false } },
+    { "op": { "type": "join", "peer": 2, "now": 106 }, "expected": { "states": { "1": "Dead", "2": "Alive" }, "alive_set": [2], "invalidates": true } },
+    { "op": { "type": "leave", "peer": 2, "now": 107 }, "expected": { "states": { "1": "Dead", "2": "Left" }, "alive_set": [], "invalidates": true } }
+  ]
+}
