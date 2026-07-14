@@ -1,0 +1,35 @@
+{
+  "description": "DeadlineCell value + deadline — state is Deadlined<T>, either Live(v) or Expired(v). It flips Live -> Expired at the first tick with now >= deadline, preserving the value. Expiry is monotone and idempotent; the state reader invalidates only on the expiry edge.",
+  "kind": "Temporal",
+  "model": "DeadlineCell",
+  "initial": { "value": "payload", "deadline": 4 },
+  "steps": [
+    {
+      "op": { "type": "tick", "now": 2 },
+      "returns": false,
+      "expected": {
+        "state": "Live",
+        "value": "payload",
+        "invalidates": { "state": false }
+      }
+    },
+    {
+      "op": { "type": "tick", "now": 4 },
+      "returns": true,
+      "expected": {
+        "state": "Expired",
+        "value": "payload",
+        "invalidates": { "state": true }
+      }
+    },
+    {
+      "op": { "type": "tick", "now": 9 },
+      "returns": false,
+      "expected": {
+        "state": "Expired",
+        "value": "payload",
+        "invalidates": { "state": false }
+      }
+    }
+  ]
+}

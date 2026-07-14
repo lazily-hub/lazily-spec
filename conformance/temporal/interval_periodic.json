@@ -1,0 +1,33 @@
+{
+  "description": "IntervalCell periodic — a fire boundary lands at period, 2*period, ... On tick(now) every boundary in (frontier, now] fires and count grows by the number crossed; a now that jumps past several boundaries counts them all. count is monotone and its reader invalidates only when count changes.",
+  "kind": "Temporal",
+  "model": "IntervalCell",
+  "initial": { "period": 2 },
+  "steps": [
+    {
+      "op": { "type": "tick", "now": 1 },
+      "returns": false,
+      "expected": { "count": 0, "next_fire": 2, "invalidates": { "count": false } }
+    },
+    {
+      "op": { "type": "tick", "now": 2 },
+      "returns": true,
+      "expected": { "count": 1, "next_fire": 4, "invalidates": { "count": true } }
+    },
+    {
+      "op": { "type": "tick", "now": 4 },
+      "returns": true,
+      "expected": { "count": 2, "next_fire": 6, "invalidates": { "count": true } }
+    },
+    {
+      "op": { "type": "tick", "now": 5 },
+      "returns": false,
+      "expected": { "count": 2, "next_fire": 6, "invalidates": { "count": false } }
+    },
+    {
+      "op": { "type": "tick", "now": 8 },
+      "returns": true,
+      "expected": { "count": 4, "next_fire": 10, "invalidates": { "count": true } }
+    }
+  ]
+}

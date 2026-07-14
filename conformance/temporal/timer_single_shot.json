@@ -1,0 +1,38 @@
+{
+  "description": "TimerCell single-shot — value flips None -> Some(()) at the first tick with now >= fire_at, fires exactly once, and is idempotent thereafter. The fired/value reader invalidates only on the fire edge.",
+  "kind": "Temporal",
+  "model": "TimerCell",
+  "initial": { "fire_at": 3 },
+  "steps": [
+    {
+      "op": { "type": "tick", "now": 1 },
+      "returns": false,
+      "expected": {
+        "fired": false,
+        "value": null,
+        "next_fire": 3,
+        "invalidates": { "fired": false }
+      }
+    },
+    {
+      "op": { "type": "tick", "now": 3 },
+      "returns": true,
+      "expected": {
+        "fired": true,
+        "value": "()",
+        "next_fire": null,
+        "invalidates": { "fired": true }
+      }
+    },
+    {
+      "op": { "type": "tick", "now": 5 },
+      "returns": false,
+      "expected": {
+        "fired": true,
+        "value": "()",
+        "next_fire": null,
+        "invalidates": { "fired": false }
+      }
+    }
+  ]
+}

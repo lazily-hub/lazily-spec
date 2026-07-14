@@ -1,0 +1,33 @@
+{
+  "description": "CronCell pattern-periodic — a tick m >= 1 fires iff m mod cycle is in offsets. count grows by the number of matching ticks in (cursor, now], computed arithmetically so a large now jump is O(offsets). count is monotone. cycle=5, offsets=[0,3] fires at 3,5,8,10,13,...",
+  "kind": "Temporal",
+  "model": "CronCell",
+  "initial": { "cycle": 5, "offsets": [0, 3] },
+  "steps": [
+    {
+      "op": { "type": "tick", "now": 2 },
+      "returns": false,
+      "expected": { "count": 0, "next_fire": 3, "invalidates": { "count": false } }
+    },
+    {
+      "op": { "type": "tick", "now": 3 },
+      "returns": true,
+      "expected": { "count": 1, "next_fire": 5, "invalidates": { "count": true } }
+    },
+    {
+      "op": { "type": "tick", "now": 5 },
+      "returns": true,
+      "expected": { "count": 2, "next_fire": 8, "invalidates": { "count": true } }
+    },
+    {
+      "op": { "type": "tick", "now": 8 },
+      "returns": true,
+      "expected": { "count": 3, "next_fire": 10, "invalidates": { "count": true } }
+    },
+    {
+      "op": { "type": "tick", "now": 10 },
+      "returns": true,
+      "expected": { "count": 4, "next_fire": 13, "invalidates": { "count": true } }
+    }
+  ]
+}
