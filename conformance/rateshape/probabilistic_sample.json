@@ -1,0 +1,12 @@
+{
+  "description": "ProbabilisticSampleCell — tail sampling. Each input carries an injected random draw in [0,1); it passes (emits) iff draw < rate. Deterministic under the injected draws. rate=0.5 here: 0.5 is excluded (draw < rate, not <=).",
+  "kind": "RateShape",
+  "model": "ProbabilisticSampleCell",
+  "initial": { "rate": 0.5 },
+  "steps": [
+    { "op": { "type": "input", "value": "a", "draw": 0.2 }, "returns": "a", "expected": { "output": "a", "invalidates": { "output": true } } },
+    { "op": { "type": "input", "value": "b", "draw": 0.7 }, "returns": null, "expected": { "output": "a", "invalidates": { "output": false } } },
+    { "op": { "type": "input", "value": "c", "draw": 0.5 }, "returns": null, "expected": { "output": "a", "invalidates": { "output": false } } },
+    { "op": { "type": "input", "value": "d", "draw": 0.49 }, "returns": "d", "expected": { "output": "d", "invalidates": { "output": true } } }
+  ]
+}

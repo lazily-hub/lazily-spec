@@ -1,0 +1,15 @@
+{
+  "description": "DebounceCell — coalesces inputs (KeepLatest) and emits the latest value only after `quiet` ticks with no new input; every input resets the quiet deadline. One emit per quiet period; the emit edge is the only output invalidation.",
+  "kind": "RateShape",
+  "model": "DebounceCell",
+  "initial": { "quiet": 3 },
+  "steps": [
+    { "op": { "type": "input", "now": 0, "value": "a" }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "input", "now": 1, "value": "b" }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "tick", "now": 3 }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "tick", "now": 4 }, "returns": "b", "expected": { "output": "b", "invalidates": { "output": true } } },
+    { "op": { "type": "tick", "now": 5 }, "returns": null, "expected": { "output": "b", "invalidates": { "output": false } } },
+    { "op": { "type": "input", "now": 6, "value": "c" }, "returns": null, "expected": { "output": "b", "invalidates": { "output": false } } },
+    { "op": { "type": "tick", "now": 9 }, "returns": "c", "expected": { "output": "c", "invalidates": { "output": true } } }
+  ]
+}

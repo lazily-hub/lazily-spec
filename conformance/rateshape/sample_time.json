@@ -1,0 +1,14 @@
+{
+  "description": "SampleCell (Time) — hold the latest input and emit it at each period boundary (period, 2*period, ...), one emit per boundary crossed. The held value persists across emits (sampling the signal's current value).",
+  "kind": "RateShape",
+  "model": "SampleCell",
+  "initial": { "mode": "Time", "period": 2 },
+  "steps": [
+    { "op": { "type": "input", "now": 0, "value": "a" }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "input", "now": 1, "value": "b" }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "tick", "now": 2 }, "returns": "b", "expected": { "output": "b", "invalidates": { "output": true } } },
+    { "op": { "type": "input", "now": 3, "value": "c" }, "returns": null, "expected": { "output": "b", "invalidates": { "output": false } } },
+    { "op": { "type": "tick", "now": 4 }, "returns": "c", "expected": { "output": "c", "invalidates": { "output": true } } },
+    { "op": { "type": "tick", "now": 5 }, "returns": null, "expected": { "output": "c", "invalidates": { "output": false } } }
+  ]
+}

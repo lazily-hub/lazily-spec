@@ -1,0 +1,14 @@
+{
+  "description": "ThrottleCell (Trailing) — the first input opens a window without emitting; inputs coalesce (KeepLatest); at the window boundary (tick with now >= window_start + window) the latest is emitted and the window closes.",
+  "kind": "RateShape",
+  "model": "ThrottleCell",
+  "initial": { "edge": "Trailing", "window": 5 },
+  "steps": [
+    { "op": { "type": "input", "now": 0, "value": "a" }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "input", "now": 2, "value": "b" }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "tick", "now": 5 }, "returns": "b", "expected": { "output": "b", "invalidates": { "output": true } } },
+    { "op": { "type": "tick", "now": 6 }, "returns": null, "expected": { "output": "b", "invalidates": { "output": false } } },
+    { "op": { "type": "input", "now": 7, "value": "c" }, "returns": null, "expected": { "output": "b", "invalidates": { "output": false } } },
+    { "op": { "type": "tick", "now": 12 }, "returns": "c", "expected": { "output": "c", "invalidates": { "output": true } } }
+  ]
+}

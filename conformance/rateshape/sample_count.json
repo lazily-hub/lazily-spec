@@ -1,0 +1,14 @@
+{
+  "description": "SampleCell (Count) — emit every n-th input: a counter increments per input and emits the current value iff counter mod n == 0.",
+  "kind": "RateShape",
+  "model": "SampleCell",
+  "initial": { "mode": "Count", "n": 3 },
+  "steps": [
+    { "op": { "type": "input", "value": "a" }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "input", "value": "b" }, "returns": null, "expected": { "output": null, "invalidates": { "output": false } } },
+    { "op": { "type": "input", "value": "c" }, "returns": "c", "expected": { "output": "c", "invalidates": { "output": true } } },
+    { "op": { "type": "input", "value": "d" }, "returns": null, "expected": { "output": "c", "invalidates": { "output": false } } },
+    { "op": { "type": "input", "value": "e" }, "returns": null, "expected": { "output": "c", "invalidates": { "output": false } } },
+    { "op": { "type": "input", "value": "f" }, "returns": "f", "expected": { "output": "f", "invalidates": { "output": true } } }
+  ]
+}

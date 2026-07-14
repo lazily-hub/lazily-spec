@@ -1,0 +1,12 @@
+{
+  "description": "ThrottleCell (Leading) — the first input of a window passes immediately and opens a window [now, now+window); subsequent inputs are dropped until the window elapses, then the next input passes and re-opens.",
+  "kind": "RateShape",
+  "model": "ThrottleCell",
+  "initial": { "edge": "Leading", "window": 5 },
+  "steps": [
+    { "op": { "type": "input", "now": 0, "value": "a" }, "returns": "a", "expected": { "output": "a", "invalidates": { "output": true } } },
+    { "op": { "type": "input", "now": 2, "value": "b" }, "returns": null, "expected": { "output": "a", "invalidates": { "output": false } } },
+    { "op": { "type": "input", "now": 5, "value": "c" }, "returns": "c", "expected": { "output": "c", "invalidates": { "output": true } } },
+    { "op": { "type": "input", "now": 6, "value": "d" }, "returns": null, "expected": { "output": "c", "invalidates": { "output": false } } }
+  ]
+}
