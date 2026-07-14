@@ -1,0 +1,14 @@
+{
+  "description": "LockCell — distributed mutex over a lease with a monotone fencing token. acquire locks (returns fence); a second acquire while held is rejected; validate(fence) accepts the current token and rejects a stale one after re-grant; expiry unlocks. is_locked invalidates only when the lock state flips.",
+  "kind": "Coordination",
+  "model": "LockCell",
+  "steps": [
+    { "op": { "type": "acquire", "peer": 1, "now": 0, "ttl": 10 }, "returns": 1, "expected": { "is_locked": true, "fence": 1, "invalidates": { "is_locked": true } } },
+    { "op": { "type": "acquire", "peer": 2, "now": 1, "ttl": 10 }, "returns": null, "expected": { "is_locked": true, "fence": 1, "invalidates": { "is_locked": false } } },
+    { "op": { "type": "validate", "fence": 1, "now": 2 }, "returns": true, "expected": { "is_locked": true, "fence": 1, "invalidates": { "is_locked": false } } },
+    { "op": { "type": "tick", "now": 10 }, "returns": true, "expected": { "is_locked": false, "fence": 1, "invalidates": { "is_locked": true } } },
+    { "op": { "type": "acquire", "peer": 2, "now": 11, "ttl": 10 }, "returns": 2, "expected": { "is_locked": true, "fence": 2, "invalidates": { "is_locked": true } } },
+    { "op": { "type": "validate", "fence": 1, "now": 12 }, "returns": false, "expected": { "is_locked": true, "fence": 2, "invalidates": { "is_locked": false } } },
+    { "op": { "type": "validate", "fence": 2, "now": 12 }, "returns": true, "expected": { "is_locked": true, "fence": 2, "invalidates": { "is_locked": false } } }
+  ]
+}

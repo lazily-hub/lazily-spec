@@ -1,0 +1,13 @@
+{
+  "description": "LeaseCell — single-writer authority with a monotone fencing token. acquire grants when free/expired (increments fence, sets expiry); a renew by the holder keeps the same fence; held-by-another is rejected; tick expires at now >= expiry. The holder reader invalidates only when the holder changes.",
+  "kind": "Coordination",
+  "model": "LeaseCell",
+  "steps": [
+    { "op": { "type": "acquire", "peer": 1, "now": 0, "ttl": 10 }, "returns": 1, "expected": { "holder": 1, "held": true, "fence": 1, "invalidates": { "holder": true } } },
+    { "op": { "type": "acquire", "peer": 2, "now": 1, "ttl": 10 }, "returns": null, "expected": { "holder": 1, "held": true, "fence": 1, "invalidates": { "holder": false } } },
+    { "op": { "type": "renew", "peer": 1, "now": 5, "ttl": 10 }, "returns": true, "expected": { "holder": 1, "held": true, "fence": 1, "invalidates": { "holder": false } } },
+    { "op": { "type": "tick", "now": 10 }, "returns": false, "expected": { "holder": 1, "held": true, "fence": 1, "invalidates": { "holder": false } } },
+    { "op": { "type": "tick", "now": 15 }, "returns": true, "expected": { "holder": null, "held": false, "fence": 1, "invalidates": { "holder": true } } },
+    { "op": { "type": "acquire", "peer": 2, "now": 16, "ttl": 10 }, "returns": 2, "expected": { "holder": 2, "held": true, "fence": 2, "invalidates": { "holder": true } } }
+  ]
+}

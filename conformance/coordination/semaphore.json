@@ -1,0 +1,14 @@
+{
+  "description": "SemaphoreCell(capacity=2) — bounded permit pool. acquire succeeds while permits remain and fails at capacity; release returns a permit (saturating at capacity). permits_available invalidates only when it changes.",
+  "kind": "Coordination",
+  "model": "SemaphoreCell",
+  "config": { "capacity": 2 },
+  "steps": [
+    { "op": { "type": "acquire" }, "returns": true, "expected": { "permits_available": 1, "invalidates": { "permits_available": true } } },
+    { "op": { "type": "acquire" }, "returns": true, "expected": { "permits_available": 0, "invalidates": { "permits_available": true } } },
+    { "op": { "type": "acquire" }, "returns": false, "expected": { "permits_available": 0, "invalidates": { "permits_available": false } } },
+    { "op": { "type": "release" }, "returns": null, "expected": { "permits_available": 1, "invalidates": { "permits_available": true } } },
+    { "op": { "type": "release" }, "returns": null, "expected": { "permits_available": 2, "invalidates": { "permits_available": true } } },
+    { "op": { "type": "release" }, "returns": null, "expected": { "permits_available": 2, "invalidates": { "permits_available": false } } }
+  ]
+}

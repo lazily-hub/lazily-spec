@@ -1,0 +1,13 @@
+{
+  "description": "LeaderCell from node me=1's perspective. campaign acquires the lease for me -> Leader; expiry -> Candidate (no holder); another peer contending and winning -> Follower. current_leader invalidates on re-election.",
+  "kind": "Coordination",
+  "model": "LeaderCell",
+  "config": { "me": 1 },
+  "steps": [
+    { "op": { "type": "campaign", "now": 0, "ttl": 10 }, "expected": { "role": "Leader", "current_leader": 1, "invalidates": { "current_leader": true } } },
+    { "op": { "type": "tick", "now": 5 }, "expected": { "role": "Leader", "current_leader": 1, "invalidates": { "current_leader": false } } },
+    { "op": { "type": "tick", "now": 10 }, "expected": { "role": "Candidate", "current_leader": null, "invalidates": { "current_leader": true } } },
+    { "op": { "type": "contend", "peer": 2, "now": 11, "ttl": 10 }, "expected": { "role": "Follower", "current_leader": 2, "invalidates": { "current_leader": true } } },
+    { "op": { "type": "tick", "now": 15 }, "expected": { "role": "Follower", "current_leader": 2, "invalidates": { "current_leader": false } } }
+  ]
+}
