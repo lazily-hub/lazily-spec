@@ -1,0 +1,13 @@
+{
+  "description": "AwarenessCell — typed ephemeral broadcast (e.g. cursors) with a TTL. Values do NOT merge: last-writer-per-peer overwrite. tick evicts expired entries. present() is the live map; invalidates only on a live-view change.",
+  "kind": "Presence",
+  "model": "AwarenessCell",
+  "config": { "ttl": 5 },
+  "steps": [
+    { "op": { "type": "set", "peer": 1, "value": "cursor-a", "now": 0 }, "expected": { "present": { "1": "cursor-a" }, "invalidates": { "present": true } } },
+    { "op": { "type": "set", "peer": 2, "value": "cursor-b", "now": 1 }, "expected": { "present": { "1": "cursor-a", "2": "cursor-b" }, "invalidates": { "present": true } } },
+    { "op": { "type": "set", "peer": 1, "value": "cursor-a2", "now": 2 }, "expected": { "present": { "1": "cursor-a2", "2": "cursor-b" }, "invalidates": { "present": true } } },
+    { "op": { "type": "tick", "now": 5 }, "expected": { "present": { "1": "cursor-a2", "2": "cursor-b" }, "invalidates": { "present": false } } },
+    { "op": { "type": "tick", "now": 7 }, "expected": { "present": {}, "invalidates": { "present": true } } }
+  ]
+}

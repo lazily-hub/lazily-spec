@@ -1,0 +1,13 @@
+{
+  "description": "EphemeralCell — a single value with auto-expiry ('last value seen in window N'). set stamps expiry = now + ttl; tick clears the value at now >= expiry; a set before expiry overwrites. value() invalidates only when the live value changes.",
+  "kind": "Presence",
+  "model": "EphemeralCell",
+  "steps": [
+    { "op": { "type": "set", "value": "a", "now": 0, "ttl": 5 }, "expected": { "value": "a", "invalidates": { "value": true } } },
+    { "op": { "type": "tick", "now": 3 }, "expected": { "value": "a", "invalidates": { "value": false } } },
+    { "op": { "type": "tick", "now": 5 }, "expected": { "value": null, "invalidates": { "value": true } } },
+    { "op": { "type": "set", "value": "b", "now": 6, "ttl": 5 }, "expected": { "value": "b", "invalidates": { "value": true } } },
+    { "op": { "type": "tick", "now": 10 }, "expected": { "value": "b", "invalidates": { "value": false } } },
+    { "op": { "type": "set", "value": "c", "now": 10, "ttl": 5 }, "expected": { "value": "c", "invalidates": { "value": true } } }
+  ]
+}

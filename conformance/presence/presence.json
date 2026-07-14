@@ -1,0 +1,13 @@
+{
+  "description": "PresenceCell — per-peer ephemeral presence kept alive by heartbeats, auto-evicted on membership loss (evict) or TTL lapse (tick). present() is the live peer->value map; it invalidates only when the live view changes.",
+  "kind": "Presence",
+  "model": "PresenceCell",
+  "config": { "ttl": 5 },
+  "steps": [
+    { "op": { "type": "heartbeat", "peer": 1, "value": "online", "now": 0 }, "expected": { "present": { "1": "online" }, "invalidates": { "present": true } } },
+    { "op": { "type": "heartbeat", "peer": 2, "value": "online", "now": 1 }, "expected": { "present": { "1": "online", "2": "online" }, "invalidates": { "present": true } } },
+    { "op": { "type": "heartbeat", "peer": 1, "value": "away", "now": 3 }, "expected": { "present": { "1": "away", "2": "online" }, "invalidates": { "present": true } } },
+    { "op": { "type": "evict", "peer": 2, "now": 4 }, "expected": { "present": { "1": "away" }, "invalidates": { "present": true } } },
+    { "op": { "type": "tick", "now": 8 }, "expected": { "present": {}, "invalidates": { "present": true } } }
+  ]
+}
