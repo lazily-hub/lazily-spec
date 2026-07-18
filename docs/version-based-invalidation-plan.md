@@ -1,6 +1,10 @@
 # Version-Based (Revision) Invalidation — Plan
 
-**Status:** design proposal — an **optional, Context-level** invalidation engine. Companion to
+**Status:** ratified — the `get_equiv_push` formal pin shipped
+(`lazily-formal/LazilyFormal/RevisionEngine.lean`), and lazily-rs v0.43.0
+implements the engine (`Context::with_revision_engine()`, accepted by the full
+existing reactive conformance suite). An **optional, Context-level**
+invalidation engine. Companion to
 [`reactive-graph.md`](reactive-graph.md) (default push engine) and
 [`relaycell-backpressure-analysis.md`](relaycell-backpressure-analysis.md) (merge cost law).
 
