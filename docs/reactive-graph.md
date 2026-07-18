@@ -254,7 +254,12 @@ deterministic properties under concurrent access:
    `Send + Sync`; one reactive graph is shared across OS threads.
 2. **Observers fire synchronously within the invalidating `send`/`batch`**,
    preserving the same glitch-free pull-based ordering as the single-threaded
-   context — a concurrent reader never observes a half-updated graph.
+   context — a concurrent reader never observes a half-updated graph. "Synchronously
+   within" mandates **glitch-free ordering** (every observer that runs sees the fully
+   settled graph, never an intermediate state), **not** literal in-lock dispatch. A
+   threaded binding **MAY** defer observer dispatch out of the graph lock (so a callback
+   may re-enter the context) provided the ordering invariant holds: observers are still
+   delivered in dependency order and none observes a mixed state (`#lzspecobserverclarify`).
 3. The `==` (PartialEq) cell guard and the `memo` equality guard both hold under
    concurrent mutation: an equal write invalidates nothing, an equal recompute
    suppresses downstream work.

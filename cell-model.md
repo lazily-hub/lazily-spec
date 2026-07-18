@@ -500,6 +500,12 @@ it collects a stable deleted element only when nothing references it as a left o
 removal never orphans a survivor; interior tombstones are reclaimed bottom-up. Bloat is
 bounded to the multi-writer plane — the single-producer Snapshot/Delta mirror accrues none.
 
+**Scheduling (`#lzspecgcdefer`).** The safety contract fixes *which* tombstones are
+collectable; it does not mandate *when* collection runs. A binding **MAY** defer GC to idle,
+batch it under memory pressure, or reclaim incrementally per anti-entropy round, provided no
+collectable tombstone is re-examined after reclaim and unbounded accrual is surfaced via
+instrumentation. Deferral changes only memory footprint, never observable values.
+
 ## Reactive queues
 
 A *reactive queue* (`QueueCell`) is a FIFO collection composed of cells — **not a new cell
@@ -766,15 +772,20 @@ not merge (see the PRD's § "Background: Why Consensus, Not CRDT").
 - **Named observables**: `is_empty` and `len` are reactive reads dual to `is_full`. All
   three (`is_empty` / `len` / `is_full`) MUST be reactive when their respective conditions
   can change.
-- **Demand-driven derivation** (permitted optimization): a reader-kind MUST be
-  observable-consistent — a `get` returns the value consistent with all preceding ops — but a
-  binding MAY **defer its derivation until it has a subscriber**. A reader-kind is a *derived*
+- **Demand-driven derivation** (`#lzspecdemanddriven`): a reader-kind MUST be
+  observable-consistent — a `get` returns the value consistent with all preceding ops — and a
+  binding **SHOULD** **defer its derivation until it has a subscriber** (the measured collapse
+  is ~32× per op — 327 ns → ~10 ns — per
+  [`docs/relaycell-backpressure-analysis.md`](docs/relaycell-backpressure-analysis.md) §5).
+  A reader-kind is a *derived*
   value (a `Slot`), not an eagerly-written cell; an op with no subscriber to a given
-  reader-kind MAY only mark it stale (O(1)) and derive it lazily on the next `get`, provided
+  reader-kind SHOULD only mark it stale (O(1)) and derive it lazily on the next `get`, provided
   the derived value is consistent with all preceding ops. This preserves the observable
   contract (conformance fixtures read the values and MUST stay green) while an **unsubscribed**
   `QueueCell` collapses toward raw-storage cost — the reactive shell is charged only along a
-  path an effect actually observes. See [`docs/relaycell-backpressure-analysis.md`](docs/relaycell-backpressure-analysis.md)
+  path an effect actually observes. A binding that eagerly derives reader-kinds remains
+  conformant (values stay green by construction) but forgoes the write-cost win. See
+  [`docs/relaycell-backpressure-analysis.md`](docs/relaycell-backpressure-analysis.md)
   §5 (demand-driven reader-kinds) and §4.0 (the merge cost law).
 
 ## Queue family extensions
@@ -951,7 +962,8 @@ operations and outcomes:
 `visibility_timeout` is a positive logical-clock duration and `max_deliveries >= 1`. Requeue-at-tail
 means retries do not block newer work. The portable reactive reader kinds are `pending_len`,
 `is_empty` (pending only), `in_flight_len`, and `dead_letter_len`; a mutation invalidates only readers
-whose values may have changed. The canonical fixtures are
+whose values may have changed, and these reader-kinds SHOULD be demand-driven (`#lzspecdemanddriven`,
+see § "Demand-driven derivation" above). The canonical fixtures are
 `conformance/collections/workqueue_competing_delivery.json` and
 `workqueue_lease_deadletter.json`.
 

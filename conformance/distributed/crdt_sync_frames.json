@@ -1,5 +1,5 @@
 {
-  "description": "CrdtSync anti-entropy frame variants for cross-language serde conformance. Each frame's `wire` is the externally-tagged {\"CrdtSync\": {frontier, ops}} envelope (the third IpcMessage variant) and validates against schemas/distributed.json. `frontier` is a list of [peer, WireStamp] tuples; WireStamp uses `peer` (never `peer_id`). Each CrdtOp always carries `key` (null when unset). State-based / idempotent: re-delivering a frame applies 0 new ops.",
+  "description": "CrdtSync anti-entropy frame variants for cross-language serde conformance. Each frame's `wire` is the externally-tagged {\"CrdtSync\": {frontier, ops}} envelope (the third IpcMessage variant) and validates against schemas/distributed.json. `frontier` is a list of [peer, WireStamp] tuples; WireStamp uses `peer` (never `peer_id`). Each CrdtOp always carries `key` (null when unset). State-based / idempotent: re-delivering a frame applies 0 new ops. Under #lzspecfrontiersuppress, `frontier` is optional — an omitted/empty frontier means 'unchanged since the last accepted frame'.",
   "protocol_version": 1,
   "kind": "CrdtSyncFrames",
   "frames": [
@@ -47,6 +47,22 @@
               "key": "counter/global",
               "stamp": { "wall_time": 12, "logical": 4, "peer": 3 },
               "state": { "Inline": [42] }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "crdt_sync_frontier_suppressed",
+      "assertions": { "frontier_omitted": true, "op_count": 1 },
+      "wire": {
+        "CrdtSync": {
+          "ops": [
+            {
+              "node": 7,
+              "key": "counter/global",
+              "stamp": { "wall_time": 13, "logical": 0, "peer": 1 },
+              "state": { "Inline": [7] }
             }
           ]
         }

@@ -46,11 +46,24 @@ NodeState = { "Payload": [u8] }          // concrete serialized value bytes
            | "Opaque"                      // visible node whose value cannot be serialized
 ```
 
-Opaque serialized value bytes are owned by the producing language; type-aware decoding is fixed by the stable `type_tag` carried on the node. Over the JSON codec, bytes are transmitted as JSON arrays of integers in `0..255` (not base64).
+Opaque serialized value bytes are owned by the producing language; type-aware decoding is fixed by the stable `type_tag` carried on the node. Over the JSON codec, bytes are transmitted as JSON arrays of integers in `0..255` (not base64). Under the negotiated `json-base64` feature (`#lzspecbase64`, see § Capability Negotiation), a peer MAY instead encode `Inline`/`Payload` byte arrays as a base64 **string**, cutting ~4× wire bloat and ~3× parse cost; `json-u8` stays the canonical fixture form.
 
 ### type_tag
 
 Each serializable node carries a `type_tag: &'static str` — a stable cross-process key that maps to a language-local deserialization constructor. The type-tag registry is per-implementation; tags must not collide across nodes.
+
+### Batch string-intern table (`#lzspecintern`)
+
+A `Snapshot`, `Delta`, or `CrdtSync` batch that repeats the same `type_tag` string or the same `NodeKey` prefix across many nodes pays a per-node string cost that dominates wire size at scale. A batch **MAY** carry an optional sidecar `intern` table that assigns small integer ids to repeated strings; nodes then reference the id instead of inlining the string.
+
+```
+InternTable = { strings: [string] }   # index → string; position is the id
+```
+
+- An empty or absent `intern` field is the default and means "all strings are inlined" — existing decoders are unaffected (additive, backward-compatible).
+- A sender populates `intern.strings` with the deduplicated `type_tag` values (and, opt-in, repeated `NodeKey` namespace prefixes) appearing in the batch, then writes the integer id in each node's tagged field. The reference is scoped to the batch and does not persist across frames.
+- A receiver resolves ids against `intern.strings`; an id with no entry is a decode error (fail closed).
+- The intern table is a pure wire optimization: the decoded `IpcMessage` is identical whether or not interning was used. Conformance fixtures exercise both the interned and inlined forms.
 
 ## IPC: Snapshot + Incremental Update Protocol
 
@@ -316,6 +329,15 @@ Each non-local session starts with a compatibility handshake:
 | `features` | Supported feature flags |
 
 If peers disagree on `protocol_major_version`, `codec`, `ordered_reliable`, or required features, they fail closed before applying any `Snapshot` or `Delta`.
+
+**Feature flags.** The `features` array advertises optional capabilities both peers must offer to use. Defined flags:
+
+| Flag | Effect when both peers advertise it |
+|------|-------------------------------------|
+| `shared-blob` | Large payloads travel as `SharedBlob` descriptors into a shared-memory arena (§ zero-copy transport). |
+| `signaling-relay` | A signaling relay may mediate peer discovery (§ signaling). |
+| `command-plane-v1` | The command/RPC message plane is active (§ message-passing). |
+| `json-base64` (`#lzspecbase64`) | Over the `json` codec, `Inline`/`Payload` byte arrays MAY be encoded as a base64 string instead of a JSON array of `0..255` integers (~4× smaller, ~3× faster to parse). The array form (`json-u8`) remains the canonical form for conformance fixtures; a decoder that advertises `json-base64` MUST accept both forms. |
 
 ### Frame codecs
 
@@ -625,7 +647,9 @@ shared-memory concurrency (native threads, OS goroutines, JVM threads, Kotlin
 coroutines over a shared heap, etc.) MUST ship the lock-backed context whose handles are
 clonable and whose transition function and state are `Send + Sync`, so observers fire
 synchronously within the invalidating `send`/`batch` preserving glitch-free pull-based
-ordering. A platform with no shared-memory threading model — a strictly single-threaded
+ordering. "Synchronously within" mandates **glitch-free ordering**, not literal in-lock
+dispatch — a threaded binding MAY defer observer dispatch out of the graph lock provided the
+ordering invariant holds (`#lzspecobserverclarify`). A platform with no shared-memory threading model — a strictly single-threaded
 runtime, or a process/actor-isolation model (e.g. a Dart isolate, a browser Worker) where
 peers do not share an address space — declares the `thread_safe` capability as `none`.
 
@@ -820,7 +844,7 @@ CrdtOp = {
 }
 
 CrdtSync = {
-  frontier: [(peer: u64, WireStamp)],   # the sender's per-peer stamp frontier
+  frontier: [(peer: u64, WireStamp)]?,   # the sender's per-peer stamp frontier
   ops:      [CrdtOp],                    # the op batch this frame ships
 }
 ```
@@ -829,6 +853,17 @@ CrdtSync = {
 format is codec-stable whether or not a peer compiles the CRDT runtime in. It round-trips
 across all three codecs (JSON, MessagePack, postcard) and is classified by the FFI message
 kind (`CrdtSync = 3`).
+
+**Frontier suppression (`#lzspecfrontiersuppress`).** `frontier` is **optional**. A frame
+that omits `frontier` (JSON/msgpack) or carries the sentinel `frontier: []` means "the
+sender's stamp frontier is unchanged since the last frame the receiver accepted" — the
+receiver reuses its last-merged frontier to compute the watermark. This is a pure wire
+savings on chatty peers (a frame shipping only ops need not repeat an unchanged frontier).
+The self-describing codecs (JSON, msgpack) **omit** the field when unchanged; positional
+postcard carries a 1-bit discriminant. A sender MUST include `frontier` whenever its
+advertised stamp has advanced; a receiver that receives a frontier-less frame with no prior
+frontier (cold start) MUST request a full `CrdtSync` (fail closed). Conformance risk is
+medium: paired fixtures exercise both the suppressed and the full forms.
 
 **State-based, idempotent.** Each `CrdtOp` ships the *converged* register/sequence/text
 state for a node. The receiver merges `state` into its local replica; because every cell
@@ -849,6 +884,13 @@ collectable stamp is `≤` every member's observation) and drives the runtime
 `SeqCrdt::gc` / `TextCrdt::gc_with`. A single replica's local clock is explicitly **not** a
 sound watermark; only the version-vector minimum is.
 
+**GC scheduling (`#lzspecgcdefer`).** The contract above fixes *when a tombstone is
+collectable*; it does not mandate *when collection runs*. A binding **MAY** defer GC to an
+idle window, batch it under memory pressure, or run it incrementally (sweep a bounded number
+of tombstones per anti-entropy round), provided (a) no tombstone below the watermark is
+re-examined after reclaim and (b) unbounded accrual is reported via the instrumentation
+surface. Deferring GC changes only memory footprint, never observable values.
+
 **Permission filtering.** `CrdtSync.filter_readable(peer)` drops ops for non-readable nodes
 entirely (omission, not redaction — like `Delta`). The `frontier` advertisement is retained
 in full: it names peers and stamps, not node content, and the receiver needs the whole
@@ -859,6 +901,31 @@ frontier to compute a sound watermark.
 > `merge: crdt` root cells (local edits → `CrdtOp`s; remote `CrdtOp`s → `ReplicatedCell`
 > ingress merge) and `BridgeHub` fan-out of `CrdtSync` is the runtime-integration slice
 > (`#lzcrdtplane5b`).
+
+**Delta-CRDT sync (`#lzspecdeltacrdt`).** Today each `CrdtOp` ships the *full converged*
+register state per anti-entropy round (state-based / CvRDT). For LWW/MV registers and
+PN-counters whose state is small this is acceptable, but for OR-set membership and large
+register values the full-state ship is wasteful when little changed. The watermark + join
+algebra already exist (`formal/lean/LazilyFormal/CRDT.lean`, `stampJoin_{comm,assoc,idem}`);
+the `#lztextsync` pattern (`cell-model.md` § Delta sync) already proves the
+`version_vector` / `delta_since(their_vv)` / `apply_delta` triad for text.
+
+This section lifts the same delta pattern to the cell-register plane as an **additive,
+optional** control frame:
+
+```
+DeltaSinceRequest = { node: NodeId, their_vv: [(peer, counter)] }
+```
+
+- A receiver of a `DeltaSinceRequest` responds with a `CrdtSync` whose `ops` carry only the
+  states whose stamp is past `their_vv` (the delta), instead of the full converged state.
+  An empty delta (nothing past `their_vv`) is a valid response.
+- The join is the same semilattice: `apply_delta` ≡ `merge` — commutative, associative,
+  idempotent — so a delta is safe to resend and applies in any order.
+- A binding that does not implement delta-CRDT sync continues to ship full state; the
+  `DeltaSinceRequest` frame is opt-in and the receiver falls back to full state when it does
+  not recognize the request. Conformance fixtures exercise both the full-state and the
+  delta-sync paths and assert they converge to the same state (`#lzspecdeltacrdt`).
 
 ### Reactive keyed-map sync (`#lzfamilysync`)
 

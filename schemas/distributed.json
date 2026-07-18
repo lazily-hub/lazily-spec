@@ -10,13 +10,13 @@
     "CrdtSync": {
       "type": "object",
       "description": "Anti-entropy sync frame: the sender advertises its per-peer stamp frontier and ships an op batch.",
-      "required": ["frontier", "ops"],
+      "required": ["ops"],
       "additionalProperties": false,
       "properties": {
         "frontier": {
           "type": "array",
           "items": { "$ref": "#/$defs/StampFrontierEntry" },
-          "description": "Per-peer highest observed stamp. Retained in full (not permission-filtered) so the receiver can compute a sound causal-stability watermark."
+          "description": "Per-peer highest observed stamp. Retained in full (not permission-filtered) so the receiver can compute a sound causal-stability watermark. Optional under #lzspecfrontiersuppress: omit (or send []) when unchanged since the last accepted frame; the receiver reuses its last-merged frontier."
         },
         "ops": {
           "type": "array",
