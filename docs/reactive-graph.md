@@ -64,6 +64,8 @@ decides the invalidation source.
 | `effect(run)` | Register an observer; `run` may return a cleanup closure |
 | `dispose_effect(handle)` | Deschedule, drop edges, run cleanup |
 | `dispose_slot(handle)` / `dispose_cell(handle)` | Tear down a derived slot or source cell: detach edges in both directions, clear the node, recycle its id |
+| `scope()` | Open a **teardown scope**: nodes created through it are disposed together when the scope ends |
+| `scope.disarm()` | Disarm a scope — ending it disposes nothing; its nodes revert to context ownership |
 | `batch(run)` | Coalesce several cell updates into one invalidation + effect flush |
 
 ## Semantics
@@ -123,6 +125,69 @@ decides the invalidation source.
   and propagation cost. Disposal detaches edges in *both* directions; reading a
   disposed node afterwards is an error, the same contract as disposing an
   effect (`#lzspecedgeindex`).
+
+  **Detection of a stale handle is bounded, deliberately.** A binding that
+  recycles ids and checks only the node's *kind* catches a handle naming a
+  disposed node of a different kind, but cannot catch one whose id has been
+  reused by a new node of the *same* kind — the classic ABA case. Closing that
+  requires generational ids or reference-counted handles, and this spec does
+  **not** require either: both cost either handle size or the copyability that
+  fan-out depends on. Conforming bindings therefore reject the cross-kind case
+  and **MAY** admit the same-kind one. Callers must not rely on read-after-
+  dispose failing.
+
+  **Garbage collection does not substitute for this.** The reverse edge set is a
+  *strong* reference to each dependent, so a long-lived source retains every node
+  that ever read it — the same unbounded growth a manual binding has, arrived at
+  by a different route. A tracing binding that wants reclamation to follow
+  reachability **MUST** make its back-edges weak; until it does, its disposal
+  story is exactly the explicit one above.
+
+- **Teardown scopes (`scope`).** A scope records what was created through it and
+  disposes that set when it ends. It **bounds teardown, not visibility**: a
+  scope's nodes read parent- and sibling-owned nodes freely, and scoping never
+  restricts what an edge may point at.
+
+  Ending a scope **MUST** be observationally equal to disposing each of its
+  members individually — a scope introduces no disposal semantics of its own, it
+  only names a set and a moment. Proved as `disposeScope_eq_disposeAll` in the
+  standalone [`lazily-formal`](https://github.com/lazily-hub/lazily-formal)
+  `LazilyFormal.Reactive` module. A binding is therefore free to implement the
+  scope as a bulk sweep rather than a loop, and **SHOULD**, since reading each
+  node's kind from the arena at teardown is cheaper than a per-node dispatch.
+
+  The resulting *graph state* depends only on the set of members, not on their
+  order or multiplicity (`disposeAll_order_independent`). Effect **cleanups**
+  are a different matter: they are side effects, so the order they run in is
+  observable, and a binding **MUST** tear a scope down in reverse creation
+  order — dependents before what they read — so a scope never transiently
+  dangles inside itself and every binding runs cleanups in the same sequence.
+  Order is therefore free for the edge bookkeeping and fixed for the cleanups.
+
+  A scope carries the **same hazard** as `dispose_slot`: ending it tears down its
+  nodes even if something outside the scope still reads them. A binding **MUST
+  NOT** present scope teardown as safe against that; only reference-counted
+  handles close it, and they cost copyable handles.
+
+- **Scope and reachability are different questions.** Disposal and teardown
+  scopes answer *"this work is over — free it now"*, deterministically, at a
+  point the program names. Weak back-edges and reference-counted handles answer
+  *"is anyone still using this?"*, and answer it whenever the collector or the
+  last release gets around to it. Neither subsumes the other, and a binding
+  **SHOULD** offer both rather than picking one:
+
+  | binding class | scope | reachability |
+  |---|---|---|
+  | non-GC, no destructors (zig) | scopes, ended at an explicit `deinit`/`defer` | none available; explicit disposal is the whole story |
+  | non-GC, destructors (rs, cpp) | scopes, ended by the scope's own destructor | reference-counted handles, **opt-in** — they cost copyable handles, which fan-out needs |
+  | tracing GC (js, kt, py, go, dart) | scopes, ended by an explicit call | weak back-edges, which need no user-facing API |
+
+  Reference-counted handles are opt-in in every class because a source read by
+  two dependents cannot be moved twice, so making the handle an owner forces a
+  clone at every fan-out capture site. Per-*node* destructor ownership is not a
+  third option: a node an arena-stored closure can capture must outlive the
+  capture, so a handle that borrows the context can only ever be a leaf — the
+  constraint that makes the scope, not the node, the right unit of teardown.
 - **Cycle detection.** A slot that depends on itself (directly or transitively)
   is detected during refresh and throws — the graph is acyclic by construction.
 - **`batch` coalesces.** Multiple `set_cell` calls inside `batch(run)` queue

@@ -1,0 +1,64 @@
+{
+  "description": "`disarm()` cancels the scope's teardown; it does nothing to the nodes (#lzspecedgeindex). The operation changes only what the scope does at end-of-life — node state, edges, and values are untouched, which is why it is named for disarming the scope rather than for releasing the nodes. After calling it, the scope's nodes remain fully readable, keep their edges, keep propagating, and remain individually disposable; ending the scope afterwards disposes nothing at all. What breaks if a binding gets this wrong: implemented as a dispose-now it destroys the very nodes the caller asked to keep; implemented as a no-op on the *scope* rather than on its owned set, the scope still tears down at end-of-life and the escaped handles dangle. The distinguishing observation is the pair of steps after `end_scope` — the nodes must still be readable *and* must still respond to a publish, which rules out a binding that merely suppresses the error and leaves the nodes half-detached. The final steps pin that cancelling teardown does not make the nodes undisposable: they revert to plain context ownership, the same state every unscoped node is already in, and individual disposal still works normally.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "steps": [
+    { "op": { "type": "cell", "id": "topic", "value": 1 } },
+    { "op": { "type": "begin_scope", "scope": "g" } },
+    { "op": { "type": "computed", "id": "escaped", "reads": ["topic"], "offset": 0, "scope": "g" } },
+    { "op": { "type": "computed", "id": "downstream", "reads": ["escaped"], "offset": 5, "scope": "g" } },
+    { "op": { "type": "effect", "id": "watch", "reads": ["downstream"], "scope": "g" } },
+    {
+      "op": { "type": "read", "id": "downstream" },
+      "expect": {
+        "value": 6,
+        "dependents_of": { "topic": 1, "escaped": 1, "downstream": 1 }
+      }
+    },
+    {
+      "op": { "type": "disarm", "scope": "g" },
+      "expect": {
+        "scope_owned_count": { "g": 0 },
+        "readable": { "escaped": true, "downstream": true, "watch": true },
+        "dependents_of": { "topic": 1, "escaped": 1, "downstream": 1 },
+        "cleanup_order": [],
+        "note": "cancelling teardown disposes nothing and detaches nothing — the edge sets are exactly what they were one step ago. The scope now owns no nodes, so its end-of-life is a no-op."
+      }
+    },
+    {
+      "op": { "type": "end_scope", "scope": "g" },
+      "expect": {
+        "cleanup_order": [],
+        "readable": { "escaped": true, "downstream": true, "watch": true },
+        "dependents_of": { "topic": 1, "escaped": 1, "downstream": 1 },
+        "note": "ending a scope whose teardown was cancelled disposes nothing"
+      }
+    },
+    {
+      "op": { "type": "read", "id": "downstream" },
+      "expect": { "value": 6 }
+    },
+    {
+      "op": { "type": "set_cell", "id": "topic", "value": 4 },
+      "expect": {
+        "observed_by": ["watch"],
+        "read": { "escaped": 4, "downstream": 9 },
+        "note": "the nodes still propagate — a binding that half-detached them would show a stale value or a silent effect here"
+      }
+    },
+    {
+      "op": { "type": "dispose", "id": "watch" }
+    },
+    {
+      "op": { "type": "dispose", "id": "downstream" }
+    },
+    {
+      "op": { "type": "dispose", "id": "escaped" },
+      "expect": {
+        "readable": { "escaped": false, "downstream": false, "topic": true },
+        "dependents_of": { "topic": 0 },
+        "note": "nodes whose scope teardown was cancelled revert to plain context ownership and stay individually disposable"
+      }
+    }
+  ]
+}

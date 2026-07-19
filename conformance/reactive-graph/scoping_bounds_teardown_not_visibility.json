@@ -1,0 +1,77 @@
+{
+  "description": "Scoping bounds *teardown*, not visibility (#lzspecedgeindex). A scope's nodes read parent-owned and sibling-scope-owned nodes freely, and scoping never restricts what an edge may point at. A binding that treats `scope()` as a scope in the lexical or ownership sense — refusing or erroring on a cross-scope read, or silently returning a stale value for one — is non-conforming, and would break the primary use of scopes: a per-connection or per-subscription scope whose nodes derive from long-lived application state that outlives every scope. The fixture reads in all three directions (child reads parent, child reads sibling's node, parent reads child's node) and asserts each yields the same value it would with no scoping at all, and that the edges registered are the ordinary ones. `parent_reads_child` is the direction most likely to be rejected by an over-eager scope check, and is also the one that sets up the cross-scope hazard pinned in cross_scope_teardown_hazard.json — legal to build, dangerous to outlive.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "steps": [
+    { "op": { "type": "cell", "id": "topic", "value": 2 } },
+    { "op": { "type": "computed", "id": "parent_owned", "reads": ["topic"], "offset": 3 } },
+    { "op": { "type": "begin_scope", "scope": "g1" } },
+    { "op": { "type": "begin_scope", "scope": "g2" } },
+    {
+      "op": { "type": "computed", "id": "g1_from_parent", "reads": ["parent_owned"], "offset": 1, "scope": "g1" },
+      "expect": { "error": null }
+    },
+    {
+      "op": { "type": "read", "id": "g1_from_parent" },
+      "expect": {
+        "value": 6,
+        "dependents_of": { "parent_owned": 1 },
+        "dependencies_of": { "g1_from_parent": 1 },
+        "note": "a scope's node reads a parent-owned node; the edge is an ordinary one"
+      }
+    },
+    {
+      "op": { "type": "computed", "id": "g2_from_sibling", "reads": ["g1_from_parent"], "offset": 10, "scope": "g2" }
+    },
+    {
+      "op": { "type": "read", "id": "g2_from_sibling" },
+      "expect": {
+        "value": 16,
+        "dependents_of": { "g1_from_parent": 1 },
+        "note": "sibling scopes are not isolated from each other"
+      }
+    },
+    {
+      "op": { "type": "computed", "id": "parent_reads_child", "reads": ["g2_from_sibling"], "offset": 0 }
+    },
+    {
+      "op": { "type": "read", "id": "parent_reads_child" },
+      "expect": {
+        "value": 16,
+        "dependents_of": { "g2_from_sibling": 1 },
+        "note": "an unscoped node may read a scoped one; scoping constrains lifetime, not reachability"
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "topic", "value": 4 },
+      "expect": {
+        "read": {
+          "parent_owned": 7,
+          "g1_from_parent": 8,
+          "g2_from_sibling": 18,
+          "parent_reads_child": 18
+        },
+        "note": "propagation crosses scope boundaries exactly as if no scope existed"
+      }
+    },
+    {
+      "op": { "type": "end_scope", "scope": "g2" },
+      "expect": {
+        "readable": { "g1_from_parent": true, "parent_owned": true, "topic": true, "g2_from_sibling": false },
+        "note": "ending one scope leaves the parent's and the sibling's nodes untouched"
+      }
+    },
+    {
+      "op": { "type": "read", "id": "g1_from_parent" },
+      "expect": { "value": 8 }
+    },
+    {
+      "op": { "type": "end_scope", "scope": "g1" },
+      "expect": {
+        "readable": { "parent_owned": true, "topic": true, "g1_from_parent": false },
+        "read": { "parent_owned": 7 },
+        "dependents_of": { "parent_owned": 0, "topic": 1 }
+      }
+    }
+  ]
+}

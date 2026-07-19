@@ -666,7 +666,7 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Reactive graph disposal / teardown groups (conformance/reactive-graph/) —
+# Reactive graph disposal / teardown scopes (conformance/reactive-graph/) —
 # structural guard (#lzspecedgeindex)
 # ---------------------------------------------------------------------------
 
@@ -684,9 +684,9 @@ _REACTIVE_GRAPH_OPS = {
     "fanout",
     "dispose_fanout",
     "churn",
-    "begin_group",
-    "end_group",
-    "cancel_teardown",
+    "begin_scope",
+    "end_scope",
+    "disarm",
     "dispose_stale_handle",
 }
 
@@ -703,7 +703,7 @@ _REACTIVE_GRAPH_EXPECT_KEYS = {
     "observed_by",
     "observed_count",
     "cleanup_order",
-    "group_owned_count",
+    "scope_owned_count",
     "note",
 }
 
@@ -731,7 +731,7 @@ def _check_reactive_graph_steps(name: str, steps: object, where: str) -> None:
 
 @pytest.mark.parametrize("name", _reactive_graph_fixtures())
 def test_reactive_graph_fixture_is_well_formed(name: str) -> None:
-    """Guard the disposal / teardown-group fixtures against shape drift.
+    """Guard the disposal / teardown-scope fixtures against shape drift.
 
     These are compute fixtures replayed by each binding, so this asserts only
     the language-agnostic top-level shape and the documented op / assertion
@@ -777,10 +777,10 @@ def test_reactive_graph_fixtures_cover_the_disposal_contract() -> None:
         "dispose_detaches_edges_both_directions.json",
         "read_after_dispose_is_an_error.json",
         "recycled_id_inherits_nothing.json",
-        "group_teardown_equals_fold_of_disposals.json",
-        "grouping_bounds_teardown_not_visibility.json",
-        "cancel_teardown_disposes_nothing.json",
-        "cross_group_teardown_hazard.json",
+        "scope_teardown_equals_fold_of_disposals.json",
+        "scoping_bounds_teardown_not_visibility.json",
+        "disarm_disposes_nothing.json",
+        "cross_scope_teardown_hazard.json",
         "churn_returns_to_baseline.json",
     }
     present = set(_reactive_graph_fixtures())

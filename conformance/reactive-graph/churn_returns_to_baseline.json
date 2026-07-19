@@ -5,7 +5,7 @@
   "notes": {
     "cycles": "`cycles` is large enough that an accumulating dependent list is unmistakable and small enough to run in every binding's unit-test tier. A binding MAY raise it; the assertion does not depend on the count.",
     "why_read_each": "Each replacement subscriber is read once before the next cycle so the edge is actually registered — a lazy binding that never pulls the slot registers no dependency and would pass a weaker version of this fixture vacuously.",
-    "churn_modes": "`dispose_then_create` holds `live_width` subscribers, and each cycle disposes one and creates its replacement, so the live count is invariant. `group_per_cycle` instead opens a teardown group per cycle, creates one subscriber through it, reads it, and ends the group — the group's subscriber is gone by the end of its own cycle, so it contributes nothing to the steady-state count and `topic` stays at the `live_width` subscribers created by the earlier `fanout`."
+    "churn_modes": "`dispose_then_create` holds `live_width` subscribers, and each cycle disposes one and creates its replacement, so the live count is invariant. `scope_per_cycle` instead opens a teardown scope per cycle, creates one subscriber through it, reads it, and ends the scope — the scope's subscriber is gone by the end of its own cycle, so it contributes nothing to the steady-state count and `topic` stays at the `live_width` subscribers created by the earlier `fanout`."
   },
   "steps": [
     { "op": { "type": "cell", "id": "topic", "value": 0 } },
@@ -48,15 +48,15 @@
       "op": {
         "type": "churn",
         "source": "topic",
-        "id_prefix": "grouped",
+        "id_prefix": "scoped",
         "live_width": 8,
         "cycles": 500,
-        "mode": "group_per_cycle",
+        "mode": "scope_per_cycle",
         "read_each": true
       },
       "expect": {
         "dependents_of": { "topic": 8 },
-        "note": "the same churn expressed as one teardown group per subscriber returns to the same baseline — consistent with group teardown being the fold of individual disposals"
+        "note": "the same churn expressed as one teardown scope per subscriber returns to the same baseline — consistent with scope teardown being the fold of individual disposals"
       }
     },
     {
