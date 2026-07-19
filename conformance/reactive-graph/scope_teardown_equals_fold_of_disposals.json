@@ -1,5 +1,5 @@
 {
-  "description": "The central claim: ending a teardown scope MUST be observationally equal to disposing each of its members individually — a scope introduces no disposal semantics of its own, it only names a set and a moment (#lzspecedgeindex). Proved as `disposeScope_eq_disposeAll` in lazily-formal's `Reactive` module. Both scenarios below build the identical graph and differ only in *how* the three scoped nodes go away; every observable named in `expected` MUST agree, and `observationally_equal` names the scenario pair that must match. A binding is free to implement scope teardown as a bulk operation rather than a loop — and SHOULD, since reading each node's kind from the arena at teardown is cheaper than a per-node dispatch — but any observable difference between the two paths is a conformance failure. What breaks otherwise: callers write teardown logic against one path and get different edge state, different surviving readability, or a different set of effects observing the next publish from the other. Teardown order within a scope is reverse creation order (dependents before what they read) so the scope never transiently dangles inside itself; that ordering is observable only through effect cleanup order, which this fixture pins as `cleanup_order`.",
+  "description": "The central claim: ending a teardown scope MUST be observationally equal to disposing each of its members individually \u2014 a scope introduces no disposal semantics of its own, it only names a set and a moment (#lzspecedgeindex). Proved as `disposeScope_eq_disposeAll` in lazily-formal's `Reactive` module. Both scenarios below build the identical graph and differ only in *how* the three scoped nodes go away; every observable named in `expected` MUST agree, and `observationally_equal` names the scenario pair that must match. A binding is free to implement scope teardown as a bulk operation rather than a loop \u2014 and SHOULD, since reading each node's kind from the arena at teardown is cheaper than a per-node dispatch \u2014 but any observable difference between the two paths is a conformance failure. What breaks otherwise: callers write teardown logic against one path and get different edge state, different surviving readability, or a different set of effects observing the next publish from the other. Teardown order within a scope is reverse creation order (dependents before what they read) so the scope never transiently dangles inside itself; that ordering is observable only through effect cleanup order, which this fixture pins as `cleanup_order`. NOTE ON STEP ORDER: `read outside` MUST precede the `read b` that carries the `dependents_of` assertion, and reordering them is a defect rather than a style choice. `outside` is created reading `topic`, but in a lazy binding a slot that has never been pulled has registered no dependency yet -- so asserting `dependents_of.topic == 2` before `outside` is read makes every lazy implementation report 1 and fail, while an eager one passes. This fixture shipped with that ordering inverted and produced exactly that false divergence against lazily-rs. The rule is stated by a sibling: see `why_read_each` in `churn_returns_to_baseline.json`.",
   "kind": "ReactiveGraph",
   "model": "Context",
   "shape": "scenarios",
@@ -7,63 +7,232 @@
     {
       "name": "scope_teardown",
       "steps": [
-        { "op": { "type": "cell", "id": "topic", "value": 1 } },
-        { "op": { "type": "computed", "id": "outside", "reads": ["topic"], "offset": 100 } },
-        { "op": { "type": "begin_scope", "scope": "g" } },
-        { "op": { "type": "computed", "id": "a", "reads": ["topic"], "offset": 1, "scope": "g" } },
-        { "op": { "type": "computed", "id": "b", "reads": ["a"], "offset": 2, "scope": "g" } },
-        { "op": { "type": "effect", "id": "watch_b", "reads": ["b"], "scope": "g" } },
         {
-          "op": { "type": "read", "id": "b" },
-          "expect": {
-            "value": 4,
-            "dependents_of": { "topic": 2, "a": 1, "b": 1 }
+          "op": {
+            "type": "cell",
+            "id": "topic",
+            "value": 1
           }
         },
-        { "op": { "type": "read", "id": "outside" }, "expect": { "value": 101 } },
         {
-          "op": { "type": "end_scope", "scope": "g" },
-          "expect": { "cleanup_order": ["watch_b", "b", "a"] }
+          "op": {
+            "type": "computed",
+            "id": "outside",
+            "reads": [
+              "topic"
+            ],
+            "offset": 100
+          }
+        },
+        {
+          "op": {
+            "type": "begin_scope",
+            "scope": "g"
+          }
+        },
+        {
+          "op": {
+            "type": "computed",
+            "id": "a",
+            "reads": [
+              "topic"
+            ],
+            "offset": 1,
+            "scope": "g"
+          }
+        },
+        {
+          "op": {
+            "type": "computed",
+            "id": "b",
+            "reads": [
+              "a"
+            ],
+            "offset": 2,
+            "scope": "g"
+          }
+        },
+        {
+          "op": {
+            "type": "effect",
+            "id": "watch_b",
+            "reads": [
+              "b"
+            ],
+            "scope": "g"
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "outside"
+          },
+          "expect": {
+            "value": 101
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "b"
+          },
+          "expect": {
+            "value": 4,
+            "dependents_of": {
+              "topic": 2,
+              "a": 1,
+              "b": 1
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "end_scope",
+            "scope": "g"
+          },
+          "expect": {
+            "cleanup_order": [
+              "watch_b",
+              "b",
+              "a"
+            ]
+          }
         }
       ]
     },
     {
       "name": "individual_disposal",
       "steps": [
-        { "op": { "type": "cell", "id": "topic", "value": 1 } },
-        { "op": { "type": "computed", "id": "outside", "reads": ["topic"], "offset": 100 } },
-        { "op": { "type": "computed", "id": "a", "reads": ["topic"], "offset": 1 } },
-        { "op": { "type": "computed", "id": "b", "reads": ["a"], "offset": 2 } },
-        { "op": { "type": "effect", "id": "watch_b", "reads": ["b"] } },
         {
-          "op": { "type": "read", "id": "b" },
-          "expect": {
-            "value": 4,
-            "dependents_of": { "topic": 2, "a": 1, "b": 1 }
+          "op": {
+            "type": "cell",
+            "id": "topic",
+            "value": 1
           }
         },
-        { "op": { "type": "read", "id": "outside" }, "expect": { "value": 101 } },
-        { "op": { "type": "dispose", "id": "watch_b" } },
-        { "op": { "type": "dispose", "id": "b" } },
         {
-          "op": { "type": "dispose", "id": "a" },
-          "expect": { "cleanup_order": ["watch_b", "b", "a"] }
+          "op": {
+            "type": "computed",
+            "id": "outside",
+            "reads": [
+              "topic"
+            ],
+            "offset": 100
+          }
+        },
+        {
+          "op": {
+            "type": "computed",
+            "id": "a",
+            "reads": [
+              "topic"
+            ],
+            "offset": 1
+          }
+        },
+        {
+          "op": {
+            "type": "computed",
+            "id": "b",
+            "reads": [
+              "a"
+            ],
+            "offset": 2
+          }
+        },
+        {
+          "op": {
+            "type": "effect",
+            "id": "watch_b",
+            "reads": [
+              "b"
+            ]
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "outside"
+          },
+          "expect": {
+            "value": 101
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "b"
+          },
+          "expect": {
+            "value": 4,
+            "dependents_of": {
+              "topic": 2,
+              "a": 1,
+              "b": 1
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "watch_b"
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "b"
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "a"
+          },
+          "expect": {
+            "cleanup_order": [
+              "watch_b",
+              "b",
+              "a"
+            ]
+          }
         }
       ]
     }
   ],
   "expected": {
-    "observationally_equal": ["scope_teardown", "individual_disposal"],
+    "observationally_equal": [
+      "scope_teardown",
+      "individual_disposal"
+    ],
     "final_state": {
-      "dependents_of": { "topic": 1 },
-      "readable": { "topic": true, "outside": true, "a": false, "b": false, "watch_b": false },
-      "read": { "outside": 101 }
+      "dependents_of": {
+        "topic": 1
+      },
+      "readable": {
+        "topic": true,
+        "outside": true,
+        "a": false,
+        "b": false,
+        "watch_b": false
+      },
+      "read": {
+        "outside": 101
+      }
     },
     "after_publish": {
-      "op": { "type": "set_cell", "id": "topic", "value": 5 },
+      "op": {
+        "type": "set_cell",
+        "id": "topic",
+        "value": 5
+      },
       "observed_by": [],
-      "read": { "outside": 105 },
-      "dependents_of": { "topic": 1 }
+      "read": {
+        "outside": 105
+      },
+      "dependents_of": {
+        "topic": 1
+      }
     }
   }
 }
