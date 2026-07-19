@@ -846,3 +846,32 @@ any binding whose platform supports them (see [Wire Protocol § Concurrency
 layers are required](protocol.md#concurrency-layers-are-required)); a platform
 that structurally lacks either declares the matching `thread_safe` / `async`
 capability as `none` and advertises it, never silently.
+
+**Measured 2026-07-19.** Shipping a type named `AsyncContext` or
+`ThreadSafeContext` is not the same as implementing the capability, so this
+records what was found by reading each implementation rather than by counting
+type names:
+
+| Binding | `async` | `thread_safe` | Note |
+|---|---|---|---|
+| `lazily-rs` | full | `shared-graph` | reference; the only binding replaying the reactive-graph corpus |
+| `lazily-py` | full | `shared-graph` | `AsyncContext` added 2026-07-19 (`d115000`); it was the last binding without one |
+| `lazily-dart` | full | `serialized` | single-isolate reentrancy guard; isolates share no memory |
+| `lazily-js` | full | `serialized` | `Atomics`/`SharedArrayBuffer` mutex shared across worker realms, **graph is per-realm** |
+| `lazily-go` | full | *unmeasured* | |
+| `lazily-kt` | *unmeasured* | *unmeasured* | |
+| `lazily-zig` | full | *unmeasured* | cascade rides the publish path rather than the invalidate path |
+| `lazily-cpp` | **stub** | *unmeasured* | see below |
+
+`lazily-cpp`'s async context is a **stub and MUST NOT be counted as implementing
+the capability**: `AsyncSlotNode` carries no `dependents` or `dependencies`
+fields, `get_async` unconditionally recomputes on every call, and the
+synchronous `get()` returns a cached value that nothing ever invalidates. Depth
+tests "pass" through `get_async` only because nothing is ever memoized. Per the
+rule above it should declare `async: none` until it has a dependency graph, or
+implement one.
+
+The `unmeasured` entries are deliberately not guesses. Absence of a finding is
+not a finding — that lesson is recorded in *Reactives have no observers*, where
+three bindings' omission from a divergence table turned out to mean nobody had
+looked.
