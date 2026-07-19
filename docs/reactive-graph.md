@@ -292,6 +292,43 @@ ship one. Observation is declarative and structural; if a caller is registering
 callbacks against a value, they have left the reactive model, and the library
 should say so rather than provide a door.
 
+#### Effect and observer are not two spellings of one thing
+
+The distinction is worth stating flatly, because the two look interchangeable at
+the call site and are not:
+
+| | **Effect** | **Observer** (removed) |
+|---|---|---|
+| Registration | implicit — reading a value inside the body declares the edge | explicit — hand a callback to a node |
+| Position | a **node in the graph** | a callback list **hanging off** a node |
+| Runs | once per settled cone | once per write |
+| Batch | honours it — one run per batch | ignores it — one call per write |
+| `==` store-guard | sees the coalesced result | cannot see a suppressed write at all |
+| Memo guard | respects it — no run on an equal recompute | not subject to it |
+| Glitch-free | yes — inputs are mutually consistent | no — fires mid-update by construction |
+| Dependencies | dynamic; re-discovered every run | none; bound to one node forever |
+| Teardown | disposed with its scope | manual, and outlives its scope |
+| Per-node cost when unused | zero | storage on every node |
+
+**Coalescence is the row that matters most, and it is not one mechanism but
+four.** This family coalesces at every layer: the `==` store-guard drops an equal
+write entirely; the memo guard drops an equal recompute so downstream never
+learns; `batch` folds many writes into one invalidation and one flush; and
+store-without-cascade skips effect scheduling for a cell whose cone holds no
+effect. Every one of those is the graph deciding that some change does not need
+to be propagated — which is most of what makes a lazy reactive graph cheaper than
+recomputing everything.
+
+An `Effect` is downstream of all four. It sees what the graph decided was worth
+propagating, which is why it can be glitch-free and why an unobserved subgraph
+costs nothing to write to.
+
+An observer is upstream of all four and outside all of them. It fires on the raw
+write, before coalescence has a chance to apply. That is not a different
+observation strategy; it means a caller holding an observer is looking at a
+system whose central optimization is invisible to them, and cannot tell the
+difference between a change that mattered and one the graph suppressed.
+
 #### Use an Effect
 
 Everything an observer expressed, an `Effect` expresses:
@@ -384,10 +421,12 @@ Underneath all of them is the defect no clause could patch: **an observer cannot
 distinguish batching from coalescence.** It receives a flat sequence of callbacks
 with no framing. Three invocations may be three separate updates or one logical
 update whose writes were grouped, and nothing in the callback distinguishes them
-— there is no signal for where an update begins or ends. Nor can an observer see
-a write suppressed by the `==` store-guard, so it cannot tell "the value did not
-change" from "nothing was written." It is an event stream stripped of its
-transaction boundaries.
+— there is no signal for where an update begins or ends. Nor can it see what the
+graph coalesced away: a write dropped by the `==` store-guard, a recompute
+dropped by the memo guard, a flush skipped because the cone held no effect. So
+"the value did not change", "nothing was written", and "the graph decided this
+did not need propagating" are all the same non-event to an observer. It is an
+event stream stripped of both its transaction boundaries and its elisions.
 
 This is not a missing feature to be added. It follows from sitting outside the
 graph: the graph is what knows where an update starts and stops, and a callback
