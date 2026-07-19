@@ -551,6 +551,33 @@ satisfies are *selected by the transport contract*, not fixed
 | **Commutativity** | Per policy (`const COMMUTATIVE`) | The *reordering tax* — required only when ops may be applied out of order (concurrent producers / replicas / pages). |
 | **Idempotency** | Per policy (`const IDEMPOTENT`) | The *durability tax* — required only for at-least-once / crash-replay. For an idempotent `⊕`, re-applying an op is a no-op, which is exactly the `==` store-guard one layer up: **free dedup**. |
 
+**Policies are open. A binding MUST permit application-defined policies.** The
+list below is canonical, not exhaustive: a `MergePolicy` is *any* associative
+fold with honestly declared flags, and a binding that ships a closed enum of
+policies has implemented a subset rather than the algebra. Merge semantics are
+domain knowledge — a text register, a set of tags, a running quantile, a
+per-tenant precedence rule — and the family cannot enumerate them in advance. A
+binding **MUST** expose the policy interface publicly, and **SHOULD** accept a
+custom policy anywhere a canonical one is accepted.
+
+**With one obligation attached, and it is the whole cost of the openness.** An
+application-defined policy **MUST** declare `COMMUTATIVE` and `IDEMPOTENT`
+truthfully, and a binding **MUST** ship the law-test harness that checks a policy
+against its own declarations — the same harness that verifies the canonical
+policies, exposed for application use.
+
+A policy that misdeclares its flags does not fail loudly. It converges correctly
+in every single-replica test, every in-order test, and every test without
+redelivery — and diverges only under the conditions the flag was supposed to
+license: a claimed-commutative policy that isn't will disagree between replicas
+that saw the same ops in different orders, and a claimed-idempotent one that
+isn't will drift under at-least-once delivery. Both surface as replicas that
+silently stop agreeing, arbitrarily far from the code that caused it. That is why
+the flags are verified rather than trusted for the canonical policies, and the
+reasoning does not weaken for a policy an application wrote. **Shipping the
+checker is therefore part of shipping the extension point** — an unverifiable
+declaration is worse than no declaration, because the relay acts on it.
+
 The canonical policies (each names its algebraic structure and flags):
 
 | Policy | `⊕` | Structure | Comm | Idem |
@@ -561,6 +588,44 @@ The canonical policies (each names its algebraic structure and flags):
 | `SetUnion` | `old ∪ op` | grow-only semilattice | ✓ | ✓ |
 | `RawFifo` | `old ++ op` | free semigroup (concat) | ✗ | ✗ |
 | `CrdtJoin<C>` | `C::merge_from` | join semilattice | ✓ | ✓ |
+
+**A replicated cell that accepts writes from more than one authority MUST use a
+commutative policy.** This follows from the reordering tax above, but it is
+stated separately because the default is the trap: `Cell ≡ MergeCell<KeepLatest>`,
+and `KeepLatest` is **not** commutative. A plain cell replicated to peers that
+also write it will converge differently depending on arrival order — the exact
+defect the algebra exists to prevent, arrived at by writing no policy at all. The
+multi-writer replicated case wants `CrdtJoin<LwwRegister>` or another commutative
+policy, chosen deliberately.
+
+"More than one authority" is about *who may write*, not about topology. A
+replicated derivation pushed to a peer that only reads it has one authority and
+needs no commutativity — it is `Reactive<T>` and not `Source<T>` on that peer,
+which is the read-only replicated cell shape. Commutativity becomes mandatory the
+moment the receiving peer may also write.
+
+**Derived default with user override.** A recurring shape worth naming, because
+it looks like it needs a new primitive and does not. Where a value has a computed
+default that a user may override:
+
+- **Co-located** — use the graph, not a policy. A `Cell` holding the override
+  (absent = defer), a `Slot` holding the derivation, and a `Slot` selecting
+  `override ?? derived`. Glitch-free, self-documenting, and "reset to default" is
+  clearing the override cell. No arbitration exists to get wrong.
+- **Distributed** — a merge policy is required, and a valid one exists: tag ops
+  with provenance and fold by precedence (user outranks derived, LWW within the
+  user rank). It satisfies all three properties — associative because a higher
+  rank absorbs a lower one regardless of grouping, commutative because rank
+  comparison is order-free and ties resolve by timestamp, idempotent because
+  re-applying an op of equal rank and stamp is a no-op.
+
+  **The hazard is reset-to-default, and it is not obvious.** Clearing an override
+  is an op that *lowers* precedence, and a naive "a clear beats the user rank"
+  rule is **not commutative** — a clear arriving after a newer user edit would
+  wrongly win. The clear **MUST** carry a timestamp and lose to any user op newer
+  than itself, which makes it an ordinary participant in the LWW rank rather than
+  a special case. A binding that special-cases the clear will pass single-replica
+  tests and diverge only under reordering.
 
 `KeepLatest` (positional last-writer-wins, **not** commutative) is distinct from
 a timestamped LWW register (`CrdtJoin<LwwRegister>`, commutative): both conflate,
