@@ -137,6 +137,8 @@ Op vocabulary (all ids are fixture-local labels, never a binding's internal id):
 | `begin_scope {scope}` / `end_scope {scope}` | Open / end a teardown scope |
 | `disarm {scope}` | Cancel the scope's teardown — ending it then disposes nothing |
 | `dispose_stale_handle {handle_of, handle_kind}` | Dispose through a handle whose id may have been recycled; a no-op unless the id still names a node of `handle_kind` |
+| `subscribe {id, cell, callback?, on_notify?, on_notify_once?}` | Register a `Cell` observer labelled `id` on `cell`. `callback` names a *shared* callable, so two registrations naming the same `callback` subscribe the same function (default: the callback is unique to `id`). `on_notify` is a list of `subscribe`/`unsubscribe` ops the callback performs reentrantly when it runs; `on_notify_once` restricts them to the first invocation. A reentrant `subscribe` may use `id_prefix` instead of `id`, minting `<prefix>_0`, `<prefix>_1`, … per invocation |
+| `unsubscribe {id, times?}` | Invoke the disposer returned by `subscribe {id}`, `times` times (default 1) — repeat calls exercise idempotency |
 
 A fixture uses top-level `steps`, or `scenarios` plus `expected` when the claim is that
 two differently-built runs agree (`expected.observationally_equal`).
@@ -151,6 +153,38 @@ two differently-built runs agree (`expected.observationally_equal`).
 | `reactive-graph/disarm_disposes_nothing.json` | `disarm()` leaves node state untouched — the nodes stay readable, keep propagating, and stay individually disposable; ending the scope disposes nothing |
 | `reactive-graph/cross_scope_teardown_hazard.json` | ending a scope tears down its nodes even when a node outside still reads them (**required** failure — a binding that keeps them alive is non-conforming); the mirror case is symmetric |
 | `reactive-graph/churn_returns_to_baseline.json` | a subscribe/unsubscribe cycle that disposes what it creates leaves the source's dependent set at its starting size, under both individual disposal and one scope per cycle |
+
+### Cell observer conformance (`#lzdartobservercow`)
+
+The same directory pins
+[observer semantics](reactive-graph.md#observer-semantics-cellsubscribe-lzdartobservercow) —
+the hand-registered `Cell.subscribe` callbacks, which are a separate mechanism from the
+tracked dependency edges above. Same compute-fixture shape, same op replay, two further
+assertion keys:
+
+| Assertion | Meaning |
+|---|---|
+| `observed_order` | The **exact sequence** of observer labels invoked by this step |
+| `observed_counts` | Per-observer invocation counts for this step, where a shared callback runs more than once |
+
+`observed_order` is deliberately a sequence and not a set. An unordered observer
+collection satisfies a set-valued `observed_by` while firing in a fresh order on every
+notification, which is precisely how the family's divergence went unnoticed — so an
+observer fixture that asserts only `observed_by` is rejected by the structural guard.
+
+**These fixtures fail against some bindings today, by design.** The observer contract was
+unwritten until now and four bindings answered it differently; the fixtures encode the
+family position, and the gaps are listed as
+[known divergences](reactive-graph.md#observer-semantics-cellsubscribe-lzdartobservercow)
+with migrations. A red result here is a binding bug, not a fixture bug.
+
+| Fixture | Covers |
+|---------|--------|
+| `reactive-graph/observer_order_is_registration_order.json` | observers fire in registration order, stably across notifications; a removal closes the gap without reordering survivors; a re-registered callback appends rather than resuming its old position; the `==` guard still suppresses the notification entirely (**fails**: py, zig) |
+| `reactive-graph/observer_duplicate_registrations_are_independent.json` | subscribing one callback twice yields two registrations that both fire and dispose independently — no dedup by identity or by equality (**fails**: py, zig) |
+| `reactive-graph/observer_subscribe_during_notify_is_deferred.json` | an observer registered mid-notification first runs on the next one, including when observers registered earlier are still unvisited; a self-feeding subscriber terminates because the pass is bounded by the pre-callback count |
+| `reactive-graph/observer_unsubscribe_during_notify_takes_effect_immediately.json` | an observer disposed mid-notification does not run in that pass even when unvisited; an already-visited observer's invocation stands; self-unsubscribe completes the call it is in; the tail observer still runs, catching a swap-remove under a live cursor (**fails**: dart, go) |
+| `reactive-graph/observer_disposer_is_idempotent.json` | a disposer latches — repeat calls are silent no-ops that remove nothing else, and a spent disposer never reaches a later registration of an equal callable; cell teardown drops observers without invoking them, and a disposer outliving its cell is a no-op |
 
 ## Signaling conformance
 

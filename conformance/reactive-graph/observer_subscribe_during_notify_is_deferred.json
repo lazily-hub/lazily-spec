@@ -1,0 +1,67 @@
+{
+  "description": "An observer registered from inside a callback is deferred to the next notification (#lzdartobservercow). On cell `topic`, `obs_a` subscribes `obs_late` the first time it runs; `obs_late` MUST NOT be invoked by the notification in flight — not even though `obs_b`, registered *earlier*, has not been reached yet at that moment — and MUST be invoked by the following one. Cell `feed` carries the reason the clause is load-bearing rather than incidental: `obs_feeder` subscribes a fresh observer on every notification, so a binding that lets a reentrant subscribe extend the pass it is running in never terminates, because the loop appends to the list it is iterating. Bounding the pass by the count captured before the first callback is sufficient; a binding is NOT required to copy the list, and this fixture asserts nothing about which of the two it does. What breaks otherwise: either a hang (the self-feeding case) or an observer invoked with a value it was not yet subscribed for, which callers reasonably debug as a missed-initial-state bug in their own code. Assertions are on `observed_order` per publish only. Every binding is believed to conform already — this fixture exists so that stays true.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "steps": [
+    { "op": { "type": "cell", "id": "topic", "value": 1 } },
+    {
+      "op": {
+        "type": "subscribe",
+        "id": "obs_a",
+        "cell": "topic",
+        "on_notify_once": true,
+        "on_notify": [{ "type": "subscribe", "id": "obs_late", "cell": "topic" }]
+      }
+    },
+    { "op": { "type": "subscribe", "id": "obs_b", "cell": "topic" } },
+    {
+      "op": { "type": "set_cell", "id": "topic", "value": 2 },
+      "expect": {
+        "observed_order": ["obs_a", "obs_b"],
+        "observed_count": 2,
+        "note": "obs_late was registered mid-pass and MUST NOT run in it, even though obs_b — registered earlier — is still unvisited at that moment"
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "topic", "value": 3 },
+      "expect": {
+        "observed_order": ["obs_a", "obs_b", "obs_late"],
+        "observed_count": 3,
+        "note": "deferred, not dropped; and it lands at the back, per registration order"
+      }
+    },
+    { "op": { "type": "cell", "id": "feed", "value": 1 } },
+    {
+      "op": {
+        "type": "subscribe",
+        "id": "obs_feeder",
+        "cell": "feed",
+        "on_notify": [{ "type": "subscribe", "id_prefix": "obs_spawn", "cell": "feed" }]
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "feed", "value": 2 },
+      "expect": {
+        "observed_order": ["obs_feeder"],
+        "observed_count": 1,
+        "note": "the pass is bounded by the pre-callback count, so it terminates; obs_spawn_0 was appended but not run"
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "feed", "value": 3 },
+      "expect": {
+        "observed_order": ["obs_feeder", "obs_spawn_0"],
+        "observed_count": 2,
+        "note": "each notification admits exactly the observers registered before it began — obs_spawn_1 is appended here and waits its turn"
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "feed", "value": 4 },
+      "expect": {
+        "observed_order": ["obs_feeder", "obs_spawn_0", "obs_spawn_1"],
+        "observed_count": 3,
+        "note": "growth is one per notification and never unbounded within one — the termination claim"
+      }
+    }
+  ]
+}

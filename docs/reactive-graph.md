@@ -246,6 +246,122 @@ decides the invalidation source.
   returns. Disposing the puller effect reverts the signal to lazy behavior (the
   backing value stays readable but is no longer eagerly kept fresh).
 
+### Observer semantics (`Cell.subscribe`) (`#lzdartobservercow`)
+
+`Cell.subscribe(callback)` registers an **observer**: a callback invoked on each
+`set_cell` that passes the `==` guard, returning a **disposer** that removes it.
+This is a different mechanism from the dependency edges above — observers are
+registered by hand, are not discovered by the tracking stack, and are not part of
+the glitch-free pull. Everything the tracking stack decides for itself, a caller
+decides here, which is why the contract has to be written down.
+
+It was not, until now. Four bindings each answered these questions
+independently while repairing observer-list defects, and shipped **different**
+answers; the same caller code observes different behavior on different bindings
+today. The clauses below are the family position. Where a binding contradicts
+one, it is named — see *Known divergences* at the end of this section.
+
+- **Firing order is registration order.** A notification **MUST** invoke
+  observers in the order they were registered. This is the only order a caller
+  can predict without reading an implementation, and the alternative is not
+  "some other order" but a *different* order per notification: a hash- or
+  set-backed observer collection reorders on rehash, and `lazily-go`'s map
+  iteration is randomized by the runtime deliberately, so its observers fired in
+  a fresh order every publish. A binding **MUST NOT** rely on that
+  unpredictability as licence to leave the order free — callers write observers
+  with side effects (a log line, a queue push, a paint) whose composition is
+  order-dependent whether or not the contract admits it.
+
+  Order is a property of the *registration sequence*, not of the callback: an
+  observer removed and re-registered goes to the back.
+
+- **Every registration is independent — no deduplication.** Subscribing the same
+  callback twice **MUST** produce two registrations. Both are invoked on each
+  notification, in registration order, and each disposer removes exactly one of
+  them; after disposing one, the other still fires. A binding **MUST NOT**
+  deduplicate observers by callback identity or by callback equality.
+
+  Deduplication is not portable and is not safe. It is inexpressible where
+  callbacks are neither hashable nor comparable, which is most bindings' natural
+  closure type. Worse, it silently couples unrelated callers: two components that
+  happen to subscribe the same bound method share one registration, so the first
+  to unsubscribe cancels the second's subscription. Identity-keyed collections
+  make this the *default* behavior rather than a bug a binding chose, which is
+  why the clause is a `MUST NOT` on the mechanism and not only on the effect.
+
+- **Subscribing during a notification is deferred.** An observer registered from
+  inside a callback **MUST NOT** be invoked by the notification in flight; it
+  first runs on the next one. Every binding already holds, or emulates, a
+  snapshot of the observer list taken before the first callback, and this clause
+  only writes that down.
+
+  The deferral is load-bearing rather than incidental: without it a self-feeding
+  observer — one that subscribes on every notification — extends the loop it is
+  running in and never terminates. Bounding the pass by the count captured before
+  the first callback is sufficient; a binding is **NOT** required to copy the
+  list.
+
+- **Unsubscribing during a notification takes effect immediately.** An observer
+  disposed from inside a callback **MUST NOT** be invoked by the notification in
+  flight, *including when the loop has not yet reached it*. Observers the loop
+  has already visited are unaffected — they ran before the disposal, which is not
+  retroactive.
+
+  This is the clause the family actually disagreed on, and it is settled against
+  the majority. A stable pre-notification snapshot — dart's and go's choice — is
+  the simpler implementation and invokes a disposed observer one final time in
+  that pass. Under a tracing collector that extra call is harmless: the closure
+  is still alive because the snapshot references it. It is **not** harmless
+  anywhere else. In a manually-managed binding `unsubscribe` is routinely the
+  step immediately before freeing the state the callback reads, so "one more
+  call after you asked to stop" is a use-after-free with a specification behind
+  it. A contract that is safe in five bindings and unsound in three is the wrong
+  family default, so the GC'd bindings migrate rather than `lazily-zig`,
+  `lazily-cpp`, and `lazily-rs` adopting a rule they cannot honour.
+
+  This does not mandate a mechanism. A binding **MAY** tombstone the entry and
+  skip it (`lazily-zig`), consult a live-set before each call, or re-check the
+  registration before invoking — the contract fixes *which observers run*, never
+  how removal is represented. A binding **MUST NOT** implement removal in a way
+  that relocates an unvisited observer behind the notify cursor: a swap-remove
+  under a live iteration silently drops whichever entry it moved, which is the
+  defect this section was written from.
+
+- **Disposers are idempotent and single-shot.** A disposer **MUST** latch: the
+  first call removes its registration, and every later call is a no-op. It
+  **MUST NOT** remove any other registration — in particular not one created
+  after it, and not one whose callback is equal or identical to its own.
+
+  Latching is not a defensive nicety. Where removal is keyed by the callback
+  rather than by the registration, an unlatched disposer called a second time
+  removes whatever now matches that key, which is a *later* subscription of an
+  equal callable belonging to a caller that never asked to be unsubscribed —
+  found in `lazily-py` (`b2de504`) as exactly that. A disposer that is latched
+  cannot express the bug regardless of how the collection is keyed, so bindings
+  **SHOULD** latch in the disposer rather than relying on the collection.
+
+  Disposing an observer and disposing the cell are independent: tearing down the
+  cell **MUST** drop its observers without invoking them, and a disposer called
+  after its cell is gone is a no-op, not an error.
+
+**Known divergences (migration required).** These are outstanding as of
+`#lzdartobservercow`; each is a binding bug against this section, not a
+tolerated variation, and none is fixed here — this is a spec-only change.
+
+| Binding | Clause | Current behavior | Migration |
+|---|---|---|---|
+| `lazily-py` | firing order | **Unspecified** — the observer collection is a `set`, so order is neither registration order nor stable across notifications. `b2de504` documented it as unspecified and its order test asserts on the multiset only. | Move to an insertion-ordered collection. Deliberately deferred there: matching the contract changes existing observable behavior, so it wants its own change. |
+| `lazily-py` | duplicate registration | Deduplicated by **equality** — two subscribes collapse to one registration, and one disposal removes it. | Key by registration, not by callback. Subsumes the ordering migration; both are the `set`. |
+| `lazily-zig` | firing order | Not registration order in steady state — `unsubscribe` is a swap-remove, so removing any observer relocates the tail over it. | Preserve order on removal (compact rather than swap), or accept the O(n) erase its notify path already tolerates. |
+| `lazily-zig` | duplicate registration | Deduplicated by callback **address** — `subscribe` returns "not added" for a callback already present. | Key by registration. |
+| `lazily-dart` | unsubscribe during notify | Stable pre-notification snapshot, so an observer disposed mid-pass **is still invoked once more** in that pass (`95acb1d`). | Skip entries removed since the snapshot — check liveness before each call, or tombstone in place. |
+| `lazily-go` | unsubscribe during notify | Same stable snapshot, same extra invocation (`8781f2b`). | As dart. |
+
+`lazily-dart` and `lazily-go` already conform on ordering, and both pin it with
+tests. `lazily-zig` already conforms on both notify-reentrancy clauses
+(`9d72b14`), which is why it is the one binding not migrating on the clause the
+family disagreed about.
+
 ## MergeCell and the merge algebra (`#relaycell`)
 
 A **`MergeCell<T, M>`** is a `Source<T>` whose write is a *merge* rather than a

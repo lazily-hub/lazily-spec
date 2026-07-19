@@ -688,7 +688,14 @@ _REACTIVE_GRAPH_OPS = {
     "end_scope",
     "disarm",
     "dispose_stale_handle",
+    # Cell observers (#lzdartobservercow)
+    "subscribe",
+    "unsubscribe",
 }
+
+# A reactive-graph fixture must cite the contract it conforms to, so a rule can
+# not be silently widened by editing prose alone.
+_REACTIVE_GRAPH_TAGS = ("#lzspecedgeindex", "#lzdartobservercow")
 
 # Assertion keys are observable effects only. Deliberately absent: anything
 # naming a promotion threshold, a hash strategy, or an index layout — the spec's
@@ -702,6 +709,11 @@ _REACTIVE_GRAPH_EXPECT_KEYS = {
     "dependencies_of",
     "observed_by",
     "observed_count",
+    # Observer firing sequence / per-observer invocation counts
+    # (#lzdartobservercow). `observed_order` is an exact sequence; `observed_by`
+    # stays set-valued.
+    "observed_order",
+    "observed_counts",
     "cleanup_order",
     "scope_owned_count",
     "note",
@@ -742,8 +754,8 @@ def test_reactive_graph_fixture_is_well_formed(name: str) -> None:
     assert obj["kind"] == "ReactiveGraph", f"{name}: kind must be 'ReactiveGraph'"
     assert obj["model"] == "Context", f"{name}: model must be 'Context'"
     assert isinstance(obj["description"], str) and obj["description"], f"{name}: missing description"
-    assert "#lzspecedgeindex" in obj["description"], (
-        f"{name}: description must cite the #lzspecedgeindex tag it conforms to"
+    assert any(tag in obj["description"] for tag in _REACTIVE_GRAPH_TAGS), (
+        f"{name}: description must cite one of {list(_REACTIVE_GRAPH_TAGS)}"
     )
 
     scenarios = obj.get("scenarios")
@@ -785,6 +797,41 @@ def test_reactive_graph_fixtures_cover_the_disposal_contract() -> None:
     }
     present = set(_reactive_graph_fixtures())
     assert required <= present, f"missing disposal fixtures: {sorted(required - present)}"
+
+
+def test_reactive_graph_fixtures_cover_the_observer_contract() -> None:
+    """Every clause of the Cell observer contract keeps a fixture.
+
+    The observer contract was unwritten until `#lzdartobservercow`, and four
+    bindings each answered it differently in the gap. Prose alone did not hold
+    them together, so each clause is pinned by name rather than globbed.
+    """
+    required = {
+        "observer_order_is_registration_order.json",
+        "observer_duplicate_registrations_are_independent.json",
+        "observer_subscribe_during_notify_is_deferred.json",
+        "observer_unsubscribe_during_notify_takes_effect_immediately.json",
+        "observer_disposer_is_idempotent.json",
+    }
+    present = set(_reactive_graph_fixtures())
+    assert required <= present, f"missing observer fixtures: {sorted(required - present)}"
+
+
+def test_observer_fixtures_assert_an_exact_firing_order() -> None:
+    """The order clause is only pinned if the assertion is a *sequence*.
+
+    A binding with an unordered observer collection passes a set-valued
+    ``observed_by`` assertion while firing in a fresh order every notification —
+    exactly how the divergence went unnoticed. So the observer fixtures must
+    carry at least one ``observed_order`` assertion each.
+    """
+    for name in _reactive_graph_fixtures():
+        if not name.startswith("observer_"):
+            continue
+        text = (_REACTIVE_GRAPH_DIR / name).read_text()
+        assert '"observed_order"' in text, (
+            f"{name}: an observer fixture must assert observed_order, not only observed_by"
+        )
 
 
 # ---------------------------------------------------------------------------
