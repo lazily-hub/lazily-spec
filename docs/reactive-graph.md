@@ -82,6 +82,16 @@ decides the invalidation source.
   a dependency. Stale dependencies from a previous run are removed before
   re-registering; a slot that reads a different set of inputs on rerun has its
   edge set updated to match. There is no manual subscribe/unsubscribe.
+
+> **Implementation note.** The dedup that keeps edge registration idempotent is
+> an implementation concern, not an observable one — the contract fixes the edge
+> *set*, not how membership is tested. A binding **MAY** dedup by linear scan
+> while a node's degree is small; above a wide-fanout threshold (~32 edges) it
+> **SHOULD** promote to a hash-indexed edge set, so registration stays amortized
+> O(1) in node degree and a wide-fanout graph does not degrade to O(n²) per
+> propagation. The threshold matters in both directions: below it the linear
+> scan is measurably the faster of the two, so an unconditional hash set is a
+> regression on the common low-degree case (`#lzspecedgeindex`).
 - **Cycle detection.** A slot that depends on itself (directly or transitively)
   is detected during refresh and throws — the graph is acyclic by construction.
 - **`batch` coalesces.** Multiple `set_cell` calls inside `batch(run)` queue
