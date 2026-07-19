@@ -305,19 +305,50 @@ the call site and are not:
 | Batch | honours it — one run per batch | ignores it — one call per write |
 | `==` store-guard | sees the coalesced result | cannot see a suppressed write at all |
 | Memo guard | respects it — no run on an equal recompute | not subject to it |
+| Merge `⊕` | sees converged state — the only guaranteed value | sees a flush-timing artifact (below) |
 | Glitch-free | yes — inputs are mutually consistent | no — fires mid-update by construction |
 | Dependencies | dynamic; re-discovered every run | none; bound to one node forever |
 | Teardown | disposed with its scope | manual, and outlives its scope |
 | Per-node cost when unused | zero | storage on every node |
 
 **Coalescence is the row that matters most, and it is not one mechanism but
-four.** This family coalesces at every layer: the `==` store-guard drops an equal
+five.** This family coalesces at every layer: the `==` store-guard drops an equal
 write entirely; the memo guard drops an equal recompute so downstream never
-learns; `batch` folds many writes into one invalidation and one flush; and
+learns; `batch` folds many writes into one invalidation and one flush;
 store-without-cascade skips effect scheduling for a cell whose cone holds no
-effect. Every one of those is the graph deciding that some change does not need
-to be propagated — which is most of what makes a lazy reactive graph cheaper than
+effect; and the **merge algebra folds a run of ops into one state through `⊕`**.
+Every one of those is the graph deciding that some change does not need to be
+propagated — which is most of what makes a lazy reactive graph cheaper than
 recomputing everything.
+
+**Merge coalescence is where an observer fails hardest, and it is worth spelling
+out because it is not a quality-of-implementation matter.** Associativity is the
+irreducible law of `MergePolicy`, and what it buys is *variable flush points*: a
+bounded relay may flush at any post-merge watermark and converge identically. The
+converged state is guaranteed; **the sequence of intermediate values is not.**
+Two runs of the same program over the same ops may legitimately produce different
+intermediate values under different backpressure, buffer sizes, or transports.
+
+An `Effect` reads the converged state, which is the value the algebra actually
+promises. An observer fires on intermediate writes — so what it receives is an
+artifact of flush timing rather than data, and it is non-deterministic *by
+design*, not by defect. A caller cannot write correct code against it, because
+there is no contract there to be correct against.
+
+Last-writer-wins sharpens this to a point. `KeepLatest` is `old ⊕ op = op` — the
+new op annihilates the previous state — and **`Cell ≡ MergeCell<KeepLatest>`**,
+so every plain cell in the family is already an LWW instance. Under a timestamped
+LWW register (`CrdtJoin<LwwRegister>`) a losing write is dropped outright: after
+convergence, it never happened. An observer that fired on that write reported an
+event the system has since decided did not occur, and any side effect it took —
+a log line, a queue push, a paint, an outbound message — is now describing a
+state that no replica will ever agree existed. An `Effect` never sees it, because
+it observes only what survived the merge.
+
+That is the general shape of the whole objection, stated at its most concrete:
+**observers report writes; the system's actual semantics are about values that
+survive.** Those are different questions, and in a coalescing, converging,
+distributed graph they diverge constantly.
 
 An `Effect` is downstream of all four. It sees what the graph decided was worth
 propagating, which is why it can be glitch-free and why an unobserved subgraph
