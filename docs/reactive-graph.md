@@ -19,7 +19,7 @@ MUST honor this contract.
 | **Cell** | A mutable source value. `setCell` invalidates dependents on a `==` (PartialEq) change; an equal set is a no-op. |
 | **Slot** | A lazily-computed, memoized derived value. Tracks its dependencies automatically, computes on first read, caches, and recomputes only when read after an upstream invalidation. |
 | **MergeCell** | A source whose write is a **merge** `⊕` under a [`MergePolicy`](#mergecell-and-the-merge-algebra-relaycell) rather than a replace. `Cell ≡ MergeCell<KeepLatest>`: a plain cell is the keep-latest instance. Backed by a cell node, so it inherits the `==` store-guard and store-without-cascade. |
-| **Effect** | A side-effecting observer that reruns whenever a tracked dependency invalidates. An optional cleanup closure runs before each rerun and on dispose. |
+| **Effect** | A side-effecting computation that reruns whenever a tracked dependency invalidates. An optional cleanup closure runs before each rerun and on dispose. |
 
 The three core primitives are **`Cell`** / **`Slot`** / **`Effect`** (with
 `MergeCell` the merge-generalized source, `Cell ≡ MergeCell<KeepLatest>`).
@@ -27,7 +27,7 @@ The three core primitives are **`Cell`** / **`Slot`** / **`Effect`** (with
 **`Signal` is a derived construct, not a core primitive.** It is
 `Signal ≡ Slot.eager` — a memo Slot plus a puller Effect that reads the slot on
 creation and after every invalidation, so its value is materialized by the time
-the invalidating `setCell`/`batch` returns (observers never see an intermediate
+the invalidating `setCell`/`batch` returns (readers never see an intermediate
 unset state — `relaycell-backpressure-analysis.md` §4.0). It composes the core
 primitives; bindings expose it as a convenience (`signal(compute)`), not as a
 distinct kind of node.
@@ -40,7 +40,7 @@ node table — they are usable only with the owning context.
 **The read/write type split.** Every primitive above is a **`Reactive<T>`** — the
 read supertype exposing `get` (auto-subscribing), nothing more. Note it does
 **not** expose `subscribe`: observation is a declared dependency edge, never a
-registered callback — see *There is no Cell observer*.
+registered callback — see *Reactives have no observers*.
 Writability is the sub-interface **`Source<T>: Reactive<T>`**, which adds `set`
 (replace) and `merge` (fold under the source's policy). A derived Slot/Signal is
 `Reactive<T>` only (read-only); `Cell`/`MergeCell` are `Source<T>`. The payoff
@@ -63,7 +63,7 @@ decides the invalidation source.
 | `get_signal(handle)` | Read a signal's current (always-materialized) value |
 | `merge_cell<M>(value)` | Create a `MergeCell` whose write folds under policy `M` |
 | `merge(handle, op)` | Fold `op` into a `MergeCell`/`Source` under its policy (`⊕`; routes through `set_cell`, so the `==` guard + store-without-cascade apply) |
-| `effect(run)` | Register an observer; `run` may return a cleanup closure |
+| `effect(run)` | Register a side-effecting computation; `run` may return a cleanup closure |
 | `dispose_effect(handle)` | Deschedule, drop edges, run cleanup |
 | `dispose_slot(handle)` / `dispose_cell(handle)` | Tear down a derived slot or source cell: detach edges in both directions, clear the node, recycle its id |
 | `scope()` | Open a **teardown scope**: nodes created through it are disposed together when the scope ends |
@@ -248,12 +248,21 @@ decides the invalidation source.
   returns. Disposing the puller effect reverts the signal to lazy behavior (the
   backing value stays readable but is no longer eagerly kept fresh).
 
-### There is no Cell observer (`#lzdartobservercow`)
+### Reactives have no observers (`#lzdartobservercow`)
 
-A `Cell` **MUST NOT** expose an observer API. No `subscribe`, no `on_write`, no
-`on_change`, no `add_listener`, no callback collection of any kind attached to a
-cell. A binding **MUST NOT** provide one, and **MUST NOT** carry per-cell storage
+**No reactive exposes an observer API.** Not `Cell`, not `Slot`, not `Signal`,
+not `MergeCell`. No `subscribe`, no `on_write`, no `on_change`, no
+`add_listener`, no callback collection of any kind attached to a reactive node. A
+binding **MUST NOT** provide one, and **MUST NOT** carry per-node storage
 reserved for one.
+
+The clause is stated on *reactives* rather than on `Cell` because it was first
+written too narrowly and a second registry survived it: `lazily-py` carried a
+`Signal.subscribe` — documented in its own docstring as "an external
+(non-reactive) change callback", with the real graph edges tracked separately —
+that a Cell-only prohibition did not reach. It deduplicated by equality via a
+`set`, the same defect this section elsewhere calls a `MUST NOT`. If the rule is
+worth having it is worth having on every node kind, so it is written that way.
 
 This is a `MUST NOT` about a mechanism rather than a behavior, which is unusual
 for this document. It is stated that way because the mechanism cannot be made
@@ -345,10 +354,31 @@ requiring six normative clauses to be safe, that still diverges across the
 family, and whose delivery discipline contradicts the surrounding model, is not
 under-specified. It is misdesigned.
 
-The per-cell cost settled it. Observer storage sits on every cell whether or not
-anything registers — in `lazily-zig`, roughly 112 bytes of inline edge sets on
-every `Cell` in every program. At cell-family scale that is the dominant memory
-term, paid by every reactive to support a feature with one caller family-wide.
+Two things settled it: **memory carried by the graph itself, and semantics that
+were footguns at the edges.**
+
+The memory is measured, not estimated. Removing the observer API from
+`lazily-zig` moved `@sizeOf(Cell(u64))` from **168 bytes to 32** — 136 bytes,
+81%, reclaimed from *every cell in every program* whether or not anything ever
+registered. It was not only the callback collections: the reentrancy counters
+(`notify_depth`, `before_notify_depth`, and two tombstone flags) and the
+monotonic registration counter were all unconditional per-node state that existed
+solely to make the notify loop safe. At cell-family scale that is the dominant
+memory term in the graph, paid by every reactive value to support a feature with
+one caller family-wide. A reactive graph's whole value proposition is holding
+many nodes cheaply; a per-node cost multiplied across the graph is the one kind
+of overhead it cannot absorb.
+
+The semantics were worse, because the failures were all at the edges where they
+are hardest to find. Delivery that ignores `batch` while everything beside it
+honours it. Firing order that depends on a collection's rehash. Two components
+sharing a bound method and silently sharing one registration, so the first to
+unsubscribe cancels the second. A disposer that removes a *later* caller's
+registration. An observer invoked once more after asking to stop, which is
+harmless under a tracing collector and a use-after-free without one. Each of
+these is fine in the common case and wrong in a case the caller cannot see
+coming, which is the definition of a footgun rather than a bug: correct code and
+broken code look identical at the call site.
 
 #### Conformance
 
