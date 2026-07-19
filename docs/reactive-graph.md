@@ -344,23 +344,78 @@ one, it is named — see *Known divergences* at the end of this section.
   cell **MUST** drop its observers without invoking them, and a disposer called
   after its cell is gone is a no-op, not an error.
 
-**Known divergences (migration required).** These are outstanding as of
-`#lzdartobservercow`; each is a binding bug against this section, not a
-tolerated variation, and none is fixed here — this is a spec-only change.
+**Known divergences (migration status).** Each row is a binding bug against this
+section, not a tolerated variation.
 
-| Binding | Clause | Current behavior | Migration |
+> **This table was found to be incomplete on 2026-07-19, and the way it failed is
+> worth recording.** It listed two violated clauses for `lazily-py`. There were
+> three: py also invoked observers disposed mid-notification — the same defect
+> this table documents against `lazily-dart` and `lazily-go`, in this table, in
+> the revision that added it. It went unrecorded because a py test asserted the
+> behavior as intended and the `subscribe` docstring described it as a deliberate
+> "snapshot dispatch" design, so it did not read as a bug to anyone reviewing py
+> in isolation.
+>
+> It was found by *executing* the fixtures, not by reading. A hand-maintained
+> audit of where implementations diverge from a spec is itself an implementation
+> of that spec, and it drifts the same way. **Do not extend this table by
+> inspection.** Add a row only when a conformance run produces it, and treat the
+> table as a record of runner output rather than as a source of truth.
+
+| Binding | Clause | Status | Detail |
 |---|---|---|---|
-| `lazily-py` | firing order | **Unspecified** — the observer collection is a `set`, so order is neither registration order nor stable across notifications. `b2de504` documented it as unspecified and its order test asserts on the multiset only. | Move to an insertion-ordered collection. Deliberately deferred there: matching the contract changes existing observable behavior, so it wants its own change. |
-| `lazily-py` | duplicate registration | Deduplicated by **equality** — two subscribes collapse to one registration, and one disposal removes it. | Key by registration, not by callback. Subsumes the ordering migration; both are the `set`. |
-| `lazily-zig` | firing order | Not registration order in steady state — `unsubscribe` is a swap-remove, so removing any observer relocates the tail over it. | Preserve order on removal (compact rather than swap), or accept the O(n) erase its notify path already tolerates. |
-| `lazily-zig` | duplicate registration | Deduplicated by callback **address** — `subscribe` returns "not added" for a callback already present. | Key by registration. |
-| `lazily-dart` | unsubscribe during notify | Stable pre-notification snapshot, so an observer disposed mid-pass **is still invoked once more** in that pass (`95acb1d`). | Skip entries removed since the snapshot — check liveness before each call, or tombstone in place. |
-| `lazily-go` | unsubscribe during notify | Same stable snapshot, same extra invocation (`8781f2b`). | As dart. |
+| `lazily-py` | firing order | **migrated** `b2bc6bd` | Was a `set`, so order was neither registration order nor stable. Now a dict keyed by a monotonic per-cell registration token; CPython insertion order is registration order. |
+| `lazily-py` | duplicate registration | **migrated** `b2bc6bd` | Was deduplicated by **equality**. Now keyed by token, so two subscribes are two entries and each disposer pops its own. Tokens are never rewound, so a spent disposer cannot name a later registration. |
+| `lazily-py` | unsubscribe during notify | **migrated** `b2bc6bd` | **Was missing from this table.** `touch` iterated a stable `tuple(subs)` snapshot, so an observer disposed mid-pass was invoked once more. Now snapshots *tokens* to bound the pass but re-reads each callback from the live table before invoking. |
+| `lazily-dart` | unsubscribe during notify | **migrated** `16a0b93` | Was a stable pre-notification snapshot (`95acb1d`). The slot representation already tombstoned in place; the snapshot was discarding the liveness bit by flattening to bare callbacks. Now snapshots slots and re-reads liveness before each call. |
+| `lazily-go` | unsubscribe during notify | **migrated** `c654cf6` | Same defect (`8781f2b`), same fix. Steady-state notify remains 0 allocs/op. |
+| `lazily-zig` | firing order | **migrated** `da7610c` | Was a swap-remove, so removing any observer relocated the tail over it — not registration order, and not even *stable*, since each removal reshuffled differently. Tombstone-then-compact is now the only removal mechanism, so survivors keep order and no live entry is relocated past the notify cursor. |
+| `lazily-zig` | duplicate registration | **migrated** `da7610c` | Was deduplicated by callback **address**. `subscribe` now returns a `Subscription` token (per-cell monotonic id, never reused; `0` is the tombstone sentinel) and `unsubscribe` takes it. Breaking API change, approved 2026-07-19. |
 
-`lazily-dart` and `lazily-go` already conform on ordering, and both pin it with
-tests. `lazily-zig` already conforms on both notify-reentrancy clauses
-(`9d72b14`), which is why it is the one binding not migrating on the clause the
+`lazily-dart` and `lazily-go` already conformed on ordering, and both pin it with
+tests. `lazily-zig` already conformed on both notify-reentrancy clauses
+(`9d72b14`), which is why it was the one binding not migrating on the clause the
 family disagreed about.
+
+**Unverified bindings.** `lazily-cpp`, `lazily-js`, and `lazily-kt` have never
+been run against the `observer_*` fixtures. Their absence from the table above is
+**not evidence of conformance** — it is absence of measurement. Given how that
+table failed for `lazily-py`, treat all three as unknown until a runner reports.
+
+**Fixtures.** The normative cases are
+`conformance/reactive-graph/observer_*.json`. As of 2026-07-19 these are executed
+by `lazily-py`, `lazily-dart`, `lazily-go`, and `lazily-zig` via runners that
+load this repository directly rather than from a bundled copy.
+
+A note for whoever writes the next runner, learned by writing four: where a
+fixture shares one `callback` label across two registrations, the runner **must**
+hand both the *same* callable — the same function pointer, the same object. Give
+each its own and a binding that deduplicates by address or by equality passes the
+duplicate-registration fixture vacuously, which is precisely the bug that fixture
+exists to catch. The corollary is that a shared callable cannot report which
+registration invoked it, so every runner resolves labels to registration ids
+afterwards, in registration order, against the registrations live at the start of
+the pass.
+
+Two ops are **not** uniformly expressible, and every runner so far has had to
+model rather than measure them:
+
+- The `dispose` op and its `readable` expectation assume a Cell teardown API.
+  `lazily-dart`, `lazily-go`, and `lazily-zig` have none — a Cell's lifetime ends
+  at unreachability, and in a manually-managed binding a token cannot legally
+  probe freed memory. All three assert the observable contract instead (nothing
+  fires, the disposer afterwards is a latched no-op) and track `readable` in
+  harness bookkeeping. Either those bindings gain explicit disposal or the
+  expectation becomes binding-conditional. **Unresolved.**
+- `scope_teardown_equals_fold_of_disposals.json` has no `steps` key at all; it is
+  `scenarios`-shaped, so every runner must special-case it. Whether that is
+  intentional or a fixture defect is **unresolved**.
+
+The eight disposal and teardown fixtures in this directory remain unexecuted by
+every binding. They are not a quick follow-up: they require `TeardownScope`
+(`ctx.scope()` / `disarm()`) plus dependency-graph introspection
+(`dependents_of`, `dependencies_of`, `cleanup_order`) that at least `lazily-py`
+does not currently expose.
 
 ## MergeCell and the merge algebra (`#relaycell`)
 
