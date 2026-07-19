@@ -1,0 +1,49 @@
+{
+  "description": "A write to a source is observable at every transitive depth, and MUST be replayed against every context a binding ships. The chain here is four deep (topic -> a -> b -> c) because a two-link chain cannot distinguish a correct implementation from one that propagates exactly one level, and a one-level-only defect is the natural failure mode: an invalidation handler that marks its own node stale but never notifies its own dependents. This fixture asserts only what a caller can observe -- the value read at each depth after a source write -- and deliberately does NOT assert how staleness is represented. A pull-based binding may mark nothing at all and let each read refresh its dependencies recursively; an eager binding may mark the whole cone at write time. Both conform, because the contract is that a read observes values consistent with the current sources (glitch-freedom), not that any particular node was flagged. What neither may do is serve a stale cached value at depth. Known hazard motivating this fixture: a binding whose *asynchronous* context tracks staleness by revision counters and in-flight state can break the pull chain that makes the lazy strategy work, so a chain that refreshes correctly in the synchronous context silently stops refreshing in the async one. That is why the replay-against-every-context requirement is part of this fixture rather than a note elsewhere -- a binding that replays it only against its default context can pass while its async path is broken (#lzdartobservercow, lazily-dart async cascade).",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": { "type": "cell", "id": "topic", "value": 1 }
+    },
+    { "op": { "type": "computed", "id": "a", "reads": ["topic"], "offset": 10 } },
+    { "op": { "type": "computed", "id": "b", "reads": ["a"], "offset": 100 } },
+    { "op": { "type": "computed", "id": "c", "reads": ["b"], "offset": 1000 } },
+    {
+      "op": { "type": "read", "id": "c" },
+      "expect": {
+        "value": 1111,
+        "note": "1 + 10 + 100 + 1000 — establishes the cached value at every depth before any write"
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "topic", "value": 2 },
+      "expect": {
+        "read": { "a": 12, "b": 112, "c": 1112 },
+        "note": "the discriminating step. Depth 1 (a) refreshes even under a one-level-only implementation; depth 2 (b) and depth 3 (c) do not. A binding serving 111 or 1011 here is propagating a bounded number of levels rather than reaching the whole cone."
+      }
+    },
+    {
+      "op": { "type": "read", "id": "c" },
+      "expect": {
+        "value": 1112,
+        "note": "re-read is stable — refreshing must not be a one-shot that leaves the node stale for the next reader"
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "topic", "value": 2 },
+      "expect": {
+        "read": { "c": 1112 },
+        "note": "the == store-guard still applies at depth: an equal write is not a write, and nothing recomputes"
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "topic", "value": 3 },
+      "expect": {
+        "read": { "c": 1113 },
+        "note": "a second real write reaches depth 3 again — the first cascade must not have consumed the edges permanently"
+      }
+    }
+  ]
+}
