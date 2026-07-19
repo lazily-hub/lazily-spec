@@ -662,9 +662,10 @@ A reactive context conforms when:
    dispose, and disposal unsubscribes edges.
 8. A `Signal` is materialized by the time the invalidating `set_cell`/`batch`
    returns (eager push).
-9. **`Reactive<T>` / `Source<T>` split.** Reads (`get`/`subscribe`) are the
-   `Reactive` supertype; writes (`set`/`merge`) are the `Source` sub-interface. A
-   derived Slot/Signal is `Reactive` only.
+9. **`Reactive<T>` / `Source<T>` split.** Reads (`get`) are the `Reactive`
+   supertype; writes (`set`/`merge`) are the `Source` sub-interface. A derived
+   Slot/Signal is `Reactive` only. There is no `subscribe` — see *Reactives have
+   no observers*.
 10. **MergeCell + merge algebra (`#relaycell`).** `merge(handle, op)` folds under
     an associative `MergePolicy` and routes through the `==`-guarded `set_cell`
     (so an idempotent policy's no-op merge fires no cascade). `Cell ≡
@@ -672,6 +673,56 @@ A reactive context conforms when:
     `IDEMPOTENT` flags match the policy's algebra (verified by law-tests); the
     converged egress state is independent of merge grouping/order for a
     commutative policy (verified by `mergecell_algebra.json`).
+
+### Declared context capabilities
+
+A binding **MUST** declare, per context it ships, where that context sits on two
+independent axes. The declaration exists so the conformance harness can decide
+**which fixtures apply**. It has no other purpose, and the constraints below are
+part of the requirement rather than commentary on it.
+
+**Axis 1 — read discipline.** Either *blocking* (reads return values) or *async*
+(reads return futures/promises). Mutually exclusive per context.
+
+**Axis 2 — concurrent access.** One of:
+
+| Level | Meaning |
+|---|---|
+| `none` | Single-threaded; no concurrent access contemplated. |
+| `serialized` | Concurrent callers are linearized against **per-thread or per-realm graphs**. No graph is shared. |
+| `shared-graph` | **One** reactive graph is genuinely accessed from multiple threads. |
+
+The three-way split on axis 2 is not pedantry — it was added because a two-way
+`thread-safe: yes/no` flag would have been satisfied by four bindings offering
+materially different guarantees. Measured 2026-07-19: `lazily-rs` and `lazily-py`
+share one graph across OS threads; `lazily-js` shares an `Atomics`-backed lock
+across worker realms while each realm keeps **its own** graph; `lazily-dart` is a
+single-isolate reentrancy guard with no cross-isolate anything. Every one of those
+is individually honest and documented, but a fixture asserting concurrent-access
+behavior is meaningful only at `shared-graph` and vacuous at `serialized`. A flag
+that cannot tell them apart produces exactly the failure this chapter exists to
+prevent: a suite that passes while testing nothing.
+
+**The axes are independent.** Read discipline does not imply a concurrency level
+and vice versa. Single-threaded async is fully concurrent while requiring no
+thread-safety at all, and a blocking context may be `shared-graph`. A binding
+**MUST NOT** infer one axis from the other.
+
+**The declaration is not wire-visible.** Context capability **MUST NOT** appear in
+any protocol message, influence sync behavior, or be observable by a peer. The
+reactive graph is *compute, not protocol*; only resolved values cross IPC/FFI, and
+convergence is a property of the merge algebra rather than of any replica's local
+execution model. Associativity already licenses variable flush points, so local
+scheduling is unconstrained by the protocol — which is precisely why the execution
+model producing that scheduling is irrelevant to a peer. A replica running an
+async context and one running a `shared-graph` context converge because `⊕` says
+so, not because they agree about threads.
+
+This constraint is stated because the failure mode is quiet. Nobody sets out to
+leak the execution model into the protocol; it happens when a sync path needs a
+decision and a capability declaration is conveniently in scope. The declaration
+answers exactly one question — which fixtures run — and the moment it answers a
+second, the layering is broken.
 
 ### Thread-safe context conformance
 
@@ -682,14 +733,28 @@ deterministic properties under concurrent access:
 
 1. Handles are **clonable**, and the transition function and cell/slot state are
    `Send + Sync`; one reactive graph is shared across OS threads.
-2. **Observers fire synchronously within the invalidating `send`/`batch`**,
-   preserving the same glitch-free pull-based ordering as the single-threaded
-   context — a concurrent reader never observes a half-updated graph. "Synchronously
-   within" mandates **glitch-free ordering** (every observer that runs sees the fully
-   settled graph, never an intermediate state), **not** literal in-lock dispatch. A
-   threaded binding **MAY** defer observer dispatch out of the graph lock (so a callback
-   may re-enter the context) provided the ordering invariant holds: observers are still
-   delivered in dependency order and none observes a mixed state (`#lzspecobserverclarify`).
+
+   This clause applies **only to a context declaring `shared-graph`** (see
+   *Declared context capabilities*). A `serialized` context — `lazily-js`, whose
+   graph is per-realm, or `lazily-dart`, whose guard is single-isolate — cannot
+   satisfy it and is not required to. Conformance for those is the linearization
+   property alone: concurrent callers are ordered, and none observes a
+   half-updated graph. Requiring a shared graph of every "thread-safe" context
+   would have made two bindings permanently non-conforming for having chosen a
+   design their platform actually permits.
+2. **Effects run glitch-free under concurrent access**, preserving the same
+   ordering as the single-threaded context — a concurrent reader never observes a
+   half-updated graph. This mandates **glitch-free ordering** (every effect that
+   runs sees the fully settled cone, never an intermediate state), **not** literal
+   in-lock dispatch. A threaded binding **MAY** defer effect dispatch out of the
+   graph lock, so a callback may re-enter the context, provided the ordering
+   invariant holds: effects are delivered in dependency order and none observes a
+   mixed state.
+
+   *(This clause previously governed observer callbacks, under
+   `#lzspecobserverclarify`. Observers were removed from the family — see
+   *Reactives have no observers* — and the requirement now attaches to effects,
+   which are the only remaining way user code runs inside an invalidation wave.)*
 3. The `==` (PartialEq) cell guard and the `memo` equality guard both hold under
    concurrent mutation: an equal write invalidates nothing, an equal recompute
    suppresses downstream work.
