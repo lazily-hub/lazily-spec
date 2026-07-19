@@ -35,7 +35,28 @@ Copy the fixture-loading pattern from `lazily-rs/tests/conformance.rs`. Each tes
 1. Load the fixture.
 2. Parse the `wire` field into the binding's native `IpcMessage` type.
 3. Assert the `assertions` fields.
-4. Re-serialize and compare for byte-for-byte round-trip fidelity.
+4. Re-serialize and compare for byte-for-byte round-trip fidelity, subject to the
+   equivalence exemptions below.
+
+### Round-trip equivalence exemptions
+
+Byte-for-byte comparison is the default, but it is **not** the contract for a field whose
+schema declares two encodings equivalent. Where the schema says a field may be omitted *or*
+sent in some canonical empty form, a binding MUST NOT be required to reproduce the sender's
+choice: both encodings decode to the same value, so a binding is free to emit either one.
+
+For such fields the round-trip comparison is **semantic**: normalize the fixture's `wire` and
+the binding's re-serialized output to the same canonical form (fill in the declared default for
+an absent field) before comparing. All other fields remain byte-for-byte.
+
+Exempt fields:
+
+| Field | Equivalent encodings | Declared by |
+|-------|----------------------|-------------|
+| `CrdtSync.frontier` | omitted ≡ `[]` — "unchanged since the last accepted frame" (`#lzspecfrontiersuppress`) | [`schemas/distributed.json`](../schemas/distributed.json) (`required` is `["ops"]` only) |
+
+A binding MUST accept an omitted `frontier` on decode and treat it as empty. Rejecting the
+absent form is a conformance failure; re-emitting it as `[]` is not.
 
 ## Keyed cell collections conformance
 
