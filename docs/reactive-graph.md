@@ -377,24 +377,60 @@ tests. `lazily-zig` already conformed on both notify-reentrancy clauses
 (`9d72b14`), which is why it was the one binding not migrating on the clause the
 family disagreed about.
 
-**Unverified bindings.** `lazily-cpp` and `lazily-kt` have never been run against
-the `observer_*` fixtures. Their absence from the table above is **not evidence
-of conformance** — it is absence of measurement. Given how that table failed for
-`lazily-py`, treat both as unknown until a runner reports.
+**Unverified binding.** `lazily-kt` has never been run against the `observer_*`
+fixtures. Its absence from the table above is **not evidence of conformance** —
+it is absence of measurement. Given how that table failed for `lazily-py`, treat
+it as unknown until a runner reports.
 
-**`lazily-js` does not implement this section at all.** Audited 2026-07-19: there
-is no `subscribe`, `onChange`, `observe`, `addListener`, or listener collection
-on `Cell` or `CellHandle`. The `subscribe` that exists is `TopicCell.subscribe`,
-a broadcast-cursor mechanism specified elsewhere, and a signaling-message
-callback. So js is *vacuously* non-divergent: it cannot violate the five clauses
-because it has not implemented them.
+### Three bindings do not implement this section at all
 
-That is an **unimplemented spec surface**, not conformance, and it is arguably a
-larger gap than any divergence listed above — a binding that fails a clause can
-be measured and migrated, whereas this one silently offers callers no observer
-API while the family documents one as normative. Unresolved: either js gains the
-API, or this section is marked optional-per-binding and says so explicitly. It
-should not stay in the current state, where the only signal is an empty row.
+Audited 2026-07-19. `lazily-js`, `lazily-cpp`, and `lazily-rs` have **no Cell
+observer API**: no `subscribe`, `on_change`, `observe`, `add_listener`, or
+listener collection on `Cell`/`CellHandle`. In each, the `subscribe` that exists
+is the `Topic`/queue broadcast cursor — a different mechanism, distinguished from
+observers earlier in this document. Observation in those bindings is expressed
+through effects and dependency edges instead.
+
+So all three are *vacuously* non-divergent. They cannot violate the five clauses
+because they have not implemented them. This is an **unimplemented spec surface**,
+not conformance, and it is arguably a larger gap than any divergence in the table
+above: a binding that fails a clause can be measured and migrated, whereas these
+silently offer callers no observer API while this document declares one normative.
+
+> **This invalidates a premise of the reasoning below, and the decision needs
+> re-examination on that basis.**
+>
+> The rationale for *Unsubscribing during a notification takes effect
+> immediately* argues that a stable pre-notification snapshot is unsound in
+> manually-managed bindings, and concludes: "A contract that is safe in five
+> bindings and unsound in three is the wrong family default, so the GC'd bindings
+> migrate rather than `lazily-zig`, `lazily-cpp`, and `lazily-rs` adopting a rule
+> they cannot honour."
+>
+> Of the three bindings named there, **only `lazily-zig` implements observers.**
+> `lazily-cpp` and `lazily-rs` do not, so they were never going to adopt or
+> reject anything. The "five safe, three unsound" count is not a description of
+> this family.
+>
+> The *conclusion* may well still be right — zig's hazard is real, the
+> use-after-free argument holds for it, and any future manually-managed
+> implementation would face the same constraint. But it now rests on one binding
+> plus a claim about hypothetical ones, not on a three-to-five split. Three
+> bindings (`py`, `dart`, `go`) have already migrated against this reasoning.
+> **Whoever owns `#lzdartobservercow` should decide whether the clause survives
+> its stated justification.** It has not been changed here, because reversing it
+> would be a second breaking migration and that is not a call to make inside a
+> correction.
+>
+> Recorded rather than quietly fixed for the same reason as the table above: this
+> section has now been wrong twice, in opposite directions — once by omitting a
+> real violation, once by citing bindings that do not participate in the contract
+> at all. Both were found by executing fixtures and reading source, not by
+> reviewing the prose.
+
+Unresolved for all three: either they gain the API, or this section is marked
+optional-per-binding and says so explicitly. The current state — an empty row —
+carries no signal at all.
 
 **Fixtures.** The normative cases are
 `conformance/reactive-graph/observer_*.json`. As of 2026-07-19 these are executed
