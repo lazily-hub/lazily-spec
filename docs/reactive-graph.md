@@ -344,6 +344,83 @@ one, it is named — see *Known divergences* at the end of this section.
   cell **MUST** drop its observers without invoking them, and a disposer called
   after its cell is gone is a no-op, not an error.
 
+- **Delivery is per write. `batch` does not coalesce it.** Each write that passes
+  the `==` store-guard **MUST** invoke every live registration exactly once, at
+  the moment of the write, whatever the batch depth. Two writes to one cell
+  inside a batch produce two invocations per registration, not one at the
+  outermost exit. Nesting changes nothing: a nested `batch` is not a coalescing
+  boundary either. The store-guard is **not** suspended inside a batch — writing
+  the value a cell already holds is not a write and **MUST NOT** notify.
+
+  This is the clause that separates an observer from an `Effect`, and it is why
+  both mechanisms exist rather than one. An `Effect` is batched, fires once when
+  the cone settles, participates in the dependency graph, and is glitch-free. An
+  observer deliberately bypasses all of that: it is an out-of-band callback list
+  on a single cell, and it sees every intermediate transition — including the
+  ones a `batch` exists to hide.
+
+  Neither is a cheaper spelling of the other, so the choice is a real one. A
+  consumer that wants the settled value **SHOULD** use an `Effect`: it is
+  glitch-free, it costs nothing on the write side for a cell whose cone contains
+  no effect, and it is easier to reason about. A consumer that needs *every*
+  transition — a mutation log, a replication feed, a persistence tap — cannot
+  express that with an `Effect` at all, and coalescing observer delivery would
+  defeat the only requirement that justifies an out-of-band callback list.
+
+  A pre-commit observer cannot be coalesced even in principle, which is the
+  strongest form of this argument: if two writes land inside one batch, there is
+  no single value that a `before_write` hook could meaningfully fire *before*.
+  Any binding offering the pre-commit variant is therefore already committed to
+  per-write delivery, and a binding that coalesces has, in effect, decided it
+  will never offer one.
+
+  Fixture: `observer_delivery_is_per_write.json`.
+
+- **An unobserved cell allocates nothing, and churn returns to baseline.** A cell
+  with no live registrations **MUST NOT** hold *allocated* observer storage, and
+  disposing the last registration **MUST** release it. Storage is allocated on
+  first registration and released on last.
+
+  A binding must reserve *some* per-cell field to find the registrations at all —
+  a null pointer, a nil slice header, an empty-optional. That reservation is
+  unavoidable and is not what this clause forbids. What it forbids is a heap
+  allocation for a cell nobody observes, and it **SHOULD** be read as a budget on
+  the reservation too: pointer-sized is the target, and a binding that reserves a
+  multi-word inline buffer in every `Cell` is charging every cell in every
+  program for a feature it does not use. At cell-family scale that reservation is
+  the dominant cost — a million-cell family pays it a million times to hold
+  observers that were never registered — whereas the *checking* cost on the write
+  path is one predictable branch and is not at issue.
+
+  Storage **MUST** live in the node. A binding **MUST NOT** hold observer
+  registrations in a side table keyed by cell id — that is the owner-keyed
+  aliasing hazard already ruled out by *A recycled id inherits nothing*
+  (`recycled_id_inherits_nothing.json`, and `disposeNode_recycled_id_inherits_nothing`
+  in `lazily-formal`), and observers are a strictly worse instance of it than the
+  edge index that motivated the rule: a recycled id would inherit the dead cell's
+  *callbacks*, so an unrelated new cell would invoke a disposed subscriber's
+  closure on write. The saving is a few bytes per cell; the failure is executing
+  a stale callback against freed state.
+
+  Fixture: `churn_returns_to_baseline.json` covers the release half. The
+  allocate-nothing half is a memory property rather than an observable one, so it
+  is stated normatively here and checked per binding rather than by replay.
+
+**Naming.** This mechanism is named **`on_write`** / **`onWrite`** (and
+**`on_before_write`** / **`onBeforeWrite`** for the pre-commit variant), **not**
+`subscribe`. The name is normative because the old one was actively misleading:
+`subscribe` is the vocabulary of the reactive-graph mechanisms, so a reader
+reasonably assumes the reactive-graph guarantees — batching, glitch-freedom, cone
+settlement — every one of which this mechanism explicitly does not provide.
+`on_write` names the property that surprises people, and it names it in the
+signature rather than in a document they may not read.
+
+Bindings **SHOULD** keep `subscribe` as a deprecated alias for one release where
+their compatibility policy calls for it. Note the family has been here before:
+`Signal` was demoted from core to derived after a naming ambiguity turned out to
+be hiding an architectural question, and this is the same shape — the ambiguity
+concealed a delivery-discipline fork that went unnoticed across four bindings.
+
 **Known divergences (migration status).** Each row is a binding bug against this
 section, not a tolerated variation.
 
@@ -369,6 +446,8 @@ section, not a tolerated variation.
 | `lazily-py` | unsubscribe during notify | **migrated** `b2bc6bd` | **Was missing from this table.** `touch` iterated a stable `tuple(subs)` snapshot, so an observer disposed mid-pass was invoked once more. Now snapshots *tokens* to bound the pass but re-reads each callback from the live table before invoking. |
 | `lazily-dart` | unsubscribe during notify | **migrated** `16a0b93` | Was a stable pre-notification snapshot (`95acb1d`). The slot representation already tombstoned in place; the snapshot was discarding the liveness bit by flattening to bare callbacks. Now snapshots slots and re-reads liveness before each call. |
 | `lazily-go` | unsubscribe during notify | **migrated** `c654cf6` | Same defect (`8781f2b`), same fix. Steady-state notify remains 0 allocs/op. |
+| `lazily-zig` | unobserved cell allocates nothing | **outstanding** | Reserves observer storage inline in every `Cell`. `SubscriberEdgeSet = EdgeSet(Subscription, 1)` is `buf [1]Subscription` (16B) + `len` (8B) + `spill` `ArrayList` (24B) + `index` ptr (8B) = 56B, and a `Cell` carries two (`before_change_subscribers`, `change_subscribers`) = **~112B per cell, paid whether or not anything is registered**. Widening the key from `usize` to `Subscription` in `da7610c` added 16B/cell to every zig program. Field sizes computed, not `@sizeOf`-measured — confirm padding before quoting. Pure optimization, no semantic change; a nullable pointer to a heap block would satisfy the clause. |
+| `lazily-py` | delivery is per write | **outstanding** | Coalesced. `batch.notify_change` queues the cell and defers to a single `touch()` at the outermost batch exit, so two writes in a batch invoke each registration **once**, not twice. The other three bindings invoke observers before consulting the batching machinery at all. Found 2026-07-19 by inspecting the batch path, *not* by a fixture — no `observer_*` fixture exercised `batch` until `observer_delivery_is_per_write.json` was added for exactly this. |
 | `lazily-zig` | firing order | **migrated** `da7610c` | Was a swap-remove, so removing any observer relocated the tail over it — not registration order, and not even *stable*, since each removal reshuffled differently. Tombstone-then-compact is now the only removal mechanism, so survivors keep order and no live entry is relocated past the notify cursor. |
 | `lazily-zig` | duplicate registration | **migrated** `da7610c` | Was deduplicated by callback **address**. `subscribe` now returns a `Subscription` token (per-cell monotonic id, never reused; `0` is the tombstone sentinel) and `unsubscribe` takes it. Breaking API change, approved 2026-07-19. |
 
