@@ -377,10 +377,24 @@ tests. `lazily-zig` already conformed on both notify-reentrancy clauses
 (`9d72b14`), which is why it was the one binding not migrating on the clause the
 family disagreed about.
 
-**Unverified bindings.** `lazily-cpp`, `lazily-js`, and `lazily-kt` have never
-been run against the `observer_*` fixtures. Their absence from the table above is
-**not evidence of conformance** — it is absence of measurement. Given how that
-table failed for `lazily-py`, treat all three as unknown until a runner reports.
+**Unverified bindings.** `lazily-cpp` and `lazily-kt` have never been run against
+the `observer_*` fixtures. Their absence from the table above is **not evidence
+of conformance** — it is absence of measurement. Given how that table failed for
+`lazily-py`, treat both as unknown until a runner reports.
+
+**`lazily-js` does not implement this section at all.** Audited 2026-07-19: there
+is no `subscribe`, `onChange`, `observe`, `addListener`, or listener collection
+on `Cell` or `CellHandle`. The `subscribe` that exists is `TopicCell.subscribe`,
+a broadcast-cursor mechanism specified elsewhere, and a signaling-message
+callback. So js is *vacuously* non-divergent: it cannot violate the five clauses
+because it has not implemented them.
+
+That is an **unimplemented spec surface**, not conformance, and it is arguably a
+larger gap than any divergence listed above — a binding that fails a clause can
+be measured and migrated, whereas this one silently offers callers no observer
+API while the family documents one as normative. Unresolved: either js gains the
+API, or this section is marked optional-per-binding and says so explicitly. It
+should not stay in the current state, where the only signal is an empty row.
 
 **Fixtures.** The normative cases are
 `conformance/reactive-graph/observer_*.json`. As of 2026-07-19 these are executed
