@@ -38,7 +38,9 @@ semantics are required. Handles (`SlotHandle` / `CellHandle` / `SignalHandle` /
 node table — they are usable only with the owning context.
 
 **The read/write type split.** Every primitive above is a **`Reactive<T>`** — the
-read supertype exposing `get` (auto-subscribing) and `subscribe`, nothing more.
+read supertype exposing `get` (auto-subscribing), nothing more. Note it does
+**not** expose `subscribe`: observation is a declared dependency edge, never a
+registered callback — see *There is no Cell observer*.
 Writability is the sub-interface **`Source<T>: Reactive<T>`**, which adds `set`
 (replace) and `merge` (fold under the source's policy). A derived Slot/Signal is
 `Reactive<T>` only (read-only); `Cell`/`MergeCell` are `Source<T>`. The payoff
@@ -246,305 +248,125 @@ decides the invalidation source.
   returns. Disposing the puller effect reverts the signal to lazy behavior (the
   backing value stays readable but is no longer eagerly kept fresh).
 
-### Observer semantics (`Cell.subscribe`) (`#lzdartobservercow`)
+### There is no Cell observer (`#lzdartobservercow`)
 
-`Cell.subscribe(callback)` registers an **observer**: a callback invoked on each
-`set_cell` that passes the `==` guard, returning a **disposer** that removes it.
-This is a different mechanism from the dependency edges above — observers are
-registered by hand, are not discovered by the tracking stack, and are not part of
-the glitch-free pull. Everything the tracking stack decides for itself, a caller
-decides here, which is why the contract has to be written down.
+A `Cell` **MUST NOT** expose an observer API. No `subscribe`, no `on_write`, no
+`on_change`, no `add_listener`, no callback collection of any kind attached to a
+cell. A binding **MUST NOT** provide one, and **MUST NOT** carry per-cell storage
+reserved for one.
 
-It was not, until now. Four bindings each answered these questions
-independently while repairing observer-list defects, and shipped **different**
-answers; the same caller code observes different behavior on different bindings
-today. The clauses below are the family position. Where a binding contradicts
-one, it is named — see *Known divergences* at the end of this section.
+This is a `MUST NOT` about a mechanism rather than a behavior, which is unusual
+for this document. It is stated that way because the mechanism cannot be made
+safe by constraining it — every constraint below was tried, written down, and
+abandoned.
 
-- **Firing order is registration order.** A notification **MUST** invoke
-  observers in the order they were registered. This is the only order a caller
-  can predict without reading an implementation, and the alternative is not
-  "some other order" but a *different* order per notification: a hash- or
-  set-backed observer collection reorders on rehash, and `lazily-go`'s map
-  iteration is randomized by the runtime deliberately, so its observers fired in
-  a fresh order every publish. A binding **MUST NOT** rely on that
-  unpredictability as licence to leave the order free — callers write observers
-  with side effects (a log line, a queue push, a paint) whose composition is
-  order-dependent whether or not the contract admits it.
+#### Observation is a graph edge, not a callback
 
-  Order is a property of the *registration sequence*, not of the callback: an
-  observer removed and re-registered goes to the back.
+Reading a cell inside a computation *declares a dependency*. The tracking stack
+records the edge, invalidation propagates structurally, and the graph decides
+when dependents run. Nobody registers anything. That is the whole design, and
+every guarantee the family makes — batching, glitch-freedom, coalescing,
+cone-settled consistency — follows from the graph knowing what depends on what.
 
-- **Every registration is independent — no deduplication.** Subscribing the same
-  callback twice **MUST** produce two registrations. Both are invoked on each
-  notification, in registration order, and each disposer removes exactly one of
-  them; after disposing one, the other still fires. A binding **MUST NOT**
-  deduplicate observers by callback identity or by callback equality.
+A callback list attached to a cell knows none of that. It cannot batch, because
+it has no notion of a cone to settle. It cannot be glitch-free, because it fires
+mid-update by construction. It cannot participate in scope teardown, because it
+is not a node. It is the observer pattern, living inside the reactive primitive
+and bypassing it.
 
-  Deduplication is not portable and is not safe. It is inexpressible where
-  callbacks are neither hashable nor comparable, which is most bindings' natural
-  closure type. Worse, it silently couples unrelated callers: two components that
-  happen to subscribe the same bound method share one registration, so the first
-  to unsubscribe cancels the second's subscription. Identity-keyed collections
-  make this the *default* behavior rather than a bug a binding chose, which is
-  why the clause is a `MUST NOT` on the mechanism and not only on the effect.
+**This is the substance behind a common objection: "isn't a reactive just an
+observer with extra steps?"** While `Cell.subscribe` existed the answer was
+embarrassing, because in four bindings it was *literally true* — there was an
+observer registry inside the cell, and callers could reach it. The honest answer
+is that a reactive is not an observer, and the way to be able to say so is to not
+ship one. Observation is declarative and structural; if a caller is registering
+callbacks against a value, they have left the reactive model, and the library
+should say so rather than provide a door.
 
-- **Subscribing during a notification is deferred.** An observer registered from
-  inside a callback **MUST NOT** be invoked by the notification in flight; it
-  first runs on the next one. Every binding already holds, or emulates, a
-  snapshot of the observer list taken before the first callback, and this clause
-  only writes that down.
+#### Use an Effect
 
-  The deferral is load-bearing rather than incidental: without it a self-feeding
-  observer — one that subscribes on every notification — extends the loop it is
-  running in and never terminates. Bounding the pass by the count captured before
-  the first callback is sufficient; a binding is **NOT** required to copy the
-  list.
+Everything an observer expressed, an `Effect` expresses:
 
-- **Unsubscribing during a notification takes effect immediately.** An observer
-  disposed from inside a callback **MUST NOT** be invoked by the notification in
-  flight, *including when the loop has not yet reached it*. Observers the loop
-  has already visited are unaffected — they ran before the disposal, which is not
-  retroactive.
+```
+// instead of: cell.subscribe(cb)
+ctx.effect(|ctx| cb(ctx.get_cell(&cell)))
+```
 
-  This is the clause the family actually disagreed on, and it is settled against
-  the majority. A stable pre-notification snapshot — dart's and go's choice — is
-  the simpler implementation and invokes a disposed observer one final time in
-  that pass. Under a tracing collector that extra call is harmless: the closure
-  is still alive because the snapshot references it. It is **not** harmless
-  anywhere else. In a manually-managed binding `unsubscribe` is routinely the
-  step immediately before freeing the state the callback reads, so "one more
-  call after you asked to stop" is a use-after-free with a specification behind
-  it. A contract that is safe in five bindings and unsound in three is the wrong
-  family default, so the GC'd bindings migrate rather than `lazily-zig`,
-  `lazily-cpp`, and `lazily-rs` adopting a rule they cannot honour.
+The effect is batched, glitch-free, participates in teardown scopes, and is
+disposed by handle. Where a caller wants both the previous and the new value —
+the state-machine `on_transition` shape — the effect captures the previous value
+in its closure; see `lazily-rs` `state_machine.rs` for the reference form.
 
-  This does not mandate a mechanism. A binding **MAY** tombstone the entry and
-  skip it (`lazily-zig`), consult a live-set before each call, or re-check the
-  registration before invoking — the contract fixes *which observers run*, never
-  how removal is represented. A binding **MUST NOT** implement removal in a way
-  that relocates an unvisited observer behind the notify cursor: a swap-remove
-  under a live iteration silently drops whichever entry it moved, which is the
-  defect this section was written from.
+The behavioral difference is real and intended: under a `batch`, an effect
+observes the *settled* value. Writing `A → B → C` inside one batch reports
+`A → C`. Intermediate states are not observable, because that is what a batch
+asserts. A caller who did not want that should not have opened a batch.
 
-- **Disposers are idempotent and single-shot.** A disposer **MUST** latch: the
-  first call removes its registration, and every later call is a no-op. It
-  **MUST NOT** remove any other registration — in particular not one created
-  after it, and not one whose callback is equal or identical to its own.
+#### Use a Topic when you need every transition
 
-  Latching is not a defensive nicety. Where removal is keyed by the callback
-  rather than by the registration, an unlatched disposer called a second time
-  removes whatever now matches that key, which is a *later* subscription of an
-  equal callable belonging to a caller that never asked to be unsubscribed —
-  found in `lazily-py` (`b2de504`) as exactly that. A disposer that is latched
-  cannot express the bug regardless of how the collection is keyed, so bindings
-  **SHOULD** latch in the disposer rather than relying on the collection.
+A `Cell` is a **value**: latest-wins, batched, glitch-free. A stream of every
+transition is a different thing, and the family already has it — `Topic`, present
+in all eight bindings, with cursors and durability. `Topic.subscribe` keeps its
+name because a topic genuinely *is* a subscription: an ordered stream a consumer
+reads at its own position.
 
-  Disposing an observer and disposing the cell are independent: tearing down the
-  cell **MUST** drop its observers without invoking them, and a disposer called
-  after its cell is gone is a no-op, not an error.
+The design error this section removes was a `Topic` hiding inside a `Cell`. A
+consumer needing every write — a mutation log, a replication feed, a persistence
+tap — should publish to a topic. That also makes the cost honest: only machines
+that actually expose a stream allocate one, and a plain cell pays nothing.
 
-- **Delivery is per write. `batch` does not coalesce it.** Each write that passes
-  the `==` store-guard **MUST** invoke every live registration exactly once, at
-  the moment of the write, whatever the batch depth. Two writes to one cell
-  inside a batch produce two invocations per registration, not one at the
-  outermost exit. Nesting changes nothing: a nested `batch` is not a coalescing
-  boundary either. The store-guard is **not** suspended inside a batch — writing
-  the value a cell already holds is not a write and **MUST NOT** notify.
+#### Why not keep it, constrained
 
-  This is the clause that separates an observer from an `Effect`, and it is why
-  both mechanisms exist rather than one. An `Effect` is batched, fires once when
-  the cone settles, participates in the dependency graph, and is glitch-free. An
-  observer deliberately bypasses all of that: it is an out-of-band callback list
-  on a single cell, and it sees every intermediate transition — including the
-  ones a `batch` exists to hide.
+Recorded so the argument is not re-run from scratch. `Cell.subscribe` was
+specified in detail before being removed, and each clause below was a genuine
+attempt to make it safe:
 
-  Neither is a cheaper spelling of the other, so the choice is a real one. A
-  consumer that wants the settled value **SHOULD** use an `Effect`: it is
-  glitch-free, it costs nothing on the write side for a cell whose cone contains
-  no effect, and it is easier to reason about. A consumer that needs *every*
-  transition — a mutation log, a replication feed, a persistence tap — cannot
-  express that with an `Effect` at all, and coalescing observer delivery would
-  defeat the only requirement that justifies an out-of-band callback list.
+- **Firing order is registration order**, because a `set`- or hash-backed
+  collection reorders on rehash and `lazily-go`'s map iteration is deliberately
+  randomized. Four bindings had four answers.
+- **No deduplication by callback identity or equality**, because two components
+  subscribing the same bound method silently share one registration and the first
+  to unsubscribe cancels the second. `lazily-py` deduplicated by equality,
+  `lazily-zig` by address.
+- **Subscribe during notify is deferred**, or a self-feeding observer extends the
+  loop it is running in and never terminates.
+- **Unsubscribe during notify takes effect immediately**, because in a
+  manually-managed binding `unsubscribe` is routinely the step before freeing the
+  state the callback reads, so one more call is a use-after-free.
+- **Disposers latch**, or an unlatched second call removes a later registration
+  belonging to a caller who never asked.
+- **Delivery is per write and `batch` does not coalesce it** — which put the
+  mechanism in permanent conflict with the batching model it sat beside.
 
-  A pre-commit observer cannot be coalesced even in principle, which is the
-  strongest form of this argument: if two writes land inside one batch, there is
-  no single value that a `before_write` hook could meaningfully fire *before*.
-  Any binding offering the pre-commit variant is therefore already committed to
-  per-write delivery, and a binding that coalesces has, in effect, decided it
-  will never offer one.
+Six clauses, four bindings, and the specification was still wrong twice in a
+single day: it omitted a violated clause in one binding, and its central argument
+cited two bindings that had never implemented the mechanism at all. A primitive
+requiring six normative clauses to be safe, that still diverges across the
+family, and whose delivery discipline contradicts the surrounding model, is not
+under-specified. It is misdesigned.
 
-  Fixture: `observer_delivery_is_per_write.json`.
+The per-cell cost settled it. Observer storage sits on every cell whether or not
+anything registers — in `lazily-zig`, roughly 112 bytes of inline edge sets on
+every `Cell` in every program. At cell-family scale that is the dominant memory
+term, paid by every reactive to support a feature with one caller family-wide.
 
-- **An unobserved cell allocates nothing, and churn returns to baseline.** A cell
-  with no live registrations **MUST NOT** hold *allocated* observer storage, and
-  disposing the last registration **MUST** release it. Storage is allocated on
-  first registration and released on last.
+#### Conformance
 
-  A binding must reserve *some* per-cell field to find the registrations at all —
-  a null pointer, a nil slice header, an empty-optional. That reservation is
-  unavoidable and is not what this clause forbids. What it forbids is a heap
-  allocation for a cell nobody observes, and it **SHOULD** be read as a budget on
-  the reservation too: pointer-sized is the target, and a binding that reserves a
-  multi-word inline buffer in every `Cell` is charging every cell in every
-  program for a feature it does not use. At cell-family scale that reservation is
-  the dominant cost — a million-cell family pays it a million times to hold
-  observers that were never registered — whereas the *checking* cost on the write
-  path is one predictable branch and is not at issue.
+There are no observer fixtures. The clauses above were removed along with the
+mechanism, and `conformance/reactive-graph/observer_*.json` no longer exists. A
+binding conforms to this section by not having the API.
 
-  Storage **MUST** live in the node. A binding **MUST NOT** hold observer
-  registrations in a side table keyed by cell id — that is the owner-keyed
-  aliasing hazard already ruled out by *A recycled id inherits nothing*
-  (`recycled_id_inherits_nothing.json`, and `disposeNode_recycled_id_inherits_nothing`
-  in `lazily-formal`), and observers are a strictly worse instance of it than the
-  edge index that motivated the rule: a recycled id would inherit the dead cell's
-  *callbacks*, so an unrelated new cell would invoke a disposed subscriber's
-  closure on write. The saving is a few bytes per cell; the failure is executing
-  a stale callback against freed state.
+`lazily-rs`, `lazily-cpp`, `lazily-js`, and `lazily-kt` never implemented one and
+require no change. `lazily-py`, `lazily-dart`, `lazily-go`, and `lazily-zig`
+carried one and remove it, re-expressing `on_transition` as an effect.
 
-  Fixture: `churn_returns_to_baseline.json` covers the release half. The
-  allocate-nothing half is a memory property rather than an observable one, so it
-  is stated normatively here and checked per binding rather than by replay.
-
-**Naming.** This mechanism is named **`on_write`** / **`onWrite`** (and
-**`on_before_write`** / **`onBeforeWrite`** for the pre-commit variant), **not**
-`subscribe`. The name is normative because the old one was actively misleading:
-`subscribe` is the vocabulary of the reactive-graph mechanisms, so a reader
-reasonably assumes the reactive-graph guarantees — batching, glitch-freedom, cone
-settlement — every one of which this mechanism explicitly does not provide.
-`on_write` names the property that surprises people, and it names it in the
-signature rather than in a document they may not read.
-
-Bindings **SHOULD** keep `subscribe` as a deprecated alias for one release where
-their compatibility policy calls for it. Note the family has been here before:
-`Signal` was demoted from core to derived after a naming ambiguity turned out to
-be hiding an architectural question, and this is the same shape — the ambiguity
-concealed a delivery-discipline fork that went unnoticed across four bindings.
-
-**Known divergences (migration status).** Each row is a binding bug against this
-section, not a tolerated variation.
-
-> **This table was found to be incomplete on 2026-07-19, and the way it failed is
-> worth recording.** It listed two violated clauses for `lazily-py`. There were
-> three: py also invoked observers disposed mid-notification — the same defect
-> this table documents against `lazily-dart` and `lazily-go`, in this table, in
-> the revision that added it. It went unrecorded because a py test asserted the
-> behavior as intended and the `subscribe` docstring described it as a deliberate
-> "snapshot dispatch" design, so it did not read as a bug to anyone reviewing py
-> in isolation.
->
-> It was found by *executing* the fixtures, not by reading. A hand-maintained
-> audit of where implementations diverge from a spec is itself an implementation
-> of that spec, and it drifts the same way. **Do not extend this table by
-> inspection.** Add a row only when a conformance run produces it, and treat the
-> table as a record of runner output rather than as a source of truth.
-
-| Binding | Clause | Status | Detail |
-|---|---|---|---|
-| `lazily-py` | firing order | **migrated** `b2bc6bd` | Was a `set`, so order was neither registration order nor stable. Now a dict keyed by a monotonic per-cell registration token; CPython insertion order is registration order. |
-| `lazily-py` | duplicate registration | **migrated** `b2bc6bd` | Was deduplicated by **equality**. Now keyed by token, so two subscribes are two entries and each disposer pops its own. Tokens are never rewound, so a spent disposer cannot name a later registration. |
-| `lazily-py` | unsubscribe during notify | **migrated** `b2bc6bd` | **Was missing from this table.** `touch` iterated a stable `tuple(subs)` snapshot, so an observer disposed mid-pass was invoked once more. Now snapshots *tokens* to bound the pass but re-reads each callback from the live table before invoking. |
-| `lazily-dart` | unsubscribe during notify | **migrated** `16a0b93` | Was a stable pre-notification snapshot (`95acb1d`). The slot representation already tombstoned in place; the snapshot was discarding the liveness bit by flattening to bare callbacks. Now snapshots slots and re-reads liveness before each call. |
-| `lazily-go` | unsubscribe during notify | **migrated** `c654cf6` | Same defect (`8781f2b`), same fix. Steady-state notify remains 0 allocs/op. |
-| `lazily-zig` | unobserved cell allocates nothing | **outstanding** | Reserves observer storage inline in every `Cell`. `SubscriberEdgeSet = EdgeSet(Subscription, 1)` is `buf [1]Subscription` (16B) + `len` (8B) + `spill` `ArrayList` (24B) + `index` ptr (8B) = 56B, and a `Cell` carries two (`before_change_subscribers`, `change_subscribers`) = **~112B per cell, paid whether or not anything is registered**. Widening the key from `usize` to `Subscription` in `da7610c` added 16B/cell to every zig program. Field sizes computed, not `@sizeOf`-measured — confirm padding before quoting. Pure optimization, no semantic change; a nullable pointer to a heap block would satisfy the clause. |
-| `lazily-py` | delivery is per write | **outstanding** | Coalesced. `batch.notify_change` queues the cell and defers to a single `touch()` at the outermost batch exit, so two writes in a batch invoke each registration **once**, not twice. The other three bindings invoke observers before consulting the batching machinery at all. Found 2026-07-19 by inspecting the batch path, *not* by a fixture — no `observer_*` fixture exercised `batch` until `observer_delivery_is_per_write.json` was added for exactly this. |
-| `lazily-zig` | firing order | **migrated** `da7610c` | Was a swap-remove, so removing any observer relocated the tail over it — not registration order, and not even *stable*, since each removal reshuffled differently. Tombstone-then-compact is now the only removal mechanism, so survivors keep order and no live entry is relocated past the notify cursor. |
-| `lazily-zig` | duplicate registration | **migrated** `da7610c` | Was deduplicated by callback **address**. `subscribe` now returns a `Subscription` token (per-cell monotonic id, never reused; `0` is the tombstone sentinel) and `unsubscribe` takes it. Breaking API change, approved 2026-07-19. |
-
-`lazily-dart` and `lazily-go` already conformed on ordering, and both pin it with
-tests. `lazily-zig` already conformed on both notify-reentrancy clauses
-(`9d72b14`), which is why it was the one binding not migrating on the clause the
-family disagreed about.
-
-**Unverified binding.** `lazily-kt` has never been run against the `observer_*`
-fixtures. Its absence from the table above is **not evidence of conformance** —
-it is absence of measurement. Given how that table failed for `lazily-py`, treat
-it as unknown until a runner reports.
-
-### Three bindings do not implement this section at all
-
-Audited 2026-07-19. `lazily-js`, `lazily-cpp`, and `lazily-rs` have **no Cell
-observer API**: no `subscribe`, `on_change`, `observe`, `add_listener`, or
-listener collection on `Cell`/`CellHandle`. In each, the `subscribe` that exists
-is the `Topic`/queue broadcast cursor — a different mechanism, distinguished from
-observers earlier in this document. Observation in those bindings is expressed
-through effects and dependency edges instead.
-
-So all three are *vacuously* non-divergent. They cannot violate the five clauses
-because they have not implemented them. This is an **unimplemented spec surface**,
-not conformance, and it is arguably a larger gap than any divergence in the table
-above: a binding that fails a clause can be measured and migrated, whereas these
-silently offer callers no observer API while this document declares one normative.
-
-> **This invalidates a premise of the reasoning below, and the decision needs
-> re-examination on that basis.**
->
-> The rationale for *Unsubscribing during a notification takes effect
-> immediately* argues that a stable pre-notification snapshot is unsound in
-> manually-managed bindings, and concludes: "A contract that is safe in five
-> bindings and unsound in three is the wrong family default, so the GC'd bindings
-> migrate rather than `lazily-zig`, `lazily-cpp`, and `lazily-rs` adopting a rule
-> they cannot honour."
->
-> Of the three bindings named there, **only `lazily-zig` implements observers.**
-> `lazily-cpp` and `lazily-rs` do not, so they were never going to adopt or
-> reject anything. The "five safe, three unsound" count is not a description of
-> this family.
->
-> The *conclusion* may well still be right — zig's hazard is real, the
-> use-after-free argument holds for it, and any future manually-managed
-> implementation would face the same constraint. But it now rests on one binding
-> plus a claim about hypothetical ones, not on a three-to-five split. Three
-> bindings (`py`, `dart`, `go`) have already migrated against this reasoning.
-> **Whoever owns `#lzdartobservercow` should decide whether the clause survives
-> its stated justification.** It has not been changed here, because reversing it
-> would be a second breaking migration and that is not a call to make inside a
-> correction.
->
-> Recorded rather than quietly fixed for the same reason as the table above: this
-> section has now been wrong twice, in opposite directions — once by omitting a
-> real violation, once by citing bindings that do not participate in the contract
-> at all. Both were found by executing fixtures and reading source, not by
-> reviewing the prose.
-
-Unresolved for all three: either they gain the API, or this section is marked
-optional-per-binding and says so explicitly. The current state — an empty row —
-carries no signal at all.
-
-**Fixtures.** The normative cases are
-`conformance/reactive-graph/observer_*.json`. As of 2026-07-19 these are executed
-by `lazily-py`, `lazily-dart`, `lazily-go`, and `lazily-zig` via runners that
-load this repository directly rather than from a bundled copy.
-
-A note for whoever writes the next runner, learned by writing four: where a
-fixture shares one `callback` label across two registrations, the runner **must**
-hand both the *same* callable — the same function pointer, the same object. Give
-each its own and a binding that deduplicates by address or by equality passes the
-duplicate-registration fixture vacuously, which is precisely the bug that fixture
-exists to catch. The corollary is that a shared callable cannot report which
-registration invoked it, so every runner resolves labels to registration ids
-afterwards, in registration order, against the registrations live at the start of
-the pass.
-
-Two ops are **not** uniformly expressible, and every runner so far has had to
-model rather than measure them:
-
-- The `dispose` op and its `readable` expectation assume a Cell teardown API.
-  `lazily-dart`, `lazily-go`, and `lazily-zig` have none — a Cell's lifetime ends
-  at unreachability, and in a manually-managed binding a token cannot legally
-  probe freed memory. All three assert the observable contract instead (nothing
-  fires, the disposer afterwards is a latched no-op) and track `readable` in
-  harness bookkeeping. Either those bindings gain explicit disposal or the
-  expectation becomes binding-conditional. **Unresolved.**
-- `scope_teardown_equals_fold_of_disposals.json` has no `steps` key at all; it is
-  `scenarios`-shaped, so every runner must special-case it. Whether that is
-  intentional or a fixture defect is **unresolved**.
-
-The eight disposal and teardown fixtures in this directory remain unexecuted by
-every binding. They are not a quick follow-up: they require `TeardownScope`
-(`ctx.scope()` / `disarm()`) plus dependency-graph introspection
-(`dependents_of`, `dependencies_of`, `cleanup_order`) that at least `lazily-py`
-does not currently expose.
+The reactive-graph fixtures that remain cover disposal and teardown scopes. They
+are unexecuted by every binding as of this writing, requiring `TeardownScope`
+(`ctx.scope()` / `disarm()`) and dependency-graph introspection (`dependents_of`,
+`dependencies_of`, `cleanup_order`) that at least `lazily-py` does not expose.
+Note `scope_teardown_equals_fold_of_disposals.json` has no `steps` key — it is
+`scenarios`-shaped and every runner must special-case it; whether that is
+intentional is unresolved.
 
 ## MergeCell and the merge algebra (`#relaycell`)
 
