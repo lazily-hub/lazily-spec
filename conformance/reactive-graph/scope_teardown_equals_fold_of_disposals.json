@@ -2,6 +2,7 @@
   "description": "The central claim: ending a teardown scope MUST be observationally equal to disposing each of its members individually — a scope introduces no disposal semantics of its own, it only names a set and a moment (#lzspecedgeindex). Proved as `disposeScope_eq_disposeAll` in lazily-formal's `Reactive` module. Both scenarios below build the identical graph and differ only in *how* the three scoped nodes go away; every observable named in `expected` MUST agree, and `observationally_equal` names the scenario pair that must match. A binding is free to implement scope teardown as a bulk operation rather than a loop — and SHOULD, since reading each node's kind from the arena at teardown is cheaper than a per-node dispatch — but any observable difference between the two paths is a conformance failure. What breaks otherwise: callers write teardown logic against one path and get different edge state, different surviving readability, or a different set of effects observing the next publish from the other. Teardown order within a scope is reverse creation order (dependents before what they read) so the scope never transiently dangles inside itself; that ordering is observable only through effect cleanup order, which this fixture pins as `cleanup_order`.",
   "kind": "ReactiveGraph",
   "model": "Context",
+  "shape": "scenarios",
   "scenarios": [
     {
       "name": "scope_teardown",

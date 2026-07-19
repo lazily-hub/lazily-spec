@@ -758,6 +758,23 @@ def test_reactive_graph_fixture_is_well_formed(name: str) -> None:
         f"{name}: description must cite one of {list(_REACTIVE_GRAPH_TAGS)}"
     )
 
+    # The variant is DECLARED, not inferred. A runner should switch on `shape`
+    # rather than probing for whichever key happens to be present -- the first
+    # binding to write a runner special-cased the scenarios fixture by
+    # *filename*, which goes stale silently the moment a second one is added.
+    shape = obj.get("shape")
+    assert shape in {"steps", "scenarios"}, (
+        f"{name}: 'shape' must be declared as 'steps' or 'scenarios', got {shape!r}"
+    )
+    # Cross-check the declaration against reality so `shape` cannot drift from
+    # the fixture it describes.
+    assert ("scenarios" in obj) == (shape == "scenarios"), (
+        f"{name}: shape={shape!r} contradicts the keys present"
+    )
+    assert ("steps" in obj) == (shape == "steps"), (
+        f"{name}: shape={shape!r} contradicts the keys present"
+    )
+
     scenarios = obj.get("scenarios")
     if scenarios is not None:
         assert isinstance(scenarios, list) and len(scenarios) >= 2, (
@@ -799,39 +816,24 @@ def test_reactive_graph_fixtures_cover_the_disposal_contract() -> None:
     assert required <= present, f"missing disposal fixtures: {sorted(required - present)}"
 
 
-def test_reactive_graph_fixtures_cover_the_observer_contract() -> None:
-    """Every clause of the Cell observer contract keeps a fixture.
+def test_reactive_graph_has_no_observer_fixtures() -> None:
+    """The observer contract was removed, so its fixtures must stay removed.
 
-    The observer contract was unwritten until `#lzdartobservercow`, and four
-    bindings each answered it differently in the gap. Prose alone did not hold
-    them together, so each clause is pinned by name rather than globbed.
+    `#lzdartobservercow` ended by *banning* observer APIs on every reactive
+    rather than specifying them: six normative clauses across four bindings
+    still left the family diverging, and the last clause -- per-write delivery,
+    unsuppressed by `batch` -- contradicted the batching model it sat beside. A
+    binding now conforms by NOT having the API.
+
+    Asserting the absence, rather than merely deleting the old checks, because
+    the failure mode is someone re-adding a fixture for a mechanism the spec
+    forbids and a runner dutifully replaying it.
     """
-    required = {
-        "observer_order_is_registration_order.json",
-        "observer_duplicate_registrations_are_independent.json",
-        "observer_subscribe_during_notify_is_deferred.json",
-        "observer_unsubscribe_during_notify_takes_effect_immediately.json",
-        "observer_disposer_is_idempotent.json",
-    }
-    present = set(_reactive_graph_fixtures())
-    assert required <= present, f"missing observer fixtures: {sorted(required - present)}"
-
-
-def test_observer_fixtures_assert_an_exact_firing_order() -> None:
-    """The order clause is only pinned if the assertion is a *sequence*.
-
-    A binding with an unordered observer collection passes a set-valued
-    ``observed_by`` assertion while firing in a fresh order every notification —
-    exactly how the divergence went unnoticed. So the observer fixtures must
-    carry at least one ``observed_order`` assertion each.
-    """
-    for name in _reactive_graph_fixtures():
-        if not name.startswith("observer_"):
-            continue
-        text = (_REACTIVE_GRAPH_DIR / name).read_text()
-        assert '"observed_order"' in text, (
-            f"{name}: an observer fixture must assert observed_order, not only observed_by"
-        )
+    stragglers = sorted(n for n in _reactive_graph_fixtures() if n.startswith("observer_"))
+    assert not stragglers, (
+        "observer fixtures must not exist -- reactives have no observer API: "
+        f"{stragglers}"
+    )
 
 
 # ---------------------------------------------------------------------------

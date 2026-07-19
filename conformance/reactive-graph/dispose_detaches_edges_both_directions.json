@@ -2,6 +2,7 @@
   "description": "Disposal detaches edges in *both* directions (#lzspecedgeindex). After disposing `mid`, the upstream source `src` no longer lists it as a dependent, and the downstream `sink` no longer lists it as a dependency — a binding that only detaches one direction leaves a dangling half-edge that either keeps the disposed node reachable from a publish (upstream leak: the source's dependent list grows without bound under subscribe/unsubscribe churn) or leaves a reader pointing at a cleared arena slot (downstream dangle: the next recompute reads a node that is gone, or worse, a recycled unrelated node). The publish step is the load-bearing one: a `set_cell` on a former source MUST NOT reach the disposed node, so `watch_mid` — an effect that read through `mid` — is *also* disposed here rather than left to observe. Assertions are on dependent/dependency *set sizes* and on which effects ran, never on how a binding stores the edge set.",
   "kind": "ReactiveGraph",
   "model": "Context",
+  "shape": "steps",
   "steps": [
     {
       "op": { "type": "cell", "id": "src", "value": 1 }

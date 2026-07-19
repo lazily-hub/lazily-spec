@@ -506,9 +506,30 @@ The reactive-graph fixtures that remain cover disposal and teardown scopes. They
 are unexecuted by every binding as of this writing, requiring `TeardownScope`
 (`ctx.scope()` / `disarm()`) and dependency-graph introspection (`dependents_of`,
 `dependencies_of`, `cleanup_order`) that at least `lazily-py` does not expose.
-Note `scope_teardown_equals_fold_of_disposals.json` has no `steps` key — it is
-`scenarios`-shaped and every runner must special-case it; whether that is
-intentional is unresolved.
+**Fixture shape is declared, not inferred.** Every `ReactiveGraph` fixture
+carries a top-level `"shape"` field, either `"steps"` or `"scenarios"`. A runner
+**MUST** switch on that field rather than probing for whichever key happens to be
+present, and **MUST NOT** special-case a fixture by filename — the first runner
+written against this corpus did exactly that, which goes stale silently the
+moment a second `scenarios` fixture is added. The schema suite cross-checks the
+declaration against the keys actually present, so `shape` cannot drift from the
+fixture it describes.
+
+The two shapes are not interchangeable and the split is deliberate. A `steps`
+fixture asserts a single trace. A `scenarios` fixture asserts a **relation
+between two op streams** — `scope_teardown_equals_fold_of_disposals.json` claims
+that ending a scope is observationally equal to disposing its members
+individually, and a single `steps` array structurally cannot express "these two
+paths must agree." It names the scenarios that must agree in
+`expected.observationally_equal`.
+
+One trap in that fixture, stated here because every runner will hit it:
+**`cleanup_order` is cumulative across a scenario, not per-step.** The
+`individual_disposal` scenario spreads three disposals across three steps and
+pins the whole resulting order on the last of them, while `scope_teardown`
+produces all three from a single `end_scope`. A runner reading `cleanup_order`
+per-step will see the scenarios disagree and report a divergence that is not
+there.
 
 ## MergeCell and the merge algebra (`#relaycell`)
 

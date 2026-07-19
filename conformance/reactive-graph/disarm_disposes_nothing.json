@@ -2,6 +2,7 @@
   "description": "`disarm()` cancels the scope's teardown; it does nothing to the nodes (#lzspecedgeindex). The operation changes only what the scope does at end-of-life — node state, edges, and values are untouched, which is why it is named for disarming the scope rather than for releasing the nodes. After calling it, the scope's nodes remain fully readable, keep their edges, keep propagating, and remain individually disposable; ending the scope afterwards disposes nothing at all. What breaks if a binding gets this wrong: implemented as a dispose-now it destroys the very nodes the caller asked to keep; implemented as a no-op on the *scope* rather than on its owned set, the scope still tears down at end-of-life and the escaped handles dangle. The distinguishing observation is the pair of steps after `end_scope` — the nodes must still be readable *and* must still respond to a publish, which rules out a binding that merely suppresses the error and leaves the nodes half-detached. The final steps pin that cancelling teardown does not make the nodes undisposable: they revert to plain context ownership, the same state every unscoped node is already in, and individual disposal still works normally.",
   "kind": "ReactiveGraph",
   "model": "Context",
+  "shape": "steps",
   "steps": [
     { "op": { "type": "cell", "id": "topic", "value": 1 } },
     { "op": { "type": "begin_scope", "scope": "g" } },

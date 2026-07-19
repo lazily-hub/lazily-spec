@@ -2,6 +2,7 @@
   "description": "The cross-scope hazard, pinned as contract (#lzspecedgeindex). Ending a scope tears down its nodes even if a node *outside* the scope still reads them — the outside reader then errors on its next recompute. This is deliberate and is asserted here rather than left implicit: a scope carries the same hazard as `dispose_slot`, and a binding MUST NOT present scope teardown as safe against it. Only reference-counted handles close this hazard, and they cost copyable handles, so they are opt-in in every binding class. Why this must be *asserted* and not merely documented: a binding that silently keeps such nodes alive — by refcounting internally, by deferring teardown while a dependent exists, or by treating a live reverse edge as a pin — is non-conforming even though its behavior is 'safer', because callers who test against it would then write code that depends on behavior only some bindings have, and that code breaks on every binding that tears down as specified. Divergence in the safe direction is still divergence. The mirror case is included: a node *inside* the scope reading one *outside* it survives the outside node's lifetime fine, since teardown flows from the scope's owned set, not from reachability.",
   "kind": "ReactiveGraph",
   "model": "Context",
+  "shape": "steps",
   "steps": [
     { "op": { "type": "cell", "id": "topic", "value": 1 } },
     { "op": { "type": "computed", "id": "parent_owned", "reads": ["topic"], "offset": 0 } },

@@ -2,6 +2,7 @@
   "description": "Scoping bounds *teardown*, not visibility (#lzspecedgeindex). A scope's nodes read parent-owned and sibling-scope-owned nodes freely, and scoping never restricts what an edge may point at. A binding that treats `scope()` as a scope in the lexical or ownership sense — refusing or erroring on a cross-scope read, or silently returning a stale value for one — is non-conforming, and would break the primary use of scopes: a per-connection or per-subscription scope whose nodes derive from long-lived application state that outlives every scope. The fixture reads in all three directions (child reads parent, child reads sibling's node, parent reads child's node) and asserts each yields the same value it would with no scoping at all, and that the edges registered are the ordinary ones. `parent_reads_child` is the direction most likely to be rejected by an over-eager scope check, and is also the one that sets up the cross-scope hazard pinned in cross_scope_teardown_hazard.json — legal to build, dangerous to outlive.",
   "kind": "ReactiveGraph",
   "model": "Context",
+  "shape": "steps",
   "steps": [
     { "op": { "type": "cell", "id": "topic", "value": 2 } },
     { "op": { "type": "computed", "id": "parent_owned", "reads": ["topic"], "offset": 3 } },
