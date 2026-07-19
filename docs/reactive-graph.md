@@ -63,6 +63,7 @@ decides the invalidation source.
 | `merge(handle, op)` | Fold `op` into a `MergeCell`/`Source` under its policy (`⊕`; routes through `set_cell`, so the `==` guard + store-without-cascade apply) |
 | `effect(run)` | Register an observer; `run` may return a cleanup closure |
 | `dispose_effect(handle)` | Deschedule, drop edges, run cleanup |
+| `dispose_slot(handle)` / `dispose_cell(handle)` | Tear down a derived slot or source cell: detach edges in both directions, clear the node, recycle its id |
 | `batch(run)` | Coalesce several cell updates into one invalidation + effect flush |
 
 ## Semantics
@@ -86,12 +87,42 @@ decides the invalidation source.
 > **Implementation note.** The dedup that keeps edge registration idempotent is
 > an implementation concern, not an observable one — the contract fixes the edge
 > *set*, not how membership is tested. A binding **MAY** dedup by linear scan
-> while a node's degree is small; above a wide-fanout threshold (~32 edges) it
-> **SHOULD** promote to a hash-indexed edge set, so registration stays amortized
-> O(1) in node degree and a wide-fanout graph does not degrade to O(n²) per
-> propagation. The threshold matters in both directions: below it the linear
-> scan is measurably the faster of the two, so an unconditional hash set is a
-> regression on the common low-degree case (`#lzspecedgeindex`).
+> while a node's degree is small; above a wide-fanout threshold it **SHOULD**
+> promote to a hash-indexed edge set, so registration stays amortized O(1) in
+> node degree and a wide-fanout graph does not degrade to O(n²) per propagation.
+> The threshold matters in both directions: below it the linear scan is
+> measurably the faster of the two, so an unconditional hash set is a regression
+> on the common low-degree case (`#lzspecedgeindex`).
+>
+> The threshold is **not portable — measure it per binding.** It is where a
+> scan of contiguous ids crosses the cost of one hash lookup, so it moves with
+> both, and the same number can be right or wrong in the same language depending
+> on unrelated choices. In `lazily-rs` the crossover measured near degree 170
+> with the standard library's SipHash and near degree 40 once ids were hashed
+> with a multiply-shift finalizer — a 4x shift from changing the hash function
+> alone. Copying another binding's constant is how a promotion threshold ends up
+> making mid-degree nodes slower than the scan it replaced.
+>
+> Two further hazards, both observed:
+>
+> - **Demotion needs hysteresis, or it thrashes.** A dependent list oscillates by
+>   one on every recompute, because edges are removed and re-registered, so a
+>   single shared promote/demote boundary makes a list sitting at the threshold
+>   rebuild its index on every recompute. Measured at ~4x the steady-state cost.
+>   Demote well below the promote threshold, or do not demote at all.
+> - **A recycled id must not inherit an index.** Where the index is held outside
+>   the node — a side table keyed by owner — its entries have to be dropped
+>   whenever the list is cleared or the owner is torn down. A binding that
+>   recycles ids will otherwise alias a stale index onto an unrelated node.
+- **Disposal is explicit.** Handles are copyable ids, not owners, so dropping
+  every handle to a node reclaims nothing: without an explicit disposal call the
+  node and its edges live as long as the context. A binding whose nodes can
+  outlive their usefulness — anything with subscribe/unsubscribe churn —
+  **SHOULD** expose disposal for slots and cells, not only for effects, or a
+  workload whose live size is constant still grows without bound in both memory
+  and propagation cost. Disposal detaches edges in *both* directions; reading a
+  disposed node afterwards is an error, the same contract as disposing an
+  effect (`#lzspecedgeindex`).
 - **Cycle detection.** A slot that depends on itself (directly or transitively)
   is detected during refresh and throws — the graph is acyclic by construction.
 - **`batch` coalesces.** Multiple `set_cell` calls inside `batch(run)` queue
