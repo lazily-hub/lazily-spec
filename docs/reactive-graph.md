@@ -380,6 +380,23 @@ these is fine in the common case and wrong in a case the caller cannot see
 coming, which is the definition of a footgun rather than a bug: correct code and
 broken code look identical at the call site.
 
+Underneath all of them is the defect no clause could patch: **an observer cannot
+distinguish batching from coalescence.** It receives a flat sequence of callbacks
+with no framing. Three invocations may be three separate updates or one logical
+update whose writes were grouped, and nothing in the callback distinguishes them
+— there is no signal for where an update begins or ends. Nor can an observer see
+a write suppressed by the `==` store-guard, so it cannot tell "the value did not
+change" from "nothing was written." It is an event stream stripped of its
+transaction boundaries.
+
+This is not a missing feature to be added. It follows from sitting outside the
+graph: the graph is what knows where an update starts and stops, and a callback
+list attached to one node is structurally unable to observe that. An `Effect` has
+the framing for free, because running once per settled cone *is* the transaction
+boundary. The two mechanisms are therefore not two ways of observing a value —
+one can express "this update is complete" and the other cannot, at any level of
+specification effort.
+
 #### Conformance
 
 There are no observer fixtures. The clauses above were removed along with the
