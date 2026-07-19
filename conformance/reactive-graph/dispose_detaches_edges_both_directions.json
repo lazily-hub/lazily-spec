@@ -1,0 +1,62 @@
+{
+  "description": "Disposal detaches edges in *both* directions (#lzspecedgeindex). After disposing `mid`, the upstream source `src` no longer lists it as a dependent, and the downstream `sink` no longer lists it as a dependency — a binding that only detaches one direction leaves a dangling half-edge that either keeps the disposed node reachable from a publish (upstream leak: the source's dependent list grows without bound under subscribe/unsubscribe churn) or leaves a reader pointing at a cleared arena slot (downstream dangle: the next recompute reads a node that is gone, or worse, a recycled unrelated node). The publish step is the load-bearing one: a `set_cell` on a former source MUST NOT reach the disposed node, so `watch_mid` — an effect that read through `mid` — is *also* disposed here rather than left to observe. Assertions are on dependent/dependency *set sizes* and on which effects ran, never on how a binding stores the edge set.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "steps": [
+    {
+      "op": { "type": "cell", "id": "src", "value": 1 }
+    },
+    {
+      "op": { "type": "computed", "id": "mid", "reads": ["src"], "offset": 1 }
+    },
+    {
+      "op": { "type": "computed", "id": "sink", "reads": ["mid"], "offset": 10 }
+    },
+    {
+      "op": { "type": "effect", "id": "watch_sink", "reads": ["sink"] }
+    },
+    {
+      "op": { "type": "read", "id": "sink" },
+      "expect": {
+        "value": 12,
+        "dependents_of": { "src": 1, "mid": 1 },
+        "dependencies_of": { "mid": 1, "sink": 1 }
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "src", "value": 2 },
+      "expect": {
+        "observed_by": ["watch_sink"],
+        "read": { "sink": 13 }
+      }
+    },
+    {
+      "op": { "type": "dispose", "id": "watch_sink" }
+    },
+    {
+      "op": { "type": "dispose", "id": "sink" }
+    },
+    {
+      "op": { "type": "dispose", "id": "mid" },
+      "expect": {
+        "dependents_of": { "src": 0 },
+        "dependencies_of": { "mid": 0 },
+        "readable": { "mid": false }
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "src", "value": 3 },
+      "expect": {
+        "observed_by": [],
+        "dependents_of": { "src": 0 }
+      }
+    },
+    {
+      "op": { "type": "read", "id": "src" },
+      "expect": {
+        "value": 3,
+        "note": "the surviving source is unaffected by its dependents' teardown"
+      }
+    }
+  ]
+}

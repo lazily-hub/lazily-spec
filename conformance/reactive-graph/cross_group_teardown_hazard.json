@@ -1,0 +1,71 @@
+{
+  "description": "The cross-group hazard, pinned as contract (#lzspecedgeindex). Ending a group tears down its nodes even if a node *outside* the group still reads them — the outside reader then errors on its next recompute. This is deliberate and is asserted here rather than left implicit: a group carries the same hazard as `dispose_slot`, and a binding MUST NOT present group teardown as safe against it. Only reference-counted handles close this hazard, and they cost copyable handles, so they are opt-in in every binding class. Why this must be *asserted* and not merely documented: a binding that silently keeps such nodes alive — by refcounting internally, by deferring teardown while a dependent exists, or by treating a live reverse edge as a pin — is non-conforming even though its behavior is 'safer', because callers who test against it would then write code that depends on behavior only some bindings have, and that code breaks on every binding that tears down as specified. Divergence in the safe direction is still divergence. The mirror case is included: a node *inside* the group reading one *outside* it survives the outside node's lifetime fine, since teardown flows from the group's owned set, not from reachability.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "steps": [
+    { "op": { "type": "cell", "id": "topic", "value": 1 } },
+    { "op": { "type": "computed", "id": "parent_owned", "reads": ["topic"], "offset": 0 } },
+    { "op": { "type": "begin_group", "group": "g" } },
+    { "op": { "type": "computed", "id": "in_group", "reads": ["parent_owned"], "offset": 2, "group": "g" } },
+    {
+      "op": { "type": "computed", "id": "outside_reader", "reads": ["in_group"], "offset": 0 }
+    },
+    {
+      "op": { "type": "read", "id": "outside_reader" },
+      "expect": {
+        "value": 3,
+        "dependents_of": { "in_group": 1 },
+        "note": "an ungrouped node legally reads a grouped one — building this edge is allowed (see grouping_bounds_teardown_not_visibility.json)"
+      }
+    },
+    {
+      "op": { "type": "end_group", "group": "g" },
+      "expect": {
+        "readable": { "in_group": false, "parent_owned": true, "topic": true },
+        "dependents_of": { "parent_owned": 0 },
+        "note": "the group tears down its member even though `outside_reader` still names it — the live reverse edge is NOT a pin"
+      }
+    },
+    {
+      "op": { "type": "read", "id": "outside_reader" },
+      "expect": {
+        "error": "read_after_dispose",
+        "note": "REQUIRED failure. A binding that returns 3 here — keeping `in_group` alive because something still read it — is non-conforming. Callers must not be able to rely on cross-group reads outliving the group, because most bindings cannot offer that."
+      }
+    },
+    {
+      "op": { "type": "dispose", "id": "outside_reader" }
+    },
+    {
+      "op": { "type": "begin_group", "group": "h" }
+    },
+    {
+      "op": { "type": "computed", "id": "h_member", "reads": ["parent_owned"], "offset": 1, "group": "h" }
+    },
+    {
+      "op": { "type": "read", "id": "h_member" },
+      "expect": { "value": 2 }
+    },
+    {
+      "op": { "type": "dispose", "id": "parent_owned" },
+      "expect": {
+        "note": "mirror case: the group member read a node outside the group, and that node is disposed first"
+      }
+    },
+    {
+      "op": { "type": "read", "id": "h_member" },
+      "expect": {
+        "error": "read_after_dispose",
+        "note": "symmetric — group membership never pins what a member reads either"
+      }
+    },
+    {
+      "op": { "type": "end_group", "group": "h" },
+      "expect": {
+        "error": null,
+        "readable": { "h_member": false, "topic": true },
+        "note": "ending a group whose members read already-disposed nodes MUST NOT itself error; teardown is idempotent over already-gone dependencies"
+      }
+    }
+  ]
+}

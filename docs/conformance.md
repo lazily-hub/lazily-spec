@@ -82,6 +82,55 @@ only the compute effects below.
 | `materialization/deferral_not_deallocation.json` | lazy present set grows monotonically and is unchanged by re-reads; final lazy set is a subset of the eager set; no churn from allocation (`materialize_present_monotone`, `lazy_present_subset_eager`, `materialize_preserves_observe`) |
 | `materialization/entry_kind_orthogonal_to_mode.json` | entry kind ⟂ mode: cell (input) entries are present under either mode; slot (derived) entries are deferred under lazy until read (`cell_entries_materialized_in_every_mode`, `slot_entries_deferred_under_lazy`) |
 
+## Reactive graph disposal conformance
+
+The `conformance/reactive-graph/` directory pins
+[disposal and teardown groups](reactive-graph.md#semantics) (`#lzspecedgeindex`) — the
+explicit-lifetime half of the graph contract, whose group law is proved as
+`disposeGroup_eq_disposeAll` in [lazily-formal](formal-model.md)'s `Reactive` module.
+These are **compute** fixtures: a binding builds the graph by replaying each `step`'s
+`op` against a fresh `Context` and asserts that step's `expect`. Disposal is not
+observable on the wire — it changes what a context holds and what a publish reaches,
+never a serialized frame — so there is no wire schema, only the compute effects below.
+
+Every assertion is on **observable** state: dependent/dependency-set *sizes*, whether a
+node is readable, a read's value or error, and which effects ran on a publish. Nothing
+here fixes a promotion threshold, a hash strategy, or an index layout — those are
+explicitly implementation-free per the
+[implementation note](reactive-graph.md#semantics), and a binding that dedups edges by
+linear scan at every degree conforms exactly as well as one that promotes to a hash
+index.
+
+Op vocabulary (all ids are fixture-local labels, never a binding's internal id):
+
+| Op | Meaning |
+|---|---|
+| `cell {id, value}` | Create a source cell |
+| `computed {id, reads[], offset, group?}` | Create a derived slot whose value is `sum(reads) + offset`; owned by `group` when named |
+| `effect {id, reads[], group?}` | Register an effect over `reads`; runs on creation and on each flush after a tracked invalidation |
+| `read {id}` | Read a node — `expect.value`, or `expect.error` for a disposed one |
+| `set_cell {id, value}` | Publish; `expect.observed_by` names the effects that ran, `expect.observed_count` their number |
+| `dispose {id}` | Dispose one node, dispatching on its own kind |
+| `fanout {id_prefix, reads[], count, read_each}` / `dispose_fanout {id_prefix, count}` | Create / dispose `count` sibling readers, for widths a literal step list would bloat |
+| `churn {source, id_prefix, live_width, cycles, mode, read_each}` | Run `cycles` subscribe/unsubscribe cycles holding `live_width` subscribers live (`mode`: `dispose_then_create` or `group_per_cycle`) |
+| `begin_group {group}` / `end_group {group}` | Open / end a teardown group |
+| `cancel_teardown {group}` | Cancel the group's teardown — ending it then disposes nothing |
+| `dispose_stale_handle {handle_of, handle_kind}` | Dispose through a handle whose id may have been recycled; a no-op unless the id still names a node of `handle_kind` |
+
+A fixture uses top-level `steps`, or `scenarios` plus `expected` when the claim is that
+two differently-built runs agree (`expected.observationally_equal`).
+
+| Fixture | Covers |
+|---------|--------|
+| `reactive-graph/dispose_detaches_edges_both_directions.json` | disposal detaches upstream *and* downstream edges; a publish to a former source does not reach the disposed node; the surviving source is unaffected |
+| `reactive-graph/read_after_dispose_is_an_error.json` | reading a disposed slot, a disposed cell, or through a live reader that names one is an error — never a stale or default value; double-dispose is an idempotent no-op |
+| `reactive-graph/recycled_id_inherits_nothing.json` | a node minted on a recycled id starts with an empty edge set in both directions — the owner-keyed-side-table aliasing hazard; a stale cross-kind handle disposes nothing |
+| `reactive-graph/group_teardown_equals_fold_of_disposals.json` | ending a group is observationally equal to disposing each member individually (`disposeGroup_eq_disposeAll`), including reverse-creation-order cleanup |
+| `reactive-graph/grouping_bounds_teardown_not_visibility.json` | a group's nodes read parent- and sibling-owned nodes freely in every direction; propagation crosses group boundaries unchanged |
+| `reactive-graph/cancel_teardown_disposes_nothing.json` | `cancel_teardown()` leaves node state untouched — the nodes stay readable, keep propagating, and stay individually disposable; ending the group disposes nothing |
+| `reactive-graph/cross_group_teardown_hazard.json` | ending a group tears down its nodes even when a node outside still reads them (**required** failure — a binding that keeps them alive is non-conforming); the mirror case is symmetric |
+| `reactive-graph/churn_returns_to_baseline.json` | a subscribe/unsubscribe cycle that disposes what it creates leaves the source's dependent set at its starting size, under both individual disposal and one group per cycle |
+
 ## Signaling conformance
 
 The `conformance/signaling/` directory pins the WebSocket signaling wire protocol

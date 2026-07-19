@@ -666,6 +666,128 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Reactive graph disposal / teardown groups (conformance/reactive-graph/) —
+# structural guard (#lzspecedgeindex)
+# ---------------------------------------------------------------------------
+
+_REACTIVE_GRAPH_DIR = FIXTURE_DIR / "reactive-graph"
+
+# The op vocabulary documented in docs/conformance.md § Reactive graph disposal
+# conformance. A fixture may not invent an op a binding has no way to replay.
+_REACTIVE_GRAPH_OPS = {
+    "cell",
+    "computed",
+    "effect",
+    "read",
+    "set_cell",
+    "dispose",
+    "fanout",
+    "dispose_fanout",
+    "churn",
+    "begin_group",
+    "end_group",
+    "cancel_teardown",
+    "dispose_stale_handle",
+}
+
+# Assertion keys are observable effects only. Deliberately absent: anything
+# naming a promotion threshold, a hash strategy, or an index layout — the spec's
+# implementation note keeps those out of the contract.
+_REACTIVE_GRAPH_EXPECT_KEYS = {
+    "value",
+    "read",
+    "error",
+    "readable",
+    "dependents_of",
+    "dependencies_of",
+    "observed_by",
+    "observed_count",
+    "cleanup_order",
+    "group_owned_count",
+    "note",
+}
+
+
+def _reactive_graph_fixtures() -> list[str]:
+    if not _REACTIVE_GRAPH_DIR.is_dir():
+        return []
+    return sorted(p.name for p in _REACTIVE_GRAPH_DIR.glob("*.json"))
+
+
+def _check_reactive_graph_steps(name: str, steps: object, where: str) -> None:
+    assert isinstance(steps, list) and steps, f"{name}: {where} needs a non-empty 'steps' list"
+    for i, step in enumerate(steps):
+        op = step.get("op")
+        assert isinstance(op, dict), f"{name}: {where} step {i} missing 'op' object"
+        op_type = op.get("type")
+        assert op_type in _REACTIVE_GRAPH_OPS, f"{name}: {where} step {i} unknown op {op_type!r}"
+        expect = step.get("expect")
+        if expect is None:
+            continue
+        assert isinstance(expect, dict), f"{name}: {where} step {i} 'expect' must be an object"
+        unknown = set(expect) - _REACTIVE_GRAPH_EXPECT_KEYS
+        assert not unknown, f"{name}: {where} step {i} unknown expect keys {sorted(unknown)}"
+
+
+@pytest.mark.parametrize("name", _reactive_graph_fixtures())
+def test_reactive_graph_fixture_is_well_formed(name: str) -> None:
+    """Guard the disposal / teardown-group fixtures against shape drift.
+
+    These are compute fixtures replayed by each binding, so this asserts only
+    the language-agnostic top-level shape and the documented op / assertion
+    vocabulary — never any binding's runtime semantics, and never an
+    implementation detail the spec leaves free.
+    """
+    obj = json.loads((_REACTIVE_GRAPH_DIR / name).read_text())
+    assert obj["kind"] == "ReactiveGraph", f"{name}: kind must be 'ReactiveGraph'"
+    assert obj["model"] == "Context", f"{name}: model must be 'Context'"
+    assert isinstance(obj["description"], str) and obj["description"], f"{name}: missing description"
+    assert "#lzspecedgeindex" in obj["description"], (
+        f"{name}: description must cite the #lzspecedgeindex tag it conforms to"
+    )
+
+    scenarios = obj.get("scenarios")
+    if scenarios is not None:
+        assert isinstance(scenarios, list) and len(scenarios) >= 2, (
+            f"{name}: 'scenarios' exists to compare runs, so it needs at least two"
+        )
+        names = []
+        for sc in scenarios:
+            assert isinstance(sc.get("name"), str) and sc["name"], f"{name}: scenario missing 'name'"
+            names.append(sc["name"])
+            _check_reactive_graph_steps(name, sc.get("steps"), f"scenario {sc['name']!r}")
+        assert len(set(names)) == len(names), f"{name}: duplicate scenario names"
+        equal = obj.get("expected", {}).get("observationally_equal")
+        assert isinstance(equal, list) and len(equal) >= 2, (
+            f"{name}: a multi-scenario fixture must name the scenarios that must agree"
+        )
+        assert set(equal) <= set(names), f"{name}: observationally_equal names an unknown scenario"
+        return
+
+    _check_reactive_graph_steps(name, obj.get("steps"), "fixture")
+
+
+def test_reactive_graph_fixtures_cover_the_disposal_contract() -> None:
+    """Every clause of the disposal contract keeps a fixture.
+
+    Deleting one of these is how a binding quietly stops being held to a rule,
+    so the set is pinned rather than merely globbed.
+    """
+    required = {
+        "dispose_detaches_edges_both_directions.json",
+        "read_after_dispose_is_an_error.json",
+        "recycled_id_inherits_nothing.json",
+        "group_teardown_equals_fold_of_disposals.json",
+        "grouping_bounds_teardown_not_visibility.json",
+        "cancel_teardown_disposes_nothing.json",
+        "cross_group_teardown_hazard.json",
+        "churn_returns_to_baseline.json",
+    }
+    present = set(_reactive_graph_fixtures())
+    assert required <= present, f"missing disposal fixtures: {sorted(required - present)}"
+
+
+# ---------------------------------------------------------------------------
 # Lossless tree CRDT (conformance/lossless-tree/) — compute fixtures + wire
 # schema for the op delta (#lzlosstree)
 # ---------------------------------------------------------------------------

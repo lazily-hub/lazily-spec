@@ -1,0 +1,71 @@
+{
+  "description": "Churn returns to baseline (#lzspecedgeindex) — the fixture that catches the leak motivating disposal in the first place. A subscribe/unsubscribe cycle that disposes what it creates MUST leave the source's dependent set at exactly its starting size, no matter how many cycles run. Handles are copyable ids, not owners, so dropping every handle to a node reclaims nothing: without an explicit disposal call the node and its edges live as long as the context, and a source's dependent list keeps lengthening even though the live subscriber count is constant. The cost is paid twice — memory, and propagation, since every publish walks the whole list. A workload whose live size is constant then degrades without bound, which is the failure mode any binding with subscribe/unsubscribe churn hits in production and never in a short test. Note the assertion is on the *dependent-set size*, not on any allocator, arena, or free-list statistic: a binding that reuses storage and one that does not are equally conforming as long as the edge set tracks live subscribers. This also holds for a tracing-GC binding: the reverse edge set is a *strong* reference to each dependent, so a long-lived source retains every node that ever read it and reaches the same unbounded growth by a different route. Until such a binding makes its back-edges weak, its disposal story is the explicit one, and this fixture applies to it unchanged.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "notes": {
+    "cycles": "`cycles` is large enough that an accumulating dependent list is unmistakable and small enough to run in every binding's unit-test tier. A binding MAY raise it; the assertion does not depend on the count.",
+    "why_read_each": "Each replacement subscriber is read once before the next cycle so the edge is actually registered — a lazy binding that never pulls the slot registers no dependency and would pass a weaker version of this fixture vacuously.",
+    "churn_modes": "`dispose_then_create` holds `live_width` subscribers, and each cycle disposes one and creates its replacement, so the live count is invariant. `group_per_cycle` instead opens a teardown group per cycle, creates one subscriber through it, reads it, and ends the group — the group's subscriber is gone by the end of its own cycle, so it contributes nothing to the steady-state count and `topic` stays at the `live_width` subscribers created by the earlier `fanout`."
+  },
+  "steps": [
+    { "op": { "type": "cell", "id": "topic", "value": 0 } },
+    {
+      "op": {
+        "type": "fanout",
+        "id_prefix": "live",
+        "reads": ["topic"],
+        "count": 8,
+        "read_each": true
+      },
+      "expect": {
+        "dependents_of": { "topic": 8 },
+        "note": "baseline: 8 live subscribers"
+      }
+    },
+    {
+      "op": {
+        "type": "churn",
+        "source": "topic",
+        "id_prefix": "live",
+        "live_width": 8,
+        "cycles": 500,
+        "mode": "dispose_then_create",
+        "read_each": true
+      },
+      "expect": {
+        "dependents_of": { "topic": 8 },
+        "note": "REQUIRED: after 500 subscribe/unsubscribe cycles the dependent set tracks live subscribers (8), not total ever created (508). A binding that leaks shows 508 here."
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "topic", "value": 1 },
+      "expect": {
+        "observed_count": 8,
+        "note": "propagation reaches exactly the live subscribers — the leak is observable as work, not only as memory"
+      }
+    },
+    {
+      "op": {
+        "type": "churn",
+        "source": "topic",
+        "id_prefix": "grouped",
+        "live_width": 8,
+        "cycles": 500,
+        "mode": "group_per_cycle",
+        "read_each": true
+      },
+      "expect": {
+        "dependents_of": { "topic": 8 },
+        "note": "the same churn expressed as one teardown group per subscriber returns to the same baseline — consistent with group teardown being the fold of individual disposals"
+      }
+    },
+    {
+      "op": { "type": "dispose_fanout", "id_prefix": "live", "count": 8 },
+      "expect": {
+        "dependents_of": { "topic": 0 },
+        "readable": { "topic": true },
+        "note": "full teardown returns the source to zero dependents; the source itself is unaffected"
+      }
+    }
+  ]
+}

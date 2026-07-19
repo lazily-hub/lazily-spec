@@ -1,0 +1,60 @@
+{
+  "description": "Reading a disposed node is an error — the same contract as disposing an effect (#lzspecedgeindex). This holds for a derived slot (`dispose_slot`), a source cell (`dispose_cell`), and transitively for a live reader that still names a disposed node: the reader throws on its next recompute rather than silently observing a stale, default, or recycled value. A binding that returns the last-computed value, a zero value, or `null` instead of erroring is non-conforming, because callers cannot then distinguish 'torn down' from 'legitimately this value', and a use-after-dispose bug surfaces as a wrong number far from its cause. Disposing an already-disposed handle is *not* an error — it is a no-op, so teardown paths stay idempotent — and neither is disposing through a handle whose id has been recycled onto a node of another kind (that too is a no-op; see recycled_id_inherits_nothing.json).",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "steps": [
+    {
+      "op": { "type": "cell", "id": "src", "value": 4 }
+    },
+    {
+      "op": { "type": "computed", "id": "derived", "reads": ["src"], "offset": 0 }
+    },
+    {
+      "op": { "type": "computed", "id": "reader", "reads": ["derived"], "offset": 1 }
+    },
+    {
+      "op": { "type": "read", "id": "reader" },
+      "expect": { "value": 5 }
+    },
+    {
+      "op": { "type": "dispose", "id": "derived" },
+      "expect": {
+        "readable": { "derived": false, "src": true }
+      }
+    },
+    {
+      "op": { "type": "read", "id": "derived" },
+      "expect": {
+        "error": "read_after_dispose",
+        "note": "reading the disposed slot itself errors"
+      }
+    },
+    {
+      "op": { "type": "read", "id": "reader" },
+      "expect": {
+        "error": "read_after_dispose",
+        "note": "a live reader that still names a disposed dependency errors on its next recompute; it MUST NOT return the value it computed before the disposal"
+      }
+    },
+    {
+      "op": { "type": "dispose", "id": "derived" },
+      "expect": {
+        "error": null,
+        "note": "disposing twice is a no-op, not an error — teardown paths must be idempotent"
+      }
+    },
+    {
+      "op": { "type": "dispose", "id": "src" },
+      "expect": {
+        "readable": { "src": false }
+      }
+    },
+    {
+      "op": { "type": "read", "id": "src" },
+      "expect": {
+        "error": "read_after_dispose",
+        "note": "a disposed source cell reads as an error too — dispose_cell and dispose_slot share one contract"
+      }
+    }
+  ]
+}

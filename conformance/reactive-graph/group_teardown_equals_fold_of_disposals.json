@@ -1,0 +1,68 @@
+{
+  "description": "The central claim: ending a teardown group MUST be observationally equal to disposing each of its members individually — a group introduces no disposal semantics of its own, it only names a set and a moment (#lzspecedgeindex). Proved as `disposeGroup_eq_disposeAll` in lazily-formal's `Reactive` module. Both scenarios below build the identical graph and differ only in *how* the three grouped nodes go away; every observable named in `expected` MUST agree, and `observationally_equal` names the scenario pair that must match. A binding is free to implement group teardown as a bulk operation rather than a loop — and SHOULD, since reading each node's kind from the arena at teardown is cheaper than a per-node dispatch — but any observable difference between the two paths is a conformance failure. What breaks otherwise: callers write teardown logic against one path and get different edge state, different surviving readability, or a different set of effects observing the next publish from the other. Teardown order within a group is reverse creation order (dependents before what they read) so the group never transiently dangles inside itself; that ordering is observable only through effect cleanup order, which this fixture pins as `cleanup_order`.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "scenarios": [
+    {
+      "name": "group_teardown",
+      "steps": [
+        { "op": { "type": "cell", "id": "topic", "value": 1 } },
+        { "op": { "type": "computed", "id": "outside", "reads": ["topic"], "offset": 100 } },
+        { "op": { "type": "begin_group", "group": "g" } },
+        { "op": { "type": "computed", "id": "a", "reads": ["topic"], "offset": 1, "group": "g" } },
+        { "op": { "type": "computed", "id": "b", "reads": ["a"], "offset": 2, "group": "g" } },
+        { "op": { "type": "effect", "id": "watch_b", "reads": ["b"], "group": "g" } },
+        {
+          "op": { "type": "read", "id": "b" },
+          "expect": {
+            "value": 4,
+            "dependents_of": { "topic": 2, "a": 1, "b": 1 }
+          }
+        },
+        { "op": { "type": "read", "id": "outside" }, "expect": { "value": 101 } },
+        {
+          "op": { "type": "end_group", "group": "g" },
+          "expect": { "cleanup_order": ["watch_b", "b", "a"] }
+        }
+      ]
+    },
+    {
+      "name": "individual_disposal",
+      "steps": [
+        { "op": { "type": "cell", "id": "topic", "value": 1 } },
+        { "op": { "type": "computed", "id": "outside", "reads": ["topic"], "offset": 100 } },
+        { "op": { "type": "computed", "id": "a", "reads": ["topic"], "offset": 1 } },
+        { "op": { "type": "computed", "id": "b", "reads": ["a"], "offset": 2 } },
+        { "op": { "type": "effect", "id": "watch_b", "reads": ["b"] } },
+        {
+          "op": { "type": "read", "id": "b" },
+          "expect": {
+            "value": 4,
+            "dependents_of": { "topic": 2, "a": 1, "b": 1 }
+          }
+        },
+        { "op": { "type": "read", "id": "outside" }, "expect": { "value": 101 } },
+        { "op": { "type": "dispose", "id": "watch_b" } },
+        { "op": { "type": "dispose", "id": "b" } },
+        {
+          "op": { "type": "dispose", "id": "a" },
+          "expect": { "cleanup_order": ["watch_b", "b", "a"] }
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "observationally_equal": ["group_teardown", "individual_disposal"],
+    "final_state": {
+      "dependents_of": { "topic": 1 },
+      "readable": { "topic": true, "outside": true, "a": false, "b": false, "watch_b": false },
+      "read": { "outside": 101 }
+    },
+    "after_publish": {
+      "op": { "type": "set_cell", "id": "topic", "value": 5 },
+      "observed_by": [],
+      "read": { "outside": 105 },
+      "dependents_of": { "topic": 1 }
+    }
+  }
+}

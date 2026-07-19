@@ -1,0 +1,93 @@
+{
+  "description": "A recycled id inherits nothing (#lzspecedgeindex). Disposal frees a node's id; a binding whose allocator hands that id to the next node MUST give the new node an empty edge set, empty of both dependents and dependencies. This is a real observed hazard, not a theoretical one: a binding that keeps the wide-fanout edge index in a side table *keyed by owner id* — rather than inside the node — will alias the disposed node's stale index onto the unrelated node that inherits the id, and every subsequent membership test against that index answers about the wrong graph. The same applies to any owner-keyed side table (schedules, dirty bits, cached degrees), so the rule is stated on the id, not on the index. `wide` is deliberately given a large fan-out first, so a binding that promotes past a threshold has an index to leak; the fixture never asserts *whether* it promoted, only that the recycled node starts clean. `stale_dispose` pins the companion rule: disposing through a handle whose id has since been recycled onto a live node of another kind is a no-op — check the kind before tearing down, or a stale handle silently destroys an unrelated node.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "notes": {
+    "id_reuse": "A binding is not required to recycle ids. If it does not, `reused` is simply a fresh node and the assertions still hold. If it does, `reused` MUST receive the id freed by disposing `wide` — bindings that recycle SHOULD additionally assert that identity.",
+    "fanout_width": "`fanout_width` is a scale hint for the generator, not a threshold. The spec's implementation note forbids fixing a promotion threshold, a hash strategy, or an index layout in the contract; a binding may satisfy this fixture with a linear scan at any width."
+  },
+  "steps": [
+    {
+      "op": { "type": "cell", "id": "topic", "value": 0 }
+    },
+    {
+      "op": { "type": "computed", "id": "wide", "reads": ["topic"], "offset": 0 }
+    },
+    {
+      "op": {
+        "type": "fanout",
+        "id_prefix": "reader",
+        "reads": ["wide"],
+        "count": 64,
+        "read_each": true
+      },
+      "expect": {
+        "dependents_of": { "wide": 64, "topic": 1 }
+      }
+    },
+    {
+      "op": { "type": "dispose_fanout", "id_prefix": "reader", "count": 64 },
+      "expect": {
+        "dependents_of": { "wide": 0 }
+      }
+    },
+    {
+      "op": { "type": "dispose", "id": "wide" },
+      "expect": {
+        "dependents_of": { "topic": 0 },
+        "readable": { "wide": false }
+      }
+    },
+    {
+      "op": { "type": "computed", "id": "reused", "reads": [], "offset": 7 },
+      "expect": {
+        "dependents_of": { "reused": 0 },
+        "dependencies_of": { "reused": 0 },
+        "note": "the node minted after the disposal — possibly on the recycled id — starts with an empty edge set in both directions"
+      }
+    },
+    {
+      "op": { "type": "read", "id": "reused" },
+      "expect": {
+        "value": 7,
+        "dependencies_of": { "reused": 0 }
+      }
+    },
+    {
+      "op": { "type": "computed", "id": "probe", "reads": ["reused"], "offset": 0 }
+    },
+    {
+      "op": { "type": "read", "id": "probe" },
+      "expect": {
+        "value": 7,
+        "dependents_of": { "reused": 1, "topic": 0 },
+        "note": "the recycled node accumulates exactly its own edges — one dependent, not the 64 the previous occupant of that id had"
+      }
+    },
+    {
+      "op": { "type": "cell", "id": "sentinel", "value": 99 }
+    },
+    {
+      "op": { "type": "dispose", "id": "sentinel" }
+    },
+    {
+      "op": { "type": "computed", "id": "successor", "reads": [], "offset": 1 },
+      "expect": {
+        "dependents_of": { "successor": 0 },
+        "dependencies_of": { "successor": 0 }
+      }
+    },
+    {
+      "op": {
+        "type": "dispose_stale_handle",
+        "handle_of": "sentinel",
+        "handle_kind": "cell"
+      },
+      "expect": {
+        "readable": { "successor": true },
+        "read": { "successor": 1 },
+        "note": "a stale *cell* handle whose id has been recycled onto a slot MUST be a no-op — read the node's kind from the arena before tearing it down. Same-kind recycling (a slot id handed to another slot) is NOT distinguishable by kind and is out of contract: a binding that wants that safety needs generational ids or reference-counted handles, and the spec does not require either."
+      }
+    }
+  ]
+}
