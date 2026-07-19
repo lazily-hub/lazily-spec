@@ -96,22 +96,61 @@ decides the invalidation source.
 > measurably the faster of the two, so an unconditional hash set is a regression
 > on the common low-degree case (`#lzspecedgeindex`).
 >
-> The threshold is **not portable — measure it per binding.** It is where a
-> scan of contiguous ids crosses the cost of one hash lookup, so it moves with
-> both, and the same number can be right or wrong in the same language depending
-> on unrelated choices. In `lazily-rs` the crossover measured near degree 170
-> with the standard library's SipHash and near degree 40 once ids were hashed
-> with a multiply-shift finalizer — a 4x shift from changing the hash function
-> alone. Copying another binding's constant is how a promotion threshold ends up
-> making mid-degree nodes slower than the scan it replaced.
+> The threshold is **not portable — measure it per binding.** Naively it is
+> where a scan of contiguous ids crosses the cost of one hash lookup, so it moves
+> with both, and the same number can be right or wrong in the same language
+> depending on unrelated choices. In `lazily-rs` that crossover measured near
+> degree 170 with the standard library's SipHash and near degree 40 once ids were
+> hashed with a multiply-shift finalizer — a 4x shift from changing the hash
+> function alone. `lazily-dart` measured 60 under AOT and 96 under JIT, a 1.6x
+> spread from *compilation mode* with no code change at all. Copying another
+> binding's constant is how a promotion threshold ends up making mid-degree nodes
+> slower than the scan it replaced. Across bindings the measured thresholds so
+> far are 32, 64, 128 and 160 — there is no family constant.
+>
+> **Measure the hybrid, not the pure crossover.** The crossover between a
+> *pure* scan and a *pure* index is the wrong number, because a list arriving at
+> degree T pays the full scan **plus** the one-time index build, with no indexed
+> insert at exactly T to amortize against. Every candidate threshold therefore
+> parks a regression on its own width, and the pure crossover cannot predict
+> where. Sweep the real implementation against the unfixed tree across candidate
+> thresholds and take the knee — `lazily-dart`'s pure crossover said 60–96, but
+> the hybrid sweep put the worst-case regression at 1.63x for T=64 and 1.31x for
+> T=128, so 128 shipped.
+>
+> Two ways to get this measurement wrong, both observed:
+>
+> - **Comparing always-indexed against always-scanning inflates the crossover.**
+>   It charges the index's overhead on every one-element dependency list to the
+>   wide list. `lazily-cpp` first estimated 96 this way against a true 32 — a 3x
+>   error. Sweep the threshold constant alone, with everything else fixed.
+> - **A width ladder's narrow rungs cannot answer the low-degree question.** A
+>   few hundred registrations is noise; `lazily-dart` measured 1.4x run-to-run
+>   variance at widths 2–4 and nearly reported a phantom regression at width 96
+>   from ladder data. Low-degree behavior needs a separate high-repetition
+>   harness, not the tail of the ladder.
 >
 > Two further hazards, both observed:
 >
 > - **Demotion needs hysteresis, or it thrashes.** A dependent list oscillates by
 >   one on every recompute, because edges are removed and re-registered, so a
 >   single shared promote/demote boundary makes a list sitting at the threshold
->   rebuild its index on every recompute. Measured at ~4x the steady-state cost.
->   Demote well below the promote threshold, or do not demote at all.
+>   rebuild its index on every recompute. Demote well below the promote
+>   threshold, or do not demote at all.
+>
+>   The cost is severe where the hazard exists and varies far more than the
+>   mechanism suggests: **~4x** in `lazily-rs`, **7.67x** in `lazily-js`, and
+>   **21.5x** in `lazily-kt` — each at exactly threshold+1 and within noise at
+>   every neighbouring width, which is why a ladder must cluster rungs there or
+>   it will not see this at all.
+>
+>   It is **not universal**, and the reason is structural: the hazard needs a
+>   list that oscillates by one. `lazily-zig` has no demotion path, so nothing
+>   can thrash. `lazily-dart` clears its dependent list wholesale during cascade
+>   rather than removing one edge at a time, and no thrash was observable at
+>   threshold±1 (0.99–1.05x) — it keeps hysteresis as cheap insurance on the
+>   detach path, not because measurement forced it. A binding **SHOULD** check
+>   which shape its own recompute has before assuming either result.
 > - **A recycled id must not inherit an index.** Where the index is held outside
 >   the node — a side table keyed by owner — its entries have to be dropped
 >   whenever the list is cleared or the owner is torn down. A binding that
