@@ -292,6 +292,31 @@ ship one. Observation is declarative and structural; if a caller is registering
 callbacks against a value, they have left the reactive model, and the library
 should say so rather than provide a door.
 
+#### How to tell an edge set from a registry
+
+A binding auditing itself against this clause needs a test that does not depend
+on what a collection is *called*, because naming is exactly what hid these:
+
+> **Anything that survives an invalidation is not a graph edge.**
+
+Dependency edges are re-discovered on every recompute — the tracking stack clears
+them and the next run re-registers whatever it actually reads. That is what makes
+dependencies dynamic. A collection that *persists* across invalidation is
+therefore not participating in dependency tracking, whatever its name, whatever
+its docstring, and whatever it sits next to.
+
+This criterion is stated because it was arrived at expensively. `lazily-py`
+carried **three** registries — on `Cell`, on `Signal`, and on `Slot` — and every
+one of them was either labelled or assumed to be dependency-graph state. Two
+separate readers, with the source open, misclassified one each. In every case the
+registry sat beside a real edge set with a similar name (`_subscribers` next to
+`_parents`), and in every case the deciding fact was a single line: the edge set
+is rebound and cleared on invalidation, the registry is iterated and kept.
+
+Apply the criterion mechanically rather than reading intent. It resolves all
+three without argument, and it is the only check here that does not require
+trusting a description.
+
 #### Effect and observer are not two spellings of one thing
 
 The distinction is worth stating flatly, because the two look interchangeable at
