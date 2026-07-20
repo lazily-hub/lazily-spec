@@ -1,0 +1,112 @@
+{
+  "description": "Inside a batch, a signal re-materializes ONCE at the outermost batch exit -- not once per write. This is normative clause 3 of *Signal eagerness* (reactive-graph.md) and it is the clause that separates a signal built as a composition from one that welds eagerness into its slot invalidation path. Both satisfy clause 2 (fresh at mutator return) and both return identical values everywhere, so no other fixture in this corpus can tell them apart. The reason the composed construction gets this for free: the puller is an ordinary Effect, and effects are scheduled rather than inline (see *Effects are scheduled, not inline*), so N invalidations inside a batch coalesce into one scheduled run at the flush. A binding that instead re-pulls from its slot's invalidation handler runs the compute during invalidation, which is EARLIER than the flush, so it recomputes once per write and the count scales with batch size. That is a real cost defect rather than a wrong answer -- the final value is correct in both, which is precisely why it can ship unnoticed. Known motivating case: lazily-go implemented `Signal` as a `signalSlot` subclass overriding `onInvalidate` to eagerly re-pull, with no effect anywhere in the construction, and every other reactive-graph fixture stayed green. Contract: #lzsignaleager clause 3.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": {
+        "type": "cell",
+        "id": "a",
+        "value": 1
+      }
+    },
+    {
+      "op": {
+        "type": "cell",
+        "id": "b",
+        "value": 2
+      }
+    },
+    {
+      "op": {
+        "type": "signal",
+        "id": "sig",
+        "reads": [
+          "a",
+          "b"
+        ],
+        "offset": 0
+      },
+      "expect": {
+        "computes_of": {
+          "sig": 1
+        },
+        "value": 3,
+        "note": "baseline: materialized once at creation"
+      }
+    },
+    {
+      "op": {
+        "type": "batch",
+        "writes": [
+          {
+            "id": "a",
+            "value": 10
+          },
+          {
+            "id": "b",
+            "value": 20
+          }
+        ]
+      },
+      "expect": {
+        "computes_of": {
+          "sig": 2
+        },
+        "note": "THE discriminating step. Two writes, ONE additional compute. A binding that re-pulls per invalidation shows 3 -- correct value, twice the work. The count, not the value, is the whole assertion."
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "sig"
+      },
+      "expect": {
+        "value": 30,
+        "computes_of": {
+          "sig": 2
+        },
+        "note": "coalescing must not cost correctness: the single compute at batch exit saw BOTH writes, not just the last one"
+      }
+    },
+    {
+      "op": {
+        "type": "batch",
+        "writes": [
+          {
+            "id": "a",
+            "value": 100
+          },
+          {
+            "id": "b",
+            "value": 200
+          },
+          {
+            "id": "a",
+            "value": 101
+          }
+        ]
+      },
+      "expect": {
+        "computes_of": {
+          "sig": 3
+        },
+        "note": "three writes including a repeated write to the same cell, still one compute. A per-write puller shows 6 by now; a per-invalidated-source puller shows 5. Both are distinguishable from 3."
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "sig"
+      },
+      "expect": {
+        "value": 301,
+        "computes_of": {
+          "sig": 3
+        },
+        "note": "101 + 200 — the coalesced compute observes last-write-wins per cell, not the intermediate a=100"
+      }
+    }
+  ]
+}

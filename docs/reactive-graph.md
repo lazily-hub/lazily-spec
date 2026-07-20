@@ -30,7 +30,14 @@ creation and after every invalidation, so its value is materialized by the time
 the invalidating `setCell`/`batch` returns (readers never see an intermediate
 unset state — `relaycell-backpressure-analysis.md` §4.0). It composes the core
 primitives; bindings expose it as a convenience (`signal(compute)`), not as a
-distinct kind of node.
+distinct kind of node in their public surface.
+
+The normative semantics are four observable clauses — materialize once at
+creation, fresh at mutator return, once per flush rather than once per write,
+and disposal that removes only the puller. They are stated under *Signal
+eagerness* below and fixtured in `conformance/reactive-graph/signal_*.json`. The
+memo-plus-puller construction is the recommended way to satisfy them, not itself
+a requirement.
 
 Values are **lazy by default**; reach for the derived `Signal` when eager push
 semantics are required. Handles (`SlotHandle` / `CellHandle` / `SignalHandle` /
@@ -247,6 +254,106 @@ decides the invalidation source.
   `set_cell`/`batch`'s effect flush, the value is fresh by the time the mutator
   returns. Disposing the puller effect reverts the signal to lazy behavior (the
   backing value stays readable but is no longer eagerly kept fresh).
+
+  **Normative signal semantics.** The four clauses below are what a binding
+  conforms to. They are stated as observations a caller can make, so that any
+  implementation strategy satisfying them conforms — see *Composition is
+  recommended, not required* below.
+
+  1. **Creation materializes once.** `signal(compute)` **MUST** run `compute`
+     exactly once at creation and **MUST NOT** expose an intermediate unset
+     state. A reader immediately after creation observes the computed value
+     without triggering a compute of its own.
+  2. **Fresh at mutator return.** After a `set_cell` that invalidates the
+     signal's dependency cone returns, the signal's value **MUST** already equal
+     what `compute` yields from the current sources, with **no intervening
+     read**. This is the clause a lazy memo does not satisfy, and it is the
+     operational meaning of "eager".
+  3. **Once per flush, not once per write.** Inside `batch(run)`, a signal whose
+     dependencies are written N times **MUST** re-materialize **once**, at the
+     outermost batch exit — not once per write. The puller is an effect and
+     obeys *Effects are scheduled, not inline*; a signal that re-materializes
+     during invalidation rather than during the flush violates this clause even
+     though it satisfies (2). N writes inside a batch **MUST** produce exactly
+     one compute.
+  4. **Disposal removes only the puller.** Disposing a signal **MUST** dispose
+     the eager puller and **MUST NOT** dispose the backing value. After
+     disposal the value remains readable, remains correct on read (it reverts to
+     lazy recompute-on-read), and **MUST NOT** re-materialize on write. This is
+     why the operation is not a teardown of the signal, and why naming it
+     `dispose_signal` is a known inaccuracy rather than a description.
+
+  **Composition is recommended, not required.** Clauses 1–4 are observable.
+  "A memo slot plus a puller effect" is the construction that satisfies them and
+  is what every binding **SHOULD** use — it is five lines over the public API and
+  needs no teardown special case. It is deliberately **not** a `MUST`, because
+  which nodes exist internally is not something a caller can observe, and this
+  specification does not mandate unobservable representation (the same rule that
+  lets a binding choose weak back-edges). A binding that welds eagerness into its
+  slot invalidation path conforms if and only if it satisfies all four clauses —
+  and clause 3 is the one such a binding is most likely to fail, because
+  re-pulling during invalidation is earlier than the flush.
+
+  A binding **SHOULD NOT** make the signal a node kind in its graph
+  representation: the kernel's node enumeration is `Cell`, `Slot`, `Effect` (plus
+  `MergeCell` where the merge algebra is implemented), and `Signal` is a
+  convenience over those. This is a `SHOULD NOT` rather than a `MUST NOT`
+  deliberately. Shipping a `Signal` *type* is not the violation — every binding
+  has one, and `lazily-rs`'s is a pair of ids the arena has never heard of. The
+  question is whether the graph itself has a fourth kind to dispatch on, and in a
+  binding whose node base class is private that is not something a caller can
+  observe at all. Where it is unobservable, it is a design rule about the kernel
+  staying closed, enforced by review rather than by conformance — the same reason
+  this specification declines to mandate weak back-edges.
+
+  Conformance: `conformance/reactive-graph/signal_*.json`.
+
+  **Measured 2026-07-20.** What replaying the three signal fixtures against every
+  context each binding ships actually found. Recorded as measurements, not as
+  inferences from which types exist — the discipline established by the capability
+  table above.
+
+  | Binding | Clauses 1, 2, 4 | Clause 3 | Construction |
+  |---|---|---|---|
+  | `lazily-js` | pass | pass | composed |
+  | `lazily-kt` | pass | pass | composed |
+  | `lazily-cpp` | pass (`Context`) | pass | composed |
+  | `lazily-py` | pass | **failed, fixed** | welded → composed |
+  | `lazily-dart` | pass | **failed, fixed** | welded → composed |
+  | `lazily-go` | pass | **failed** | welded → composed; blocked on `Memo`, see below |
+  | `lazily-zig` | 4 fails on `AsyncContext` | **failed on `ThreadSafeContext`, fixed** | composed |
+
+  **Clause 3 caught four bindings across two unrelated mechanisms**, and every one
+  of them produced correct values while doing 2–3× the computes — which is why
+  none of the other 11 reactive-graph fixtures saw them.
+
+  *Mechanism A, welded eagerness (py, dart, go).* Three bindings independently
+  grew a signal-specific slot subclass whose invalidation handler re-pulled the
+  signal inline. Re-pulling during invalidation is earlier than the effect flush,
+  so the compute count scaled with the number of changed sources. No effect
+  existed anywhere in the construction. Nobody coordinated this; the same wrong
+  design was reached three times in three languages.
+
+  *Mechanism B, a batch that does not bound the flush (zig).* `set_cell` flushed
+  effects unconditionally while `batch` only nested a depth counter, so a
+  correctly composed puller still ran once per write. A composition is not
+  sufficient if the batch boundary does not gate the flush.
+
+  **The async surface is the family's weakest, systematically.** `lazily-cpp`'s
+  `AsyncContext` exposes no signal API at all and its async slots carry no
+  dependency graph; `lazily-zig`'s async context has no lazy mode, so every
+  derived slot is eager whether or not a puller is attached and clause 4 is
+  unobservable there; `lazily-py` and `lazily-dart` ship no async signal
+  constructor. A binding **MAY** omit `signal` from a context — clause conformance
+  is per surface, and a context that does not offer the constructor is not
+  non-conformant. What it **MUST NOT** do is offer it and diverge silently.
+
+  `lazily-go` is a genuine open divergence rather than a gap: its `Memo`
+  implements the `==` guard by recomputing during invalidation, so a memo-backed
+  signal cannot satisfy clauses 3 and 4 while a slot-backed one loses
+  equal-recompute suppression. The two cannot both hold under its current
+  invalidation model. Fixing it means making the memo guard a pull-time check,
+  which is a change to how that binding propagates.
 
 ### Reactives have no observers (`#lzdartobservercow`)
 
@@ -502,10 +609,36 @@ binding conforms to this section by not having the API.
 require no change. `lazily-py`, `lazily-dart`, `lazily-go`, and `lazily-zig`
 carried one and remove it, re-expressing `on_transition` as an effect.
 
-The reactive-graph fixtures that remain cover disposal and teardown scopes. They
-are unexecuted by every binding as of this writing, requiring `TeardownScope`
-(`ctx.scope()` / `disarm()`) and dependency-graph introspection (`dependents_of`,
-`dependencies_of`, `cleanup_order`) that at least `lazily-py` does not expose.
+The reactive-graph fixtures that remain cover disposal, teardown scopes, and
+signal eagerness. They require `TeardownScope` (`ctx.scope()` / `disarm()`) and
+dependency-graph introspection (`dependents_of`, `dependencies_of`,
+`cleanup_order`). Every binding replays this corpus as of 2026-07-19.
+
+**Signal fixtures need one observable the rest of the corpus does not:
+`computes_of`.** It maps a node id to the cumulative number of times its compute
+function has run, counted from the start of the scenario. A runner **MUST** count
+every invocation of the compute, including the one at creation, and **MUST NOT**
+reset it per step. This key exists because an eager signal and a lazy memo return
+identical values for every read sequence — the only caller-observable difference
+between them is *when* compute runs, so a corpus that asserts values alone cannot
+distinguish `signal()` from `memo()` and will pass against a binding that
+implements the former as the latter.
+
+Three ops are specific to these fixtures:
+
+| op | shape | meaning |
+|---|---|---|
+| `signal` | `{id, reads, offset}` | create an eager signal; compute is `sum(reads) + offset`, the same convention as `computed` |
+| `dispose_signal` | `{id}` | dispose the eager puller only — **not** a node teardown, see clause 4 |
+| `batch` | `{writes: [{id, value}, ...]}` | perform every write inside one batch; invalidation propagates and effects flush once, at the outermost exit |
+
+`batch` is a single op rather than a `begin_batch`/`end_batch` pair so that a
+runner need not carry nesting state. Bindings whose batch API is a closure take
+the writes as the closure body; bindings with explicit begin/end call them
+around the writes. Note that `batch` also appears in the `reliable-sync` and
+`collections` areas with unrelated semantics — these are per-area op
+vocabularies, not one global namespace.
+
 **Fixture shape is declared, not inferred.** Every `ReactiveGraph` fixture
 carries a top-level `"shape"` field, either `"steps"` or `"scenarios"`. A runner
 **MUST** switch on that field rather than probing for whichever key happens to be

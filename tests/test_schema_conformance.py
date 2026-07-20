@@ -691,11 +691,16 @@ _REACTIVE_GRAPH_OPS = {
     # Cell observers (#lzdartobservercow)
     "subscribe",
     "unsubscribe",
+    # Signal eagerness (#lzsignaleager). `batch` is a single op carrying its
+    # writes rather than a begin/end pair, so a runner needs no nesting state.
+    "signal",
+    "dispose_signal",
+    "batch",
 }
 
 # A reactive-graph fixture must cite the contract it conforms to, so a rule can
 # not be silently widened by editing prose alone.
-_REACTIVE_GRAPH_TAGS = ("#lzspecedgeindex", "#lzdartobservercow")
+_REACTIVE_GRAPH_TAGS = ("#lzspecedgeindex", "#lzdartobservercow", "#lzsignaleager")
 
 # Assertion keys are observable effects only. Deliberately absent: anything
 # naming a promotion threshold, a hash strategy, or an index layout — the spec's
@@ -716,6 +721,12 @@ _REACTIVE_GRAPH_EXPECT_KEYS = {
     "observed_counts",
     "cleanup_order",
     "scope_owned_count",
+    # Cumulative compute-invocation count per node, from scenario start
+    # (#lzsignaleager). The only caller-observable difference between an eager
+    # signal and the lazy memo it is built on — values are identical for every
+    # read sequence, so a corpus without this cannot tell `signal()` from
+    # `memo()`.
+    "computes_of",
     "note",
 }
 
