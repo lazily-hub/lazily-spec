@@ -789,32 +789,69 @@ certify that a feedback loop over it terminates; ACC is a separate property of
 the value domain and must be established separately.
 
 Where ACC does hold, the `==` store-guard is the fixpoint detector: once the join
-stops moving the value, nothing invalidates and the cascade ends. Two caveats on
-that detector:
+stops moving the value, nothing invalidates and the cascade ends. `f` need not be
+monotone for the ascent, which is why this is **not** the classical
+monotone-framework result — Kleene iteration requires a monotone transfer
+function and delivers the *least* fixed point. This construction reaches *a*
+fixed point and offers no leastness guarantee.
 
-- It detects a fixpoint of `==`, not of the lattice order. A policy carrying
-  metadata — tombstones, causal context, vector clocks — can compare unequal at
-  a genuine lattice fixpoint, and the loop will spin.
-- `f` need not be monotone for the ascent, which is why this is **not** the
-  classical monotone-framework result. Kleene iteration requires a monotone
-  transfer function and delivers the *least* fixed point. This construction
-  reaches *a* fixed point and offers no leastness guarantee.
+**The termination condition, stated correctly, is `x ⊕ f(x) == x`** — the loop
+ends exactly when the store-guard suppresses. Two consequences that an earlier
+draft of this section got wrong:
 
-Where `⊕` is **not** idempotent — `+`, `append`, counters — there is no
-*guaranteed* fixed point, and the loop diverges for any `f` that keeps producing
-non-identity operations. It terminates when `f` yields the policy's identity
-(`0`, the empty append), so such a loop is not automatically wrong — it is
-unguaranteed, and the caller owns the termination argument.
+- **An identity is sufficient, never necessary, and need not exist.** If `f(x)`
+  is the policy's identity the step is a no-op, but any absorbing or saturating
+  value is equally a fixed point — a `Sum` at its maximum absorbs every op. And
+  a `MergePolicy` is only required to be an *associative fold*; nothing mandates
+  a unit. `KeepLatest` is a right-zero band and has none, so "terminates when
+  `f` yields the identity" is not merely false there, it is undefined.
+- Correspondingly, a non-idempotent policy does **not** diverge by construction.
+  It has no *guaranteed* fixed point; whether it reaches one is a property of
+  `f` and the value domain, and the caller owns that argument.
+
+### The three termination classes
+
+The split is not two-way, and the default policy is in the third class.
+
+| `⊕` | recurrence | termination |
+|---|---|---|
+| join with ACC | monotone ascent, bounded height | **always halts** |
+| join without ACC — G-Set, OR-Set, LWW over unbounded domains | monotone accumulation | halts iff the accumulated set is finite; **semi-decidable** |
+| **`KeepLatest`** and other idempotent-but-not-commutative bands | `x ⊕ op = op` collapses it to `x_{n+1} = f(x_n)` | **undecidable** — unrestricted iteration of an arbitrary function |
+| non-idempotent — `+`, `append`, counters | accumulates | no guarantee; halts at an absorbing or saturating value |
+
+**`KeepLatest` is the case a caller will actually hit**, because
+`Cell ≡ MergeCell<KeepLatest>` — an effect that reads a memo and writes back to a
+plain cell is the most reachable feedback loop in the family. Under a right-zero
+band the merge discards prior state entirely, so there is no ascent, ACC is
+irrelevant, and the lattice framing does not apply at all. What remains is
+`x_{n+1} = f(x_n)` over unbounded state with arbitrary `f`, which is **Turing
+complete**: no analysis can decide in general whether such a loop halts.
+
+A caller in that class cannot appeal to the algebra. They must supply one of: a
+decreasing measure, an iteration bound, or a cancellation observed in the effect
+body (see below).
 
 Accordingly:
 
 - A caller building a scheduler-closed feedback loop **MUST** be able to state
-  why it terminates: ACC on the value domain for a join policy, or an explicit
-  termination condition otherwise. The policy's declared algebra is not
-  sufficient evidence.
-- Bindings **SHOULD** bound effect-flush re-entry depth and report exhaustion
-  rather than spinning, since the divergent case is reachable from safe caller
-  code and the acyclicity check cannot detect it.
+  why it terminates. The policy's declared algebra is sufficient evidence **only**
+  for a join over a domain satisfying ACC. In every other class the caller owes
+  an argument the specification cannot supply.
+- Bindings **SHOULD** bound the **effect-drain iteration count** within a single
+  flush, and report exhaustion rather than spinning. Note this is *not*
+  re-entry depth: every binding surveyed guards re-entrant flushes and returns
+  immediately, so the loop is a flat unbounded drain at constant stack depth, and
+  a re-entry-depth bound would be pinned at 1 and could never fire.
+
+**Where a cancellation can be observed.** In a synchronous context the flush does
+not return to the caller between iterations, so the calling thread cannot observe
+an interrupt and in fact starves whatever would deliver one. The available yield
+point is the **effect body**, which is caller code running once per iteration;
+declining to write ends the cascade, because an empty worklist is the drain's only
+exit. Async contexts additionally suspend between iterations. **Unmeasured:
+whether any binding's async drain observes cancellation between iterations has
+not been checked.**
 
 **Not yet fixtured.** This section is normative prose with no conformance
 fixture behind it, which this specification has learned to treat as a liability
@@ -971,8 +1008,9 @@ effect is prevented by removing it from the schedule before running cleanup.
   required** of every binding (it is the reactive core).
 - **Thread-safe** — a lock-backed counterpart (mirrors lazily-rs
   `ThreadSafeContext`); handles are clonable and the transition function and
-  state are `Send + Sync`. Observers fire synchronously within the invalidating
-  `send`/`batch` preserving glitch-free pull-based ordering. **Required of any
+  state are `Send + Sync`. Effects are scheduled and flushed within the
+  invalidating `send`/`batch`, preserving glitch-free pull-based ordering.
+  **Required of any
   binding whose platform exposes preemptive multi-threading or shared-memory
   concurrency** — see [Wire Protocol § Concurrency layers are required](protocol.md#concurrency-layers-are-required).
 - **Async** — a separate reactive surface for future-returning computations;
