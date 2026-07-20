@@ -696,11 +696,26 @@ _REACTIVE_GRAPH_OPS = {
     "signal",
     "dispose_signal",
     "batch",
+    # MergeCell fed from a reactive (#lzmergefeed). `merge_cell` constructs a
+    # cell whose write folds under a declared `policy`; `merge` folds one op
+    # into it. A `Source` never acquires a dependency edge, so "feed this merge
+    # cell from that reactive" is an ordinary `effect` that reads and merges —
+    # no new node kind, and no new op for the feeding itself.
+    "merge_cell",
+    "merge",
 }
 
 # A reactive-graph fixture must cite the contract it conforms to, so a rule can
 # not be silently widened by editing prose alone.
-_REACTIVE_GRAPH_TAGS = ("#lzspecedgeindex", "#lzdartobservercow", "#lzsignaleager")
+_REACTIVE_GRAPH_TAGS = (
+    "#lzspecedgeindex",
+    "#lzdartobservercow",
+    "#lzsignaleager",
+    # MergeCell fed from a reactive via an effect, and the drain bound that
+    # makes a divergent feedback loop testable instead of hanging the runner.
+    "#lzmergefeed",
+    "#lzfeedbackdrain",
+)
 
 # Assertion keys are observable effects only. Deliberately absent: anything
 # naming a promotion threshold, a hash strategy, or an index layout — the spec's
@@ -727,6 +742,19 @@ _REACTIVE_GRAPH_EXPECT_KEYS = {
     # read sequence, so a corpus without this cannot tell `signal()` from
     # `memo()`.
     "computes_of",
+    # Cumulative merge-fold count per merge cell, from scenario start
+    # (#lzmergefeed). Delivery through a dependency edge is per settled cone,
+    # not per write, and under an idempotent policy the VALUE converges either
+    # way — only the count separates a conforming binding from one that merges
+    # per write. Hence a count assertion, and hence the fixtures use a
+    # non-idempotent policy where the two also diverge in value.
+    "merges_of",
+    # Effect-drain exhaustion (#lzfeedbackdrain). A scheduler-closed feedback
+    # loop is a flat unbounded drain, so a runner replaying a divergent loop
+    # hangs unless the binding bounds the drain and reports being cut short.
+    # Exhaustion is NOT convergence — asserting it is asserting that the
+    # binding failed safely, not that the loop terminated.
+    "drain_exhausted",
     "note",
 }
 
