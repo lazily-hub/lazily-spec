@@ -124,9 +124,29 @@ A conforming async context MUST honor all five of:
 4. **Context disposal.** Dropping the async context cancels all in-flight
    computations via their abort handles and awaits completion of all active
    cleanup futures before returning.
-5. **Effect cleanup before next body.** An effect's cleanup future MUST complete
-   before the next effect body starts. Disposal removes pending reruns before
-   awaiting cleanup.
+5. **Effect cleanup is triggered by rerun or dispose, and completes before the
+   next body.** An effect's cleanup future MUST run **only** when the effect
+   reruns or is disposed — the trigger fixed by `reactive-graph.md`
+   § Conformance ("cleanup runs before each rerun and on dispose") — and when it
+   runs on a rerun it MUST complete before the next body starts. Disposal removes
+   pending reruns before awaiting cleanup.
+
+   A binding **MUST NOT** run cleanup at the end of the flush that ran the body.
+   This clause previously stated only the *ordering* ("cleanup completes before
+   the next body starts") and left the *trigger* to `reactive-graph.md`, which
+   turned out to be enough rope: `lazily-py`'s async effect awaited cleanup at
+   flush end whenever no rerun was queued, and satisfied the ordering vacuously
+   because there was no next body to be ordered against. Found 2026-07-19 by
+   `disarm_disposes_nothing`, which asserts `cleanup_order: []` at a step where
+   nothing was disposed or invalidated, and observed a cleanup.
+
+   The reason the trigger matters rather than just the ordering: the canonical
+   effect acquires a resource in the body and releases it in the cleanup.
+   Running cleanup at flush end releases the resource while the effect is still
+   live and will rerun later — an effect that subscribes and returns an
+   unsubscribe would unsubscribe itself immediately. `lazily-go` and
+   `lazily-dart` both retain the cleanup between runs and execute it at the start
+   of the next one; that is the family behavior.
 
 ## `get_async` re-resolve contract
 
@@ -170,8 +190,13 @@ An async effect runs an effect body returning an optional async cleanup:
 
 - **Serialized reruns:** reruns are serialized per effect — a rerun does not
   start until the previous cleanup future completes.
-- **Cleanup ordering:** the previous run's cleanup completes before the next
-  body starts; disposal awaits the current cleanup before removing the node.
+- **Cleanup trigger and ordering:** cleanup runs on rerun or dispose and at no
+  other time — **not** at the end of the flush that ran the body. When it runs on
+  a rerun, the previous run's cleanup completes before the next body starts;
+  disposal awaits the current cleanup before removing the node. The cleanup is
+  therefore *retained* between runs rather than executed eagerly. See
+  § "Conformance" item 5 for why the trigger is normative and not merely the
+  ordering.
 - **Auto-tracking:** the body receives a compute context and tracks dependencies
   through `get_async` / `get_cell`.
 - **Scheduled, not inline:** dependency invalidation schedules an async rerun
