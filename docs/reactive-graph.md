@@ -320,7 +320,7 @@ decides the invalidation source.
   | `lazily-cpp` | pass (`Context`) | pass | composed |
   | `lazily-py` | pass | **failed, fixed** | welded → composed |
   | `lazily-dart` | pass | **failed, fixed** | welded → composed |
-  | `lazily-go` | pass | **failed** | welded → composed; blocked on `Memo`, see below |
+  | `lazily-go` | pass | **failed, fixed** | welded → composed → Memo-backed |
   | `lazily-zig` | 4 fails on `AsyncContext` | **failed on `ThreadSafeContext`, fixed** | composed |
 
   **Clause 3 caught four bindings across two unrelated mechanisms**, and every one
@@ -348,12 +348,33 @@ decides the invalidation source.
   is per surface, and a context that does not offer the constructor is not
   non-conformant. What it **MUST NOT** do is offer it and diverge silently.
 
-  `lazily-go` is a genuine open divergence rather than a gap: its `Memo`
-  implements the `==` guard by recomputing during invalidation, so a memo-backed
-  signal cannot satisfy clauses 3 and 4 while a slot-backed one loses
-  equal-recompute suppression. The two cannot both hold under its current
-  invalidation model. Fixing it means making the memo guard a pull-time check,
-  which is a change to how that binding propagates.
+  `lazily-go` was the deepest case and is now resolved. Its `Memo` implemented
+  the `==` guard by recomputing during invalidation, so a memo-backed signal
+  could not satisfy clauses 3 and 4 while a slot-backed one lost equal-recompute
+  suppression — neither could hold, because the cascade **consumed reverse edges
+  as it walked**. Marking a dependent clean without recomputing meant it never
+  re-registered, so its source could no longer reach it and the next write was
+  lost at depth two, which is `hybrid_serves_stale_value_at_depth_two`.
+
+  Its sync plane now uses a non-consuming mark-frontier walk with a pull-time
+  guard, converged on `lazily-rs`'s model rather than a new design. Two details
+  from that convergence are worth recording for any binding attempting the same
+  migration, because both were initially judged redundant and both were forced
+  back by the corpus:
+
+  - **Notifying dependents when a slot's value actually changed** is what makes
+    the pull walk *order-independent*. Without it, a dependent that refreshes in
+    an unlucky order observes "no dependency changed" and keeps a stale cache.
+    Full-cone marking does not subsume it.
+  - **A force-run flag on effects.** Without one the guard cannot reach effects
+    at all: a transitively scheduled effect runs before the memo can suppress it.
+    The pull-time re-mark must *not* re-schedule effects, or an effect re-runs
+    itself mid-flush.
+
+  Its `AsyncContext` was deliberately scoped out and still does value-only
+  suppression where the sync plane suppresses downstream entirely. That
+  divergence between a single binding's two planes is recorded in the binding
+  rather than resolved here.
 
 ### Reactives have no observers (`#lzdartobservercow`)
 
