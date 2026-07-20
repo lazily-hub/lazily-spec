@@ -756,15 +756,42 @@ merges?" is the first question the accumulator case raises. It does not. Every
 the flush, so `N` calls inside a batch produce `N` folds and **one**
 invalidation.
 
-**The hazard cycle detection cannot catch.** An effect that reads `R` and merges
-into `M`, where `M` is upstream of `R`, is a feedback loop closed through the
-*scheduler* rather than through the graph. It is not a dependency cycle, so the
-acyclicity check will not fire; it manifests as a flush that reschedules itself
-and does not terminate. Bindings **SHOULD** bound effect-flush re-entry and
-report exhaustion rather than spinning. A caller building this construction is
-responsible for ensuring the merge converges — with an idempotent policy it
-settles once the value stops changing, because the `==` store-guard stops the
-next cascade.
+### Feedback: the construction cycle detection cannot see
+
+An effect that reads `R` and merges into `M`, where `M` is upstream of `R`,
+closes a loop through the **scheduler** rather than through the graph. It is not
+a dependency cycle, so the acyclicity check will not fire.
+
+This is deliberate and it is the family's **only** way to express feedback: the
+dependency graph is acyclic by construction, so a cycle cannot be an edge. Closing
+it through the scheduler makes each iteration a flush, which bounds it in time and
+makes it observable — a discrete-time recurrence rather than an unbounded walk:
+
+```
+x_{n+1}  =  x_n ⊕ f(x_n)
+```
+
+**Termination is decided by the merge policy's algebra**, which the policy already
+declares. Where `⊕` is a **join on a semilattice** — idempotent, commutative,
+associative, the properties a CRDT policy carries — every step satisfies
+`x_{n+1} ⊒ x_n`, so the state traces a non-decreasing chain. Under the ascending
+chain condition that chain stabilizes, and the `==` store-guard **is** the
+fixpoint detector: once the join stops moving the value, nothing invalidates and
+the cascade ends. `f` need not be monotone; the join alone forces the ascent.
+This is the classical dataflow-analysis result, and it makes the construction a
+usable fixpoint-iteration primitive.
+
+Where `⊕` is **not** idempotent — `+`, `append`, counters — there is no fixed
+point. Each iteration produces a new value, which invalidates, which flushes,
+which merges again. The loop diverges by construction.
+
+Accordingly:
+
+- A caller **MUST NOT** build a scheduler-closed feedback loop over a
+  non-idempotent policy without an external termination condition.
+- Bindings **SHOULD** bound effect-flush re-entry depth and report exhaustion
+  rather than spinning, since the divergent case is reachable from safe caller
+  code and the acyclicity check cannot detect it.
 
 **Not yet fixtured.** This section is normative prose with no conformance
 fixture behind it, which this specification has learned to treat as a liability
