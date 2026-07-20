@@ -1,0 +1,87 @@
+{
+  "description": "The two exact-fold paths fold EVERY op regardless of batching, in deliberate contrast to the flush-granular edge path. Explicit merge() calls and Topic-driven merges are exact because the CALLER decides how many ops exist; delivery through a dependency edge is flush-granular because the GRAPH decides. This fixture runs both paths against the same accumulator in the same batch so the contrast is structural rather than a matter of comparing two files: three explicit calls and one settled cone deliver 3 + 1 folds, not 4 and not 2. A binding that unified the two paths -- making explicit calls flush-granular, or the edge path per-write -- passes each of the single-path fixtures in isolation and fails only here. That is the point: merge_per_settled_cone_not_per_write.json and merge_folds_synchronously_in_batch.json each pin one path, and a binding can satisfy both with one rule applied inconsistently. Contract: #lzmergefeed.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": {
+        "type": "cell",
+        "id": "a",
+        "value": 0
+      }
+    },
+    {
+      "op": {
+        "type": "merge_cell",
+        "id": "acc",
+        "value": 0,
+        "policy": "Sum"
+      }
+    },
+    {
+      "op": {
+        "type": "effect",
+        "id": "feed",
+        "reads": [
+          "a"
+        ],
+        "merges_into": "acc"
+      },
+      "expect": {
+        "merges_of": {
+          "acc": 1
+        },
+        "note": "baseline fold of a=0 at effect creation"
+      }
+    },
+    {
+      "op": {
+        "type": "batch",
+        "writes": [
+          {
+            "id": "a",
+            "value": 1
+          },
+          {
+            "id": "a",
+            "value": 2
+          }
+        ],
+        "merges": [
+          {
+            "id": "acc",
+            "value": 100
+          },
+          {
+            "id": "acc",
+            "value": 200
+          },
+          {
+            "id": "acc",
+            "value": 300
+          }
+        ]
+      },
+      "expect": {
+        "merges_of": {
+          "acc": 5
+        },
+        "note": "THE assertion: 1 (baseline) + 3 explicit calls (exact, one per call) + 1 edge delivery (flush-granular, one per settled cone) = 5. Unifying the paths gives 3 (all flush-granular) or 7 (all per-write)."
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "acc"
+      },
+      "expect": {
+        "value": 602,
+        "merges_of": {
+          "acc": 5
+        },
+        "note": "0 + 100 + 200 + 300 + 2 -- every explicit op, and only the SETTLED value of a. The intermediate a=1 never reaches the accumulator."
+      }
+    }
+  ]
+}

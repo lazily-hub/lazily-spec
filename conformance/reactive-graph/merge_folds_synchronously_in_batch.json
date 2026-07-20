@@ -1,0 +1,72 @@
+{
+  "description": "Explicit merge() calls fold SYNCHRONOUSLY inside a batch; only propagation defers. N calls produce N folds and one invalidation. This is pinned explicitly because 'does batching lose my merges?' is the accumulator case's first question, and the answer is no -- batching coalesces the downstream cascade, never the algebra. The distinction this fixture draws is between the fold and the notification: a binding that correctly defers invalidation until batch exit but ALSO defers the fold will show fewer merges than calls, and under a non-idempotent policy it will also land on the wrong value. Contrast merge_per_settled_cone_not_per_write.json, where a single merge is correct because the CALLER made one call -- there the graph decided how many ops existed. Here the caller decides, so the fold is exact. That is the same event-versus-state split the family already drew for RelayCell: exact when the caller counts the ops, flush-granular when the graph does. Contract: #lzmergefeed.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": {
+        "type": "merge_cell",
+        "id": "acc",
+        "value": 0,
+        "policy": "Sum"
+      }
+    },
+    {
+      "op": {
+        "type": "effect",
+        "id": "watch",
+        "reads": [
+          "acc"
+        ]
+      },
+      "expect": {
+        "computes_of": {
+          "watch": 1
+        },
+        "note": "an observer of the accumulator, so the invalidation count is visible"
+      }
+    },
+    {
+      "op": {
+        "type": "batch",
+        "merges": [
+          {
+            "id": "acc",
+            "value": 1
+          },
+          {
+            "id": "acc",
+            "value": 2
+          },
+          {
+            "id": "acc",
+            "value": 3
+          }
+        ]
+      },
+      "expect": {
+        "merges_of": {
+          "acc": 3
+        },
+        "computes_of": {
+          "watch": 2
+        },
+        "note": "THE assertion: three calls fold three times (exact), but the watcher runs only once more (coalesced). A binding deferring the fold itself shows merges_of 1."
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "acc"
+      },
+      "expect": {
+        "value": 6,
+        "merges_of": {
+          "acc": 3
+        },
+        "note": "1+2+3 under Sum. A binding that folded only the last op lands on 3 -- the value catches what the count catches, because the policy is non-idempotent."
+      }
+    }
+  ]
+}

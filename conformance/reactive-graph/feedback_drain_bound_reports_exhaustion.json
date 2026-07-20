@@ -1,0 +1,49 @@
+{
+  "description": "A divergent scheduler-closed feedback loop MUST report drain exhaustion rather than hang. An effect that writes into its own dependency cone closes a loop through the SCHEDULER, not the graph -- it is not a dependency cycle, so acyclicity checks never fire. The write calls set_cell, which re-enters the flush, hits the re-entrancy guard and returns immediately, appending the rescheduled effect to the worklist for the OUTER drain. The loop therefore runs flat at constant stack depth: it cannot self-terminate by stack overflow, and a recursion-depth bound could never fire because depth is pinned at 1 by construction. Measured across the family: every binding surveyed guards re-entrant flushes and none bounds iterations, so the only exit was an empty worklist and this fixture would have hung the runner rather than failed it. That is why the bound is the ENABLING CONDITION for this whole area -- nothing else here is testable until it lands. Exhaustion is NOT convergence, and asserting it here asserts that the binding failed safely, not that the loop terminated. The report must also IDENTIFY the loop rather than merely announce that a counter was hit: a self-rescheduling effect concentrates runs in itself, which is what distinguishes divergence from a long-but-terminating wide cascade, and without that attribution a budget cannot tell them apart -- which is how bounds end up set to a million to stop false positives. The policy here is KeepLatest, deliberately: it is the reachable case since Cell is MergeCell<KeepLatest>, its recurrence collapses to unrestricted iteration of an arbitrary function over unbounded state, and whether that halts is undecidable. No analysis can replace the bound. Contract: #lzfeedbackdrain.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": {
+        "type": "cell",
+        "id": "counter",
+        "value": 0
+      }
+    },
+    {
+      "op": {
+        "type": "effect",
+        "id": "diverge",
+        "reads": [
+          "counter"
+        ],
+        "writes_own_cone": "counter"
+      },
+      "expect": {
+        "drain_exhausted": false,
+        "note": "creation runs the effect once; the loop has not been kicked yet"
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "counter",
+        "value": 1
+      },
+      "expect": {
+        "drain_exhausted": true,
+        "note": "THE assertion. Without a bound this step never returns. With one, the drain is cut short and says so. A binding reporting false here either bounded nothing (and hung) or converged, which under KeepLatest with an incrementing body it cannot have."
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "counter"
+      },
+      "expect": {
+        "note": "deliberately asserts NO value. The counter's value at exhaustion is the budget, which is a binding's own tuning choice and not part of the contract -- pinning it here would make the fixture fail on a binding that is conforming but bounded differently."
+      }
+    }
+  ]
+}
