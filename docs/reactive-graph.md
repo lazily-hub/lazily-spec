@@ -788,6 +788,16 @@ policies are not finite-height.** A policy declaration therefore does *not*
 certify that a feedback loop over it terminates; ACC is a separate property of
 the value domain and must be established separately.
 
+**ACC and bounded height are different properties, and the weaker one is the one
+that matters.** ACC says no ascending chain is infinite. *Bounded height* says
+there is a single constant `H` bounding the length of every chain. Bounded height
+implies ACC; the converse fails. A witness: take `⊥`, a top `⊤`, and for each
+`n ≥ 1` a disjoint ladder `(n,1) ⊏ … ⊏ (n,n)`, with joins across different
+ladders landing on `⊤`. Every ascending chain is finite — so ACC holds — while
+chain lengths are unbounded, so no `H` exists. Termination needs only ACC. The
+distinction is recorded because a flag can only ever declare the *stronger*
+property (see below), so the two must not be written as synonyms.
+
 Where ACC does hold, the `==` store-guard is the fixpoint detector: once the join
 stops moving the value, nothing invalidates and the cascade ends. `f` need not be
 monotone for the ascent, which is why this is **not** the classical
@@ -815,7 +825,7 @@ The split is not two-way, and the default policy is in the third class.
 
 | `⊕` | recurrence | termination |
 |---|---|---|
-| join with ACC | monotone ascent, bounded height | **always halts** |
+| join with ACC | monotone ascent, no infinite ascending chain | **always halts** |
 | join without ACC — G-Set, OR-Set, LWW over unbounded domains | monotone accumulation | halts iff the accumulated set is finite; **semi-decidable** |
 | **`KeepLatest`** and other idempotent-but-not-commutative bands | `x ⊕ op = op` collapses it to `x_{n+1} = f(x_n)` | **undecidable** — unrestricted iteration of an arbitrary function |
 | non-idempotent — `+`, `append`, counters | accumulates | no guarantee; halts at an absorbing or saturating value |
@@ -838,11 +848,34 @@ Accordingly:
   why it terminates. The policy's declared algebra is sufficient evidence **only**
   for a join over a domain satisfying ACC. In every other class the caller owes
   an argument the specification cannot supply.
-- Bindings **SHOULD** bound the **effect-drain iteration count** within a single
+- Bindings **MUST** bound the **effect-drain iteration count** within a single
   flush, and report exhaustion rather than spinning. Note this is *not*
   re-entry depth: every binding surveyed guards re-entrant flushes and returns
   immediately, so the loop is a flat unbounded drain at constant stack depth, and
   a re-entry-depth bound would be pinned at 1 and could never fire.
+
+  The bound's **value** is deliberately unspecified and is not part of the
+  contract — it is a binding's tuning parameter, and pinning a number would make
+  a legitimately long cascade non-conformant. What is normative is that the
+  drain has an exit other than an empty worklist, and that taking that exit is
+  **observable**: exhaustion **MUST** surface as a distinguishable outcome
+  (a raised error, a reported diagnostic, a context-level status) and **MUST
+  NOT** be a silent truncation of the cascade. A silently truncated flush leaves
+  the graph in a state no clause of this specification describes — dependents
+  marked dirty with their effects never run — which is worse than the livelock
+  it replaced, because it is indistinguishable from convergence.
+
+  **Why this was raised from SHOULD.** Three flush loops were read directly
+  (lazily-rs `Context::flush_effects` and `ThreadSafeContext::flush_effects`,
+  lazily-js `flushEffects`). All three are re-entrancy-guarded flat drains whose
+  only exit is an empty worklist; **none bounds anything**. A SHOULD that no
+  surveyed binding implements is not a requirement, and the failure it permits
+  is a silent livelock on a thread that has starved whatever would diagnose it.
+  The bound is also the **enabling condition for fixturing this section at all**:
+  a conformance runner cannot replay a divergent feedback loop against a binding
+  whose only exit is convergence, because the fixture hangs the runner. This
+  section has stood as unfixtured normative prose precisely because there was no
+  bounded failure mode to assert against.
 
 **Where a cancellation can be observed.** In a synchronous context the flush does
 not return to the caller between iterations, so the calling thread cannot observe
@@ -853,11 +886,130 @@ exit. Async contexts additionally suspend between iterations. **Unmeasured:
 whether any binding's async drain observes cancellation between iterations has
 not been checked.**
 
-**Not yet fixtured.** This section is normative prose with no conformance
-fixture behind it, which this specification has learned to treat as a liability
-rather than a nuance — the signal semantics sat in exactly this state for months
-while a binding shipped a different construction under a green checkmark. Until
-fixtures exist, treat cross-binding agreement here as unverified.
+**Exhaustion SHOULD say what was cycling.** A bound that reports only that it was
+hit sends the reader to a debugger on a thread that has just stopped livelocking.
+A binding **SHOULD** report the nodes that re-ran repeatedly and, where cheap, the
+repeating values — the difference between *"drain exhausted after N iterations"*
+and *"drain exhausted; `acc` and `total` alternated"*. Only the second is
+actionable. Representation is a binding's choice.
+
+### Termination state belongs in the graph, not in a closure
+
+The stop predicate that ends a feedback loop **SHOULD** be a `Memo`, read by the
+effect, rather than a branch buried in the effect body:
+
+```
+done = memo(|ctx| ctx.get(acc) >= threshold)
+effect(|ctx| { if ctx.get(done) { return } merge(acc, f(ctx.get(upstream))) })
+```
+
+This is a recommendation about where to put a condition, not new surface — it is
+a `Memo` and an `Effect`, both already kinds. What it buys:
+
+- **It is inspectable.** Other nodes may read `done`; a UI can show it; another
+  effect can react to it.
+- **It is fixturable.** A fixture can assert `done` transitions and that merging
+  stops. A predicate inside an effect body is opaque to the corpus, which is part
+  of why this area went untested.
+- **It is reviewable.** The termination argument the clause above requires a
+  caller to *state* becomes a named node rather than a comment.
+
+The shape is legal under the source/dependent partition, which is worth checking
+explicitly because it looks circular: `acc → done → effect → acc`. The final hop
+is a **write**, not a dependency edge, so `acc` acquires no incoming edge and no
+dependency cycle exists. It remains scheduler-closed, one iteration per flush.
+
+It does **not** make termination decidable. A `done` that never becomes true
+diverges exactly as before; the drain bound remains the backstop.
+
+### Accumulators
+
+An accumulator is a **`MergeCell`** under an accumulating policy. That is what
+the merge algebra is for.
+
+A **`Memo` cannot be an accumulator**, for two independent reasons, and the
+second is a live hazard:
+
+1. **No self-edge.** A memo's value is a function of its dependencies' *current*
+   values; accumulation is a function of history. Reading its own previous value
+   would be a self-dependency, which the acyclic graph forbids.
+2. **Recomputes are elidable, so an impure workaround silently loses data.** A
+   memo body closing over a mutable counter compiles everywhere and looks
+   correct. But the graph is free *not to run it*: the `==` guard suppresses a
+   recompute whose value is unchanged, a memo with no readers never runs, and a
+   batch coalesces N invalidations into one recompute. Each of those drops an
+   increment. A binding **MUST NOT** document or example this pattern.
+
+The structural rule, stated once because it decides these questions generally:
+
+> **Memory of its own past implies `Source`.** A dependent must be recomputable
+> from its dependencies, and a value determined by history is not. This is why
+> `MergeCell` is a `Source` even though it computes — `⊕(current, op)` reads its
+> own prior state, which no dependent may do.
+
+The exception that confirms it: a memo folding a **`Topic`**'s retained events is
+an ordinary derivation, because the history is materialized in the topic and the
+fold is a pure function of current state.
+
+| pattern | where history lives | |
+|---|---|---|
+| `MergeCell` + accumulating policy | in the cell (a `Source`) | ✅ |
+| `Memo` folding a `Topic`'s retained events | in the topic | ✅ the fold is pure |
+| `Memo` closing over a mutable counter | nowhere reachable | ❌ loses increments under elision |
+
+Recall also that driving `merge` from a dependency edge is flush-granular, so an
+accumulator fed that way counts *flushes*, not writes. For an exact count, drive
+it from explicit `merge` calls or from a `Topic`.
+
+### There is no `fixpoint` construct, and this records why
+
+A termination construct was designed for this section and **declined**. Recorded
+briefly so it is not re-derived; this is rationale, not specification.
+
+The proposal was a `fixpoint` restricted to policies declaring a new
+`BOUNDED_HEIGHT`, plus a `fixpoint_with(cell, f, measure)` taking a
+strictly-decreasing measure. Three reasons it failed:
+
+1. **The flag would be unverifiable.** `COMMUTATIVE` and `IDEMPOTENT` are honest
+   because they are *refutable by sampling* — one counterexample disproves a
+   claim; neither is confirmable, and this document does not pretend otherwise.
+   ACC is **not even refutable**: every finite chain observed is consistent with
+   it. The stronger bounded-height-with-constant *is* refutable and is vacuous —
+   `Max` over a 64-bit integer has height `2^64`. **A declared property that is
+   unverifiable or vacuous is worse than no property**, and that test generalizes
+   past this proposal.
+2. **It could not cover the reachable case.** `Cell ≡ MergeCell<KeepLatest>`, and
+   a right-zero band has no ascent, so an ACC-restricted construct is by
+   construction absent from the class callers actually hit.
+3. **A measure parameter adds no capability**, and the construct is a composition
+   promoted to a primitive. A caller who can compute a decreasing measure over
+   their own state can compute a stop predicate over that same state — which is
+   the `Memo` pattern above, written with kinds that already exist. `Signal` was
+   retired for exactly this shape.
+
+What the proposal genuinely offered was diagnosis, which is retained above as a
+`SHOULD` on exhaustion reporting.
+
+### Conformance for this section
+
+Three fixtures are specified; **they are not yet written.**
+
+| fixture | asserts |
+|---|---|
+| `feedback_drain_bound_reports_exhaustion` | A divergent loop — `c` a cell, `m` a memo of `c + 1`, an effect merging `get(m)` into `c` under `KeepLatest` — **terminates the flush** and surfaces the exhaustion outcome. Asserts no iteration count, which is not contract. |
+| `feedback_converges_below_the_bound` | The discriminating negative. The same shape with `m = min(get(c) + 1, 3)` under `Max` reaches its fixed point and **must not** report exhaustion. A binding that reports exhaustion for every feedback loop passes the first and fails this. |
+| `feedback_declining_to_write_terminates` | Pins the caller-side exit: an effect that stops merging ends the cascade as ordinary convergence, **not** an exhaustion report. |
+
+Deliberately absent: the bound's value, the exhaustion outcome's representation,
+and any assertion about how many times a given effect ran.
+
+**Unfixtured and unverified, stated explicitly.** Until these exist, treat
+cross-binding agreement on this whole section as unverified — the signal
+semantics sat in exactly this state for months while a binding shipped a
+different construction under a green checkmark. Separately unmeasured: whether
+any binding's async drain observes cancellation between iterations. And the
+`MUST` above is currently satisfied by **no** surveyed binding; it describes
+required behavior, not observed behavior.
 
 A **`MergePolicy`** is an associative fold `⊕ : T × T → T`. The properties it
 satisfies are *selected by the transport contract*, not fixed
