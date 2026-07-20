@@ -1,0 +1,39 @@
+{
+  "description": "Disposal marks the surviving dependent cone dirty but MUST NOT run the effects it reaches, then or later (#lzspecedgeindex). Disposal is not a publish. An effect reached by the teardown walk is a *survivor* — it depended on the disposed node and is still live — so running it re-enters a compute that reads the node currently being torn down. In a binding that flushes effects inside `dispose`, that turns disposal itself into an error and breaks teardown idempotence, with scope teardown the first casualty since it disposes members in sequence. In a binding that defers its flush the failure is quieter but still wrong: the effect sits queued and fires later, during some unrelated flush, as a spurious rerun the caller never triggered. This fixture catches BOTH shapes, which is why it does not stop at the disposal step. Step 6 asserts no effect ran during the dispose — that catches the flush-inside-disposal binding. Step 7 then writes an UNRELATED cell and asserts only that cell's own effect ran — that catches the deferred binding, because a spuriously scheduled `watch` would fire on this flush. The contract for the survivor is 'errors on next recompute', not 'errors immediately', so `watch` remains live and subscribed; it simply must not be run by the teardown. Known to be invisible to the rest of this corpus: lazily-dart and lazily-cpp each mutated their implementation to schedule effects during disposal and all nine other reactive-graph fixtures stayed green, because every one of them disposes an effect in the cone rather than leaving a survivor.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": { "type": "cell", "id": "src", "value": 1 }
+    },
+    {
+      "op": { "type": "cell", "id": "other", "value": 100 }
+    },
+    { "op": { "type": "computed", "id": "mid", "reads": ["src"], "offset": 10 } },
+    { "op": { "type": "effect", "id": "watch", "reads": ["mid"] } },
+    { "op": { "type": "effect", "id": "keeper", "reads": ["other"] } },
+    {
+      "op": { "type": "read", "id": "mid" },
+      "expect": {
+        "value": 11,
+        "dependents_of": { "src": 1, "mid": 1 },
+        "note": "watch is a live dependent of mid; keeper is independent and exists only to give step 7 something to flush"
+      }
+    },
+    {
+      "op": { "type": "dispose", "id": "mid" },
+      "expect": {
+        "observed_by": [],
+        "note": "the first discriminating assertion. watch is in the disposed cone and is NOT itself disposed, so a binding that flushes effects inside dispose runs it here and reports ['watch']."
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "other", "value": 200 },
+      "expect": {
+        "observed_by": ["keeper"],
+        "note": "the second discriminating assertion, and the one a deferred-flush binding needs. If disposal scheduled watch instead of only marking it, watch fires on this unrelated flush as a spurious rerun and appears here alongside keeper."
+      }
+    }
+  ]
+}

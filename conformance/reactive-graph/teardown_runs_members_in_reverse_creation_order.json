@@ -1,0 +1,37 @@
+{
+  "description": "Ending a scope tears its members down in reverse creation order (#lzspecedgeindex). Graph state is order-independent — `disposeAll_order_independent` in lazily-formal proves teardown reaches the same graph whatever order the scope recorded its members — but effect **cleanups are side effects**, and their relative order is observable to the caller. A scope that acquires A then B then C must release C, B, A, because a later member may have been created against state an earlier one owns. This fixture uses THREE effects deliberately. The existing `scope_teardown_equals_fold_of_disposals.json` carries a `cleanup_order` assertion but its scope owns exactly one effect, and a runner that projects `cleanup_order` onto effect entries (which is what a binding whose derived slots have no cleanup callback will do) then sees a single-entry log that reads identically forwards and backwards. That fixture therefore cannot discriminate teardown order, and lazily-dart confirmed it by mutation: reversing the iteration left all nine reactive-graph fixtures green. Three effects make the sequence unambiguous under either projection — forward teardown yields [e_first, e_second, e_third] and cannot be mistaken for the required order. Nothing here asserts on graph state, only on the cleanup sequence, so a binding remains free to implement scope teardown as a bulk sweep rather than a per-member loop.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": { "type": "cell", "id": "src", "value": 1 }
+    },
+    { "op": { "type": "begin_scope", "scope": "g" } },
+    { "op": { "type": "effect", "id": "e_first", "reads": ["src"], "scope": "g" } },
+    { "op": { "type": "effect", "id": "e_second", "reads": ["src"], "scope": "g" } },
+    { "op": { "type": "effect", "id": "e_third", "reads": ["src"], "scope": "g" } },
+    {
+      "op": { "type": "read", "id": "src" },
+      "expect": {
+        "value": 1,
+        "scope_owned_count": { "g": 3 },
+        "note": "all three effects are owned by the scope and have run once, so each has a cleanup outstanding"
+      }
+    },
+    {
+      "op": { "type": "end_scope", "scope": "g" },
+      "expect": {
+        "cleanup_order": ["e_third", "e_second", "e_first"],
+        "note": "the discriminating assertion. Forward teardown yields [e_first, e_second, e_third]; a single-effect scope would yield the same one-entry log either way, which is why this one owns three."
+      }
+    },
+    {
+      "op": { "type": "set_cell", "id": "src", "value": 2 },
+      "expect": {
+        "observed_by": [],
+        "note": "every member is torn down, so a write to the surviving source reaches nothing — teardown detached the edges rather than merely running the cleanups"
+      }
+    }
+  ]
+}
