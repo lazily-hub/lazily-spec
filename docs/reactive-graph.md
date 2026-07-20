@@ -695,6 +695,83 @@ exactly `MergeCell<KeepLatest>`** (the keep-latest instance); a binding MAY
 implement `Cell` as that instance or keep it as a distinct fast path with
 identical semantics.
 
+### Feeding a `MergeCell` from another reactive
+
+A recurring question, answered here because the answer is not obvious and the
+failure mode is one cycle detection cannot see.
+
+**A `Source` never acquires a dependency edge.** That is what makes it a source:
+`Source` and `Dependent` partition the graph by incoming edges, so a node fed by
+the graph would be both, and `Memo → MergeCell → Memo` would become
+constructible. So "feed this merge cell from that reactive" is **not** a new
+capability on the cell. It is an `Effect` that reads the reactive and calls
+`merge`:
+
+```
+effect(|ctx| { merge(acc, ctx.get(upstream)) })
+```
+
+The edge belongs to the effect. The cell stays edge-free, the partition holds,
+and the construction needs no new node kind — the same answer the family gave for
+eager values.
+
+**Delivery is per settled cone, not per write.** The effect runs once per flush
+carrying the post-coalescence value, so `1 → 2 → 3` inside a batch produces
+**one** merge, of `3`. This is a feature rather than a limitation: the
+intermediates were never materialized, because eliding them is what a lazy graph
+is for. An `Effect` is the only mechanism with the framing to do this correctly —
+it sees a settled value at a boundary, where an observer would see raw writes
+with neither.
+
+**Therefore merge granularity is flush granularity, and this MUST be stated
+wherever the construction is offered.** With a non-idempotent policy (`+`, count,
+append-to-log) the accumulated result depends on how writes were batched: three
+unbatched writes fold three times, the same three writes inside a batch fold
+once. That is not a defect — it follows from *Effects are scheduled, not inline* —
+but the accumulator is the case callers reach for first, and it is the case where
+the difference is visible.
+
+**For an exact fold over every operation, do not drive it from a dependency
+edge.** Drive it from explicit `merge` calls or from a `Topic`:
+
+| driver | merges performed | fold is over |
+|---|---|---|
+| explicit `merge()` calls | one per call, batched or not | **every op** — exact |
+| `Topic` subscription | one per event | **every op** — exact |
+| dependency edge, via an effect | one per settled cone | **settled values** — flush-granular |
+
+The first two are exact because the caller or the topic decides how many
+operations exist. The third is flush-granular because the *graph* decides, and
+deciding not to produce an intermediate is the graph working as designed. This is
+the same event-versus-state split recorded in
+`relaycell-backpressure-analysis.md` — retained events versus coalescible state —
+and it is why the answer to "I need every transition" is `Topic`, not a new
+capability on a reactive.
+
+**`merge` folds synchronously inside a `batch`; only propagation defers.** This
+follows from `merge` routing through `set_cell` and from *Mutation inside a batch
+is synchronous*, but it is stated explicitly because "does batching lose my
+merges?" is the first question the accumulator case raises. It does not. Every
+`merge` call folds when it is called. What a batch defers is the invalidation and
+the flush, so `N` calls inside a batch produce `N` folds and **one**
+invalidation.
+
+**The hazard cycle detection cannot catch.** An effect that reads `R` and merges
+into `M`, where `M` is upstream of `R`, is a feedback loop closed through the
+*scheduler* rather than through the graph. It is not a dependency cycle, so the
+acyclicity check will not fire; it manifests as a flush that reschedules itself
+and does not terminate. Bindings **SHOULD** bound effect-flush re-entry and
+report exhaustion rather than spinning. A caller building this construction is
+responsible for ensuring the merge converges — with an idempotent policy it
+settles once the value stops changing, because the `==` store-guard stops the
+next cascade.
+
+**Not yet fixtured.** This section is normative prose with no conformance
+fixture behind it, which this specification has learned to treat as a liability
+rather than a nuance — the signal semantics sat in exactly this state for months
+while a binding shipped a different construction under a green checkmark. Until
+fixtures exist, treat cross-binding agreement here as unverified.
+
 A **`MergePolicy`** is an associative fold `⊕ : T × T → T`. The properties it
 satisfies are *selected by the transport contract*, not fixed
 (`relaycell-backpressure-analysis.md` §2):
