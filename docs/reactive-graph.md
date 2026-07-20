@@ -771,24 +771,47 @@ makes it observable — a discrete-time recurrence rather than an unbounded walk
 x_{n+1}  =  x_n ⊕ f(x_n)
 ```
 
-**Termination is decided by the merge policy's algebra**, which the policy already
-declares. Where `⊕` is a **join on a semilattice** — idempotent, commutative,
-associative, the properties a CRDT policy carries — every step satisfies
-`x_{n+1} ⊒ x_n`, so the state traces a non-decreasing chain. Under the ascending
-chain condition that chain stabilizes, and the `==` store-guard **is** the
-fixpoint detector: once the join stops moving the value, nothing invalidates and
-the cascade ends. `f` need not be monotone; the join alone forces the ascent.
-This is the classical dataflow-analysis result, and it makes the construction a
-usable fixpoint-iteration primitive.
+**Termination needs two properties, and the policy's algebra supplies only one.**
 
-Where `⊕` is **not** idempotent — `+`, `append`, counters — there is no fixed
-point. Each iteration produces a new value, which invalidates, which flushes,
-which merges again. The loop diverges by construction.
+Where `⊕` is a **join on a semilattice** — idempotent, commutative, associative,
+the properties a CRDT policy carries — every step satisfies `x_{n+1} ⊒ x_n`, so
+the state traces a non-decreasing chain. That is the ascent, and it is all the
+join gives you.
+
+**It does not give you termination.** The chain stabilizes only if the lattice
+also satisfies the **ascending chain condition** — no infinite strictly
+increasing chains — and idempotence, commutativity and associativity imply
+nothing about chain height. A G-Set or OR-Set over an unbounded domain is a
+perfectly good join semilattice whose chain ascends forever if `f` keeps
+producing fresh elements; LWW over unbounded timestamps is the same. **Most CRDT
+policies are not finite-height.** A policy declaration therefore does *not*
+certify that a feedback loop over it terminates; ACC is a separate property of
+the value domain and must be established separately.
+
+Where ACC does hold, the `==` store-guard is the fixpoint detector: once the join
+stops moving the value, nothing invalidates and the cascade ends. Two caveats on
+that detector:
+
+- It detects a fixpoint of `==`, not of the lattice order. A policy carrying
+  metadata — tombstones, causal context, vector clocks — can compare unequal at
+  a genuine lattice fixpoint, and the loop will spin.
+- `f` need not be monotone for the ascent, which is why this is **not** the
+  classical monotone-framework result. Kleene iteration requires a monotone
+  transfer function and delivers the *least* fixed point. This construction
+  reaches *a* fixed point and offers no leastness guarantee.
+
+Where `⊕` is **not** idempotent — `+`, `append`, counters — there is no
+*guaranteed* fixed point, and the loop diverges for any `f` that keeps producing
+non-identity operations. It terminates when `f` yields the policy's identity
+(`0`, the empty append), so such a loop is not automatically wrong — it is
+unguaranteed, and the caller owns the termination argument.
 
 Accordingly:
 
-- A caller **MUST NOT** build a scheduler-closed feedback loop over a
-  non-idempotent policy without an external termination condition.
+- A caller building a scheduler-closed feedback loop **MUST** be able to state
+  why it terminates: ACC on the value domain for a join policy, or an explicit
+  termination condition otherwise. The policy's declared algebra is not
+  sufficient evidence.
 - Bindings **SHOULD** bound effect-flush re-entry depth and report exhaustion
   rather than spinning, since the divergent case is reachable from safe caller
   code and the acyclicity check cannot detect it.
