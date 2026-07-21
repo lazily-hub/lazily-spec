@@ -738,9 +738,9 @@ _REACTIVE_GRAPH_EXPECT_KEYS = {
     "scope_owned_count",
     # Cumulative compute-invocation count per node, from scenario start
     # (#lzsignaleager). The only caller-observable difference between an eager
-    # signal and the lazy memo it is built on — values are identical for every
-    # read sequence, so a corpus without this cannot tell `signal()` from
-    # `memo()`.
+    # `Computed` and the lazy `Computed` it is built on — values are identical for every
+    # read sequence, so a corpus without this cannot tell `computed().eager()`
+    # from `computed()`.
     "computes_of",
     # Cumulative merge-fold count per merge cell, from scenario start
     # (#lzmergefeed). Delivery through a dependency edge is per settled cone,

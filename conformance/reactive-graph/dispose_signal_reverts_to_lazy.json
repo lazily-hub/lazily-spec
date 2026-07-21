@@ -1,5 +1,5 @@
 {
-  "description": "Disposing a signal disposes only its eager puller. The backing value survives, stays readable, stays CORRECT, and reverts to lazy recompute-on-read. This is normative clause 4 of *Signal eagerness* (reactive-graph.md), and it is the reason the operation every binding spells `dispose_signal` is a naming inaccuracy rather than a description -- it does not dispose the signal, it de-eagers it. A caller who trusts the name expects teardown and gets a still-live lazy memo. This fixture pins three failures that a values-only assertion cannot separate. (a) A binding that disposes the backing slot along with the puller makes the value unreadable, so step 3 errors instead of returning. (b) A binding that disposes the puller but leaves the value FROZEN at its last eager materialization returns the pre-write value at step 4 -- correct-looking if you only ever check that a read succeeds, and wrong. (c) A binding whose dispose is a no-op on the puller keeps re-materializing eagerly, which step 3 catches on the compute count while every value in the fixture stays identical to the conforming case. The steps are ordered so that (c) is caught BEFORE any read, because a read would mask it by triggering the lazy recompute that makes the counts agree again. Contract: #lzsignaleager clause 4.",
+  "description": "Disposing a signal disposes only its eager puller. The backing value survives, stays readable, stays CORRECT, and reverts to lazy recompute-on-read. This is normative clause 4 of *Signal eagerness* (reactive-graph.md), and it is the reason the operation every binding spells `dispose_signal` is a naming inaccuracy rather than a description -- it does not dispose the signal, it de-eagers it. A caller who trusts the name expects teardown and gets a still-live lazy computed cell. This fixture pins three failures that a values-only assertion cannot separate. (a) A binding that disposes the backing slot along with the puller makes the value unreadable, so step 3 errors instead of returning. (b) A binding that disposes the puller but leaves the value FROZEN at its last eager materialization returns the pre-write value at step 4 -- correct-looking if you only ever check that a read succeeds, and wrong. (c) A binding whose dispose is a no-op on the puller keeps re-materializing eagerly, which step 3 catches on the compute count while every value in the fixture stays identical to the conforming case. The steps are ordered so that (c) is caught BEFORE any read, because a read would mask it by triggering the lazy recompute that makes the counts agree again. Contract: #lzsignaleager clause 4.",
   "kind": "ReactiveGraph",
   "model": "Context",
   "shape": "steps",
@@ -79,7 +79,7 @@
         "computes_of": {
           "sig": 2
         },
-        "note": "the de-eagered signal is an ordinary memo: the recompute is cached, so a second read does not recompute"
+        "note": "the de-eagered computed is an ordinary lazy `Computed`: the recompute is cached, so a second read does not recompute"
       }
     }
   ]

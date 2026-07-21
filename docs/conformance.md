@@ -76,7 +76,7 @@ assert the emitted minimal op set.
 | `collections/keyed_reconciliation_lis.json` | LIS move-minimized reconciliation; stable entries not invalidated |
 | `collections/semtree_incremental.json` | memoized semantic tree: ancestor-chain-only recompute, sibling isolation, memo guard |
 | `collections/seqcrdt_convergence.json` | move-aware sequence CRDT: single-LWW move, concurrent-move/value-edit independence, tombstone convergence, commutativity |
-| `collections/mergecell_algebra.json` | `SourceCell` merge algebra (`#relaycell`): KeepLatest/Sum/Max policies; per-op converged value + whether `⊕(old,op)==old` suppresses the cascade (idempotent/identity no-op = free dedup); `Cell ≡ SourceCell<KeepLatest>` |
+| `collections/mergecell_algebra.json` | `Source<T, M>` merge algebra (`#relaycell`): KeepLatest/Sum/Max policies; per-op converged value + whether `⊕(old,op)==old` suppresses the cascade (idempotent/identity no-op = free dedup); `Cell ≡ Source<KeepLatest>` |
 | `collections/textcrdt_convergence.json` | Fugue/RGA character CRDT: concurrent same-point inserts, sticky tombstone, commutative/idempotent merge, GC |
 | `collections/textcrdt_delta_sync.json` | `TextCrdt` delta sync (`#lztextsync`): `version_vector` (insert + tombstone ids), `delta_since` / `apply_delta`; bidirectional exchange convergence, whole-snapshot fork identity preservation, idempotent apply |
 | `collections/stableid_alignment.json` | manufactured text identity: anchors / content hashes / word-LCS similarity alignment |
@@ -127,7 +127,7 @@ Op vocabulary (all ids are fixture-local labels, never a binding's internal id):
 | Op | Meaning |
 |---|---|
 | `cell {id, value}` | Create a source cell |
-| `computed {id, reads[], offset, scope?}` | Create a derived formula whose value is `sum(reads) + offset`; owned by `scope` when named |
+| `computed {id, reads[], offset, scope?}` | Create a derived, guarded `Computed` whose value is `sum(reads) + offset`; owned by `scope` when named |
 | `effect {id, reads[], scope?}` | Register an effect over `reads`; runs on creation and on each flush after a tracked invalidation |
 | `read {id}` | Read a node — `expect.value`, or `expect.error` for a disposed one |
 | `set_cell {id, value}` | Publish; `expect.observed_by` names the effects that ran, `expect.observed_count` their number |
@@ -146,7 +146,7 @@ two differently-built runs agree (`expected.observationally_equal`).
 | Fixture | Covers |
 |---------|--------|
 | `reactive-graph/dispose_detaches_edges_both_directions.json` | disposal detaches upstream *and* downstream edges; a publish to a former source does not reach the disposed node; the surviving source is unaffected |
-| `reactive-graph/read_after_dispose_is_an_error.json` | reading a disposed formula, a disposed cell, or through a live reader that names one is an error — never a stale or default value; double-dispose is an idempotent no-op |
+| `reactive-graph/read_after_dispose_is_an_error.json` | reading a disposed `Computed`, a disposed source cell, or through a live reader that names one is an error — never a stale or default value; double-dispose is an idempotent no-op |
 | `reactive-graph/recycled_id_inherits_nothing.json` | a node minted on a recycled id starts with an empty edge set in both directions — the owner-keyed-side-table aliasing hazard; a stale cross-kind handle disposes nothing |
 | `reactive-graph/scope_teardown_equals_fold_of_disposals.json` | ending a scope is observationally equal to disposing each member individually (`disposeScope_eq_disposeAll`), including reverse-creation-order cleanup |
 | `reactive-graph/scoping_bounds_teardown_not_visibility.json` | a scope's nodes read parent- and sibling-owned nodes freely in every direction; propagation crosses scope boundaries unchanged |
