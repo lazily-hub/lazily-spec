@@ -14,7 +14,7 @@ message in the repo's existing style; push to the current branch on `origin`.
 This standing rule overrides the harness default of "commit only when
 explicitly asked" for this repo.
 
-<!-- tsift:code-navigation v=0.1.74 -->
+<!-- tsift:code-navigation v=0.1.77 -->
 ## Code Navigation
 
 Keep this block self-contained for Codex/OpenCode prompt reuse. If this repository also ships current `.claude/skills/tsift/SKILL.md` or `runbooks/code-navigation.md`, use those deeper runbooks for command detail instead of expanding this block.
