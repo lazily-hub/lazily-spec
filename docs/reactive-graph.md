@@ -14,85 +14,106 @@ MUST honor this contract.
 
 ## The reactive family
 
-| Primitive | Role |
+The kernel is a **single genus** `Cell<T, K>` — a node with a readable value —
+with two value-bearing kinds and one sink:
+
+| Kind | Role |
 |-----------|------|
-| **Cell** | A mutable source value. `setCell` invalidates dependents on a `==` (PartialEq) change; an equal set is a no-op. |
-| **Slot** | A lazily-computed, memoized derived value. Tracks its dependencies automatically, computes on first read, caches, and recomputes only when read after an upstream invalidation. |
-| **MergeCell** | A source whose write is a **merge** `⊕` under a [`MergePolicy`](#mergecell-and-the-merge-algebra-relaycell) rather than a replace. `Cell ≡ MergeCell<KeepLatest>`: a plain cell is the keep-latest instance. Backed by a cell node, so it inherits the `==` store-guard and store-without-cascade. |
-| **Effect** | A side-effecting computation that reruns whenever a tracked dependency invalidates. An optional cleanup closure runs before each rerun and on dispose. |
+| **`Cell<T, K>`** | The **genus**: a node with a readable value. The kind `K` is either `Source<M>` or `Formula`. Every kind reads through `get` (auto-subscribing). Generic code takes `Cell<T, K>`; humans write the two aliases below. |
+| **`SourceCell<T, M>`** | `Cell<T, Source<M>>` — written from outside. `set` replaces (invalidating dependents on a `==` (PartialEq) change; an equal set is a no-op); `merge` folds an op `⊕` under [`MergePolicy`](#the-merge-algebra-and-sourcecellt-m-relaycell) `M`. `M` defaults to `KeepLatest`, so `SourceCell<T>` is a plain source cell and `SourceCell<T, M>` with `M ≠ KeepLatest` is what used to be called a `MergeCell`. |
+| **`FormulaCell<T>`** | `Cell<T, Formula>` — computed from upstream. Tracks its dependencies automatically, computes on first read, caches, and recomputes only when read after an upstream invalidation. **Guarded by default**: an equal recompute suppresses downstream invalidation. |
+| **`Effect`** | A side-effecting **sink** — no readable value, so nothing can ever depend on it. Reruns whenever a tracked dependency invalidates; an optional cleanup closure runs before each rerun and on dispose. It sits **outside** the `Cell` hierarchy, by capability, not by current degree. |
 
-The three core primitives are **`Cell`** / **`Slot`** / **`Effect`** (with
-`MergeCell` the merge-generalized source, `Cell ≡ MergeCell<KeepLatest>`).
+The partition is one axis with both sides covered and no leftover: **a node's
+value comes either from outside it (`SourceCell`) or from upstream of it
+(`FormulaCell`, via a formula).** `Effect` has no value to read, so it cannot be
+folded in — the sink position is a real boundary, not a naming accident.
 
-**`Signal` is a derived construct, not a core primitive.** It is
-`Signal ≡ Slot.eager` — a memo Slot plus a puller Effect that reads the slot on
-creation and after every invalidation, so its value is materialized by the time
-the invalidating `setCell`/`batch` returns (readers never see an intermediate
-unset state — `relaycell-backpressure-analysis.md` §4.0). It composes the core
-primitives; bindings expose it as a convenience (`signal(compute)`), not as a
-distinct kind of node in their public surface.
+`Cell ≡ SourceCell<KeepLatest>` is not a spec assertion but a **type alias with a
+default parameter**: a plain source cell is the keep-latest instance of the one
+source kind. A binding MAY implement it as that instance or keep it as a distinct
+fast path with identical semantics.
 
-The normative semantics are four observable clauses — materialize once at
-creation, fresh at mutator return, once per flush rather than once per write,
-and disposal that removes only the puller. They are stated under *Signal
-eagerness* below and fixtured in `conformance/reactive-graph/signal_*.json`. The
-memo-plus-puller construction is the recommended way to satisfy them, not itself
-a requirement.
+**The eager construct is a *driven* `FormulaCell`, not a distinct kind.** The
+eager construction is `formula(compute).drive()`: a guarded `FormulaCell` plus a
+puller `Effect` that reads the formula on creation and after every invalidation,
+so its value is materialized by the time the invalidating `set`/`batch` returns
+(readers never see an intermediate unset state — `relaycell-backpressure-analysis.md`
+§4.0). `.drive()` is **idempotent** and returns the **same** formula handle,
+mutated — so the per-write puller of the old `Signal` cannot be constructed (see
+*Eager formulas* under Semantics, and §9.2.2's theorem that a writer is always a sink).
 
-Values are **lazy by default**; reach for the derived `Signal` when eager push
-semantics are required. Handles (`SlotHandle` / `CellHandle` / `SignalHandle` /
-`MergeCellHandle` / `EffectHandle`) are lightweight, copyable ids over a shared
-node table — they are usable only with the owning context.
+The normative eager semantics are four observable clauses — materialize once at
+creation, fresh at mutator return, once per flush rather than once per write, and
+disposal that removes only the puller. They are stated under *Eager formulas*
+below and fixtured in `conformance/reactive-graph/signal_*.json`. The
+formula-plus-puller construction is the recommended way to satisfy them, not
+itself a requirement.
 
-**The read/write type split.** Every primitive above is a **`Reactive<T>`** — the
-read supertype exposing `get` (auto-subscribing), nothing more. Note it does
-**not** expose `subscribe`: observation is a declared dependency edge, never a
-registered callback — see *Reactives have no observers*.
-Writability is the sub-interface **`Source<T>: Reactive<T>`**, which adds `set`
-(replace) and `merge` (fold under the source's policy). A derived Slot/Signal is
-`Reactive<T>` only (read-only); `Cell`/`MergeCell` are `Source<T>`. The payoff
-(`relaycell-backpressure-analysis.md` §4.0): a composite reader-kind can be typed
-`Reactive<T>` and the backend chooses the impl — pull-Slot, push-fed Cell, or
-polling-Slot — behind one interface, so ownership of the mutation (not the type)
-decides the invalidation source.
+Values are **lazy by default**; call `.drive()` on a formula when eager push
+semantics are required. Handles are the kinded types themselves —
+`SourceCell<T, M>`, `FormulaCell<T>`, `EffectHandle` — lightweight, copyable ids
+over a shared node table (arena slots; see *Handles and identity*), usable only
+with the owning context.
+
+**Read is on the genus; write is on the source kind.** Every `Cell<T, K>` exposes
+`get` (auto-subscribing) — and *only* `get`; there is no `subscribe`, because
+observation is a declared dependency edge, never a registered callback (see
+*Reactives have no observers*). Writing is not a supertype/subtype relationship
+but a **kind restriction**: `set` (replace) and `merge` (fold under the source's
+policy) live on the inherent impl for `Cell<T, Source<M>>` alone, so
+`formula.set(…)` is a *compile error* — no method found, no trait in sight. A
+`FormulaCell` reads and never writes; a `SourceCell` does both. The payoff
+(`relaycell-backpressure-analysis.md` §4.0): a composite reader can be typed as
+the genus `Cell<T, K>` and the backend chooses the impl — pull-formula, push-fed
+source, or polling-formula — behind one type, so ownership of the mutation (not
+the type) decides the invalidation source. Where a binding has no way to restrict
+methods by type parameter (Go), the genus is reintroduced as an interface
+`Cell[T]` carrying `Get`, with `SourceCell`/`FormulaCell` as structs — the same
+compile error under a different mechanism (§4 of the design).
 
 ## API surface
 
+Three constructors, symmetric with the kernel. `source` / `formula` / `.drive()`
+replace the eight old constructors (`cell`, `merge_cell`, `computed`, `memo`,
+`slot`, `signal`, `get_signal`, `dispose_signal`).
+
 | Method | Description |
 |--------|-------------|
-| `cell(value)` | Create a mutable source cell |
-| `get_cell(handle)` | Read a cell value (auto-subscribes the running computation) |
-| `set_cell(handle, value)` | Update a cell and invalidate dependents (no-op on `==`) |
-| `computed(compute)` / `slot(compute)` | Create a lazy derived slot (no memo guard) |
-| `memo(compute)` | Create a lazy derived slot with a `==` memo guard |
-| `get(handle)` | Read a slot, computing/refreshing if necessary (auto-subscribes) |
-| `signal(compute)` | Create an eager derived value (memo slot + puller effect) |
-| `get_signal(handle)` | Read a signal's current (always-materialized) value |
-| `merge_cell<M>(value)` | Create a `MergeCell` whose write folds under policy `M` |
-| `merge(handle, op)` | Fold `op` into a `MergeCell`/`Source` under its policy (`⊕`; routes through `set_cell`, so the `==` guard + store-without-cascade apply) |
-| `effect(run)` | Register a side-effecting computation; `run` may return a cleanup closure |
+| `source(value)` | Create a `SourceCell<T, KeepLatest>` — a plain mutable source cell |
+| `source::<M>(value)` | Create a `SourceCell<T, M>` whose write folds under policy `M` (was `merge_cell`) |
+| `get(handle)` | Read any `Cell<T, K>` — a source or a formula — computing/refreshing a formula if necessary (auto-subscribes the running computation) |
+| `set(handle, value)` | Update a `SourceCell` and invalidate dependents (no-op on `==`) — a compile error on a `FormulaCell` |
+| `formula(compute)` | Create a lazy derived `FormulaCell`, **guarded by default** (an equal recompute suppresses downstream — was `memo`; subsumes `computed`/`slot`) |
+| `formula(compute).drive()` | Make the formula **eager** (attach a puller `Effect`). Idempotent; returns the same formula handle (was `signal`) |
+| `merge(handle, op)` | Fold `op` into a `SourceCell` under its policy (`⊕`; routes through `set`, so the `==` guard + store-without-cascade apply) — a compile error on a `FormulaCell` |
+| `effect(run)` | Register a side-effecting computation (a sink); `run` may return a cleanup closure |
 | `dispose_effect(handle)` | Deschedule, drop edges, run cleanup |
-| `dispose_slot(handle)` / `dispose_cell(handle)` | Tear down a derived slot or source cell: detach edges in both directions, clear the node, recycle its id |
+| `dispose(handle)` | Tear down any node kind: detach edges in both directions, clear the node, recycle its slot id. Disposing a **driven** formula also tears down its puller (§9.3.4) |
+| `undrive(handle)` | Revert a driven formula to lazy (removes the puller only, keeps the value) — replaces `dispose_signal`; exists only if a binding needs the reverse transition (§9.3.4) |
 | `scope()` | Open a **teardown scope**: nodes created through it are disposed together when the scope ends |
 | `scope.disarm()` | Disarm a scope — ending it disposes nothing; its nodes revert to context ownership |
-| `batch(run)` | Coalesce several cell updates into one invalidation + effect flush |
+| `batch(run)` | Coalesce several source updates into one invalidation + effect flush |
 
 ## Semantics
 
-- **Pull-based, glitch-free refresh.** A slot that reads other slots always
-  observes values consistent with the current inputs. On `get`, a slot first
-  refreshes its own dependencies (recursively, lazy pull), then recomputes only
-  if any dependency actually changed — it never observes a half-updated graph.
-- **`==` guard on `set_cell`.** Setting an equal value is a no-op: no
-  downstream cascade fires. Equality is structural/value equality, not
-  reference identity, so two distinct-but-equal values suppress invalidation.
-- **`memo` adds a `==` guard.** An equal recompute suppresses downstream
-  invalidation — the slot's value version does not bump, so subscribers see no
-  change. `computed`/`slot` (no memo guard) always propagates.
+- **Pull-based, glitch-free refresh.** A `FormulaCell` that reads other cells
+  always observes values consistent with the current inputs. On `get`, a formula
+  first refreshes its own dependencies (recursively, lazy pull), then recomputes
+  only if any dependency actually changed — it never observes a half-updated graph.
+- **`==` guard on `set`.** Setting an equal value is a no-op: no downstream
+  cascade fires. Equality is structural/value equality, not reference identity, so
+  two distinct-but-equal values suppress invalidation.
+- **`formula` is guarded by default.** An equal recompute suppresses downstream
+  invalidation — the formula's value version does not bump, so subscribers see no
+  change. This is a behaviour choice, not a second constructor: the old split
+  between an unguarded `computed`/`slot` and a guarded `memo` collapses into one
+  `formula`, and it picks the guard (the efficient default for derived state). An
+  unguarded formula is a construction flag, not a distinct type.
 - **Dynamic dependencies.** A tracking stack auto-discovers edges on each
-  recompute: every `get`/`get_cell` read inside a running slot/effect registers
-  a dependency. Stale dependencies from a previous run are removed before
-  re-registering; a slot that reads a different set of inputs on rerun has its
+  recompute: every `get` read inside a running formula/effect registers a
+  dependency. Stale dependencies from a previous run are removed before
+  re-registering; a formula that reads a different set of inputs on rerun has its
   edge set updated to match. There is no manual subscribe/unsubscribe.
 
 > **Implementation note.** The dedup that keeps edge registration idempotent is
@@ -236,9 +257,10 @@ decides the invalidation source.
   third option: a node an arena-stored closure can capture must outlive the
   capture, so a handle that borrows the context can only ever be a leaf — the
   constraint that makes the scope, not the node, the right unit of teardown.
-- **Cycle detection.** A slot that depends on itself (directly or transitively)
-  is detected during refresh and throws — the graph is acyclic by construction.
-- **`batch` coalesces.** Multiple `set_cell` calls inside `batch(run)` queue
+- **Cycle detection.** A `FormulaCell` that depends on itself (directly or
+  transitively) is detected during refresh and throws — the graph is acyclic by
+  construction.
+- **`batch` coalesces.** Multiple `set` calls inside `batch(run)` queue
   their invalidation roots; at the outermost batch exit the roots propagate and
   effects flush once. Mutation inside a batch is synchronous; only the
   invalidation propagation is deferred to the boundary.
@@ -247,66 +269,68 @@ decides the invalidation source.
   the same tick, at batch exit). A rerun does not start until the previous
   cleanup completes. Disposal removes pending reruns, runs the current cleanup,
   and unsubscribes all dependency edges.
-- **Signal eagerness (derived construct).** A signal is not a core primitive — it
-  is a `memo` slot plus a puller effect: the
-  effect reads the slot on creation and after every invalidation, forcing the
-  memo to re-materialize. Because the puller runs inside the invalidating
-  `set_cell`/`batch`'s effect flush, the value is fresh by the time the mutator
-  returns. Disposing the puller effect reverts the signal to lazy behavior (the
-  backing value stays readable but is no longer eagerly kept fresh).
+- **Eager formulas (`.drive()`).** Eagerness is not a kind — it is a
+  `FormulaCell` with a puller `Effect` attached, produced by `formula(compute).drive()`:
+  the effect reads the formula on creation and after every invalidation, forcing it
+  to re-materialize. Because the puller runs inside the invalidating `set`/`batch`'s
+  effect flush, the value is fresh by the time the mutator returns. `.drive()` is
+  **idempotent** — a second call is a no-op, so a formula never acquires two pullers
+  and the per-write over-compute is structurally unrepresentable. `undrive`
+  (or disposing the formula) reverts it to lazy behaviour (the backing value stays
+  readable but is no longer eagerly kept fresh).
 
-  **Normative signal semantics.** The four clauses below are what a binding
+  **Normative eager semantics.** The four clauses below are what a binding
   conforms to. They are stated as observations a caller can make, so that any
   implementation strategy satisfying them conforms — see *Composition is
-  recommended, not required* below.
+  recommended, not required* below. (The conformance fixtures still carry the
+  historical `signal` filenames; the concept is a driven formula.)
 
-  1. **Creation materializes once.** `signal(compute)` **MUST** run `compute`
-     exactly once at creation and **MUST NOT** expose an intermediate unset
-     state. A reader immediately after creation observes the computed value
+  1. **Creation materializes once.** `formula(compute).drive()` **MUST** run
+     `compute` exactly once at creation and **MUST NOT** expose an intermediate
+     unset state. A reader immediately after creation observes the computed value
      without triggering a compute of its own.
-  2. **Fresh at mutator return.** After a `set_cell` that invalidates the
-     signal's dependency cone returns, the signal's value **MUST** already equal
+  2. **Fresh at mutator return.** After a `set` that invalidates the driven
+     formula's dependency cone returns, its value **MUST** already equal
      what `compute` yields from the current sources, with **no intervening
-     read**. This is the clause a lazy memo does not satisfy, and it is the
+     read**. This is the clause a lazy formula does not satisfy, and it is the
      operational meaning of "eager".
-  3. **Once per flush, not once per write.** Inside `batch(run)`, a signal whose
-     dependencies are written N times **MUST** re-materialize **once**, at the
+  3. **Once per flush, not once per write.** Inside `batch(run)`, a driven formula
+     whose dependencies are written N times **MUST** re-materialize **once**, at the
      outermost batch exit — not once per write. The puller is an effect and
-     obeys *Effects are scheduled, not inline*; a signal that re-materializes
+     obeys *Effects are scheduled, not inline*; a formula that re-materializes
      during invalidation rather than during the flush violates this clause even
      though it satisfies (2). N writes inside a batch **MUST** produce exactly
      one compute.
-  4. **Disposal removes only the puller.** Disposing a signal **MUST** dispose
+  4. **Undrive removes only the puller.** Undriving a formula **MUST** dispose
      the eager puller and **MUST NOT** dispose the backing value. After
-     disposal the value remains readable, remains correct on read (it reverts to
+     undriving the value remains readable, remains correct on read (it reverts to
      lazy recompute-on-read), and **MUST NOT** re-materialize on write. This is
-     why the operation is not a teardown of the signal, and why naming it
-     `dispose_signal` is a known inaccuracy rather than a description.
+     why the operation is `undrive` — a state transition back to lazy — rather
+     than a teardown, and why the old `dispose_signal` naming was an inaccuracy.
 
   **Composition is recommended, not required.** Clauses 1–4 are observable.
-  "A memo slot plus a puller effect" is the construction that satisfies them and
-  is what every binding **SHOULD** use — it is five lines over the public API and
-  needs no teardown special case. It is deliberately **not** a `MUST`, because
+  "A guarded formula plus a puller effect" is the construction that satisfies them
+  and is what every binding **SHOULD** use — it is five lines over the public API
+  and needs no teardown special case. It is deliberately **not** a `MUST`, because
   which nodes exist internally is not something a caller can observe, and this
   specification does not mandate unobservable representation (the same rule that
   lets a binding choose weak back-edges). A binding that welds eagerness into its
-  slot invalidation path conforms if and only if it satisfies all four clauses —
+  formula invalidation path conforms if and only if it satisfies all four clauses —
   and clause 3 is the one such a binding is most likely to fail, because
   re-pulling during invalidation is earlier than the flush.
 
-  A binding **SHOULD NOT** make the signal a node kind in its graph
-  representation: the kernel's node enumeration is `Cell`, `Slot`, `Effect` (plus
-  `MergeCell` where the merge algebra is implemented), and `Signal` is a
-  convenience over those. This is a `SHOULD NOT` rather than a `MUST NOT`
-  deliberately. Shipping a `Signal` *type* is not the violation — every binding
-  has one, and `lazily-rs`'s is a pair of ids the arena has never heard of. The
-  question is whether the graph itself has a fourth kind to dispatch on, and in a
-  binding whose node base class is private that is not something a caller can
-  observe at all. Where it is unobservable, it is a design rule about the kernel
-  staying closed, enforced by review rather than by conformance — the same reason
-  this specification declines to mandate weak back-edges.
+  A binding **MUST NOT** make eagerness a node kind in its graph representation:
+  the kernel's node enumeration is `SourceCell`, `FormulaCell`, `Effect` — the
+  genus `Cell<T, K>` over the two value-bearing kinds, plus the sink. A driven
+  formula is a `FormulaCell` with an `Effect`, not a fourth kind to dispatch on.
+  This is now a `MUST NOT` rather than the old `SHOULD NOT`, because
+  `formula().drive()` makes the composition the *only* way to build eagerness: the
+  handle a caller holds is the `FormulaCell` itself, read with ordinary `get`,
+  and there is no `Signal` type left to ship. The kernel stays closed because the
+  DAG positions are closed — the same reason this specification declines to mandate
+  weak back-edges is why it need not police a construction that cannot be written.
 
-  Conformance: `conformance/reactive-graph/signal_*.json`.
+  Conformance: `conformance/reactive-graph/signal_*.json` (historical filenames).
 
   **Measured 2026-07-20.** What replaying the three signal fixtures against every
   context each binding ships actually found. Recorded as measurements, not as
@@ -378,8 +402,8 @@ decides the invalidation source.
 
 ### Reactives have no observers (`#lzdartobservercow`)
 
-**No reactive exposes an observer API.** Not `Cell`, not `Slot`, not `Signal`,
-not `MergeCell`. No `subscribe`, no `on_write`, no `on_change`, no
+**No reactive exposes an observer API.** Not a `SourceCell`, not a `FormulaCell`,
+driven or lazy — no kind of `Cell<T, K>`. No `subscribe`, no `on_write`, no `on_change`, no
 `add_listener`, no callback collection of any kind attached to a reactive node. A
 binding **MUST NOT** provide one, and **MUST NOT** carry per-node storage
 reserved for one.
@@ -457,7 +481,7 @@ the call site and are not:
 | Runs | once per settled cone | once per write |
 | Batch | honours it — one run per batch | ignores it — one call per write |
 | `==` store-guard | sees the coalesced result | cannot see a suppressed write at all |
-| Memo guard | respects it — no run on an equal recompute | not subject to it |
+| Formula guard | respects it — no run on an equal recompute | not subject to it |
 | Merge `⊕` | sees converged state — the only guaranteed value | sees a flush-timing artifact (below) |
 | Glitch-free | yes — inputs are mutually consistent | no — fires mid-update by construction |
 | Dependencies | dynamic; re-discovered every run | none; bound to one node forever |
@@ -466,7 +490,7 @@ the call site and are not:
 
 **Coalescence is the row that matters most, and it is not one mechanism but
 five.** This family coalesces at every layer: the `==` store-guard drops an equal
-write entirely; the memo guard drops an equal recompute so downstream never
+write entirely; the formula guard drops an equal recompute so downstream never
 learns; `batch` folds many writes into one invalidation and one flush;
 store-without-cascade skips effect scheduling for a cell whose cone holds no
 effect; and the **merge algebra folds a run of ops into one state through `⊕`**.
@@ -489,8 +513,8 @@ design*, not by defect. A caller cannot write correct code against it, because
 there is no contract there to be correct against.
 
 Last-writer-wins sharpens this to a point. `KeepLatest` is `old ⊕ op = op` — the
-new op annihilates the previous state — and **`Cell ≡ MergeCell<KeepLatest>`**,
-so every plain cell in the family is already an LWW instance. Under a timestamped
+new op annihilates the previous state — and **`Cell ≡ SourceCell<KeepLatest>`**,
+so every plain source cell in the family is already an LWW instance. Under a timestamped
 LWW register (`CrdtJoin<LwwRegister>`) a losing write is dropped outright: after
 convergence, it never happened. An observer that fired on that write reported an
 event the system has since decided did not occur, and any side effect it took —
@@ -519,7 +543,7 @@ Everything an observer expressed, an `Effect` expresses:
 
 ```
 // instead of: cell.subscribe(cb)
-ctx.effect(|ctx| cb(ctx.get_cell(&cell)))
+ctx.effect(|ctx| cb(ctx.get(&cell)))
 ```
 
 The effect is batched, glitch-free, participates in teardown scopes, and is
@@ -607,7 +631,7 @@ with no framing. Three invocations may be three separate updates or one logical
 update whose writes were grouped, and nothing in the callback distinguishes them
 — there is no signal for where an update begins or ends. Nor can it see what the
 graph coalesced away: a write dropped by the `==` store-guard, a recompute
-dropped by the memo guard, a flush skipped because the cone held no effect. So
+dropped by the formula guard, a flush skipped because the cone held no effect. So
 "the value did not change", "nothing was written", and "the graph decided this
 did not need propagating" are all the same non-event to an observer. It is an
 event stream stripped of both its transaction boundaries and its elisions.
@@ -631,26 +655,30 @@ require no change. `lazily-py`, `lazily-dart`, `lazily-go`, and `lazily-zig`
 carried one and remove it, re-expressing `on_transition` as an effect.
 
 The reactive-graph fixtures that remain cover disposal, teardown scopes, and
-signal eagerness. They require `TeardownScope` (`ctx.scope()` / `disarm()`) and
-dependency-graph introspection (`dependents_of`, `dependencies_of`,
+eager (driven) formulas. They require `TeardownScope` (`ctx.scope()` / `disarm()`)
+and dependency-graph introspection (`dependents_of`, `dependencies_of`,
 `cleanup_order`). Every binding replays this corpus as of 2026-07-19.
 
-**Signal fixtures need one observable the rest of the corpus does not:
-`computes_of`.** It maps a node id to the cumulative number of times its compute
-function has run, counted from the start of the scenario. A runner **MUST** count
-every invocation of the compute, including the one at creation, and **MUST NOT**
-reset it per step. This key exists because an eager signal and a lazy memo return
-identical values for every read sequence — the only caller-observable difference
-between them is *when* compute runs, so a corpus that asserts values alone cannot
-distinguish `signal()` from `memo()` and will pass against a binding that
-implements the former as the latter.
+**The eager-formula fixtures (historical filenames `signal_*.json`) need one
+observable the rest of the corpus does not: `computes_of`.** It maps a node id to
+the cumulative number of times its compute function has run, counted from the
+start of the scenario. A runner **MUST** count every invocation of the compute,
+including the one at creation, and **MUST NOT** reset it per step. This key exists
+because a driven formula and a lazy formula return identical values for every read
+sequence — the only caller-observable difference between them is *when* compute
+runs, so a corpus that asserts values alone cannot distinguish `formula().drive()`
+from `formula()` and will pass against a binding that implements the former as the
+latter.
 
-Three ops are specific to these fixtures:
+Three ops are specific to these fixtures. `drive` and `undrive` supersede the old
+`signal` / `dispose_signal` ops; runners **dual-accept** the old names until every
+binding emits the new ones (the runner panics on an unknown op, so acceptance
+lands before any fixture uses them):
 
 | op | shape | meaning |
 |---|---|---|
-| `signal` | `{id, reads, offset}` | create an eager signal; compute is `sum(reads) + offset`, the same convention as `computed` |
-| `dispose_signal` | `{id}` | dispose the eager puller only — **not** a node teardown, see clause 4 |
+| `drive` | `{id, reads, offset}` | create a guarded formula (compute is `sum(reads) + offset`, the same convention as `formula`) and drive it eager — was `signal` |
+| `undrive` | `{id}` | remove the eager puller only — **not** a node teardown, see clause 4 — was `dispose_signal` |
 | `batch` | `{writes: [{id, value}, ...]}` | perform every write inside one batch; invalidation propagates and effects flush once, at the outermost exit |
 
 `batch` is a single op rather than a `begin_batch`/`end_batch` pair so that a
@@ -685,27 +713,50 @@ produces all three from a single `end_scope`. A runner reading `cleanup_order`
 per-step will see the scenarios disagree and report a divergence that is not
 there.
 
-## MergeCell and the merge algebra (`#relaycell`)
+## The merge algebra and `SourceCell<T, M>` (`#relaycell`)
 
-A **`MergeCell<T, M>`** is a `Source<T>` whose write is a *merge* rather than a
+A **`SourceCell<T, M>`** is a source cell whose write is a *merge* rather than a
 replace: `merge(handle, op)` computes `⊕(current, op)` under `MergePolicy` `M`
-and routes the result through `set_cell` — so the `==` store-guard,
+and routes the result through `set` — so the `==` store-guard,
 store-without-cascade, and `batch` all apply unchanged. A plain **`Cell` is
-exactly `MergeCell<KeepLatest>`** (the keep-latest instance); a binding MAY
-implement `Cell` as that instance or keep it as a distinct fast path with
-identical semantics.
+exactly `SourceCell<KeepLatest>`** (the keep-latest instance, the default of the
+one source kind); a binding MAY implement it as that instance or keep it as a
+distinct fast path with identical semantics. The policy `M` lives **inside** the
+kind marker `Source<M>`, so it exists exactly where writes exist and is absent on
+the formula side — never a third parameter every signature must spell.
 
-### Feeding a `MergeCell` from another reactive
+> **Theorem — merge policies must be cheap (§9.2.1).** `MergePolicy::merge`
+> **MUST NOT** block and **SHOULD** be O(1)-ish in the size of `old`. The algebra
+> **is** the convergence guarantee, so the fold stays synchronous; the async or
+> expensive work that *produces* an op lives in the `Effect` that feeds the cell,
+> never in the fold. In a `ThreadSafeContext` the fold runs under the mutex, so an
+> expensive `merge` holds the lock for its duration. This constrains
+> implementations rather than observable behaviour, so it is **review-enforced**,
+> not fixtured — the same construction the observer prohibition uses.
+
+### Feeding a `SourceCell` from another reactive
 
 A recurring question, answered here because the answer is not obvious and the
 failure mode is one cycle detection cannot see.
 
-**A `Source` never acquires a dependency edge.** That is what makes it a source:
-`Source` and `Dependent` partition the graph by incoming edges, so a node fed by
-the graph would be both, and `Memo → MergeCell → Memo` would become
-constructible. So "feed this merge cell from that reactive" is **not** a new
-capability on the cell. It is an `Effect` that reads the reactive and calls
-`merge`:
+**A `SourceCell` never acquires a dependency edge.** That is what makes it a
+source: source and formula partition the graph by incoming edges, so a node fed by
+the graph would be both, and `FormulaCell → SourceCell → FormulaCell` would become
+constructible. So "feed this source cell from that reactive" is **not** a new
+capability on the cell.
+
+> **Theorem — a writer is always a sink (§9.2.2).** Writing is not having a value:
+> anything whose job is to write *reads* something and produces no readable value,
+> which is incoming edges and no value — the `Effect` position. So a network-fed
+> cell, a feedback writer, and an eager puller are each an `Effect`, not a new node
+> kind. The kernel is closed because the DAG positions are closed. The family
+> reached this answer three times from three directions — eager values (proposed as
+> `Signal`), feedback (proposed as `FeedbackEffect`), and writer encapsulation —
+> and each was an `Effect` composed with `set`/`merge`/`drive`. Stating it once
+> retires the question; only the *ergonomics* (a named `feed_async` constructor)
+> stay open, and those wait on two real call sites.
+
+So feeding a source is an `Effect` that reads the reactive and calls `merge`:
 
 ```
 effect(|ctx| { merge(acc, ctx.get(upstream)) })
@@ -749,7 +800,7 @@ and it is why the answer to "I need every transition" is `Topic`, not a new
 capability on a reactive.
 
 **`merge` folds synchronously inside a `batch`; only propagation defers.** This
-follows from `merge` routing through `set_cell` and from *Mutation inside a batch
+follows from `merge` routing through `set` and from *Mutation inside a batch
 is synchronous*, but it is stated explicitly because "does batching lose my
 merges?" is the first question the accumulator case raises. It does not. Every
 `merge` call folds when it is called. What a batch defers is the invalidation and
@@ -761,6 +812,19 @@ invalidation.
 An effect that reads `R` and merges into `M`, where `M` is upstream of `R`,
 closes a loop through the **scheduler** rather than through the graph. It is not
 a dependency cycle, so the acyclicity check will not fire.
+
+> **Theorem — feedback is when an argument is also a dependency (§9.2.3).** An
+> `Effect` relates to a cell in two ways that look alike and behave nothing alike.
+> A **write target** is an *argument*: passed in, captured by the closure, known
+> statically, creating **no edge** — and, because `set`/`merge` are kind-restricted
+> to `SourceCell`, an effect cannot even take a `FormulaCell` as a write-argument
+> (it does not compile). A **read** is a *dependency*: discovered at run time by
+> the tracking stack and re-discovered on every rerun. **Feedback is exactly the
+> case where an effect writes a cell it also reads** — a write-argument that is
+> also in `deps(E)`. Nothing about that is a graph cycle (the argument is no edge),
+> which is why acyclicity never fires and the loop closes through the scheduler.
+> Prefer this phrasing over "an effect that writes into its own dependency cone,"
+> which makes a scheduler property sound like a graph one.
 
 This is deliberate and it is the family's **only** way to express feedback: the
 dependency graph is acyclic by construction, so a cycle cannot be an edge. Closing
@@ -831,8 +895,8 @@ The split is not two-way, and the default policy is in the third class.
 | non-idempotent — `+`, `append`, counters | accumulates | no guarantee; halts at an absorbing or saturating value |
 
 **`KeepLatest` is the case a caller will actually hit**, because
-`Cell ≡ MergeCell<KeepLatest>` — an effect that reads a memo and writes back to a
-plain cell is the most reachable feedback loop in the family. Under a right-zero
+`Cell ≡ SourceCell<KeepLatest>` — an effect that reads a formula and writes back to
+a plain source cell is the most reachable feedback loop in the family. Under a right-zero
 band the merge discards prior state entirely, so there is no ascent, ACC is
 irrelevant, and the lattice framing does not apply at all. What remains is
 `x_{n+1} = f(x_n)` over unbounded state with arbitrary `f`, which is **Turing
@@ -895,16 +959,16 @@ actionable. Representation is a binding's choice.
 
 ### Termination state belongs in the graph, not in a closure
 
-The stop predicate that ends a feedback loop **SHOULD** be a `Memo`, read by the
-effect, rather than a branch buried in the effect body:
+The stop predicate that ends a feedback loop **SHOULD** be a `FormulaCell`, read by
+the effect, rather than a branch buried in the effect body:
 
 ```
-done = memo(|ctx| ctx.get(acc) >= threshold)
+done = formula(|ctx| ctx.get(acc) >= threshold)
 effect(|ctx| { if ctx.get(done) { return } merge(acc, f(ctx.get(upstream))) })
 ```
 
 This is a recommendation about where to put a condition, not new surface — it is
-a `Memo` and an `Effect`, both already kinds. What it buys:
+a `FormulaCell` and an `Effect`, both already kinds. What it buys:
 
 - **It is inspectable.** Other nodes may read `done`; a UI can show it; another
   effect can react to it.
@@ -914,7 +978,7 @@ a `Memo` and an `Effect`, both already kinds. What it buys:
 - **It is reviewable.** The termination argument the clause above requires a
   caller to *state* becomes a named node rather than a comment.
 
-The shape is legal under the source/dependent partition, which is worth checking
+The shape is legal under the source/formula partition, which is worth checking
 explicitly because it looks circular: `acc → done → effect → acc`. The final hop
 is a **write**, not a dependency edge, so `acc` acquires no incoming edge and no
 dependency cycle exists. It remains scheduler-closed, one iteration per flush.
@@ -924,38 +988,38 @@ diverges exactly as before; the drain bound remains the backstop.
 
 ### Accumulators
 
-An accumulator is a **`MergeCell`** under an accumulating policy. That is what
+An accumulator is a **`SourceCell<M>`** under an accumulating policy. That is what
 the merge algebra is for.
 
-A **`Memo` cannot be an accumulator**, for two independent reasons, and the
+A **`FormulaCell` cannot be an accumulator**, for two independent reasons, and the
 second is a live hazard:
 
-1. **No self-edge.** A memo's value is a function of its dependencies' *current*
-   values; accumulation is a function of history. Reading its own previous value
-   would be a self-dependency, which the acyclic graph forbids.
+1. **No self-edge.** A formula's value is a function of its dependencies'
+   *current* values; accumulation is a function of history. Reading its own
+   previous value would be a self-dependency, which the acyclic graph forbids.
 2. **Recomputes are elidable, so an impure workaround silently loses data.** A
-   memo body closing over a mutable counter compiles everywhere and looks
+   formula body closing over a mutable counter compiles everywhere and looks
    correct. But the graph is free *not to run it*: the `==` guard suppresses a
-   recompute whose value is unchanged, a memo with no readers never runs, and a
+   recompute whose value is unchanged, a formula with no readers never runs, and a
    batch coalesces N invalidations into one recompute. Each of those drops an
    increment. A binding **MUST NOT** document or example this pattern.
 
 The structural rule, stated once because it decides these questions generally:
 
-> **Memory of its own past implies `Source`.** A dependent must be recomputable
-> from its dependencies, and a value determined by history is not. This is why
-> `MergeCell` is a `Source` even though it computes — `⊕(current, op)` reads its
-> own prior state, which no dependent may do.
+> **Memory of its own past implies a `SourceCell`.** A formula must be
+> recomputable from its dependencies, and a value determined by history is not.
+> This is why a `SourceCell<M>` is a source even though it computes —
+> `⊕(current, op)` reads its own prior state, which no formula may do.
 
-The exception that confirms it: a memo folding a **`Topic`**'s retained events is
-an ordinary derivation, because the history is materialized in the topic and the
-fold is a pure function of current state.
+The exception that confirms it: a formula folding a **`Topic`**'s retained events
+is an ordinary derivation, because the history is materialized in the topic and
+the fold is a pure function of current state.
 
 | pattern | where history lives | |
 |---|---|---|
-| `MergeCell` + accumulating policy | in the cell (a `Source`) | ✅ |
-| `Memo` folding a `Topic`'s retained events | in the topic | ✅ the fold is pure |
-| `Memo` closing over a mutable counter | nowhere reachable | ❌ loses increments under elision |
+| `SourceCell<M>` + accumulating policy | in the cell (a source) | ✅ |
+| `FormulaCell` folding a `Topic`'s retained events | in the topic | ✅ the fold is pure |
+| `FormulaCell` closing over a mutable counter | nowhere reachable | ❌ loses increments under elision |
 
 Recall also that driving `merge` from a dependency edge is flush-granular, so an
 accumulator fed that way counts *flushes*, not writes. For an exact count, drive
@@ -978,14 +1042,14 @@ strictly-decreasing measure. Three reasons it failed:
    `Max` over a 64-bit integer has height `2^64`. **A declared property that is
    unverifiable or vacuous is worse than no property**, and that test generalizes
    past this proposal.
-2. **It could not cover the reachable case.** `Cell ≡ MergeCell<KeepLatest>`, and
+2. **It could not cover the reachable case.** `Cell ≡ SourceCell<KeepLatest>`, and
    a right-zero band has no ascent, so an ACC-restricted construct is by
    construction absent from the class callers actually hit.
 3. **A measure parameter adds no capability**, and the construct is a composition
    promoted to a primitive. A caller who can compute a decreasing measure over
    their own state can compute a stop predicate over that same state — which is
-   the `Memo` pattern above, written with kinds that already exist. `Signal` was
-   retired for exactly this shape.
+   the `FormulaCell` pattern above, written with kinds that already exist.
+   `Signal` was retired for exactly this shape.
 
 What the proposal genuinely offered was diagnosis, which is retained above as a
 `SHOULD` on exhaustion reporting.
@@ -996,7 +1060,7 @@ Three fixtures are specified; **they are not yet written.**
 
 | fixture | asserts |
 |---|---|
-| `feedback_drain_bound_reports_exhaustion` | A divergent loop — `c` a cell, `m` a memo of `c + 1`, an effect merging `get(m)` into `c` under `KeepLatest` — **terminates the flush** and surfaces the exhaustion outcome. Asserts no iteration count, which is not contract. |
+| `feedback_drain_bound_reports_exhaustion` | A divergent loop — `c` a source cell, `m` a formula of `c + 1`, an effect merging `get(m)` into `c` under `KeepLatest` — **terminates the flush** and surfaces the exhaustion outcome. Asserts no iteration count, which is not contract. |
 | `feedback_converges_below_the_bound` | The discriminating negative. The same shape with `m = min(get(c) + 1, 3)` under `Max` reaches its fixed point and **must not** report exhaustion. A binding that reports exhaustion for every feedback loop passes the first and fails this. |
 | `feedback_declining_to_write_terminates` | Pins the caller-side exit: an effect that stops merging ends the cascade as ordinary convergence, **not** an exhaustion report. |
 
@@ -1004,7 +1068,7 @@ Deliberately absent: the bound's value, the exhaustion outcome's representation,
 and any assertion about how many times a given effect ran.
 
 **Unfixtured and unverified, stated explicitly.** Until these exist, treat
-cross-binding agreement on this whole section as unverified — the signal
+cross-binding agreement on this whole section as unverified — the eager-formula
 semantics sat in exactly this state for months while a binding shipped a
 different construction under a green checkmark. Separately unmeasured: whether
 any binding's async drain observes cancellation between iterations. And the
@@ -1061,7 +1125,7 @@ The canonical policies (each names its algebraic structure and flags):
 
 **A replicated cell that accepts writes from more than one authority MUST use a
 commutative policy.** This follows from the reordering tax above, but it is
-stated separately because the default is the trap: `Cell ≡ MergeCell<KeepLatest>`,
+stated separately because the default is the trap: `Cell ≡ SourceCell<KeepLatest>`,
 and `KeepLatest` is **not** commutative. A plain cell replicated to peers that
 also write it will converge differently depending on arrival order — the exact
 defect the algebra exists to prevent, arrived at by writing no policy at all. The
@@ -1070,18 +1134,18 @@ policy, chosen deliberately.
 
 "More than one authority" is about *who may write*, not about topology. A
 replicated derivation pushed to a peer that only reads it has one authority and
-needs no commutativity — it is `Reactive<T>` and not `Source<T>` on that peer,
-which is the read-only replicated cell shape. Commutativity becomes mandatory the
-moment the receiving peer may also write.
+needs no commutativity — on that peer it is read-only, exposing the genus's `get`
+without the `SourceCell` write methods, which is the read-only replicated cell
+shape. Commutativity becomes mandatory the moment the receiving peer may also write.
 
 **Derived default with user override.** A recurring shape worth naming, because
 it looks like it needs a new primitive and does not. Where a value has a computed
 default that a user may override:
 
-- **Co-located** — use the graph, not a policy. A `Cell` holding the override
-  (absent = defer), a `Slot` holding the derivation, and a `Slot` selecting
-  `override ?? derived`. Glitch-free, self-documenting, and "reset to default" is
-  clearing the override cell. No arbitration exists to get wrong.
+- **Co-located** — use the graph, not a policy. A `SourceCell` holding the override
+  (absent = defer), a `FormulaCell` holding the derivation, and a `FormulaCell`
+  selecting `override ?? derived`. Glitch-free, self-documenting, and "reset to
+  default" is clearing the override cell. No arbitration exists to get wrong.
 - **Distributed** — a merge policy is required, and a valid one exists: tag ops
   with provenance and fold by precedence (user outranks derived, LWW within the
   user rank). It satisfies all three properties — associative because a higher
@@ -1116,13 +1180,13 @@ reimplementing their join.
 
 ## Invalidation propagation
 
-When `set_cell` changes a value (post-`==`-guard):
+When `set` changes a value (post-`==`-guard):
 
-1. The cell's dependents are marked dirty (slots) or scheduled (effects).
-2. Dirty marks propagate transitively through slot dependents — a dirty slot
-   marks its own dependents, and so on. A memo slot that recomputes to an equal
-   value stops the propagation (the memo guard).
-3. On the next `get` of a dirty slot, the slot refreshes: it pulls each
+1. The cell's dependents are marked dirty (formulas) or scheduled (effects).
+2. Dirty marks propagate transitively through formula dependents — a dirty formula
+   marks its own dependents, and so on. A formula that recomputes to an equal
+   value stops the propagation (the formula guard).
+3. On the next `get` of a dirty formula, the formula refreshes: it pulls each
    dependency (recursively refreshing/ recomputing as needed), and recomputes
    only if a dependency actually changed value.
 
@@ -1130,9 +1194,9 @@ This is a push-invalidated, pull-recomputed graph — invalidation travels
 downstream eagerly (so effects fire), but the new value is computed lazily on
 read (so untouched branches do no work).
 
-**Store-without-cascade** (the write-side dual of lazy reads). When `set_cell`
+**Store-without-cascade** (the write-side dual of lazy reads). When `set`
 changes a value whose transitive dependent cone contains **no Effect**, the new
-value is stored (step 1's dirty-marking of lazy Slot dependents still happens, so
+value is stored (step 1's dirty-marking of lazy formula dependents still happens, so
 a *future* subscriber reads the current value glitch-free — late-subscribe
 correctness) but **no effect flush is scheduled** — there is no active reactor to
 run. A binding MAY skip the flush machinery entirely in this case. Combined with
@@ -1142,16 +1206,27 @@ cost law tiers the write cost by dependent kind (none → store only; lazy-only 
 store + O(deps) dirty-mark, no flush; active → store + dirty + flush). A **burst**
 of N value-changing writes with no interleaved active read pays the transitive
 dirty-mark **once** (dirty-marking is idempotent and monotonic — an already-dirty
-Slot is not re-walked), i.e. `N·(==/⊕)` + one dirty-propagation. See
+formula is not re-walked), i.e. `N·(==/⊕)` + one dirty-propagation. See
 [`relaycell-backpressure-analysis.md`](relaycell-backpressure-analysis.md) §4.0.
 
 ## Handles and identity
 
-Handles are stable ids minted monotonically and recycled on dispose. A disposed
-handle is inert: reads on a disposed slot return its last cached value if any;
-reads on a disposed cell/signal are undefined (the caller MUST not retain a
-handle past disposal of its effect/signal puller). Re-entrancy of a disposed
-effect is prevented by removing it from the schedule before running cleanup.
+A handle is a `Cell<T, K>` (or `EffectHandle`) carrying a **`SlotId`** — and here
+`Slot` is the storage concept, not a reactive value: a slot is the arena position
+that holds a node, and it holds *any* kind (`SourceCell`, `FormulaCell`, or
+`Effect`). `SlotId`, `SlotValue`, and the slab vocabulary are accurate under this
+meaning and are unchanged by the kernel rename; only the reactive-value sense of
+"slot" became `FormulaCell`. The slot persists across recycling; its occupant does
+not (`recycled_id_inherits_nothing`).
+
+Slot ids are minted monotonically and recycled on dispose. A disposed handle is
+inert: reads on a disposed `FormulaCell` return its last cached value if any;
+reads on a disposed `SourceCell`, or on a formula whose driving puller was
+disposed, are undefined (the caller MUST NOT retain a handle past disposal).
+Re-entrancy of a disposed effect is prevented by removing it from the schedule
+before running cleanup. Detection of a stale handle is bounded (see *Disposal is
+explicit*): a binding that recycles slot ids MAY admit a same-kind ABA read unless
+its `SlotId` carries a generation tag.
 
 ## Context layers
 
@@ -1183,12 +1258,12 @@ semantics.
 
 A reactive context conforms when:
 
-1. The three core primitives (`Cell` / `Slot` / `Effect`) and the handles above
-   are implemented; `Signal` (the derived `Slot.eager` construct) is exposed as a
-   convenience.
-2. `set_cell` is `==`-guarded (equal value is a no-op); `memo` adds the same
-   guard to a recompute.
-3. Refresh is pull-based and glitch-free: a slot observes consistent inputs;
+1. The kernel `Cell<T, K>` with its two value kinds `SourceCell` / `FormulaCell`
+   and the sink `Effect` are implemented; a **driven** `FormulaCell`
+   (`formula().drive()`) is the eager construct — not a fourth kind.
+2. `set` is `==`-guarded (equal value is a no-op); `formula` is guarded by default
+   (an equal recompute suppresses downstream).
+3. Refresh is pull-based and glitch-free: a formula observes consistent inputs;
    untouched branches are not recomputed.
 4. Dependencies are tracked dynamically through a tracking stack (edges
    re-registered each recompute; no manual subscribe).
@@ -1196,16 +1271,17 @@ A reactive context conforms when:
 6. `batch` coalesces into one propagation + effect flush at the outermost exit.
 7. Effects fire scheduled (not inline), cleanup runs before each rerun and on
    dispose, and disposal unsubscribes edges.
-8. A `Signal` is materialized by the time the invalidating `set_cell`/`batch`
+8. A driven `FormulaCell` is materialized by the time the invalidating `set`/`batch`
    returns (eager push).
-9. **`Reactive<T>` / `Source<T>` split.** Reads (`get`) are the `Reactive`
-   supertype; writes (`set`/`merge`) are the `Source` sub-interface. A derived
-   Slot/Signal is `Reactive` only. There is no `subscribe` — see *Reactives have
-   no observers*.
-10. **MergeCell + merge algebra (`#relaycell`).** `merge(handle, op)` folds under
-    an associative `MergePolicy` and routes through the `==`-guarded `set_cell`
+9. **Read on the genus, write on the source kind.** Reads (`get`) are on every
+   `Cell<T, K>`; writes (`set`/`merge`) are on `Cell<T, Source<M>>` alone — a
+   compile error on a `FormulaCell`, enforced by the type parameter rather than a
+   trait (an interface in Go, §4 of the design). There is no `subscribe` — see
+   *Reactives have no observers*.
+10. **The merge algebra (`#relaycell`).** `merge(handle, op)` folds under
+    an associative `MergePolicy` and routes through the `==`-guarded `set`
     (so an idempotent policy's no-op merge fires no cascade). `Cell ≡
-    MergeCell<KeepLatest>`. Every policy is associative; the `COMMUTATIVE` and
+    SourceCell<KeepLatest>`. Every policy is associative; the `COMMUTATIVE` and
     `IDEMPOTENT` flags match the policy's algebra (verified by law-tests); the
     converged egress state is independent of merge grouping/order for a
     commutative policy (verified by `mergecell_algebra.json`).
@@ -1267,8 +1343,8 @@ binding whose platform exposes preemptive multi-threading or shared-memory
 concurrency**. A binding's thread-safe context conforms when it holds these
 deterministic properties under concurrent access:
 
-1. Handles are **clonable**, and the transition function and cell/slot state are
-   `Send + Sync`; one reactive graph is shared across OS threads.
+1. Handles are **clonable**, and the transition function and source/formula node
+   state are `Send + Sync`; one reactive graph is shared across OS threads.
 
    This clause applies **only to a context declaring `shared-graph`** (see
    *Declared context capabilities*). A `serialized` context — `lazily-js`, whose
@@ -1291,7 +1367,7 @@ deterministic properties under concurrent access:
    `#lzspecobserverclarify`. Observers were removed from the family — see
    *Reactives have no observers* — and the requirement now attaches to effects,
    which are the only remaining way user code runs inside an invalidation wave.)*
-3. The `==` (PartialEq) cell guard and the `memo` equality guard both hold under
+3. The `==` (PartialEq) cell guard and the `formula` equality guard both hold under
    concurrent mutation: an equal write invalidates nothing, an equal recompute
    suppresses downstream work.
 4. The graph lock is **released before user compute/effect/cleanup callbacks**

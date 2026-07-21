@@ -5,7 +5,7 @@ sits on an edge, adapts a fast ingress to a bounded/slow egress by an
 **algebra-typed merge**, a **reactive backpressure policy**, and an optional
 **paged durable spill**. This chapter is the normative surface of the phased plan
 in [`relaycell-backpressure-analysis.md`](relaycell-backpressure-analysis.md); the
-[merge algebra](reactive-graph.md#mergecell-and-the-merge-algebra-relaycell)
+[merge algebra](reactive-graph.md#the-merge-algebra-and-sourcecellt-m-relaycell)
 (Phase 1) is its foundation and the
 [`lazily-formal`](https://github.com/lazily-hub/lazily-formal) Lean model
 (`LazilyFormal.Merge`, `LazilyFormal.Relay`) is the executable reference for the
