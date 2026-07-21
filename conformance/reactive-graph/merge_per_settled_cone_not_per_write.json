@@ -1,0 +1,107 @@
+{
+  "description": "A MergeCell fed from a reactive through a dependency edge receives ONE merge per settled cone, not one per write. Three writes inside a batch produce a single merge, of the settled value -- the intermediates were never materialized, because eliding them is what a lazy graph is for. This is the discriminating fixture for delivery granularity and it MUST use a non-idempotent policy (Sum): under KeepLatest the converged value is identical whether a binding merges once or three times, so only the count separates a conforming binding from a per-write one, and a corpus asserting on value alone cannot tell them apart. With Sum the two diverge in both count and value, so the fixture fails loudly rather than subtly. Note what is NOT happening here: the merge cell acquires no dependency edge (see merge_cell_acquires_no_dependency_edge.json). A Source never gains one. The edge belongs to the effect that reads the upstream and calls merge; the cell stays edge-free and the Source/Dependent partition holds with no new node kind. Merge granularity is flush granularity, and that MUST be stated wherever this construction is offered -- it is the caller-visible consequence of routing feedback through the scheduler. Contract: #lzmergefeed.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": {
+        "type": "cell",
+        "id": "a",
+        "value": 0
+      }
+    },
+    {
+      "op": {
+        "type": "merge_cell",
+        "id": "acc",
+        "value": 0,
+        "policy": "Sum"
+      },
+      "expect": {
+        "merges_of": {
+          "acc": 0
+        },
+        "note": "construction alone folds nothing"
+      }
+    },
+    {
+      "op": {
+        "type": "effect",
+        "id": "feed",
+        "reads": [
+          "a"
+        ],
+        "merges_into": "acc"
+      },
+      "expect": {
+        "merges_of": {
+          "acc": 1
+        },
+        "value": 0,
+        "note": "baseline: the effect runs once on creation, reading a=0 and folding it in"
+      }
+    },
+    {
+      "op": {
+        "type": "batch",
+        "writes": [
+          {
+            "id": "a",
+            "value": 1
+          },
+          {
+            "id": "a",
+            "value": 2
+          },
+          {
+            "id": "a",
+            "value": 3
+          }
+        ]
+      },
+      "expect": {
+        "merges_of": {
+          "acc": 2
+        },
+        "note": "THE discriminating step. Three writes, ONE additional merge. A per-write binding shows 4 here."
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "acc"
+      },
+      "expect": {
+        "value": 3,
+        "merges_of": {
+          "acc": 2
+        },
+        "note": "the single merge folded the SETTLED value 3, not the sequence 1,2,3. A per-write binding shows 6 -- the intermediates it should never have seen."
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "a",
+        "value": 10
+      },
+      "expect": {
+        "merges_of": {
+          "acc": 3
+        },
+        "note": "outside a batch every write is its own settled cone, so the per-cone rule and the per-write rule coincide -- which is exactly why the batch step above is the only one that discriminates"
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "acc"
+      },
+      "expect": {
+        "value": 13,
+        "note": "3 + 10 under Sum"
+      }
+    }
+  ]
+}

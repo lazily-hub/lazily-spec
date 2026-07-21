@@ -1,0 +1,75 @@
+{
+  "description": "A Source NEVER acquires a dependency edge, even when it is fed from a reactive. 'Feed this merge cell from that reactive' is an Effect that reads the upstream and calls merge -- the edge belongs to the effect, and the merge cell stays edge-free. This pins the Source/Dependent partition STRUCTURALLY rather than by prose: a node's value comes either from outside it or from upstream of it, write-fed or compute-fed, never both. A binding that implemented feeding as a real edge into the cell would satisfy every value assertion in the corpus while having silently added a fourth node kind -- one that is both writable and dependent, which the partition says cannot exist. Only a degree assertion catches that, which is why this fixture asserts on dependencies_of/dependents_of and not on any value. The same fact explains why no new op is needed for the feeding itself: it is an ordinary effect. Contract: #lzmergefeed.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": {
+        "type": "cell",
+        "id": "a",
+        "value": 1
+      }
+    },
+    {
+      "op": {
+        "type": "merge_cell",
+        "id": "acc",
+        "value": 0,
+        "policy": "Sum"
+      },
+      "expect": {
+        "dependencies_of": {
+          "acc": 0
+        },
+        "dependents_of": {
+          "acc": 0
+        },
+        "note": "baseline: a fresh merge cell is isolated"
+      }
+    },
+    {
+      "op": {
+        "type": "effect",
+        "id": "feed",
+        "reads": [
+          "a"
+        ],
+        "merges_into": "acc"
+      },
+      "expect": {
+        "dependencies_of": {
+          "acc": 0,
+          "feed": 1
+        },
+        "note": "THE assertion. The effect gained the edge (it reads a); the merge cell gained NOTHING. A binding modelling the feed as an edge into acc shows dependencies_of acc = 1."
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "a",
+        "value": 5
+      },
+      "expect": {
+        "dependencies_of": {
+          "acc": 0
+        },
+        "dependents_of": {
+          "acc": 0
+        },
+        "note": "and it stays edge-free after the feed has actually delivered -- an edge created lazily on first delivery would pass the previous step and fail here"
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "acc"
+      },
+      "expect": {
+        "value": 6,
+        "note": "1 at creation + 5 on the write, under Sum: the feeding works, and it works WITHOUT the cell having a dependency"
+      }
+    }
+  ]
+}

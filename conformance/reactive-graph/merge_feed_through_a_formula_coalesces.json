@@ -1,0 +1,125 @@
+{
+  "description": "A merge cell fed from a FORMULA (not a plain cell) still receives one merge per settled cone. This is the additive async-scheduler fixture (design §9.1): the other merge_*  fixtures feed from a plain cell, and cells are the synchronous input layer, so as written they never exercise the async-specific path -- the fold is synchronous and the feed effect's only asynchrony is when it reruns. Here the feed reads a computed formula d = a, so on an async model the feed effect cannot run until that formula RESOLVES, which is exactly the path the async scheduler's coalescing claim covers: N invalidations in one batch must collapse to ONE effect rerun even when the read awaits. The discriminator is the same as merge_per_settled_cone -- merges_of under the non-idempotent Sum policy -- because a binding that reran the feed per write, or per formula recompute, folds too many ops and lands on the wrong value. The formula acquires the edge to a; the merge cell stays edge-free. Contract: #lzmergefeed.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": {
+        "type": "cell",
+        "id": "a",
+        "value": 0
+      }
+    },
+    {
+      "op": {
+        "type": "computed",
+        "id": "d",
+        "reads": [
+          "a"
+        ]
+      }
+    },
+    {
+      "op": {
+        "type": "merge_cell",
+        "id": "acc",
+        "value": 0,
+        "policy": "Sum"
+      },
+      "expect": {
+        "merges_of": {
+          "acc": 0
+        },
+        "note": "construction alone folds nothing"
+      }
+    },
+    {
+      "op": {
+        "type": "effect",
+        "id": "feed",
+        "reads": [
+          "d"
+        ],
+        "merges_into": "acc"
+      },
+      "expect": {
+        "merges_of": {
+          "acc": 1
+        },
+        "value": 0,
+        "dependencies_of": {
+          "acc": 0
+        },
+        "dependents_of": {
+          "acc": 0
+        },
+        "note": "baseline: the effect runs once on creation, reads the formula d = a = 0, and folds it in. The edge belongs to feed (via d); acc stays edge-free."
+      }
+    },
+    {
+      "op": {
+        "type": "batch",
+        "writes": [
+          {
+            "id": "a",
+            "value": 1
+          },
+          {
+            "id": "a",
+            "value": 2
+          },
+          {
+            "id": "a",
+            "value": 3
+          }
+        ]
+      },
+      "expect": {
+        "merges_of": {
+          "acc": 2
+        },
+        "note": "THE discriminating step. Three writes invalidate d once (batch coalesces the cascade), the feed reruns once, and ONE merge folds the settled value. A binding that reran the feed per write -- or per async formula recompute -- shows more than 2, even reading through an awaited formula."
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "acc"
+      },
+      "expect": {
+        "value": 3,
+        "merges_of": {
+          "acc": 2
+        },
+        "note": "the single merge folded the SETTLED formula value d = 3, not the sequence 1,2,3"
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "a",
+        "value": 10
+      },
+      "expect": {
+        "merges_of": {
+          "acc": 3
+        },
+        "note": "outside a batch every write is its own settled cone, so the formula resolves to 10 and the feed folds once more"
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "acc"
+      },
+      "expect": {
+        "value": 13,
+        "dependencies_of": {
+          "acc": 0
+        },
+        "note": "0 + 3 + 10 under Sum, and acc never acquired a dependency edge despite being fed through a formula"
+      }
+    }
+  ]
+}
