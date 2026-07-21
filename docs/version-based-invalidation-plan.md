@@ -25,7 +25,7 @@ revision invalidation as an **optional engine behind the same observable contrac
 | **push / tree-walk** (default) | O(dirty cone), amortized once per clean→dirty | **O(1)** (own dirty flag) | read-heavy · shallow · rare/rare-fanout writes (UI, sync) |
 | **revision / pull** (this plan) | **O(1)** (bump a counter, no walk) | O(1) if unchanged since last read, else O(changed-subpath) verify | write-heavy · huge fan-out · bursty writes · foreign/TTL sources |
 
-**The naive-epoch pitfall to avoid.** A per-`Source` epoch that a Slot re-scans on every read pushes
+**The naive-epoch pitfall to avoid.** A per-`SourceCell` epoch that a formula re-scans on every read pushes
 **O(#source-ancestors)** — and on *deep* graphs, O(depth) — onto reads. That is worse than push for
 read-heavy graphs. The production form (below) fixes this with a global revision + last-verified +
 value early-cutoff, so an unchanged graph verifies in O(1).
@@ -36,7 +36,7 @@ value early-cutoff, so an unchanged graph verifies in O(1).
 
 Per `Context`:
 
-- **Global revision counter `R`** — bumped once on any `Source` write. O(1), no propagation.
+- **Global revision counter `R`** — bumped once on any `SourceCell` write. O(1), no propagation.
 - Each **node** stores: `verified_at: Revision`, `value_version: u64`, cached value, and the
   `(input, input_value_version)` snapshot seen at its last compute.
 
@@ -47,10 +47,10 @@ Per `Context`:
 3. **Value early-cutoff (red-green):** if every input's `value_version` matches the snapshot (inputs'
    *values* did not change), the node is still valid → set `verified_at = R`, return cache **without
    recomputing**.
-4. Otherwise recompute, bump `node.value_version` (guarded by `==` / memo — an equal recompute does
+4. Otherwise recompute, bump `node.value_version` (guarded by `==` — an equal recompute does
    *not* bump, stopping the cascade), refresh the input snapshot, set `verified_at = R`, return.
 
-Early-cutoff is the same role the `==`/memo guard plays in push mode — an unchanged value stops
+Early-cutoff is the same role the `==` guard plays in push mode — an unchanged value stops
 propagation. Complexity: **O(1) write**; read **O(1)** when `verified_at == R`; else O(changed
 subpath) with cutoff — never a full-tree walk unless the whole path actually changed.
 
@@ -58,7 +58,7 @@ subpath) with cutoff — never a full-tree walk unless the whole path actually c
 
 ## 3. Unifying `version()` — push / revision / TTL are one question
 
-Add an optional `version() -> u64` (or opaque token) to `Reactive<T>`. Staleness detection then has
+Add an optional `version() -> u64` (or opaque token) to `Cell<T, K>`. Staleness detection then has
 three interchangeable mechanisms behind one interface:
 
 | Mechanism | How a consumer learns staleness | Source |
@@ -67,7 +67,7 @@ three interchangeable mechanisms behind one interface:
 | **revision** | version compared lazily on read (§2) | this plan |
 | **TTL** | `version = floor(now / ttl)` — no notification needed | foreign / non-notifying sources |
 
-This folds in the **foreign-`len`** case (regime 3 of the RelayCell doc): a **TTL-versioned Slot**
+This folds in the **foreign-`len`** case (regime 3 of the RelayCell doc): a **TTL-versioned `FormulaCell`**
 serves *lazy* consumers with bounded staleness and no background timer (freshness paid on read); a
 *poll* is still required only for an **eager** consumer that must *react* to a non-notifying source
 (no push-reactivity is free from a source that does not notify). TTL is just a time-epoch `version()`.
@@ -76,10 +76,10 @@ serves *lazy* consumers with bounded staleness and no background timer (freshnes
 
 ## 4. Interaction with the primitives
 
-- **Cell / MergeCell (Sources):** on a value-changing `set`/`merge`, bump `Context.R` and the node's
+- **`SourceCell` (`Cell<T, Source<M>>`):** on a value-changing `set`/`merge`, bump `Context.R` and the node's
   `value_version` (guarded by `==` / idempotent `⊕`). No dependent walk.
-- **Slot:** carries `verified_at` + input-version snapshot.
-- **Eager Slot (`Slot.eager`, the retired "Signal"):** its puller re-verifies on `R` bump, still
+- **`FormulaCell`:** carries `verified_at` + input-version snapshot.
+- **Driven `FormulaCell` (`formula().drive()`, the retired "Signal"):** its puller re-verifies on `R` bump, still
   **consumer-gated** (fires only with real downstream consumers). Works under both engines unchanged.
 - **`QueueCell` / `RelayCell` reader-kinds:** the **merge cost law's write cost changes** — revision
   makes a `merge`/`push` **O(1) regardless of the subscriber cone** (no dirty walk), moving the cost
@@ -128,7 +128,7 @@ substitution, not a semantics change**.
 
 ## 8. Phased plan
 
-- **P0 — `version()` extension point.** Add optional `version()` to `Reactive<T>`; default impl is a
+- **P0 — `version()` extension point.** Add optional `version()` to `Cell<T, K>`; default impl is a
   monotonic counter bumped by push invalidation. Non-breaking; lets both engines and TTL coexist behind
   one interface. Reference in Rust.
 - **P1 — Revision engine (Rust).** Global `R` + `verified_at` + value early-cutoff (§2). **Acceptance:
@@ -138,7 +138,7 @@ substitution, not a semantics change**.
   shallow (push wins). Publish the crossover so operators can choose per-`Context`.
 - **P3 — `ThreadSafeContext` revision.** Atomic `R` + concurrent verify on the existing generation/
   condvar sidecar (§5).
-- **P4 — TTL-versioned Slot.** Foreign-source lazy path (regime 3); unify under `version()` (§3).
+- **P4 — TTL-versioned `FormulaCell`.** Foreign-source lazy path (regime 3); unify under `version()` (§3).
 - **P5 — Context-level opt-in API + formal pin + optional port.** `Context::with_engine(Revision)`;
   pin `get_equiv_push`; port to bindings that want it.
 

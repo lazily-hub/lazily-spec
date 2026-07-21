@@ -5,7 +5,7 @@ time-sampling already exist *algorithmically* inside the relay plane — they ar
 trapped behind `RelayCell::egress` as `WindowPolicy` / `ExpiryPolicy` /
 `RatePolicy`. This phase **lifts** those policies into a standalone `rateshape`
 home (relay policies re-export them, semantics unchanged) and adds four
-source-level operators so **any** `Reactive<T>` source can be rate-shaped, not
+source-level operators so **any** `Cell<T, K>` source can be rate-shaped, not
 just a relay.
 
 All four are logical-clock driven (a monotone `now`), like every temporal

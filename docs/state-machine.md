@@ -35,9 +35,9 @@ it returns the next state (`Some`) or rejects the event (`None`, a guard).
 | `new(ctx, initial, transition_fn)` | Create with an initial state and a pure transition function |
 | `send(ctx, event) -> bool` | Evaluate the transition; `true` if accepted, `false` if rejected (`None`) |
 | `state(ctx) -> State` | Read the current state |
-| `state_handle() -> CellHandle<State>` | The underlying active-state cell, for reactive dependencies |
+| `state_handle() -> SourceCell<State>` | The underlying active-state cell, for reactive dependencies |
 | `on_transition(ctx, old_new_callback) -> EffectHandle` | Observer firing on each state change with `(old, new)` |
-| `state_is(ctx, target) -> SignalHandle<bool>` | Eager signal: `true` while in `target` |
+| `state_is(ctx, target) -> FormulaCell<bool>` | Eager (driven) formula: `true` while in `target` |
 
 ## Semantics
 
@@ -46,7 +46,7 @@ it returns the next state (`Some`) or rejects the event (`None`, a guard).
   the active-state cell's equality guard suppresses the no-op update. This is
   the flat analogue of the chart [self-transition](state-charts.md#self-transitions)
   rule. To force re-entry, clear the cell's dependents before `send`.
-- **Reactive integration:** any computed/memo/signal/effect that reads
+- **Reactive integration:** any formula, driven formula, or effect that reads
   `state_handle()` automatically recomputes or reruns on a real transition.
 - **On-enter / on-exit:** model with an effect that has a cleanup closure — the
   body is on-enter, the returned cleanup is on-exit (runs before the next rerun).

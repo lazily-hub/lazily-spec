@@ -34,9 +34,9 @@ invariants below.
 `RelayCell<T, M>` is **not** a new Axis-1 delivery primitive and **not** a new
 reactive node category. It decomposes into the [reactive family](reactive-graph.md):
 
-- the **hot head is a `MergeCell<T, M>`** (write = `⊕` under policy `M`);
+- the **hot head is a `SourceCell<T, M>`** (write = `⊕` under policy `M`);
 - its reactive reads (`depth` / `bytes` / `pending_keys` / `is_full` /
-  `is_spilling` / `is_draining` / `lag`) are **Slots** — demand-driven, so an
+  `is_spilling` / `is_draining` / `lag`) are **`FormulaCell`s** — demand-driven, so an
   unobserved relay costs `N·⊕` and nothing more (the [merge cost
   law](reactive-graph.md#invalidation-propagation));
 - an ingress **Effect** drives the merge from the transport.
@@ -70,7 +70,7 @@ retunes it live and every dependent relay reacts:
 | `overflow` | `Cell<Overflow>` | `Block` \| `DropOldest` \| `DropNewest` \| `Conflate` \| `Spill` |
 
 **Hysteresis is required:** `high_water ≠ low_water` so a relay riding the bound
-does not flap open/closed. An **adaptive controller** is an ordinary `computed`
+does not flap open/closed. An **adaptive controller** is an ordinary `formula`
 cell that observes `depth`/`lag`/downstream latency and drives `high_water` — the
 control loop is reactive policy driving reactive limits, not a config struct.
 
@@ -129,7 +129,7 @@ A **channel is a `Transport`, not a `QueueStorage`.** With `peek` optional
 ([QueueCell](cell-model.md#storage-backend-contract)) a native channel satisfies
 the minimal storage contract directly, but its real role is **cross-thread
 delivery**: the idiomatic form is `CrossThread`, where a worker owns the channel
-(its mailbox), drains it, and merges into the hot-head `MergeCell` (the push-fed
+(its mailbox), drains it, and merges into the hot-head `SourceCell` (the push-fed
 regime — the pop message carries the value). Crossing a thread boundary requires
 the `thread-safe` context.
 
@@ -176,8 +176,8 @@ sharding *reorder* ops, so they are sound exactly when the policy is commutative
 
 A RelayCell implementation conforms when:
 
-1. **Composite, not a new node.** The relay is built from a `MergeCell` hot head,
-   demand-driven Slot reads, and an ingress Effect — no new node category.
+1. **Composite, not a new node.** The relay is built from a `SourceCell` hot head,
+   demand-driven `FormulaCell` reads, and an ingress Effect — no new node category.
 2. **Converged-egress invariance (§9).** For an associative `M`, the egress state
    after any flush schedule equals the lossless flat fold of the delivered ops.
    Pinned per-binding by replaying `mergecell_algebra.json` through a relay and by
