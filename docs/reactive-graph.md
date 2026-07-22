@@ -97,6 +97,7 @@ is gone: `memo` is removed and `computed` **is** the guarded derivation.
 | `source(value)` | Create a `Source<T, KeepLatest>` — a plain mutable source cell |
 | `source::<M>(value)` | Create a `Source<T, M>` whose write folds under policy `M` (was `merge_cell`) |
 | `get(handle)` | Read either kind — a `Source` or a `Computed` — computing/refreshing a `Computed` if necessary (auto-subscribes the running computation) |
+| `get_shared(handle)` (binding-specific; Rust `Context::get_rc`) | Optional unified shared-owner read of either kind, avoiding a value clone while preserving `get` value, refresh, and dependency-tracking semantics (`#lzrsgetarc`) |
 | `set(handle, value)` | Update a `Source` and invalidate dependents (no-op on `==`) — a compile error on a `Computed` |
 | `computed(compute)` | Create a lazy derived `Computed`, **guarded** (an equal recompute suppresses downstream — the guard is never optional, and `memo` folded into this). `T: PartialEq`, the same uniform bound as `source` |
 | `computed(compute).eager()` | Make the `Computed` **eager** (attach a puller `Effect`). Declarative and idempotent; returns the same `Computed` handle (was `signal`) |
@@ -113,9 +114,21 @@ is gone: `memo` is removed and `computed` **is** the guarded derivation.
 ## Semantics
 
 - **Pull-based, glitch-free refresh.** A `Computed` that reads other cells
-  always observes values consistent with the current inputs. On `get`, it
-  first refreshes its own dependencies (recursively, lazy pull), then recomputes
-  only if any dependency actually changed — it never observes a half-updated graph.
+always observes values consistent with the current inputs. On `get`, it
+first refreshes its own dependencies (recursively, lazy pull), then recomputes
+only if any dependency actually changed — it never observes a half-updated graph.
+- **Unified shared-owner reads (`#lzrsgetarc`).** A context may expose a
+binding-specific shared-owner form of `get` (Rust's local spelling is
+`Context::get_rc`). When exposed as a **generic** alternate read, it is a read
+mode, not another cell kind: it MUST accept both `Source` and `Computed`, MUST
+return the same current value as `get`, MUST refresh a dirty `Computed` in the
+same way, and MUST register the same dependency edge when invoked through a
+running computation. It MUST NOT add a `Clone`/deep-copy requirement merely to
+read the value. Allocation identity, reference-count operations, and inline
+value fallbacks are binding-level mechanics and are not wire-visible. The formal
+pins are `Reactive.readShared_eq_readCell`,
+`Reactive.trackedSharedRead_eq_trackedRead`, and
+`Reactive.trackedSharedRead_registers_edge` in `lazily-formal`.
 - **Every cell is guarded — one rule, two sides.** A cell suppresses an equal
   value. On the source side this is the **`==` guard on `set`**: setting an equal
   value is a no-op, no downstream cascade fires. On the computed side it is the
@@ -1301,10 +1314,13 @@ A reactive context conforms when:
 8. An eager `Computed` is materialized by the time the invalidating `set`/`batch`
    returns (eager push).
 9. **Read on every cell, write on the source kind.** Reads (`get`) are on every
-   cell — `Source` and `Computed` alike; writes (`set`/`merge`) are on
-   `Source<T, M>` alone — a compile error on a `Computed`, enforced by the type
-   rather than a trait (a read-only interface in Go, §4 of the design). There is
-   no `subscribe` — see *Reactives have no observers*.
+cell — `Source` and `Computed` alike. Any generic alternate read surface (for
+example the optional `get_shared` / Rust `Context::get_rc`) MUST cover the same
+two kinds and preserve ordinary-read value, refresh, and dependency-tracking
+semantics. Writes (`set`/`merge`) are on `Source<T, M>` alone — a compile error
+on a `Computed`, enforced by the type rather than a trait (a read-only interface
+in Go, §4 of the design). There is no `subscribe` — see *Reactives have no
+observers*.
 10. **The merge algebra (`#relaycell`).** `merge(handle, op)` folds under
     an associative `MergePolicy` and routes through the `==`-guarded `set`
     (so an idempotent policy's no-op merge fires no cascade). `Cell ≡
