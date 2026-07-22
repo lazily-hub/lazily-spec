@@ -106,7 +106,7 @@ is gone: `memo` is removed and `computed` **is** the guarded derivation.
 | `effect(run)` | Register a side-effecting computation (a sink); `run` may return a cleanup closure |
 | `dispose_effect(handle)` | Deschedule, drop edges, run cleanup |
 | `dispose(handle)` | Tear down any node kind: detach edges in both directions, clear the node, recycle its slot id. Disposing an **eager** `Computed` also tears down its puller (§9.3.4) |
-| `scope()` | Open a **teardown scope**: nodes created through it are disposed together when the scope ends |
+| `scope()` | Open a **teardown scope**: `scope.source`, `scope.computed`, and `scope.effect` create nodes disposed together when the scope ends |
 | `scope.disarm()` | Disarm a scope — ending it disposes nothing; its nodes revert to context ownership |
 | `batch(run)` | Coalesce several source updates into one invalidation + effect flush |
 
@@ -381,7 +381,7 @@ is gone: `memo` is removed and `computed` **is** the guarded derivation.
   existed anywhere in the construction. Nobody coordinated this; the same wrong
   design was reached three times in three languages.
 
-  *Mechanism B, a batch that does not bound the flush (zig).* `set_cell` flushed
+  *Mechanism B, a batch that does not bound the flush (zig).* `set` flushed
   effects unconditionally while `batch` only nested a depth counter, so a
   correctly composed puller still ran once per write. A composition is not
   sufficient if the batch boundary does not gate the flush.

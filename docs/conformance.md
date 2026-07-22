@@ -130,7 +130,7 @@ Op vocabulary (all ids are fixture-local labels, never a binding's internal id):
 | `computed {id, reads[], offset, scope?}` | Create a derived, guarded `Computed` whose value is `sum(reads) + offset`; owned by `scope` when named |
 | `effect {id, reads[], scope?}` | Register an effect over `reads`; runs on creation and on each flush after a tracked invalidation |
 | `read {id}` | Read a node — `expect.value`, or `expect.error` for a disposed one |
-| `set_cell {id, value}` | Publish; `expect.observed_by` names the effects that ran, `expect.observed_count` their number |
+| `set {id, value}` | Publish; `expect.observed_by` names the effects that ran, `expect.observed_count` their number |
 | `dispose {id}` | Dispose one node, dispatching on its own kind |
 | `fanout {id_prefix, reads[], count, read_each}` / `dispose_fanout {id_prefix, count}` | Create / dispose `count` sibling readers, for widths a literal step list would bloat |
 | `churn {source, id_prefix, live_width, cycles, mode, read_each}` | Run `cycles` subscribe/unsubscribe cycles holding `live_width` subscribers live (`mode`: `dispose_then_create` or `scope_per_cycle`) |

@@ -8,7 +8,7 @@ bindings:
 
 - delta epochs are strictly sequential (`epoch = base_epoch + 1`);
 - gap, reorder, and restart cases fail closed to snapshot resync;
-- equal `set_cell` writes are silent;
+- equal `set` writes are silent;
 - equal memo recomputes suppress `slot_value` and downstream invalidation;
 - eager Signal changes publish concrete `slot_value` ops rather than bare
   `invalidate` ops for their backing slot;

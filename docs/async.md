@@ -35,8 +35,8 @@ synchronous handles:
 
 | Handle | Wraps |
 |--------|-------|
-| `AsyncCellHandle<T>` | A mutable input cell (the synchronous input layer) |
-| `AsyncSlotHandle<T>` | A computed/memoized async slot |
+| `AsyncSource<T>` | A mutable input cell (the synchronous input layer) |
+| `AsyncComputed<T>` | A computed/memoized async slot |
 | `AsyncEffectHandle` | An async effect |
 
 Handles are id-only and copyable; they are usable only with the owning async
@@ -46,19 +46,21 @@ context.
 
 | Method | Description |
 |--------|-------------|
-| `cell(value)` | Create a mutable cell (value type equality-comparable, cloneable, `Send + Sync`) |
-| `get_cell(handle)` | Read a cell value (synchronous) |
-| `set_cell(handle, value)` | Update a cell and invalidate dependents |
+| `source(value)` | Create a mutable `AsyncSource` (value type equality-comparable, cloneable, `Send + Sync`) |
+| `get(source)` | Read an `AsyncSource` value synchronously |
+| `set(source, value)` | Update an `AsyncSource` and invalidate dependents |
 | `computed_async(compute)` | Create an async computed slot |
-| `get(handle) -> Option<T>` | Synchronous cached read; `Some(T)` if resolved, `None` otherwise (warm-path fast path) |
-| `get_async(handle) -> T` | Await a slot value; uses `get()` for resolved slots, otherwise spawns async compute |
+| `get(computed) -> Option<T>` | Read an `AsyncComputed` cache synchronously; `Some(T)` if resolved, `None` otherwise (warm-path fast path) |
+| `get_async(computed) -> T` | Await an `AsyncComputed`; uses `get()` for resolved values, otherwise spawns async compute |
 | `memo_async(compute)` | Like `computed_async` with an equality memo guard |
 | `effect_async(effect)` | Create an async effect with an async cleanup |
 | `dispose_async_effect(handle)` | Dispose an async effect and await its cleanup |
 | `batch(run)` | Synchronous batch boundary; schedules async reruns at batch exit |
 
-Cells are the **synchronous input layer**: `cell`, `get_cell`, and `set_cell`
-are synchronous. Only computed slots, memos, and effects are async.
+Sources are the **synchronous input layer**: `source`, `get`, and `set` are
+synchronous. Only computed evaluation and effects are async. The constructor and
+read/write vocabulary is deliberately the same as the local and thread-safe
+contexts; only the async handle types and `get_async` are execution-model-specific.
 
 ## Async slot state machine
 
@@ -176,8 +178,8 @@ across `.await`). Instead each callback receives a **compute context**:
 
 | Method | Tracking |
 |--------|----------|
-| `get_async(slot)` | Records the accessed slot as a dependency **before** awaiting its value |
-| `get_cell(cell)` | Records the accessed cell as a dependency synchronously |
+| `get_async(computed)` | Records the accessed computed as a dependency **before** awaiting its value |
+| `get(source)` | Records the accessed source as a dependency synchronously |
 
 Edges register immediately, so source invalidation while the future is suspended
 can cancel or supersede the in-flight computation before it publishes stale data.
@@ -198,7 +200,7 @@ An async effect runs an effect body returning an optional async cleanup:
   § "Conformance" item 5 for why the trigger is normative and not merely the
   ordering.
 - **Auto-tracking:** the body receives a compute context and tracks dependencies
-  through `get_async` / `get_cell`.
+  through `get_async` / `get`.
 - **Scheduled, not inline:** dependency invalidation schedules an async rerun
   after the current invalidation pass; the rerun runs on the runtime executor,
   not inline within `send`/`batch`.
@@ -227,7 +229,7 @@ reruns only after the outermost batch exits.
 ## Async state machine
 
 A flat [State Machine](state-machine.md) over the async context keeps `send` and
-`state` synchronous (cells are the synchronous input layer) while reactive
+`state` synchronous (sources are the synchronous input layer) while reactive
 observers use the async APIs: `on_transition` returns an async effect handle and
 `state_is` returns an async signal handle. Because resolution is asynchronous,
 eager recomputation settles on the runtime rather than synchronously within

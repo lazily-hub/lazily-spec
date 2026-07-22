@@ -202,7 +202,7 @@ or pop.
 
 ### Consistency invariants
 
-- **PartialEq cell guard**: An equal `set_cell` emits no `CellSet` and no downstream ops.
+- **PartialEq cell guard**: An equal `set` emits no `CellSet` and no downstream ops.
 - **Memo equality suppression**: A dirty `memo()` that recomputes to an equal value emits no `SlotValue` and no downstream `Invalidate`.
 - **Coalesced frontier**: A dependent reached through many changed cells in one batch appears at most once per delta.
 - **Eager Signal values are concrete**: A changed eager Signal emits a concrete

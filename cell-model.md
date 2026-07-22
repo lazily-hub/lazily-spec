@@ -330,10 +330,10 @@ lazy, signal ⇒ eager) — with **no mode flag** and **no per-read toggle**. Th
 "lazy by default, eager when asked (via `signal`)" model lazily already uses at the single-cell
 level, applied per key. Entry kind is the pinned axis:
 
-- **Cell entries** (`H = CellHandle`) are **input** nodes — **always materialized**; an input
+- **Cell entries** (`H = Source`) are **input** nodes — **always materialized**; an input
   has no derivation to defer. Minting an input on first `get` is a collection concern, not
   materialization.
-- **Slot entries** (`H = SlotHandle`) are **derived** — the ones deferral governs: an eager
+- **Slot entries** (`H = Computed`) are **derived** — the ones deferral governs: an eager
   factory allocates them up front, a lazy factory defers each to first observe.
 
 Entry kind is **orthogonal to the materialization choice** (proved in `lazily-formal`'s
@@ -426,9 +426,9 @@ There is **one keyed primitive**, generic over the entry's handle kind:
 - **`ReactiveMap<K, V, H>`** — a mutable reactive keyed dict: reactive membership + order,
   `get_or_insert_with` (mint-on-access), `remove`, `move`. `H` is the entry handle kind. Its two
   specializations are the concrete types a binding exposes:
-  - **`CellMap<K, V>` = `ReactiveMap<K, V, CellHandle>`** — **input-cell** entries. Adds
+  - **`CellMap<K, V>` = `ReactiveMap<K, V, Source>`** — **input-cell** entries. Adds
     `set(key, value)` (an input is settable). Minting is eager-by-value.
-  - **`SlotMap<K, V>` = `ReactiveMap<K, V, SlotHandle>`** — **derived-slot** entries.
+  - **`SlotMap<K, V>` = `ReactiveMap<K, V, Computed>`** — **derived-slot** entries.
     `get_or_insert_with(key, factory)` mints a slot on first access (**lazy materialization**);
     a slot's value is derived, so `SlotMap` has **no `set`**. Eager materialization is a pre-mint
     loop over the keyset; lazy is mint-on-access — there is **no eager/lazy mode flag**.
