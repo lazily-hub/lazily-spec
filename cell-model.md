@@ -140,6 +140,44 @@ The guard is proved in `lazily-formal` as `recomputeSlot_equal_preserves_depende
 (equal recompute leaves dependents' dirty flags untouched) and its specialization
 `recomputeSlot_ripple_when_false_preserves_dependents` for a custom `changed`.
 
+#### Dependency tracking (the fortified compute view)
+
+A derived cell discovers its dependencies **dynamically**: on each recompute it runs
+its compute function and records every cell that function reads. The recorded set is
+**re-bound every recompute** (not accumulated), so a conditional read
+(`cond ? a : b`) drops the branch it did not take — an implementation MUST NOT retain
+a dependency a recompute did not read.
+
+The identity that a read must attribute to — *which* node is being recomputed — is
+carried into the compute function as a **value**, through a per-recompute **compute
+view** (lazily-rs: `Compute`, the sole implementor besides `Context` of the
+`ComputeOps` operations subset). It is NOT ambient (thread-local / module global).
+This is normative because ambient state is **clobbered across suspension**: an async
+compute that reads a dependency after an `await` would attribute it to whatever else
+ran on the executor. A value threaded through the closure survives suspension (it is
+captured), so it is the only mechanism that tracks correctly post-`await` — and the
+only one that works where no ambient carrier exists (browser JS has no
+`AsyncLocalStorage`). Bindings whose runtime *does* provide a suspension-surviving
+ambient carrier (Python `contextvars`, Dart `Zone`, Node `AsyncLocalStorage`) MAY use
+it; all others MUST thread the value.
+
+The compute view SHOULD be fortified so misattribution is prevented by construction,
+not convention:
+
+- **Sole tracking surface** — a tracked read is available ONLY through the compute
+  view; reading through the owning context registers no edge (the explicit untracked
+  escape). A normal read therefore cannot silently miss tracking.
+- **Non-escapable** — the view MUST NOT outlive the recompute (lazily-rs binds it by
+  lifetime and makes it `!Send`), so it cannot be stored and later replayed to
+  register an edge against the wrong node.
+- **Generation-stamped** — a read against a node disposed/recycled mid-recompute is
+  detected, never misattributed.
+
+**Edge-attribution invariant (normative):** every dependency edge registered during
+the recompute of node `n` has `n` as its dependent. Because the node is a value
+parameter of the compute view, this holds **by construction**. Proved in
+`lazily-formal` as `registerReads_dependent_is_recomputing_node`.
+
 ### Effects stay single-writer
 
 Effects (irreversible external actions — send email, charge card, fire webhook) are
