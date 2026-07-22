@@ -104,6 +104,42 @@ the derivation — and therefore is **always single-writer**. Replicas converge 
 derived cell *because* they converge on its roots, never by merging the derived value
 itself. An implementation MUST NOT replicate or merge a derived cell directly.
 
+#### Propagate guard (`computed` / `computed_ripple_when` / `slot`)
+
+A derived cell carries a **propagate guard**: after it recomputes, the guard decides
+whether the recompute is forwarded to its dependents. The guard governs
+**propagation, never computation** — a derived cell is always recomputed when it is
+dirty *and* read (laziness is the only compute gate), so a reader MUST always observe
+a value current with the inputs. The guard only decides whether *dependents* are
+invalidated. This is the glitch-suppression that lets a diamond re-converge without
+re-running consumers whose input did not meaningfully change.
+
+Three constructors expose the guard; all always compute, and differ only in the
+guard predicate `changed(old, new)` (propagate iff true):
+
+- **`computed(f)`** — the default. Guards by the value's **natural equality**:
+  `changed = (old ≠ new)`. An equal recompute MUST NOT invalidate dependents. This is
+  the `#lzcellkernel` guarded computed; equality semantics are the host language's
+  (`PartialEq` / `==` / `equals`), so for reference-typed values (e.g. a fresh array
+  each recompute) suppression is host-defined and MAY not fire — this is permitted
+  (an unsuppressed cascade is a missed optimization, never incorrect).
+- **`computed_ripple_when(f, changed)`** — the same guard with an explicit,
+  **pure** `changed(old, new)` predicate: a cheaper/custom equality (dedup a large
+  value by a version/hash field; epsilon compare; hysteresis; monotonic gate; or
+  "propagate every N" when the counter lives in the value). `changed` MUST be a pure
+  function of `(old, new)`; value-carried state is a permitted input, external mutable
+  state is NOT (it would key off recompute/read frequency and break determinism).
+  `computed(f)` ≡ `computed_ripple_when(f, ≠)`.
+- **`slot(f)`** — **pass-through**: no guard (`changed ≡ true`). Every recompute
+  propagates. The escape for values with no cheap equality (`!PartialEq`, non-
+  `comparable` collections) that a binding is fine re-firing. This is a *derived*
+  constructor and is distinct from the internal storage-sense `Slot` that a `computed`
+  node occupies.
+
+The guard is proved in `lazily-formal` as `recomputeSlot_equal_preserves_dependents`
+(equal recompute leaves dependents' dirty flags untouched) and its specialization
+`recomputeSlot_ripple_when_false_preserves_dependents` for a custom `changed`.
+
 ### Effects stay single-writer
 
 Effects (irreversible external actions — send email, charge card, fire webhook) are
