@@ -11,6 +11,7 @@
 - [Lossless Tree CRDT](lossless-tree-crdt.md)
 - [CrdtTree Contract](crdt-tree.md)
 - [Durable Outbox Stores](durable-outbox.md)
+- [Durable Effect Sinks](durable-sinks.md)
 - [Cross-Language Coverage](coverage.md)
 - [Wire Protocol](protocol.md)
 - [Causal Receipts](receipts.md)

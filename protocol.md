@@ -968,6 +968,10 @@ Conformance: `conformance/familysync/materialize_on_ingest.json`.
 
 CRDT convergence covers *state*. For **irreversible external actions** (send email, charge card, fire webhook), gate the effect behind a single-writer authority — a designated peer (or small Raft group) decides when the effect fires, at-most-once.
 
+### Durable effect sinks (`#lzdurablesink`)
+
+Durable storage is an **effect sink**, not a transition authority. While a Lazily runtime is live, transitions are decided from Lazily state; durable storage receives a projection or an ordered fact as an effect, and a sink MUST NOT reload storage to arbitrate the transition it is currently persisting. A projection (latest recoverable state) is an idempotent upsert of the settled epoch from an `Effect` / `AsyncEffect`; lossless history uses the existing [`TopicCell`](cell-model.md#topiccell-broadcast) / [`DurableOutbox`](#durableoutbox-durable-outbox) drain (append / replay / ack with a stable cursor). Success advances a monotone `durable_through(epoch)`; failure stays represented in live state as `pending` / `retrying` / `backpressured`. Cold loading and migration belong to a separate startup hydrator, never the decision seam. [`Ephemeral`](#liveness-cells-or-set-and-lww-lzsync-liveness)-plane values MUST NOT enter a durable sink — reuse the existing `Durable` marker. Full authority rule, the projection-vs-history shape table, and the two reference examples (coalesced projection; lossless ordered fact sink) live in [docs/durable-sinks.md](docs/durable-sinks.md); the formal backstop is `lazily-formal/LazilyFormal/DurableSink.lean`.
+
 ## Reliable Sync (`#lzsync`)
 
 The `Snapshot`/`Delta` and `CrdtSync` planes above define *what* is on the wire and *how state
