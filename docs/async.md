@@ -85,7 +85,7 @@ Each async slot tracks its state through a finite state machine:
 | `Empty` | No cached value, no in-flight computation. Entered on creation and after a hard clear. |
 | `Computing` | A handle tracks the in-flight future for the current **revision**. Concurrent `get_async` callers attach as waiters to the same in-flight result instead of spawning duplicate futures. |
 | `Resolved` | The cached value is fresh, until dependency invalidation transitions back to `Computing`. |
-| `Error` | The last computation failed; callers receive the error or retry on the next `get_async`. |
+| `Error` | The last computation failed. Every caller waiting on *that* attempt receives its error. The error is **not** a cached value: the next `get_async` MUST re-spawn (`Error → Computing`) rather than replay the stored error. |
 
 **Revision tracking** is load-bearing: a computation records the slot revision
 at start; at publish time the graph accepts the value **only if the revision is
@@ -104,7 +104,16 @@ Transitions:
   updated revision.
 - `Resolved → Computing` — invalidation marks the cached value stale and spawns
   a new computation.
-- `Error → Computing` — `get_async` retry after an error.
+- `Error → Computing` — `get_async` retry after an error. This transition is
+  **mandatory, not optional**: a slot in `Error` holds no cached result, so the
+  next read re-spawns for the current revision. A binding that replays the
+  stored error to every later reader is non-conforming — it makes a transient
+  failure (a timed-out fetch, a disconnected peer) permanent for the lifetime of
+  the slot, with no read path that can recover it. `invalidate` on an `Error`
+  slot is therefore a no-op rather than a repair: the retry is owned by the read,
+  not by a dependency change. The executable form is
+  `LazilyFormal.AsyncSlotState.step … SlotEvent.retry`, which maps
+  `error → computing` and is a no-op from every other state.
 
 ## Cancellation contract
 
