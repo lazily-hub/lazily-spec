@@ -805,6 +805,14 @@ which is what licenses running the identical rule on all three flavors. It also
 proves the atomicity requirement above, and — as the queue-family instance of
 the thread-safe confluence obligation — that invalidation is order-independent
 and idempotent, because it consults membership in a set rather than a sequence.
+`QueueFamilyReaderKinds.lean` carries the same obligation to the other two
+primitives: the `WorkQueueCell` rule invalidates a reader kind **iff** that kind's
+value moved (so it neither over- nor under-invalidates) and reads only the
+before/after counts; a `TopicCell` publish changes the observed suffix of exactly
+the connected subscribers; a cursor read depends on that subscriber's own record
+alone, which is why the independence law holds structurally rather than by
+discipline; and safe GC provably changes no reader's value, which is what
+licenses `gc` taking no context on any flavor.
 The **storage backend** owns the actual FIFO data structure and is pluggable via the
 `QueueStorage` trait (Rust) / concept (C++) / interface (Py/JS/etc.).
 
