@@ -1,5 +1,5 @@
 {
-  "$comment": "Canonical cross-language feature coverage — the single source of truth. Edit THIS file, then run `node scripts/sync-coverage.mjs` to regenerate the table in docs/coverage.md and every sibling binding README (between the coverage-table markers). CI runs `--check` to fail on drift.",
+  "$comment": "Canonical cross-language feature coverage — the single source of truth. Only the Core surface defined in cell-model.md § \"Core surface vs. binding extensions\" is scored; Extended methods (entry/entry_with, is_empty, len_untracked, reconcile, insert, Try* variants) are non-normative and MUST NOT be scored here. Edit THIS file, then run `node scripts/sync-coverage.mjs` to regenerate the table in docs/coverage.md and every sibling binding README (between the coverage-table markers). CI runs `--check` to fail on drift.",
   "legend": "✅ shipped · `~` partial · `—` absent or not applicable",
   "languages": [
     "Rust",
@@ -163,6 +163,62 @@
         "✅",
         "✅",
         "✅"
+      ]
+    },
+    {
+      "feature": "`ReactiveMap` **Core surface** — single-threaded flavor (cell-model.md § Core surface vs. binding extensions)",
+      "marks": [
+        "✅",
+        "✅",
+        "~",
+        "✅",
+        "✅",
+        "~",
+        "~",
+        "✅",
+        "~"
+      ]
+    },
+    {
+      "feature": "`ReactiveMap` **Core surface** — thread-safe flavor (ordering + membership reactivity)",
+      "marks": [
+        "✅",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "feature": "`ReactiveMap` **Core surface** — async flavor (ordering + membership reactivity)",
+      "marks": [
+        "✅",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "feature": "Atomic ordered move replayed against **all three flavors** (`cellmap_atomic_move` + `cellmap_independence`)",
+      "marks": [
+        "✅",
+        "~",
+        "~",
+        "—",
+        "~",
+        "—",
+        "~",
+        "~",
+        "~"
       ]
     },
     {

@@ -401,11 +401,19 @@ one flavor per context, and each carries the context-specific law below:
   (`eventual_transparency`, `async_resolved_matches_sync`; a pending read is never a
   stale value, `observe_pending_is_none`).
 
-A binding SHOULD keep the per-key factory uniform across flavors (the same
-`Fn(&K) -> V`), so the flavors differ only in execution context — a derived async
-slot wraps that factory in a ready computation. A flavor MUST preserve the entry-kind
-and materialization laws above; it only adds the context-specific guarantee
-(confluence for thread-safe, eventual transparency for async).
+A binding SHOULD keep the per-key factory uniform across flavors, so the flavors
+differ only in execution context — a derived async slot wraps that factory in a
+ready computation. The factory SHOULD receive the entry's own tracking view
+(`Fn(&Compute, &K) -> V`, not `Fn(&K) -> V`): without it a derived entry cannot
+read another reactive and have that read register a dependency edge, which
+silently reduces `ComputedMap` to a cache.
+
+A flavor MUST preserve the entry-kind and materialization laws above, MUST expose
+the Core surface defined under "Core surface vs. binding extensions" below, and
+adds the context-specific guarantee (confluence for thread-safe, eventual
+transparency for async). Ordering and atomic move are **not** exempt: they are
+Core, they bind every flavor, and a binding that ships them only on its
+single-threaded map is non-conforming on the other two.
 
 ### When to opt into lazy
 
@@ -473,6 +481,68 @@ It conforms to the cell model when:
 4. **Atomic ordered move** (`move_to` / `move_before` / `move_after`): reordering a key MUST
    keep the entry's same cell handle, dependents, and lineage (not remove + re-mint) and
    bump only the order signal once.
+
+### Core surface vs. binding extensions
+
+The clauses above are *laws*. This section says which **methods** a binding must
+expose for those laws to be observable, and — just as importantly — which methods
+are **not** spec surface at all.
+
+The distinction exists because the family drifted without it. A survey of all
+nine bindings' single-threaded maps found method counts from 11 to 32, and the
+drift splits cleanly in two: methods present in 8 or 9 bindings are laws with a
+fixture behind them and one binding that never implemented them, while methods
+present in 7 or fewer are conveniences with no fixture and no law —
+`is_empty` is `len() == 0`, `len_untracked` is a tracking-discipline escape
+hatch, `reconcile` belongs to a higher layer, `insert` is `set` under another
+name. Without this split, "kt is missing seven required methods" and "cs also
+ships a `reconcile` helper" are indistinguishable: both read as divergence, and
+the coverage matrix marks both green.
+
+#### Core — REQUIRED
+
+A conforming binding MUST expose all of the following, **on every flavor it
+ships** (single-threaded, thread-safe, async), spelled in the binding's own
+naming convention:
+
+| group | methods |
+|---|---|
+| construction | construct bound to a context |
+| materialization | `get_or_insert_with` (lazy mint-on-access); `materialize_all` (eager pre-mint) |
+| kind specialization | `set` (`SourceMap` only); `materialize_all` (`ComputedMap` only) |
+| entry read | `observe(key) -> Maybe<V>` — **pure and non-minting**; `handle(key) -> Maybe<H>` |
+| reactive reads | `keys` (order-tracked), `len` and `contains_key` (membership-tracked) |
+| materialization plane | `present_keys`, `present_count`, `is_present` — non-reactive |
+| order | `position`, `move_to`, `move_before`, `move_after` |
+| membership | `remove` |
+| introspection | `entry_kind` |
+
+Two Core entries are load-bearing in ways that are easy to miss:
+
+- **`observe` MUST NOT mint.** A read that takes a factory and allocates is a
+  different operation with a different contract; it cannot express "is this key
+  absent" and it cannot be called from a reader without a write side effect.
+- **`handle` is not optional.** Clause 3's stable handle and clause 4's
+  "same cell handle" are unassertable without a way to observe entry identity. A
+  map whose entries are plain cached values rather than reactive nodes cannot
+  satisfy this, and MUST be recorded as divergent rather than marked green.
+
+The **kind** specializations bind per entry kind, not per flavor: `set` is
+`SourceMap`-only on all three flavors, `materialize_all` is `ComputedMap`-only
+on all three. Ordering, by contrast, binds every flavor — it touches no entry
+handle and awaits nothing, so it is neither thread-coloured nor async-coloured.
+
+#### Extended — OPTIONAL, non-normative
+
+The following ship in some bindings and are explicitly **not** spec surface. A
+binding MAY offer them, MAY name them differently, and MAY omit them entirely;
+their absence is not a conformance gap and MUST NOT be scored in the coverage
+matrix.
+
+`entry` / `entry_with` (eager value-minting convenience), `is_empty`,
+`len_untracked`, `get_or_insert_handle`, `reconcile`, `insert`, `Try*`-prefixed
+naming variants, and any binding-local accessors for the membership/order
+signals themselves.
 
 ### Ordered keyed tree
 
