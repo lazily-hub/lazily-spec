@@ -211,13 +211,13 @@
       "feature": "Atomic ordered move replayed against **all three flavors** (`cellmap_atomic_move` + `cellmap_independence`)",
       "marks": [
         "✅",
-        "~",
-        "~",
-        "—",
-        "~",
         "✅",
-        "~",
-        "~",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
         "~"
       ]
     },
