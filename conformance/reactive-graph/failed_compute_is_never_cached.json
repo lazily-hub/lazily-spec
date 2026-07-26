@@ -1,0 +1,183 @@
+{
+  "description": "A compute that fails is never cached (#lzasyncerrfixture). The caller whose read triggered the failing run receives that run's error; the next read re-runs the body. On the async plane this is the `Error → Computing` transition (docs/async.md § Async slot state machine, LazilyFormal.AsyncSlotState `SlotEvent.retry`): a slot in `Error` holds no cached result. On the synchronous plane it is the same contract with no state to name — a throwing compute leaves nothing behind to serve. A binding that stores the error and replays it to every later reader makes a transient failure (a timed-out fetch, a disconnected peer, a momentary OOM) permanent for the lifetime of the node, with no read path able to recover it. Every assertion here is on `computes_of`, not on the error: a caching binding also raises on every read, it just runs the body once — so an error-only assertion passes against both behaviors and is exactly how lazily-go, lazily-dart and lazily-zig stayed divergent from lazily-rs, lazily-py, lazily-js, lazily-kt, lazily-cs and lazily-cpp under green suites. `fail_next` arms the next N computes of a node to raise; it creates nothing and does not change the node's dependency set, so the recovering run re-registers the same edges. The fixture opens with a baseline read so the counter starts from the same place on a context that materializes at creation and one that materializes on first read. An armed failure needs an invalidation to force the recompute it fails, so this fixture assumes a demand-driven (lazy) recompute: a context that recomputes eagerly at write time consumes the arming during `set_cell` rather than during the read, which is a scheduling difference rather than a caching one and belongs in that binding's per-model skip ledger, not in a loosened assertion here.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": {
+        "type": "cell",
+        "id": "src",
+        "value": 1
+      }
+    },
+    {
+      "op": {
+        "type": "computed",
+        "id": "slot",
+        "reads": [
+          "src"
+        ],
+        "offset": 0
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "slot"
+      },
+      "expect": {
+        "value": 1,
+        "computes_of": {
+          "slot": 1
+        },
+        "note": "baseline: one compute, whether the context materialized at creation or on this read"
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "slot"
+      },
+      "expect": {
+        "value": 1,
+        "computes_of": {
+          "slot": 1
+        },
+        "note": "a cached success is served without re-running — this is what makes the counters below discriminating"
+      }
+    },
+    {
+      "op": {
+        "type": "fail_next",
+        "id": "slot",
+        "count": 1
+      },
+      "expect": {
+        "computes_of": {
+          "slot": 1
+        },
+        "note": "arming does not itself compute"
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "src",
+        "value": 2
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "slot"
+      },
+      "expect": {
+        "error": "compute_failed",
+        "computes_of": {
+          "slot": 2
+        },
+        "note": "the invalidated read runs the armed body and that run raises"
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "slot"
+      },
+      "expect": {
+        "value": 2,
+        "computes_of": {
+          "slot": 3
+        },
+        "note": "THE CONTRACT: the next read re-runs rather than replaying the stored error, so the node recovers to the value its current dependencies imply. A caching binding raises here and reports computes_of 2"
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "slot"
+      },
+      "expect": {
+        "value": 2,
+        "computes_of": {
+          "slot": 3
+        },
+        "note": "and the recovered value caches normally — recovery does not leave the node permanently hot"
+      }
+    },
+    {
+      "op": {
+        "type": "fail_next",
+        "id": "slot",
+        "count": 2
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "src",
+        "value": 5
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "slot"
+      },
+      "expect": {
+        "error": "compute_failed",
+        "computes_of": {
+          "slot": 4
+        },
+        "note": "a persistently failing node re-runs on every read: one compute per read, not one compute total"
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "slot"
+      },
+      "expect": {
+        "error": "compute_failed",
+        "computes_of": {
+          "slot": 5
+        },
+        "note": "second consecutive failure — a caching binding is still at 4 here while raising the same error"
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "slot"
+      },
+      "expect": {
+        "value": 5,
+        "computes_of": {
+          "slot": 6
+        },
+        "note": "recovery after repeated failure, against the dependency value written while the node was failing — the failing runs did not drop the edge"
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "src",
+        "value": 9
+      }
+    },
+    {
+      "op": {
+        "type": "read",
+        "id": "slot"
+      },
+      "expect": {
+        "value": 9,
+        "computes_of": {
+          "slot": 7
+        },
+        "note": "the recovered node still tracks `src`: the failing runs re-registered their dependencies rather than leaving the node detached"
+      }
+    }
+  ]
+}

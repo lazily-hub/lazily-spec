@@ -703,6 +703,11 @@ _REACTIVE_GRAPH_OPS = {
     # no new node kind, and no new op for the feeding itself.
     "merge_cell",
     "merge",
+    # A failed compute is never cached. `fail_next` arms the next `count`
+    # computes of an existing node to raise, so a fixture can assert on
+    # `computes_of` that the node re-runs per read instead of replaying a
+    # stored error. It creates nothing and changes no dependency set.
+    "fail_next",
 }
 
 # A reactive-graph fixture must cite the contract it conforms to, so a rule can
@@ -715,6 +720,9 @@ _REACTIVE_GRAPH_TAGS = (
     # makes a divergent feedback loop testable instead of hanging the runner.
     "#lzmergefeed",
     "#lzfeedbackdrain",
+    # A failed compute is never cached: the next read re-runs the body rather
+    # than replaying the stored error (`Error -> Computing` on the async plane).
+    "#lzasyncerrfixture",
 )
 
 # Assertion keys are observable effects only. Deliberately absent: anything
