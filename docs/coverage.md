@@ -32,9 +32,15 @@ Legend: ✅ shipped · `~` partial · `—` absent or not applicable (see notes)
 | Atomic ordered move replayed against **all three flavors** (`cellmap_atomic_move` + `cellmap_independence`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ~ |
 | Memoized semantic tree (`SemTree`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Stable-id alignment (manufactured identity) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| Broadcast topic (`TopicCell`) — independent cursors + durable replay + safe GC (`#lztopiccell`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| Competing-consumer work queue (`WorkQueueCell`) — exclusive leases + ack/nack + redelivery + DLQ (`#lzworkqueue`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — single-threaded flavor | ✅ | ✅ | ✅ | ~ | ✅ | ~ | ✅ | ✅ | — |
+| Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle) | — | — | — | — | — | — | — | — | — |
+| Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — async flavor (reader kinds + eventual transparency) | — | — | — | — | — | — | — | — | — |
+| Broadcast topic (`TopicCell`) **Core surface** — single-threaded flavor — independent cursors + durable replay + safe GC (`#lztopiccell`) | ✅ | ✅ | ✅ | ~ | ✅ | ~ | ✅ | ✅ | — |
+| Broadcast topic (`TopicCell`) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle) | — | — | — | — | — | — | — | — | — |
+| Broadcast topic (`TopicCell`) **Core surface** — async flavor (reader kinds + eventual transparency) | — | — | — | — | — | — | — | — | — |
+| Competing-consumer work queue (`WorkQueueCell`) **Core surface** — single-threaded flavor — exclusive leases + ack/nack + redelivery + DLQ (`#lzworkqueue`) | ✅ | ✅ | ✅ | ~ | ✅ | ~ | ✅ | ✅ | — |
+| Competing-consumer work queue (`WorkQueueCell`) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle) | — | — | — | — | — | — | — | — | — |
+| Competing-consumer work queue (`WorkQueueCell`) **Core surface** — async flavor (reader kinds + eventual transparency) | — | — | — | — | — | — | — | — | — |
 | Merge algebra + `Source<T, M>` — associative `MergePolicy` (`KeepLatest`/`Sum`/`Max`/`SetUnion`/`RawFifo`), `Cell ≡ Source<KeepLatest>`, read-any-cell/write-`Source` split (`#relaycell`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | RelayCell — conflating relay + `BackpressurePolicy` + `SpillStore` + `Transport` + Inbox/Outbox + Rate/Window/Expiry/Priority/keyed policies (`#relaycell`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Free-text character CRDT (`TextCrdt`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -86,10 +92,23 @@ and JSON Schemas in this repo and the Lean models in
 - **ᶜ Zig reactive graph:** `Cell` / `Slot` / `Signal` / `Effect` and the public
   `batch(run)` boundary ship (`context.zig` coalesces the eager-recompute drain
   at the outermost batch exit).
-- **ᵈ Thread-safe context (JS / Dart):** not applicable — both run on a
-  single-threaded runtime (one event loop / one isolate), so a lock-backed
-  context has no meaning. This is the concurrency-layer platform carve-out
-  (see [protocol.md § Concurrency layers are required](protocol.md#concurrency-layers-are-required)).
+- **ᵈ Thread-safe context (JS / Dart):** the layer **ships and conforms in both**,
+  and is scored accordingly. The original carve-out reasoning — both run on a
+  single-threaded runtime (one event loop / one isolate), so a lock-backed context
+  has no meaning — was a *design* argument, and both bindings shipped the layer
+  anyway: JS guards realm-private state with its own mutex, Dart wraps a plain
+  `Context` behind a reentrancy guard. Marking the row "not applicable" while the
+  code shipped and passed fixtures made the matrix contradict itself, so the
+  carve-out language is withdrawn here.
+
+  What is **still open** is the design question, which is not the same as the
+  scoring question: *should* these bindings expose a thread-safe flavor at all?
+  Dart ships a duplicate family that is weaker than the single-threaded one it
+  duplicates, and JS's README argues the opposite of its own source comment. That
+  should be settled before Dart's duplicate is either extended further or deleted
+  — but until it is, a shipped, conforming layer is scored as shipped. See
+  [protocol.md § Concurrency layers are required](protocol.md#concurrency-layers-are-required)
+  for the layer requirement itself.
 - **ᵉ Zig async context:** Zig removed language `async` and has no suspendable
   executor, so the layer is a task-queue + `settle()` drain surface — the
   synchronous graph's `pending_recompute`/`drainPendingRecompute` generalized

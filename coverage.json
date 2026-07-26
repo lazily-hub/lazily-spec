@@ -250,44 +250,128 @@
       ]
     },
     {
-      "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter)",
+      "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — single-threaded flavor",
       "marks": [
         "✅",
         "✅",
         "✅",
+        "~",
         "✅",
-        "✅",
-        "✅",
+        "~",
         "✅",
         "✅",
         "—"
       ]
     },
     {
-      "feature": "Broadcast topic (`TopicCell`) — independent cursors + durable replay + safe GC (`#lztopiccell`)",
+      "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle)",
+      "marks": [
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — async flavor (reader kinds + eventual transparency)",
+      "marks": [
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "feature": "Broadcast topic (`TopicCell`) **Core surface** — single-threaded flavor — independent cursors + durable replay + safe GC (`#lztopiccell`)",
       "marks": [
         "✅",
         "✅",
         "✅",
+        "~",
         "✅",
-        "✅",
-        "✅",
+        "~",
         "✅",
         "✅",
         "—"
       ]
     },
     {
-      "feature": "Competing-consumer work queue (`WorkQueueCell`) — exclusive leases + ack/nack + redelivery + DLQ (`#lzworkqueue`)",
+      "feature": "Broadcast topic (`TopicCell`) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle)",
+      "marks": [
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "feature": "Broadcast topic (`TopicCell`) **Core surface** — async flavor (reader kinds + eventual transparency)",
+      "marks": [
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "feature": "Competing-consumer work queue (`WorkQueueCell`) **Core surface** — single-threaded flavor — exclusive leases + ack/nack + redelivery + DLQ (`#lzworkqueue`)",
       "marks": [
         "✅",
         "✅",
         "✅",
+        "~",
+        "✅",
+        "~",
         "✅",
         "✅",
-        "✅",
-        "✅",
-        "✅",
+        "—"
+      ]
+    },
+    {
+      "feature": "Competing-consumer work queue (`WorkQueueCell`) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle)",
+      "marks": [
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "feature": "Competing-consumer work queue (`WorkQueueCell`) **Core surface** — async flavor (reader kinds + eventual transparency)",
+      "marks": [
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
         "—"
       ]
     },

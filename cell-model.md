@@ -914,8 +914,17 @@ not merge (see the PRD's § "Background: Why Consensus, Not CRDT").
 ### Threading, permissions, and instrumentation
 
 - **Threading contract**: `QueueCell` inherits the `Context` threading model. MPSC on the
-  same `Context` uses `batch()`; cross-thread MPSC requires `ThreadSafeContext`;
-  cross-process requires a distributed storage backend.
+  same `Context` uses `batch()`; cross-thread MPSC requires a `ThreadSafeContext`-bound
+  flavor; cross-process requires a distributed storage backend.
+
+  This sentence was **aspirational prose for the whole v1 line**: it named
+  `ThreadSafeContext` as the way to reach cross-thread MPSC while no binding had a
+  constructor that accepted one, so the only documented path to the guarantee was
+  unimplementable. It is now **normative** — a thread-safe flavor is Core (see
+  § "Core surface vs. binding extensions (queue family)") and a binding that ships
+  the family on a single-threaded context only is non-conforming on the other two
+  flavors, not merely unfinished. Recording a capability as absent is fine;
+  documenting a route to it that does not exist is not.
 - **Permissions**: over the distributed plane, push and pop are distinct capabilities under
   `PeerPermissions` (`distributed.json`). A peer MAY be granted push-only, pop-only, or
   both.
@@ -1144,3 +1153,119 @@ stalls until failover.
 and cross-language conformance are shipped. Distributed/HA assignment still requires the consensus
 adapter from the [distributed-queue PRD](distributed-queue-prd.md) Phase 2; the local shell must not
 be mistaken for that adapter.
+
+### Core surface vs. binding extensions (queue family)
+
+The clauses above are *laws*. This section says which **methods** a binding must
+expose on `QueueCell` / `TopicCell` / `WorkQueueCell` for those laws to be
+observable, and which methods are **not** spec surface at all. It mirrors
+§ "Core surface vs. binding extensions" for `ReactiveMap`, and exists for the
+same reason: without the split, "this binding ships no ordering on two flavors"
+and "that binding also ships a convenience helper" both read as divergence and
+both score green.
+
+The split is drawn from a survey of the eight bindings that ship the family
+(lazily-cs does not yet). Normalising for naming convention, nine methods are
+present in **8 of 8** — unanimous, therefore law — and the rest are conveniences.
+
+#### Core — REQUIRED
+
+A conforming binding MUST expose all of the following **on every flavor it
+ships** (single-threaded, thread-safe, async), spelled in the binding's own
+naming convention:
+
+| primitive | group | methods |
+|---|---|---|
+| `QueueCell` | construction | construct bound to a context; bounded and unbounded forms |
+| | mutation | `try_push`, `try_pop`, `close` |
+| | reader kinds | `head`, `len`, `is_empty`, `is_full`, `is_closed` — **all reactive** |
+| | bound | `capacity` |
+| `TopicCell` | subscription | `subscribe`, `reconnect`, `disconnect` |
+| | broadcast | `publish` |
+| | cursor read | `read` (one element at the cursor), `read_stream` (the cursor's tail), `advance` |
+| | retention | cursor/GC observables sufficient to assert the retention law |
+| `WorkQueueCell` | mutation | `push`, `claim`, `ack`, `nack`, `reap_expired` |
+| | reader kinds | `pending_len`, `in_flight_len`, `dead_letter_len` — **all reactive** |
+
+Three Core entries are load-bearing in ways that are easy to miss:
+
+- **`is_empty` is Core here, unlike on `ReactiveMap`.** On the map it is
+  Extended, because it is just `len() == 0`. For a queue it is a *named reactive
+  observable* that § "Threading, permissions, and instrumentation" already
+  requires — "`is_empty` and `len` are reactive reads dual to `is_full`; all
+  three MUST be reactive when their respective conditions can change". The
+  reader-kind independence law is stated over that triple, so dropping one makes
+  the law unassertable.
+- **A reader kind MUST be reactive, and polling a counter is not reactive.** A
+  version counter the caller must poll registers no dependency edge, so no
+  reader can be invalidated by it and the independence law cannot be observed. A
+  binding whose reader kinds are polled counters, or which derives them by
+  diffing a snapshot, MUST be recorded as divergent rather than marked green.
+- **`try_pop` MUST distinguish empty from closed.** The closure lifecycle law
+  needs `Closed` to be observably different from `Empty`; a `pop` returning a
+  bare optional collapses them.
+
+Ordering-style reasoning applies to the whole family: none of the Core surface
+touches an entry handle and none of it awaits, so **it is neither
+thread-coloured nor async-coloured** and binds every flavor. Confirmed
+empirically — across all eight bindings the queue-family sources contain **no**
+`async fn`, `suspend fun`, `Future`, `Task`, `Promise`, or `await` anywhere. A
+flavor is not permitted to colour `pop`.
+
+#### Reader-kind derivation — one design, pinned
+
+A conforming binding MUST implement reader kinds as **memoized derivation with
+explicit invalidation**: each reader kind is a derived node with no graph
+dependencies, and a successful op clears exactly those whose value provably
+changed, in **one atomic frontier walk**.
+
+Three designs were in the field. This one is pinned because:
+
+- it is what § "Demand-driven derivation" already specifies, and the only one
+  that realises its cost win — a version-cell design charges a graph write on
+  every op even with no subscriber, which is precisely what that clause exists
+  to avoid;
+- it is the shape the whole family converged on for `ReactiveMap`, where all
+  nine bindings now hold a graph-agnostic ordering/bookkeeping core beside
+  per-flavor version cells minted on each flavor's own graph. Forking the queue
+  family onto a different reader-kind design would split the family's own
+  structure for no gain.
+
+A binding MAY keep a version-cell implementation and remain conformant **only**
+if reads still register a dependency edge and the invalidation set is exact; it
+forgoes the demand-driven win. Polled counters and snapshot diffing are **not**
+conformant under any reading.
+
+#### Per-flavor obligation
+
+A flavor MUST preserve the reader-kind independence law, the closure lifecycle,
+and the **single-frontier-walk atomicity** requirement — one op invalidates all
+of its changed reader kinds together, so a subscriber never observes `len`
+bumped while `is_full` has not yet flipped. On top of that it adds exactly its
+context-specific guarantee: **confluence** for thread-safe, **eventual
+transparency** for async.
+
+Two flavor questions are settled here rather than left to each binding:
+
+- **`TopicCell` fan-out needs nothing extra under a thread-safe context.** Each
+  subscriber owns its cursor and a cursor only advances, so concurrent
+  subscriber reads commute and the retained-until-all-cursors-pass rule is a
+  monotone function of the cursor set. Broadcast is confluent by construction.
+- **`WorkQueueCell` lease expiry stays caller-driven on every flavor.**
+  `reap_expired` takes the current time as a parameter; a flavor MUST NOT
+  substitute an owned timer. Time as an input is what makes lease expiry
+  deterministic and fixture-replayable, and an async flavor that grew its own
+  clock would be unreplayable for no gain.
+
+#### Extended — OPTIONAL, non-normative
+
+The following ship in some bindings and are explicitly **not** spec surface. A
+binding MAY offer them, MAY name them differently, and MAY omit them entirely;
+their absence is not a conformance gap and MUST NOT be scored in the coverage
+matrix.
+
+`push` / `pop` as panicking or asserting variants of `try_push` / `try_pop`,
+`peek`, `elements` (whole-buffer snapshot), `base_offset`, `snapshot` /
+`from_snapshot`, `restart`, `gc` as a caller-visible entry point when retention
+is already automatic, `reader_handle` accessors for the reader-kind nodes
+themselves, and any binding-local accessors for the version cells.
