@@ -569,7 +569,7 @@ via [Capability Negotiation](#capability-negotiation) rather than failing silent
 | Layer | Required | Spec | Conformance |
 |-------|----------|------|-------------|
 | Reactive core (Cell / Slot / Effect / Signal) | MUST | [Reactive Graph](reactive-graph.md), [Cell Model](cell-model.md) | — |
-| **Keyed cell collections** (`SourceMap`, `CellTree`, keyed reconciliation) | MUST | [Cell Model § Keyed cell collections](cell-model.md#keyed-cell-collections) | [`conformance/collections/`](conformance/collections/) |
+| **Keyed cell collections** (`SourceMap`, `SourceTree`, keyed reconciliation) | MUST | [Cell Model § Keyed cell collections](cell-model.md#keyed-cell-collections) | [`conformance/collections/`](conformance/collections/) |
 | Flat state machine | MUST | [State Machine](state-machine.md) | — |
 | Harel state charts | MUST | [State Charts](state-charts.md) | [`conformance/statechart/`](conformance/statechart/) |
 | Thread-safe reactive context | MUST² | [Reactive Graph § Context layers](reactive-graph.md#context-layers) | — |

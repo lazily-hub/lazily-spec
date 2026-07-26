@@ -274,7 +274,7 @@ An implementation conforms to the cell model when:
    value / set-membership / order reactivity-independence, stable-handle, and
    atomic-move invariants below hold. Collections are **required of every binding**, not
    optional.
-9. An **ordered keyed tree** (`CellTree`) is implemented, inheriting the per-cell merge
+9. An **ordered keyed tree** (`SourceTree`) is implemented, inheriting the per-cell merge
    and atomic-move guarantees node-by-node (required of every binding).
 10. **Keyed reconciliation** emits the move-minimized `{insert, remove, move, update}`
     op set (LIS over prior indices preserved), and a stable entry is not invalidated by a
@@ -454,7 +454,7 @@ type (see [§ Materialization](#materialization-a-caller-provided-recipe)).
 > **Required.** The keyed cell collections layer is normative for **every** lazily
 > binding — it is not an optional lazily-rs extension. A conforming binding MUST implement
 > `ReactiveMap` (at least its `SourceMap` specialization; `ComputedMap` where the binding supports
-> derived slots), the ordered keyed tree (`CellTree`), and keyed reconciliation, and MUST
+> derived slots), the ordered keyed tree (`SourceTree`), and keyed reconciliation, and MUST
 > validate against the canonical fixtures in [`conformance/collections/`](conformance/collections/).
 > The single-writer / multi-write classification, `merge:` mechanism, and ingress rules
 > below are exactly those defined above — the collection adds **no new merge unit**.
@@ -476,7 +476,7 @@ It conforms to the cell model when:
 
 ### Ordered keyed tree
 
-An *ordered keyed tree* (`CellTree`) is a further **composition**: each node is
+An *ordered keyed tree* (`SourceTree`) is a further **composition**: each node is
 `(stable id, value cell, ordered keyed child collection)`. It conforms when per-node value
 reactivity holds (editing a node invalidates only that node's readers), per-level
 membership/order reactivity holds (a sibling subtree or descendant change MUST NOT

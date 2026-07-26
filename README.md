@@ -35,7 +35,7 @@ matrix with per-cell notes and platform carve-outs lives in
 | Async reactive context | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Flat state machine | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Harel state charts | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Keyed reactive maps (`ReactiveMap`: `SourceMap` / `ComputedMap`) + `CellTree` + reconcile | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Keyed reactive maps (`ReactiveMap`: `SourceMap` / `ComputedMap`) + `SourceTree` + reconcile | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Memoized semantic tree (`SemTree`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Stable-id alignment (manufactured identity) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -82,7 +82,7 @@ and JSON Schemas in `lazily-spec` and the Lean models in `lazily-formal`.
 
 Every binding MUST implement the layers in the [Binding Conformance Matrix](protocol.md#binding-conformance-matrix).
 The **distributed CRDT plane (`CrdtSync`)** and the full keyed cell collections layer
-(`CellMap`, `CellTree`, keyed reconciliation) are unconditional — implementable on any
+(`SourceMap`, `SourceTree`, keyed reconciliation) are unconditional — implementable on any
 runtime that speaks the wire. The **C-ABI FFI boundary** is required by default, with a
 narrow platform carve-out: a binding whose runtime structurally cannot host a native
 in-process C ABI (browser/Worker JS, sandboxed runtimes) declares `ffi = none`, still

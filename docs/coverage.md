@@ -25,7 +25,7 @@ Legend: ✅ shipped · `~` partial · `—` absent or not applicable (see notes)
 | Async reactive context | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Flat state machine | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Harel state charts | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Keyed reactive maps (`ReactiveMap`: `SourceMap` / `ComputedMap`) + `CellTree` + reconcile | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Keyed reactive maps (`ReactiveMap`: `SourceMap` / `ComputedMap`) + `SourceTree` + reconcile | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Memoized semantic tree (`SemTree`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Stable-id alignment (manufactured identity) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -90,7 +90,7 @@ and JSON Schemas in this repo and the Lean models in
   executor, so the layer is a task-queue + `settle()` drain surface — the
   synchronous graph's `pending_recompute`/`drainPendingRecompute` generalized
   with revision tracking and the 4-state slot machine (`async_context.zig`).
-- **ᶠ Zig collections:** `CellMap` / `SlotMap` with atomic move, `CellTree`
+- **ᶠ Zig collections:** `SourceMap` / `ComputedMap` with atomic move, `SourceTree`
   (per-level membership/order reactivity, atomic child move), and the
   LIS-move-minimized reconcile op-set all ship (`collection.zig`,
   `cell_tree.zig`, `reconcile.zig`).
