@@ -170,41 +170,41 @@
       "marks": [
         "✅",
         "✅",
+        "✅",
+        "✅",
+        "✅",
         "~",
         "✅",
         "✅",
-        "~",
-        "~",
-        "✅",
-        "~"
+        "✅"
       ]
     },
     {
       "feature": "`ReactiveMap` **Core surface** — thread-safe flavor (ordering + membership reactivity)",
       "marks": [
         "✅",
-        "—",
-        "—",
-        "—",
-        "—",
         "✅",
-        "—",
-        "—",
-        "—"
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "~"
       ]
     },
     {
       "feature": "`ReactiveMap` **Core surface** — async flavor (ordering + membership reactivity)",
       "marks": [
         "✅",
-        "—",
-        "—",
-        "—",
-        "—",
         "✅",
-        "—",
-        "—",
-        "—"
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "~"
       ]
     },
     {
