@@ -40,7 +40,7 @@
       ]
     },
     {
-      "feature": "Keyed-map materialization (`SlotMap`) — mint-on-access derived slots: transparency + deferral (`#lzmatmode`)",
+      "feature": "Keyed-map materialization (`ComputedMap`) — mint-on-access derived slots: transparency + deferral (`#lzmatmode`)",
       "marks": [
         "✅",
         "✅",
@@ -54,7 +54,7 @@
       ]
     },
     {
-      "feature": "Thread-safe keyed map (`ThreadSafeSlotMap`) — `Send + Sync` + materialization confluence (`#lzmatmode`)",
+      "feature": "Thread-safe keyed map (`ThreadSafeComputedMap`) — `Send + Sync` + materialization confluence (`#lzmatmode`)",
       "marks": [
         "✅",
         "✅",
@@ -68,7 +68,7 @@
       ]
     },
     {
-      "feature": "Async keyed map (`AsyncSlotMap`) — eventual transparency (`#lzmatmode`)",
+      "feature": "Async keyed map (`AsyncComputedMap`) — eventual transparency (`#lzmatmode`)",
       "marks": [
         "✅",
         "✅",
@@ -152,7 +152,7 @@
       ]
     },
     {
-      "feature": "Keyed reactive maps (`ReactiveMap`: `CellMap` / `SlotMap`) + `CellTree` + reconcile",
+      "feature": "Keyed reactive maps (`ReactiveMap`: `SourceMap` / `ComputedMap`) + `CellTree` + reconcile",
       "marks": [
         "✅",
         "✅",

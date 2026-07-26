@@ -83,11 +83,11 @@ assert the emitted minimal op set.
 | `collections/workqueue_competing_delivery.json` | competing-consumer exclusive FIFO claims, delivery ownership, ack/nack, identity-preserving redelivery |
 | `collections/workqueue_lease_deadletter.json` | strict visibility-timeout boundary, at-least-once requeue, max-delivery poison routing to DLQ |
 
-## SlotMap materialization conformance
+## ComputedMap materialization conformance
 
 The `conformance/materialization/` directory pins the eager-vs-lazy
 [materialization behavior](cell-model.md#materialization-a-caller-provided-recipe) (`#lzmatmode`) of a
-[`SlotMap`](cell-model.md#keyed-cell-collections) — eager is a pre-mint loop over the
+[`ComputedMap`](cell-model.md#keyed-cell-collections) — eager is a pre-mint loop over the
 keyset; lazy is `get_or_insert_with` mint-on-access — proved in
 [lazily-formal](formal-model.md)'s `Materialization` module. These are **compute**
 fixtures: a binding reads the `spec` (each key's canonical value, and — for the

@@ -466,7 +466,13 @@ def _collection_fixtures() -> list[str]:
 
 
 # Keyed-collection models: top-level `steps`/`reconcile` keyed reactivity.
-_KEYED_MODELS = {"CellMap", "CellTree"}
+#
+# `CellMap` / `SlotMap` are the DEPRECATED spellings of `SourceMap` / `ComputedMap`, kept
+# accepted here because the `model` field is wire data that nine independent runners read —
+# at least one of them dispatches on it. Rejecting the old spelling would break every binding
+# that has not migrated yet, in the same commit that renames the fixtures. They are accepted,
+# not emitted: no fixture in this repo carries them any more.
+_KEYED_MODELS = {"SourceMap", "CellMap", "CellTree"}
 # Queue models: reactive queue shell + storage backend.
 _QUEUE_MODELS = {"QueueCell"}
 # Broadcast topic: keyed per-subscriber cursor state and retention.

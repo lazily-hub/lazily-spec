@@ -19,7 +19,7 @@ Wire-stable identifiers decoupled from internal `SlotId`. Serialized as bare JSO
 NodeKey = string   // a "/"-joined path, e.g. "scores/alice", "outer/k1/inner/k2"
 ```
 
-An **optional, wire-stable keyed address** for a collection entry (a `CellMap` / `SlotMap` entry). Unlike `NodeId` — the volatile internal handle a producer may re-mint after a resync or remove-then-readd — a `NodeKey` is producer-defined and **stable across NodeId churn**, so a peer can subscribe to "entry `scores/alice`" without an out-of-band key→NodeId map. A multi-segment path addresses nested collections (an entry of a `CellMap` inside a `CellMap` entry) with no extra machinery.
+An **optional, wire-stable keyed address** for a collection entry (a `SourceMap` / `ComputedMap` entry). Unlike `NodeId` — the volatile internal handle a producer may re-mint after a resync or remove-then-readd — a `NodeKey` is producer-defined and **stable across NodeId churn**, so a peer can subscribe to "entry `scores/alice`" without an out-of-band key→NodeId map. A multi-segment path addresses nested collections (an entry of a `SourceMap` inside a `SourceMap` entry) with no extra machinery.
 
 `NodeKey` is **additive** — it never changes `NodeId` semantics. It appears only as the optional `key` field on `NodeSnapshot` and the `NodeAdd` delta op.
 
@@ -569,7 +569,7 @@ via [Capability Negotiation](#capability-negotiation) rather than failing silent
 | Layer | Required | Spec | Conformance |
 |-------|----------|------|-------------|
 | Reactive core (Cell / Slot / Effect / Signal) | MUST | [Reactive Graph](reactive-graph.md), [Cell Model](cell-model.md) | — |
-| **Keyed cell collections** (`CellMap`, `CellTree`, keyed reconciliation) | MUST | [Cell Model § Keyed cell collections](cell-model.md#keyed-cell-collections) | [`conformance/collections/`](conformance/collections/) |
+| **Keyed cell collections** (`SourceMap`, `CellTree`, keyed reconciliation) | MUST | [Cell Model § Keyed cell collections](cell-model.md#keyed-cell-collections) | [`conformance/collections/`](conformance/collections/) |
 | Flat state machine | MUST | [State Machine](state-machine.md) | — |
 | Harel state charts | MUST | [State Charts](state-charts.md) | [`conformance/statechart/`](conformance/statechart/) |
 | Thread-safe reactive context | MUST² | [Reactive Graph § Context layers](reactive-graph.md#context-layers) | — |
@@ -929,7 +929,7 @@ DeltaSinceRequest = { node: NodeId, their_vv: [(peer, counter)] }
 
 ### Reactive keyed-map sync (`#lzfamilysync`)
 
-A keyed reactive map (`ReactiveMap` — its `CellMap` / `SlotMap` specializations;
+A keyed reactive map (`ReactiveMap` — its `SourceMap` / `ComputedMap` specializations;
 `cell-model.md` § "Keyed cell collections") is a *local* keyed reactive
 collection. This section fixes its **distributed** contract: what a peer does with a keyed
 `CrdtOp` (`NodeKey = namespace/suffix`) for a map entry it has **not** registered locally.

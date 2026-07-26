@@ -269,7 +269,7 @@ An implementation conforms to the cell model when:
    kind.
 7. The attach/detach authority governs writer **liveness** only, never a cell's kind or
    mechanism.
-8. A **keyed cell collection** (`ReactiveMap` — the `CellMap`/`SlotMap` specializations) is
+8. A **keyed cell collection** (`ReactiveMap` — the `SourceMap`/`ComputedMap` specializations) is
    implemented — entries are ordinary cells, a dedicated membership cell tracks the key set, and the
    value / set-membership / order reactivity-independence, stable-handle, and
    atomic-move invariants below hold. Collections are **required of every binding**, not
@@ -284,7 +284,7 @@ An implementation conforms to the cell model when:
     a pluggable `QueueStorage` backend. The shell / storage split, closure observable
     contract, bounded-queue backpressure, and ordering guarantees below hold (required of
     every binding).
-12. **Materialization** is **eager by default** — a `SlotMap`'s derived entries are pre-minted
+12. **Materialization** is **eager by default** — a `ComputedMap`'s derived entries are pre-minted
     over the keyset; **lazy** materialization (`get_or_insert_with` mint-on-access) is opt-in,
     keyed, and **observationally transparent** — identical read values, allocation deferred only
     (see [Materialization](#materialization-a-caller-provided-recipe)). It is a **behavior, not a
@@ -305,16 +305,16 @@ how it converges, not how it merges. It trades **memory and first-touch latency*
 > differently, and most never need it. What must agree is the **observable behavior** the
 > benchmark measures — *transparency* (a lazy read equals an eager read) and *deferral* (an
 > unread lazy entry costs nothing) — not any type or flag. So materialization is normative as a
-> **behavior of the keyed primitive**: it is simply what [`SlotMap`](#keyed-cell-collections)
+> **behavior of the keyed primitive**: it is simply what [`ComputedMap`](#keyed-cell-collections)
 > does — `get_or_insert_with` mints a derived slot on first access (lazy); a pre-mint loop over
 > the keyset is eager. There is **no materialization *mode* and no *family* type** — the family
-> types (`ReactiveFamily` / `CellFamily`) are removed; `SlotMap` (a `ReactiveMap` specialization)
+> types (`ReactiveFamily` / `CellFamily`) are removed; `ComputedMap` (a `ReactiveMap` specialization)
 > is the vehicle.
 
 ### The materialization recipe
 
 Materialization is **caller-provided**: a keyed collection (a
-[`CellMap`](#keyed-cell-collections) or any keyed address space) plus a **per-key factory
+[`SourceMap`](#keyed-cell-collections) or any keyed address space) plus a **per-key factory
 whose return type is the materialization choice**. Nothing new is required beyond the
 cell/slot/signal primitives a binding already has:
 
@@ -379,24 +379,24 @@ preserve these consequences:
 
 ### Execution-context flavors (thread-safe / async)
 
-`SlotMap` runs against a **context**, and the context is a third axis orthogonal to both entry
+`ComputedMap` runs against a **context**, and the context is a third axis orthogonal to both entry
 kind and materialization: it fixes *where and how* the graph executes, not *what* it computes.
 The materialization laws hold over each context a binding provides — the `ReactiveMap` line has
 one flavor per context, and each carries the context-specific law below:
 
-- **Single-threaded** (`SlotMap`, over the base `Context`) — the reference semantics above.
-- **Thread-safe** (`ThreadSafeSlotMap`, over a lock-backed context) — a `Send + Sync` map that
+- **Single-threaded** (`ComputedMap`, over the base `Context`) — the reference semantics above.
+- **Thread-safe** (`ThreadSafeComputedMap`, over a lock-backed context) — a `Send + Sync` map that
   can live in a cross-thread owner (e.g. a hub behind a global mutex, where an `Rc`-based map
   cannot go). It carries the *same* materialization laws, plus **materialization confluence**:
   the present set and every observed value are independent of the order in which keys are
   materialized. This is what makes lock-serialized concurrent materialization safe — any order
   the lock admits yields the same observable map. Proved in `lazily-formal`'s `Materialization`
   module (`materialize_present_comm` / `materialize_observe_comm`).
-- **Async** (`AsyncSlotMap`, over an async context) — derived (slot) entries
+- **Async** (`AsyncComputedMap`, over an async context) — derived (slot) entries
   resolve **asynchronously**, so a non-blocking read returns an optional value
   (`None` while pending, `Some(v)` once resolved). Observational transparency weakens
   to **eventual transparency**: once a node resolves, its observed value is the
-  canonical value — identical to what the synchronous `SlotMap` observes. Input cells
+  canonical value — identical to what the synchronous `ComputedMap` observes. Input cells
   are resolved at build. Proved in `lazily-formal`'s `AsyncMaterialization` module
   (`eventual_transparency`, `async_resolved_matches_sync`; a pending read is never a
   stale value, `observe_pending_is_none`).
@@ -426,22 +426,34 @@ There is **one keyed primitive**, generic over the entry's handle kind:
 - **`ReactiveMap<K, V, H>`** — a mutable reactive keyed dict: reactive membership + order,
   `get_or_insert_with` (mint-on-access), `remove`, `move`. `H` is the entry handle kind. Its two
   specializations are the concrete types a binding exposes:
-  - **`CellMap<K, V>` = `ReactiveMap<K, V, Source>`** — **input-cell** entries. Adds
+  - **`SourceMap<K, V>` = `ReactiveMap<K, V, Source>`** — **input-cell** entries. Adds
     `set(key, value)` (an input is settable). Minting is eager-by-value.
-  - **`SlotMap<K, V>` = `ReactiveMap<K, V, Computed>`** — **derived-slot** entries.
+  - **`ComputedMap<K, V>` = `ReactiveMap<K, V, Computed>`** — **derived-slot** entries.
     `get_or_insert_with(key, factory)` mints a slot on first access (**lazy materialization**);
-    a slot's value is derived, so `SlotMap` has **no `set`**. Eager materialization is a pre-mint
+    a slot's value is derived, so `ComputedMap` has **no `set`**. Eager materialization is a pre-mint
     loop over the keyset; lazy is mint-on-access — there is **no eager/lazy mode flag**.
 
-`set(key, value)` is therefore **cell-only** (lives on the `CellMap` specialization); the shared
+> **Deprecated spellings.** `SourceMap` and `ComputedMap` were previously `CellMap` and
+> `SlotMap`, with `ThreadSafeCellMap` / `ThreadSafeSlotMap` and `AsyncCellMap` / `AsyncSlotMap`
+> as their per-context variants. The rename finishes the v2 kernel migration: the node kinds
+> became `Source` and `Computed`, and the map names now say which kind they hold instead of
+> naming a vocabulary the kernel no longer uses. A binding SHOULD keep the old names as
+> deprecated aliases of the new ones rather than removing them, so a caller that has not
+> migrated still compiles. Runners MUST accept the old `model` spellings in a fixture
+> (`"CellMap"`, `"SlotMap"`) alongside the new ones — the same dual-accept the corpus already
+> uses for the `signal`/`eager` and `dispose_signal`/`lazy` op names. The fixture FILE names
+> keep their historical spelling; a file name is not a type name, and renaming them would
+> invalidate every binding's replay ledger at once for no semantic gain.
+
+`set(key, value)` is therefore **cell-only** (lives on the `SourceMap` specialization); the shared
 surface — `get_or_insert_with` / `remove` / `move` / membership / order — lives on the generic
-`ReactiveMap`. There are **no family types**: the "keyed materialized family" is `SlotMap` + the
+`ReactiveMap`. There are **no family types**: the "keyed materialized family" is `ComputedMap` + the
 mint recipe, and the "auto-mint keyed default" is `get_or_insert_with` — neither needs a separate
 type (see [§ Materialization](#materialization-a-caller-provided-recipe)).
 
 > **Required.** The keyed cell collections layer is normative for **every** lazily
 > binding — it is not an optional lazily-rs extension. A conforming binding MUST implement
-> `ReactiveMap` (at least its `CellMap` specialization; `SlotMap` where the binding supports
+> `ReactiveMap` (at least its `SourceMap` specialization; `ComputedMap` where the binding supports
 > derived slots), the ordered keyed tree (`CellTree`), and keyed reconciliation, and MUST
 > validate against the canonical fixtures in [`conformance/collections/`](conformance/collections/).
 > The single-writer / multi-write classification, `merge:` mechanism, and ingress rules
@@ -592,7 +604,7 @@ kind**, not to individual positions: a push invalidates length/empty/full reader
 tail signal); a pop invalidates head/length/empty/full readers. The head reader observes the
 *current* head value — after a pop, the head reader sees the next element (or empty), not a
 stale value. There is no random-access `queue[N]` reader; per-position reactivity is the
-domain of `CellMap`, not `QueueCell`.
+domain of `SourceMap`, not `QueueCell`.
 
 ### QueueCell — SPSC primitive with MPSC usage rule
 

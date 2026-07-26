@@ -1,7 +1,7 @@
 {
   "description": "Atomic ordered move (move_to / move_before / move_after). Reordering a key MUST keep the entry's same cell handle, dependents, and lineage (not remove + re-mint), bump only the order signal once, and leave value readers of the moved key untouched.",
   "kind": "Collection",
-  "model": "CellMap",
+  "model": "SourceMap",
   "initial": {
     "order": ["a", "b", "c", "d"],
     "values": { "a": 1, "b": 2, "c": 3, "d": 4 }

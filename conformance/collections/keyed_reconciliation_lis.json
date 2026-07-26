@@ -1,7 +1,7 @@
 {
   "description": "Keyed reconciliation by stable key (LIS move-minimized). Reconciling prior [a,b,c,d] -> target [b,c,a] emits only {remove d, move a}: b and c are already in relative order (the longest-increasing-subsequence over their prior indices [1,2]) so they MUST NOT move, and as stable entries with unchanged values their value cells MUST NOT be invalidated by the sibling reorder. Applying the minimal op set per-cell is the enabling step for per-cell CRDT merge of a document tree.",
   "kind": "Collection",
-  "model": "CellMap",
+  "model": "SourceMap",
   "reconcile": {
     "prior": {
       "order": ["a", "b", "c", "d"],

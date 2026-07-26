@@ -1,7 +1,7 @@
 {
-  "description": "CellMap value / set-membership / order reactivity independence. Writing an entry value MUST NOT invalidate membership or order readers; insert/remove MUST NOT invalidate unrelated entry value readers; a pure reorder (atomic move) MUST NOT invalidate set-membership readers (len/contains) — only order readers (keys).",
+  "description": "SourceMap value / set-membership / order reactivity independence. Writing an entry value MUST NOT invalidate membership or order readers; insert/remove MUST NOT invalidate unrelated entry value readers; a pure reorder (atomic move) MUST NOT invalidate set-membership readers (len/contains) — only order readers (keys).",
   "kind": "Collection",
-  "model": "CellMap",
+  "model": "SourceMap",
   "initial": {
     "order": ["a", "b", "c"],
     "values": { "a": 1, "b": 2, "c": 3 }
