@@ -798,6 +798,13 @@ A `QueueCell` factors into two layers:
 
 The **reactive shell** owns the version cells and invalidation logic; it is
 storage-agnostic and is what the formal model ([`QueueCell.lean`](formal-model.md)) pins.
+The **reader-kind plane** is pinned separately by `QueueReaderKinds.lean`: the
+invalidation set is proven to be a function of the transition alone (the bound,
+the pre-op length, emptiness, and the closed flag) and never of the elements,
+which is what licenses running the identical rule on all three flavors. It also
+proves the atomicity requirement above, and — as the queue-family instance of
+the thread-safe confluence obligation — that invalidation is order-independent
+and idempotent, because it consults membership in a set rather than a sequence.
 The **storage backend** owns the actual FIFO data structure and is pluggable via the
 `QueueStorage` trait (Rust) / concept (C++) / interface (Py/JS/etc.).
 
