@@ -122,5 +122,25 @@
       "assertions": { "code": "unknown_target" },
       "wire": { "type": "error", "code": "unknown_target", "message": "peer 42 is not in this session" }
     }
+  ],
+  "rejects": [
+    {
+      "label": "unknown_type",
+      "direction": "client",
+      "reason": "the wire tag set is closed",
+      "wire": { "type": "carrier-pigeon", "peer": 1 }
+    },
+    {
+      "label": "directed_frame_has_to_and_from",
+      "direction": "client",
+      "reason": "client directed frames carry `to` and never `from`",
+      "wire": { "type": "offer", "to": 2, "from": 99, "sdp": "SPOOF" }
+    },
+    {
+      "label": "welcome_roster_contains_joining_peer",
+      "direction": "server",
+      "reason": "a welcome roster excludes the joining peer",
+      "wire": { "type": "welcome", "peer": 2, "peers": [1, 2] }
+    }
   ]
 }

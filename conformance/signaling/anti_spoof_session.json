@@ -40,5 +40,15 @@
       "input": { "conn": "b", "recv": { "type": "leave" } },
       "expect": [ { "to": "a", "frame": { "type": "peer-left", "peer": 2 } } ]
     }
+  ],
+  "rejects": [
+    {
+      "label": "client_cannot_supply_forwarded_from",
+      "reason": "the server stamps `from` from the authenticated connection",
+      "input": {
+        "conn": "a",
+        "recv": { "type": "offer", "to": 2, "from": 999, "sdp": "SPOOF" }
+      }
+    }
   ]
 }

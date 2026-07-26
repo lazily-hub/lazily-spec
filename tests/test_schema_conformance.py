@@ -331,6 +331,38 @@ def test_signaling_stale_camelcase_tag_is_rejected() -> None:
         )
 
 
+def test_signaling_negative_fixtures_are_rejected() -> None:
+    fixture = json.loads((_SIGNALING_DIR / "frames.json").read_text())
+    schema = _load_schema("signaling")
+    direction_schemas = {
+        "client": schema["oneOf"][0],
+        "server": schema["oneOf"][1],
+    }
+    for reject in fixture["rejects"]:
+        wire = reject["wire"]
+        if reject["label"] == "welcome_roster_contains_joining_peer":
+            assert wire["peer"] in wire["peers"], reject["label"]
+            continue
+        validator = jsonschema.Draft202012Validator(
+            direction_schemas[reject["direction"]],
+            registry=_registry(),
+        )
+        assert list(validator.iter_errors(wire)), (
+            f"{reject['label']}: direction-specific signaling schema accepted {wire}"
+        )
+
+    session = json.loads((_SIGNALING_DIR / "anti_spoof_session.json").read_text())
+    client_validator = jsonschema.Draft202012Validator(
+        direction_schemas["client"],
+        registry=_registry(),
+    )
+    for reject in session["rejects"]:
+        wire = reject["input"]["recv"]
+        assert list(client_validator.iter_errors(wire)), (
+            f"{reject['label']}: client signaling schema accepted {wire}"
+        )
+
+
 def test_signaling_anti_spoof_session_frames_validate() -> None:
     """The routing transcript's every emitted frame validates against the schema,
     and forwarded frames rewrite `to` -> server-stamped `from`."""
