@@ -42,6 +42,11 @@ synchronous handles:
 Handles are id-only and copyable; they are usable only with the owning async
 context.
 
+`AsyncSource` and `AsyncComputed` are the canonical public value kinds in every
+binding. Published pre-v2 spellings such as `AsyncCellHandle` and
+`AsyncSlotHandle` may remain only as deprecated aliases of those exact types.
+Constructing through an old spelling must still return the canonical type.
+
 ## API surface
 
 | Method | Description |
@@ -49,10 +54,11 @@ context.
 | `source(value)` | Create a mutable `AsyncSource` (value type equality-comparable, cloneable, `Send + Sync`) |
 | `get(source)` | Read an `AsyncSource` value synchronously |
 | `set(source, value)` | Update an `AsyncSource` and invalidate dependents |
-| `computed_async(compute)` | Create an async computed slot |
+| `computed` / `computed_async(compute)` | Create an `AsyncComputed`; the exact spelling follows the binding's async conventions |
+| `computed_with_equals(compute, equals)` | Create a guarded `AsyncComputed` with an explicit equality policy |
 | `get(computed) -> Option<T>` | Read an `AsyncComputed` cache synchronously; `Some(T)` if resolved, `None` otherwise (warm-path fast path) |
 | `get_async(computed) -> T` | Await an `AsyncComputed`; uses `get()` for resolved values, otherwise spawns async compute |
-| `memo_async(compute)` | Like `computed_async` with an equality memo guard |
+| `memo` / `memo_async(compute, equals)` | Deprecated compatibility constructor forwarding to guarded `computed`; `memo` is not a third node kind |
 | `effect_async(effect)` | Create an async effect with an async cleanup |
 | `dispose_async_effect(handle)` | Dispose an async effect and await its cleanup |
 | `batch(run)` | Synchronous batch boundary; schedules async reruns at batch exit |
@@ -62,7 +68,13 @@ synchronous. Only computed evaluation and effects are async. The constructor and
 read/write vocabulary is deliberately the same as the local and thread-safe
 contexts; only the async handle types and `get_async` are execution-model-specific.
 
-## Async slot state machine
+The public state projection is `AsyncComputedState`. The formal theorem/module
+name remains `AsyncSlotState`, because it describes the storage state machine,
+not a public value-handle kind. Bindings with a published `AsyncSlotState` API
+keep it as a deprecated alias of `AsyncComputedState`; formal references are not
+renamed mechanically.
+
+## Async computed state machine (formal `AsyncSlotState`)
 
 Each async slot tracks its state through a finite state machine:
 
@@ -270,7 +282,10 @@ executor) — see [Wire Protocol § Concurrency layers are required](protocol.md
 A binding on a platform with no notion of suspendable async computation declares
 the `async` capability as `none` and advertises it, never silently. A binding
 that ships the async context MUST honor the full cancellation and re-resolve
-contract above. lazily-rs implements it behind an `async` feature flag.
+contract above. API-shape checks for the canonical async-v2 names are
+informational only: they do not admit a peer to transport, CRDT, queue, or sync
+feature groups. Network-suite membership continues to follow the binding's
+advertised production capabilities, channels, codecs, and variants.
 Concurrency-window coverage is pinned by targeted deterministic tests rather than
 exhaustive interleaving exploration, because the async resolve loop runs on a
 real async executor whose primitives a synchronization-model checker cannot shim.

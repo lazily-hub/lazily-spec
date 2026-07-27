@@ -11,9 +11,15 @@ coverage-check \
 coverage-sync \
 fixture-copies-check \
 fixture-copies-check-all \
-fixture-copies-sync
+fixture-copies-sync \
+async-v2-names-check
 
-check: test-schemas test-lean-formal coverage-check fixture-copies-check
+check: test-schemas test-lean-formal coverage-check fixture-copies-check async-v2-names-check
+
+# API-shape-only guard. Missing sibling checkouts are reported as staged/skipped;
+# every sibling that is present must expose the canonical async value pair.
+async-v2-names-check:
+>python3 scripts/check_async_v2_names.py
 
 # Feature-matrix single-source guard: docs/coverage.md (and every sibling binding
 # README, when checked out) must match the canonical coverage.json. Edit
