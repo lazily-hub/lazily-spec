@@ -412,8 +412,11 @@ A flavor MUST preserve the entry-kind and materialization laws above, MUST expos
 the Core surface defined under "Core surface vs. binding extensions" below, and
 adds the context-specific guarantee (confluence for thread-safe, eventual
 transparency for async). Ordering and atomic move are **not** exempt: they are
-Core, they bind every flavor, and a binding that ships them only on its
-single-threaded map is non-conforming on the other two.
+Core, and they bind every flavor the binding advertises. A binding that advertises
+a thread-safe or async map but ships Core only on its single-threaded map is
+non-conforming on that advertised flavor. A context declared absent is staged out
+of that peer group; a runner-local lock, dictionary, or synchronous stand-in MUST
+NOT be used to make the missing flavor appear covered.
 
 ### When to opt into lazy
 

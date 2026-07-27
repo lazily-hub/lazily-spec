@@ -1358,6 +1358,16 @@ behavior is meaningful only at `shared-graph` and vacuous at `serialized`. A fla
 that cannot tell them apart produces exactly the failure this chapter exists to
 prevent: a suite that passes while testing nothing.
 
+**Feature-group rule.** A `serialized` context is a meaningful execution flavor
+when it supplies a distinct linearization boundary for reentrant or concurrent
+logical callers, even though its graph is realm-local. It joins every portable
+Core feature test that its surface supports (ordering, membership, atomic move,
+materialization). It does **not** join `shared-graph` stress/model-check tests.
+A binding may instead declare the context absent; then it is staged out of that
+peer group. Merely publishing a duplicate type is not support: an incomplete
+wrapper remains partial/absent, and a test runner MUST NOT fill its gaps with a
+base-context object, ad hoc mutex, or ordinary dictionary.
+
 **The axes are independent.** Read discipline does not imply a concurrency level
 and vice versa. Single-threaded async is fully concurrent while requiring no
 thread-safety at all, and a blocking context may be `shared-graph`. A binding

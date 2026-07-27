@@ -92,23 +92,18 @@ and JSON Schemas in this repo and the Lean models in
 - **ᶜ Zig reactive graph:** `Cell` / `Slot` / `Signal` / `Effect` and the public
   `batch(run)` boundary ship (`context.zig` coalesces the eager-recompute drain
   at the outermost batch exit).
-- **ᵈ Thread-safe context (JS / Dart):** the layer **ships and conforms in both**,
-  and is scored accordingly. The original carve-out reasoning — both run on a
-  single-threaded runtime (one event loop / one isolate), so a lock-backed context
-  has no meaning — was a *design* argument, and both bindings shipped the layer
-  anyway: JS guards realm-private state with its own mutex, Dart wraps a plain
-  `Context` behind a reentrancy guard. Marking the row "not applicable" while the
-  code shipped and passed fixtures made the matrix contradict itself, so the
-  carve-out language is withdrawn here.
-
-  What is **still open** is the design question, which is not the same as the
-  scoring question: *should* these bindings expose a thread-safe flavor at all?
-  Dart ships a duplicate family that is weaker than the single-threaded one it
-  duplicates, and JS's README argues the opposite of its own source comment. That
-  should be settled before Dart's duplicate is either extended further or deleted
-  — but until it is, a shipped, conforming layer is scored as shipped. See
-  [protocol.md § Concurrency layers are required](protocol.md#concurrency-layers-are-required)
-  for the layer requirement itself.
+- **ᵈ Serialized context (JS / Dart) — decision:** both are meaningful as
+`serialized`, realm-local execution flavors, not as `shared-graph` contexts.
+They are scored when their own surfaces replay the portable Core fixtures, and
+are excluded from cross-thread shared-graph stress/model-check tests. A duplicate
+wrapper is not sufficient by itself: unsupported Core features remain staged,
+and runner-local locks/dictionaries cannot stand in for them. Either binding may
+remove the flavor and declare it absent; while it advertises the flavor, it must
+join every feature peer group it actually supports. See
+[protocol.md § Concurrency layers are required](protocol.md#concurrency-layers-are-required)
+for the conditional layer requirement and
+[reactive-graph.md § Declared context capabilities](reactive-graph.md#declared-context-capabilities)
+for the `serialized` / `shared-graph` distinction.
 - **ᵉ Zig async context:** Zig removed language `async` and has no suspendable
   executor, so the layer is a task-queue + `settle()` drain surface — the
   synchronous graph's `pending_recompute`/`drainPendingRecompute` generalized
