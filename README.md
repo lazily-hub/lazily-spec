@@ -108,6 +108,12 @@ MUST fall back to **I/O channels accessing the memory** — large payloads are c
 [Shared-memory payload path is required](protocol.md#shared-memory-payload-path-is-required)).
 Any omitted `MUST` row MUST be advertised rather than fail silently.
 
+Python, Dart, Rust, and Go vendor selected fixture subsets so their suites can
+run without a sibling checkout. From this canonical repository,
+`make fixture-copies-check-all` verifies every tracked copy byte-for-byte and
+`make fixture-copies-sync` refreshes the present mirrors. The ordinary
+`make check` verifies every sibling mirror that is currently checked out.
+
 ## Protocol Layers
 
 | Layer | Spec | Schema |
