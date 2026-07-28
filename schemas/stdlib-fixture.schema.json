@@ -1,0 +1,536 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/stdlib-fixture.schema.json",
+  "title": "Portable Lazily stdlib conformance fixture",
+  "type": "object",
+  "required": [
+    "fixture_version",
+    "feature",
+    "scenario_floor",
+    "assertion_floor",
+    "mutation_floor",
+    "scenarios",
+    "mutations"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://lazily.dev/schemas/stdlib-fixture.schema.json"
+    },
+    "fixture_version": {
+      "const": 1
+    },
+    "feature": {
+      "enum": [
+        "stdlib_timer_v1",
+        "stdlib_timeout_v1",
+        "stdlib_revision_barrier_v1"
+      ]
+    },
+    "scenario_floor": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "assertion_floor": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "mutation_floor": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1
+    },
+    "mutations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/mutation"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "feature": {
+            "const": "stdlib_timer_v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "scenarios": {
+            "items": {
+              "$ref": "#/$defs/timerScenario"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "feature": {
+            "const": "stdlib_timeout_v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "scenarios": {
+            "items": {
+              "$ref": "#/$defs/timeoutScenario"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "feature": {
+            "const": "stdlib_revision_barrier_v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "scenarios": {
+            "items": {
+              "$ref": "#/$defs/barrierScenario"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "u64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "nullableU64": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/u64"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "expect": {
+      "type": "object",
+      "required": [
+        "outcome"
+      ],
+      "properties": {
+        "outcome": {
+          "enum": [
+            "pending",
+            "fired",
+            "completed",
+            "timed_out",
+            "cancelled",
+            "unavailable",
+            "satisfied",
+            "disposed"
+          ]
+        },
+        "deadline": {
+          "$ref": "#/$defs/nullableU64"
+        },
+        "fired_at": {
+          "$ref": "#/$defs/nullableU64"
+        },
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "revision": {
+          "$ref": "#/$defs/nullableU64"
+        },
+        "generation": {
+          "$ref": "#/$defs/nullableU64"
+        },
+        "operation_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "cancellation_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "mutation": {
+      "type": "object",
+      "required": [
+        "operator",
+        "must_fail"
+      ],
+      "properties": {
+        "operator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "must_fail": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "timerScenario": {
+      "type": "object",
+      "required": [
+        "id",
+        "steps"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/timerStep"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "timerStep": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "now",
+            "duration",
+            "expect"
+          ],
+          "properties": {
+            "op": {
+              "const": "start"
+            },
+            "now": {
+              "$ref": "#/$defs/u64"
+            },
+            "duration": {
+              "$ref": "#/$defs/u64"
+            },
+            "expect": {
+              "$ref": "#/$defs/expect"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "now",
+            "expect"
+          ],
+          "properties": {
+            "op": {
+              "const": "observe"
+            },
+            "now": {
+              "$ref": "#/$defs/u64"
+            },
+            "expect": {
+              "$ref": "#/$defs/expect"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "timeoutScenario": {
+      "type": "object",
+      "required": [
+        "id",
+        "steps"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/timeoutStep"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "timeoutStep": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "now",
+            "duration",
+            "expect"
+          ],
+          "properties": {
+            "op": {
+              "const": "start"
+            },
+            "now": {
+              "$ref": "#/$defs/u64"
+            },
+            "duration": {
+              "$ref": "#/$defs/u64"
+            },
+            "expect": {
+              "$ref": "#/$defs/expect"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "now",
+            "operation",
+            "cancellation",
+            "expect"
+          ],
+          "properties": {
+            "op": {
+              "const": "poll"
+            },
+            "now": {
+              "$ref": "#/$defs/u64"
+            },
+            "operation": {
+              "enum": [
+                "pending",
+                "completed",
+                "unavailable"
+              ]
+            },
+            "value": {
+              "type": "string"
+            },
+            "cancellation": {
+              "enum": [
+                "pending",
+                "cancelled",
+                "unavailable"
+              ]
+            },
+            "expect": {
+              "$ref": "#/$defs/expect"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "barrierScenario": {
+      "type": "object",
+      "required": [
+        "id",
+        "steps"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/barrierStep"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "barrierStep": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "revision",
+            "required_revision",
+            "deadline",
+            "expect"
+          ],
+          "properties": {
+            "op": {
+              "const": "start"
+            },
+            "revision": {
+              "$ref": "#/$defs/u64"
+            },
+            "required_revision": {
+              "$ref": "#/$defs/u64"
+            },
+            "deadline": {
+              "$ref": "#/$defs/nullableU64"
+            },
+            "expect": {
+              "$ref": "#/$defs/expect"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "now",
+            "predicate",
+            "cancellation",
+            "expect"
+          ],
+          "properties": {
+            "op": {
+              "const": "observe"
+            },
+            "now": {
+              "$ref": "#/$defs/u64"
+            },
+            "predicate": {
+              "type": "boolean"
+            },
+            "cancellation": {
+              "enum": [
+                "pending",
+                "cancelled",
+                "unavailable"
+              ]
+            },
+            "expect": {
+              "$ref": "#/$defs/expect"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "now",
+            "observed_revision",
+            "predicate",
+            "expect"
+          ],
+          "properties": {
+            "op": {
+              "const": "register_recheck"
+            },
+            "now": {
+              "$ref": "#/$defs/u64"
+            },
+            "observed_revision": {
+              "$ref": "#/$defs/u64"
+            },
+            "predicate": {
+              "type": "boolean"
+            },
+            "expect": {
+              "$ref": "#/$defs/expect"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "revision",
+            "predicate",
+            "expect"
+          ],
+          "properties": {
+            "op": {
+              "const": "advance"
+            },
+            "revision": {
+              "$ref": "#/$defs/u64"
+            },
+            "predicate": {
+              "type": "boolean"
+            },
+            "expect": {
+              "$ref": "#/$defs/expect"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "expect"
+          ],
+          "properties": {
+            "op": {
+              "const": "dispose"
+            },
+            "expect": {
+              "$ref": "#/$defs/expect"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "key",
+            "expect"
+          ],
+          "properties": {
+            "op": {
+              "const": "receipt"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expect": {
+              "$ref": "#/$defs/expect"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

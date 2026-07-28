@@ -15,6 +15,7 @@ codecs encode the same shapes.
 | `receipts.json` | Causal receipts (`{"CausalReceipts": …}`) + terminal outcome projection |
 | `message-passing.json` | Command / RPC message plane (`CommandSubmit` / `CommandCancel` / `CommandEvents` / `CommandProjection`) |
 | `statechart.json` | Compute (Harel/SCXML chart form — not a wire message) |
+| `stdlib-fixture.schema.json` | Deterministic `Timer`, `Timeout`, and `RevisionBarrier` conformance scenarios |
 
 The IPC schemas describe the **normative externally-tagged envelope** that
 every binding serializes (the single-key `{"Snapshot": …}` / `{"Delta": …}` /
@@ -82,4 +83,13 @@ ordinary cell `Payload`. See [State Charts](state-charts.md).
 
 ```json
 {{#include ../schemas/statechart.json}}
+```
+
+## `stdlib-fixture.schema.json`
+
+This compute schema validates the portable standard-library fixture corpus. It
+is not a wire message. See [Portable Standard Library](stdlib.md).
+
+```json
+{{#include ../schemas/stdlib-fixture.schema.json}}
 ```

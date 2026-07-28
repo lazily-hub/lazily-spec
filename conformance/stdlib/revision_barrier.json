@@ -1,0 +1,277 @@
+{
+  "$schema": "https://lazily.dev/schemas/stdlib-fixture.schema.json",
+  "fixture_version": 1,
+  "feature": "stdlib_revision_barrier_v1",
+  "scenario_floor": 8,
+  "assertion_floor": 24,
+  "mutation_floor": 5,
+  "scenarios": [
+    {
+      "id": "already_satisfied_returns_immediately",
+      "steps": [
+        {
+          "op": "start",
+          "revision": 3,
+          "required_revision": 2,
+          "deadline": null,
+          "expect": {
+            "outcome": "pending",
+            "revision": 3,
+            "generation": 0
+          }
+        },
+        {
+          "op": "observe",
+          "now": 0,
+          "predicate": true,
+          "cancellation": "pending",
+          "expect": {
+            "outcome": "satisfied",
+            "revision": 3,
+            "generation": 0,
+            "cancellation_calls": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "advance_during_registration_is_rechecked",
+      "steps": [
+        {
+          "op": "start",
+          "revision": 0,
+          "required_revision": 1,
+          "deadline": null,
+          "expect": {
+            "outcome": "pending",
+            "revision": 0,
+            "generation": 0
+          }
+        },
+        {
+          "op": "register_recheck",
+          "now": 0,
+          "observed_revision": 1,
+          "predicate": true,
+          "expect": {
+            "outcome": "satisfied",
+            "revision": 1,
+            "generation": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "predicate_becomes_true_after_later_revision",
+      "steps": [
+        {
+          "op": "start",
+          "revision": 0,
+          "required_revision": 1,
+          "deadline": null,
+          "expect": {
+            "outcome": "pending",
+            "revision": 0,
+            "generation": 0
+          }
+        },
+        {
+          "op": "advance",
+          "revision": 1,
+          "predicate": false,
+          "expect": {
+            "outcome": "pending",
+            "revision": 1,
+            "generation": 1
+          }
+        },
+        {
+          "op": "advance",
+          "revision": 2,
+          "predicate": true,
+          "expect": {
+            "outcome": "satisfied",
+            "revision": 2,
+            "generation": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "exact_deadline_times_out",
+      "steps": [
+        {
+          "op": "start",
+          "revision": 0,
+          "required_revision": 1,
+          "deadline": 5,
+          "expect": {
+            "outcome": "pending",
+            "revision": 0,
+            "generation": 0
+          }
+        },
+        {
+          "op": "observe",
+          "now": 5,
+          "predicate": true,
+          "cancellation": "cancelled",
+          "expect": {
+            "outcome": "timed_out",
+            "revision": 0,
+            "generation": 0,
+            "cancellation_calls": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "cancellation_wakes_without_deadline",
+      "steps": [
+        {
+          "op": "start",
+          "revision": 0,
+          "required_revision": 1,
+          "deadline": null,
+          "expect": {
+            "outcome": "pending",
+            "revision": 0,
+            "generation": 0
+          }
+        },
+        {
+          "op": "observe",
+          "now": 7,
+          "predicate": false,
+          "cancellation": "cancelled",
+          "expect": {
+            "outcome": "cancelled",
+            "revision": 0,
+            "generation": 0,
+            "cancellation_calls": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "disposal_wakes_and_latches",
+      "steps": [
+        {
+          "op": "start",
+          "revision": 0,
+          "required_revision": 1,
+          "deadline": null,
+          "expect": {
+            "outcome": "pending",
+            "revision": 0,
+            "generation": 0
+          }
+        },
+        {
+          "op": "dispose",
+          "expect": {
+            "outcome": "disposed",
+            "revision": 0,
+            "generation": 0
+          }
+        },
+        {
+          "op": "advance",
+          "revision": 9,
+          "predicate": true,
+          "expect": {
+            "outcome": "disposed",
+            "revision": 0,
+            "generation": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "foreign_cancellation_is_unavailable",
+      "steps": [
+        {
+          "op": "start",
+          "revision": 0,
+          "required_revision": 1,
+          "deadline": null,
+          "expect": {
+            "outcome": "pending",
+            "revision": 0,
+            "generation": 0
+          }
+        },
+        {
+          "op": "observe",
+          "now": 1,
+          "predicate": false,
+          "cancellation": "unavailable",
+          "expect": {
+            "outcome": "unavailable",
+            "reason": "cancellation_unavailable",
+            "revision": 0,
+            "generation": 0,
+            "cancellation_calls": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "effect_receipt_is_not_barrier_authority",
+      "steps": [
+        {
+          "op": "start",
+          "revision": 0,
+          "required_revision": 1,
+          "deadline": null,
+          "expect": {
+            "outcome": "pending",
+            "revision": 0,
+            "generation": 0
+          }
+        },
+        {
+          "op": "receipt",
+          "key": "effect/order-7",
+          "expect": {
+            "outcome": "pending",
+            "revision": 0,
+            "generation": 0
+          }
+        }
+      ]
+    }
+  ],
+  "mutations": [
+    {
+      "operator": "deadline_strict_greater",
+      "must_fail": [
+        "exact_deadline_times_out"
+      ]
+    },
+    {
+      "operator": "barrier_skip_post_registration_recheck",
+      "must_fail": [
+        "advance_during_registration_is_rechecked"
+      ]
+    },
+    {
+      "operator": "terminal_not_latched",
+      "must_fail": [
+        "disposal_wakes_and_latches"
+      ]
+    },
+    {
+      "operator": "receipt_is_authority",
+      "must_fail": [
+        "effect_receipt_is_not_barrier_authority"
+      ]
+    },
+    {
+      "operator": "fixture_bookkeeping",
+      "must_fail": [
+        "already_satisfied_returns_immediately"
+      ]
+    }
+  ]
+}

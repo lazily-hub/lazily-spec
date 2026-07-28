@@ -38,6 +38,7 @@ _SCHEMA_NAMES = [
     "lossless-tree-delta",
     "message-passing",
     "reliable-sync",
+    "stdlib-fixture.schema",
 ]
 
 

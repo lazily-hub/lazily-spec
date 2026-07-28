@@ -1,0 +1,180 @@
+{
+  "$schema": "https://lazily.dev/schemas/stdlib-fixture.schema.json",
+  "fixture_version": 1,
+  "feature": "stdlib_timer_v1",
+  "scenario_floor": 6,
+  "assertion_floor": 15,
+  "mutation_floor": 3,
+  "scenarios": [
+    {
+      "id": "pending_before_deadline",
+      "steps": [
+        {
+          "op": "start",
+          "now": 0,
+          "duration": 10,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "observe",
+          "now": 9,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "fires_at_deadline",
+      "steps": [
+        {
+          "op": "start",
+          "now": 4,
+          "duration": 6,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "observe",
+          "now": 10,
+          "expect": {
+            "outcome": "fired",
+            "fired_at": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "zero_duration_fires_immediately",
+      "steps": [
+        {
+          "op": "start",
+          "now": 7,
+          "duration": 0,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 7
+          }
+        },
+        {
+          "op": "observe",
+          "now": 7,
+          "expect": {
+            "outcome": "fired",
+            "fired_at": 7
+          }
+        }
+      ]
+    },
+    {
+      "id": "terminal_result_is_latched",
+      "steps": [
+        {
+          "op": "start",
+          "now": 0,
+          "duration": 2,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 2
+          }
+        },
+        {
+          "op": "observe",
+          "now": 3,
+          "expect": {
+            "outcome": "fired",
+            "fired_at": 3
+          }
+        },
+        {
+          "op": "observe",
+          "now": 99,
+          "expect": {
+            "outcome": "fired",
+            "fired_at": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "clock_regression_is_rejected_without_state_change",
+      "steps": [
+        {
+          "op": "start",
+          "now": 5,
+          "duration": 5,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "observe",
+          "now": 8,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "observe",
+          "now": 7,
+          "expect": {
+            "outcome": "unavailable",
+            "reason": "clock_regression",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "observe",
+          "now": 10,
+          "expect": {
+            "outcome": "fired",
+            "fired_at": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "duration_overflow_is_typed",
+      "steps": [
+        {
+          "op": "start",
+          "now": 18446744073709551614,
+          "duration": 2,
+          "expect": {
+            "outcome": "unavailable",
+            "reason": "deadline_overflow"
+          }
+        }
+      ]
+    }
+  ],
+  "mutations": [
+    {
+      "operator": "deadline_strict_greater",
+      "must_fail": [
+        "fires_at_deadline",
+        "zero_duration_fires_immediately"
+      ]
+    },
+    {
+      "operator": "terminal_not_latched",
+      "must_fail": [
+        "terminal_result_is_latched"
+      ]
+    },
+    {
+      "operator": "fixture_bookkeeping",
+      "must_fail": [
+        "fires_at_deadline"
+      ]
+    }
+  ]
+}

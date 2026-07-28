@@ -1,0 +1,271 @@
+{
+  "$schema": "https://lazily.dev/schemas/stdlib-fixture.schema.json",
+  "fixture_version": 1,
+  "feature": "stdlib_timeout_v1",
+  "scenario_floor": 8,
+  "assertion_floor": 24,
+  "mutation_floor": 4,
+  "scenarios": [
+    {
+      "id": "completion_before_deadline",
+      "steps": [
+        {
+          "op": "start",
+          "now": 0,
+          "duration": 10,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "poll",
+          "now": 4,
+          "operation": "completed",
+          "value": "ok",
+          "cancellation": "pending",
+          "expect": {
+            "outcome": "completed",
+            "value": "ok",
+            "operation_calls": 1,
+            "cancellation_calls": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "pending_times_out_at_deadline",
+      "steps": [
+        {
+          "op": "start",
+          "now": 2,
+          "duration": 8,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "poll",
+          "now": 10,
+          "operation": "pending",
+          "cancellation": "pending",
+          "expect": {
+            "outcome": "timed_out",
+            "operation_calls": 0,
+            "cancellation_calls": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "completion_wins_simultaneous_cancellation",
+      "steps": [
+        {
+          "op": "start",
+          "now": 0,
+          "duration": 10,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "poll",
+          "now": 9,
+          "operation": "completed",
+          "value": "winner",
+          "cancellation": "cancelled",
+          "expect": {
+            "outcome": "completed",
+            "value": "winner",
+            "operation_calls": 1,
+            "cancellation_calls": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "pending_plus_cancellation",
+      "steps": [
+        {
+          "op": "start",
+          "now": 0,
+          "duration": 10,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "poll",
+          "now": 3,
+          "operation": "pending",
+          "cancellation": "cancelled",
+          "expect": {
+            "outcome": "cancelled",
+            "operation_calls": 1,
+            "cancellation_calls": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "zero_duration_polls_no_adapter",
+      "steps": [
+        {
+          "op": "start",
+          "now": 5,
+          "duration": 0,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 5
+          }
+        },
+        {
+          "op": "poll",
+          "now": 5,
+          "operation": "completed",
+          "value": "too-late",
+          "cancellation": "cancelled",
+          "expect": {
+            "outcome": "timed_out",
+            "operation_calls": 0,
+            "cancellation_calls": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "unavailable_operation_is_typed",
+      "steps": [
+        {
+          "op": "start",
+          "now": 0,
+          "duration": 10,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "poll",
+          "now": 1,
+          "operation": "unavailable",
+          "cancellation": "pending",
+          "expect": {
+            "outcome": "unavailable",
+            "reason": "operation_unavailable",
+            "operation_calls": 1,
+            "cancellation_calls": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "terminal_read_invokes_no_adapter",
+      "steps": [
+        {
+          "op": "start",
+          "now": 0,
+          "duration": 10,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "poll",
+          "now": 2,
+          "operation": "completed",
+          "value": "latched",
+          "cancellation": "pending",
+          "expect": {
+            "outcome": "completed",
+            "value": "latched",
+            "operation_calls": 1,
+            "cancellation_calls": 1
+          }
+        },
+        {
+          "op": "poll",
+          "now": 9,
+          "operation": "unavailable",
+          "cancellation": "cancelled",
+          "expect": {
+            "outcome": "completed",
+            "value": "latched",
+            "operation_calls": 0,
+            "cancellation_calls": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "caller_drives_wait_progress",
+      "steps": [
+        {
+          "op": "start",
+          "now": 0,
+          "duration": 10,
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10
+          }
+        },
+        {
+          "op": "poll",
+          "now": 3,
+          "operation": "pending",
+          "cancellation": "pending",
+          "expect": {
+            "outcome": "pending",
+            "deadline": 10,
+            "operation_calls": 1,
+            "cancellation_calls": 1
+          }
+        },
+        {
+          "op": "poll",
+          "now": 4,
+          "operation": "completed",
+          "value": "driven",
+          "cancellation": "pending",
+          "expect": {
+            "outcome": "completed",
+            "value": "driven",
+            "operation_calls": 1,
+            "cancellation_calls": 1
+          }
+        }
+      ]
+    }
+  ],
+  "mutations": [
+    {
+      "operator": "deadline_strict_greater",
+      "must_fail": [
+        "pending_times_out_at_deadline",
+        "zero_duration_polls_no_adapter"
+      ]
+    },
+    {
+      "operator": "cancellation_before_completion",
+      "must_fail": [
+        "completion_wins_simultaneous_cancellation"
+      ]
+    },
+    {
+      "operator": "terminal_not_latched",
+      "must_fail": [
+        "terminal_read_invokes_no_adapter"
+      ]
+    },
+    {
+      "operator": "fixture_bookkeeping",
+      "must_fail": [
+        "completion_before_deadline"
+      ]
+    }
+  ]
+}
