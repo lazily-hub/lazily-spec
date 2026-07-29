@@ -2,9 +2,9 @@
   "$schema": "https://lazily.dev/schemas/stdlib-fixture.schema.json",
   "fixture_version": 1,
   "feature": "stdlib_revision_barrier_v1",
-  "scenario_floor": 8,
-  "assertion_floor": 24,
-  "mutation_floor": 5,
+  "scenario_floor": 9,
+  "assertion_floor": 70,
+  "mutation_floor": 6,
   "scenarios": [
     {
       "id": "already_satisfied_returns_immediately",
@@ -217,6 +217,60 @@
       ]
     },
     {
+      "id": "clock_regression_is_typed_terminal_and_skips_cancellation",
+      "steps": [
+        {
+          "op": "start",
+          "revision": 0,
+          "required_revision": 1,
+          "deadline": null,
+          "expect": {
+            "outcome": "pending",
+            "revision": 0,
+            "generation": 0
+          }
+        },
+        {
+          "op": "observe",
+          "now": 5,
+          "predicate": false,
+          "cancellation": "pending",
+          "expect": {
+            "outcome": "pending",
+            "revision": 0,
+            "generation": 0,
+            "cancellation_calls": 1
+          }
+        },
+        {
+          "op": "observe",
+          "now": 4,
+          "predicate": false,
+          "cancellation": "cancelled",
+          "expect": {
+            "outcome": "unavailable",
+            "reason": "clock_regression",
+            "revision": 0,
+            "generation": 0,
+            "cancellation_calls": 0
+          }
+        },
+        {
+          "op": "observe",
+          "now": 6,
+          "predicate": true,
+          "cancellation": "cancelled",
+          "expect": {
+            "outcome": "unavailable",
+            "reason": "clock_regression",
+            "revision": 0,
+            "generation": 0,
+            "cancellation_calls": 0
+          }
+        }
+      ]
+    },
+    {
       "id": "effect_receipt_is_not_barrier_authority",
       "steps": [
         {
@@ -265,6 +319,12 @@
       "operator": "receipt_is_authority",
       "must_fail": [
         "effect_receipt_is_not_barrier_authority"
+      ]
+    },
+    {
+      "operator": "barrier_accept_clock_regression",
+      "must_fail": [
+        "clock_regression_is_typed_terminal_and_skips_cancellation"
       ]
     },
     {

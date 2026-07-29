@@ -199,7 +199,7 @@ def run_barrier(
             "generation": 0,
             "required_revision": step["required_revision"],
             "deadline": step["deadline"],
-            "last_now": 0,
+            "last_now": None,
         }
         return state, barrier_observation(state)
 
@@ -209,7 +209,10 @@ def run_barrier(
         return state, barrier_observation(state)
     if state["status"] != "pending":
         if mutation != "terminal_not_latched":
-            return state, barrier_observation(state)
+            observation = barrier_observation(state)
+            if op == "observe":
+                observation["cancellation_calls"] = 0
+            return state, observation
         state["status"] = "pending"
 
     if op == "dispose":
@@ -233,6 +236,21 @@ def run_barrier(
             state["status"] = "satisfied"
         return state, barrier_observation(state)
 
+    if op in {"register_recheck", "observe"}:
+        now = step["now"]
+        if (
+            state["last_now"] is not None
+            and now < state["last_now"]
+            and mutation != "barrier_accept_clock_regression"
+        ):
+            state["status"] = "unavailable"
+            state["reason"] = "clock_regression"
+            observation = barrier_observation(state)
+            if op == "observe":
+                observation["cancellation_calls"] = 0
+            return state, observation
+        state["last_now"] = now
+
     if op == "register_recheck":
         state["generation"] += 1
         if mutation == "barrier_skip_post_registration_recheck":
@@ -247,11 +265,6 @@ def run_barrier(
 
     assert op == "observe"
     now = step["now"]
-    if now < state["last_now"]:
-        state["status"] = "unavailable"
-        state["reason"] = "clock_regression"
-        return state, {**barrier_observation(state), "cancellation_calls": 0}
-    state["last_now"] = now
     deadline = state["deadline"]
     reached = deadline is not None and (
         now > deadline

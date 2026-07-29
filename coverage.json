@@ -267,10 +267,10 @@
       "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle)",
       "marks": [
         "✅",
-        "—",
-        "—",
-        "—",
-        "—",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
         "—",
         "—",
         "—",
@@ -281,10 +281,10 @@
       "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — async flavor (reader kinds + eventual transparency)",
       "marks": [
         "✅",
-        "—",
-        "—",
-        "—",
-        "—",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
         "—",
         "—",
         "—",
@@ -309,10 +309,10 @@
       "feature": "Broadcast topic (`TopicCell`) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle)",
       "marks": [
         "✅",
-        "—",
-        "—",
-        "—",
-        "—",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
         "—",
         "—",
         "—",
@@ -834,7 +834,7 @@
         "✅",
         "✅",
         "✅",
-        "—"
+        "✅"
       ]
     },
     {
@@ -848,7 +848,7 @@
         "✅",
         "✅",
         "✅",
-        "—"
+        "✅"
       ]
     },
     {
@@ -862,7 +862,7 @@
         "✅",
         "✅",
         "✅",
-        "—"
+        "✅"
       ]
     },
     {
