@@ -348,3 +348,31 @@ def test_every_declared_mutation_is_observed(path: Path) -> None:
 
 def test_corpus_contains_all_three_versioned_features() -> None:
     assert {load_fixture(path)["feature"] for path in FIXTURES} == set(RUNNERS)
+
+
+def mutation_report() -> list[dict[str, Any]]:
+    """Return executable evidence for every mutation declared by the corpus."""
+    results = []
+    for path in FIXTURES:
+        fixture = load_fixture(path)
+        for mutation in fixture["mutations"]:
+            expected_failures = set(mutation["must_fail"])
+            actual_failures = set(replay(fixture, mutation["operator"]))
+            results.append(
+                {
+                    "fixture": path.name,
+                    "feature": fixture["feature"],
+                    "mutation": mutation["operator"],
+                    "must_fail": sorted(expected_failures),
+                    "observed_failures": sorted(actual_failures),
+                    "caught": expected_failures <= actual_failures,
+                }
+            )
+    return results
+
+
+if __name__ == "__main__":
+    report = mutation_report()
+    print(json.dumps(report, indent=2, sort_keys=True))
+    if not all(result["caught"] for result in report):
+        raise SystemExit(1)
