@@ -2,22 +2,45 @@
 
 Language-agnostic wire protocol specification for the **lazily** reactive signals family.
 
-This repo defines the canonical message schemas shared across all lazily implementations:
+**lazily** is one reactive model — sources, computeds, effects, keyed collections,
+CRDTs, and a distributed sync plane — implemented natively in nine languages. This repo
+is the hub: it defines the canonical message schemas, the cross-language feature matrix,
+and the conformance corpus every implementation replays, so a graph built in one language
+converges with a graph built in any other.
 
-- **lazily-rs** (Rust)
-- **lazily-py** (Python)
-- **lazily-zig** (Zig)
-- **lazily-js** (TypeScript / Cloudflare Worker)
-- **lazily-kt** (Kotlin/JVM)
-- **lazily-dart** (Dart)
-- **lazily-go** (Go)
-- **lazily-cpp** (C++)
+Start here: the [wire protocol](protocol.md), the [cell model](cell-model.md), the
+**Feature Set** matrix below, and the **Conformance Fixtures** every binding must pass.
+
+## Implementations
+
+Nine native language bindings plus a React adapter. Each one implements the same cell
+model and the same wire protocol, and each replays the conformance corpus in this repo —
+per-binding parity is tracked in the **Feature Set** matrix below and in
+**Binding Conformance**.
+
+| Repo | Language |
+|------|----------|
+| [lazily-rs](https://github.com/lazily-hub/lazily-rs) | Rust — the reference implementation |
+| [lazily-py](https://github.com/lazily-hub/lazily-py) | Python |
+| [lazily-go](https://github.com/lazily-hub/lazily-go) | Go |
+| [lazily-kt](https://github.com/lazily-hub/lazily-kt) | Kotlin / JVM |
+| [lazily-js](https://github.com/lazily-hub/lazily-js) | JavaScript / TypeScript |
+| [lazily-cs](https://github.com/lazily-hub/lazily-cs) | C# / .NET |
+| [lazily-cpp](https://github.com/lazily-hub/lazily-cpp) | C++ |
+| [lazily-zig](https://github.com/lazily-hub/lazily-zig) | Zig |
+| [lazily-dart](https://github.com/lazily-hub/lazily-dart) | Dart / Flutter |
+| [lazily-react](https://github.com/lazily-hub/lazily-react) | React / Preact bindings layered over `lazily-js` — an adapter, not a separate language binding |
+
+**Formal model:** [lazily-formal](https://github.com/lazily-hub/lazily-formal) — the
+Lean 4 model of the shared primitive types, the flat FSM kernel, and the full Harel/SCXML
+state chart. It is the neutral formal home every binding depends on equally, and the
+executable reference behind the state-chart conformance fixtures (see **Formal Model**).
 
 ## Feature Set
 
 The full `lazily` capability set and its cross-language coverage across every
 binding (`lazily-rs`, `lazily-py`, `lazily-kt`, `lazily-js`, `lazily-dart`,
-`lazily-zig`, `lazily-go`, `lazily-cpp`). Legend: ✅ shipped · `~` partial · `—` absent or not applicable.
+`lazily-zig`, `lazily-go`, `lazily-cpp`, `lazily-cs`). Legend: ✅ shipped · `~` partial · `—` absent or not applicable.
 This table is generated from [`coverage.json`](coverage.json) — the canonical
 matrix with per-cell notes and platform carve-outs lives in
 [Cross-Language Coverage](docs/coverage.md). Edit `coverage.json` and run
@@ -94,7 +117,11 @@ matrix with per-cell notes and platform carve-outs lives in
 
 CRDT convergence and the wire protocol are pinned by the shared conformance fixtures
 and JSON Schemas in `lazily-spec` and the Lean models in `lazily-formal`.
+
 ## Binding Conformance
+
+The bindings the columns above refer to are listed, with links, under
+**Implementations** near the top of this file.
 
 Every binding MUST implement the layers in the [Binding Conformance Matrix](protocol.md#binding-conformance-matrix).
 The **distributed CRDT plane (`CrdtSync`)** and the full keyed cell collections layer
