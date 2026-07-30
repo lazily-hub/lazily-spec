@@ -1,0 +1,178 @@
+{
+  "description": "The reorder buffer is a bound, not a hope: at reorder_window an envelope that does not fill the gap drops instead of growing the buffer. The scope's first appearance moves it off Unknown, so readiness and authority invalidate even though the envelope itself stays invisible.",
+  "kind": "Ingress",
+  "model": "IngressCell",
+  "merge": "sum",
+  "transport": "event_channel",
+  "poll_interval": 25,
+  "policy": {
+    "reorder_window": 2,
+    "freshness_horizon": 100,
+    "high_water": 64,
+    "overflow": "conflate",
+    "receipt_capacity": 32,
+    "retry_base": 10,
+    "retry_ceiling": 80
+  },
+  "steps": [
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 1,
+        "stamped_at": 0,
+        "payload": 1
+      },
+      "returns": {
+        "admission": "buffered",
+        "gap_from": 0
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "opening",
+            "generation": 1,
+            "delivered_through": null,
+            "buffered": 1,
+            "window": null,
+            "readiness": "warming",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": null,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 0,
+          "dropped": 0,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": true,
+              "authority": true,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 2,
+        "stamped_at": 0,
+        "payload": 1
+      },
+      "returns": {
+        "admission": "buffered",
+        "gap_from": 0
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "opening",
+            "generation": 1,
+            "delivered_through": null,
+            "buffered": 2,
+            "window": null,
+            "readiness": "warming",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": null,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 0,
+          "dropped": 0,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 3,
+        "stamped_at": 0,
+        "payload": 1
+      },
+      "returns": {
+        "admission": "dropped",
+        "reason": "reorder_window_overflow"
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "opening",
+            "generation": 1,
+            "delivered_through": null,
+            "buffered": 2,
+            "window": null,
+            "readiness": "warming",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": null,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 0,
+          "dropped": 1,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": true,
+            "error": false
+          }
+        }
+      }
+    }
+  ]
+}

@@ -565,67 +565,67 @@
         "✅",
         "✅",
         "✅",
-      "✅",
-      "✅",
-      "✅",
-      "✅"
-    ]
-  },
-  {
-    "feature": "Reliable sync — resync coordinator + at-least-once durable outbox + OR-set/LWW liveness (`#lzsync`)",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Reliable sync — resync coordinator + at-least-once durable outbox + OR-set/LWW liveness (`#lzsync`)",
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
-      "✅",
-      "✅",
-      "✅",
-      "✅"
-    ]
-  },
-  {
-    "feature": "Storage-independent durable outbox (`OutboxStore` + shared outbox protocol; SQLite/Room/IndexedDB/file adapters)",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Storage-independent durable outbox (`OutboxStore` + shared outbox protocol; SQLite/Room/IndexedDB/file adapters)",
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
-      "✅",
-      "✅",
-      "✅",
-      "✅"
-    ]
-  },
-  {
-    "feature": "Reliable-sync transport seam + full-duplex `SyncDriver` loop (`IpcSink`/`IpcSource`, `#sync-driver`)",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Reliable-sync transport seam + full-duplex `SyncDriver` loop (`IpcSink`/`IpcSource`, `#sync-driver`)",
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
-      "✅",
-      "✅",
-      "✅",
-      "✅"
-    ]
-  },
-  {
-    "feature": "Distributed plane — WebRTC transport + signaling",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
+      "feature": "Distributed plane — WebRTC transport + signaling",
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
-      "✅",
-      "✅",
-      "✅",
-      "✅"
-    ]
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
     },
     {
       "feature": "State projection / mirror",
@@ -877,6 +877,48 @@
         "✅",
         "✅",
         "✅"
+      ]
+    },
+    {
+      "feature": "Transport-agnostic reactive ingress (`IngressCell`) — keyed lifecycle scopes, generation/sequence/freshness envelopes, reorder buffer, accepted/dropped/error receipt readers (`#designimplementtransport`)",
+      "marks": [
+        "✅",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "feature": "Ingress family — `Send + Sync` flavor (`ThreadSafeIngressCell`): one frontier walk per admission (`#designimplementtransport`)",
+      "marks": [
+        "✅",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "feature": "Ingress family — async flavor (`AsyncIngressCell`): admission is not async-coloured (`#designimplementtransport`)",
+      "marks": [
+        "✅",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
       ]
     }
   ]

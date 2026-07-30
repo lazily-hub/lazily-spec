@@ -1,0 +1,295 @@
+{
+  "description": "In-order admission folds into one coalesced window, reports Accepted then Conflated, and touches only the accepted receipt channel. An empty drain is a no-op that invalidates nothing.",
+  "kind": "Ingress",
+  "model": "IngressCell",
+  "merge": "sum",
+  "transport": "event_channel",
+  "poll_interval": 25,
+  "policy": {
+    "reorder_window": 4,
+    "freshness_horizon": 100,
+    "high_water": 64,
+    "overflow": "conflate",
+    "receipt_capacity": 32,
+    "retry_base": 10,
+    "retry_ceiling": 80
+  },
+  "steps": [
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 0,
+        "stamped_at": 0,
+        "payload": 5
+      },
+      "returns": {
+        "admission": "accepted",
+        "delivered_through": 0
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 0,
+            "window": 5,
+            "readiness": "ready",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 0,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": true,
+              "readiness": true,
+              "authority": true,
+              "retry": true
+            }
+          },
+          "receipts": {
+            "accepted": true,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 1,
+        "stamped_at": 0,
+        "payload": 7
+      },
+      "returns": {
+        "admission": "conflated",
+        "delivered_through": 1
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 1,
+            "buffered": 0,
+            "window": 12,
+            "readiness": "ready",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 1,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 2,
+          "dropped": 0,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": true,
+              "readiness": true,
+              "authority": true,
+              "retry": true
+            }
+          },
+          "receipts": {
+            "accepted": true,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "drain",
+        "key": "alpha"
+      },
+      "returns": {
+        "drained": 12
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 1,
+            "buffered": 0,
+            "window": null,
+            "readiness": "ready",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 1,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 2,
+          "dropped": 0,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": true,
+              "readiness": false,
+              "authority": false,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "drain",
+        "key": "alpha"
+      },
+      "returns": {
+        "drained": null
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 1,
+            "buffered": 0,
+            "window": null,
+            "readiness": "ready",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 1,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 2,
+          "dropped": 0,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "admit",
+        "key": "beta",
+        "generation": 1,
+        "sequence": 0,
+        "stamped_at": 0,
+        "payload": 3
+      },
+      "returns": {
+        "admission": "accepted",
+        "delivered_through": 0
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 1,
+            "buffered": 0,
+            "window": null,
+            "readiness": "ready",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 1,
+              "stamped_at": 0
+            },
+            "retry": null
+          },
+          "beta": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 0,
+            "window": 3,
+            "readiness": "ready",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 3,
+          "dropped": 0,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": false
+            },
+            "beta": {
+              "value": true,
+              "readiness": true,
+              "authority": true,
+              "retry": true
+            }
+          },
+          "receipts": {
+            "accepted": true,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    }
+  ]
+}

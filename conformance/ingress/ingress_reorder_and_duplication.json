@@ -1,0 +1,284 @@
+{
+  "description": "A gap buffers invisibly \u2014 no value, no authority, no receipt \u2014 and the delivery that closes it flushes every successor in sequence order as one window change. Both duplicate classes and reorder-window overflow drop. The scope's first appearance moves it off Unknown, so readiness and authority invalidate even though the envelope itself stays invisible.",
+  "kind": "Ingress",
+  "model": "IngressCell",
+  "merge": "sum",
+  "transport": "event_channel",
+  "poll_interval": 25,
+  "policy": {
+    "reorder_window": 4,
+    "freshness_horizon": 100,
+    "high_water": 64,
+    "overflow": "conflate",
+    "receipt_capacity": 32,
+    "retry_base": 10,
+    "retry_ceiling": 80
+  },
+  "steps": [
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 2,
+        "stamped_at": 0,
+        "payload": 4
+      },
+      "returns": {
+        "admission": "buffered",
+        "gap_from": 0
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "opening",
+            "generation": 1,
+            "delivered_through": null,
+            "buffered": 1,
+            "window": null,
+            "readiness": "warming",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": null,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 0,
+          "dropped": 0,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": true,
+              "authority": true,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 2,
+        "stamped_at": 0,
+        "payload": 99
+      },
+      "returns": {
+        "admission": "dropped",
+        "reason": "duplicate_buffered"
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "opening",
+            "generation": 1,
+            "delivered_through": null,
+            "buffered": 1,
+            "window": null,
+            "readiness": "warming",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": null,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 0,
+          "dropped": 1,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": true,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 1,
+        "stamped_at": 0,
+        "payload": 2
+      },
+      "returns": {
+        "admission": "buffered",
+        "gap_from": 0
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "opening",
+            "generation": 1,
+            "delivered_through": null,
+            "buffered": 2,
+            "window": null,
+            "readiness": "warming",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": null,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 0,
+          "dropped": 1,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 0,
+        "stamped_at": 0,
+        "payload": 1
+      },
+      "returns": {
+        "admission": "conflated",
+        "delivered_through": 2
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 2,
+            "buffered": 0,
+            "window": 7,
+            "readiness": "ready",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 2,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 1,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": true,
+              "readiness": true,
+              "authority": true,
+              "retry": true
+            }
+          },
+          "receipts": {
+            "accepted": true,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 0,
+        "stamped_at": 0,
+        "payload": 1
+      },
+      "returns": {
+        "admission": "dropped",
+        "reason": "duplicate_sequence"
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 2,
+            "buffered": 0,
+            "window": 7,
+            "readiness": "ready",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 2,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 2,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": true,
+            "error": false
+          }
+        }
+      }
+    }
+  ]
+}

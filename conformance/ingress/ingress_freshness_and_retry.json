@@ -1,0 +1,571 @@
+{
+  "description": "Freshness is measured against the producer stamp, so an expired arrival is refused before it can occupy a reorder slot. Crossing the horizon is a readiness-only transition; a tick inside it invalidates nothing. Retry backoff doubles per consecutive error and clamps at the ceiling.",
+  "kind": "Ingress",
+  "model": "IngressCell",
+  "merge": "sum",
+  "transport": "event_channel",
+  "poll_interval": 25,
+  "policy": {
+    "reorder_window": 4,
+    "freshness_horizon": 30,
+    "high_water": 64,
+    "overflow": "conflate",
+    "receipt_capacity": 32,
+    "retry_base": 10,
+    "retry_ceiling": 80
+  },
+  "steps": [
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 0,
+        "stamped_at": 0,
+        "payload": 1
+      },
+      "returns": {
+        "admission": "accepted",
+        "delivered_through": 0
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 0,
+            "window": 1,
+            "readiness": "ready",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 0,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": true,
+              "readiness": true,
+              "authority": true,
+              "retry": true
+            }
+          },
+          "receipts": {
+            "accepted": true,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "tick",
+        "now": 5
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 0,
+            "window": 1,
+            "readiness": "ready",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 0,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "tick",
+        "now": 40
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 0,
+            "window": 1,
+            "readiness": "stale",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 0,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": true,
+              "authority": false,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 2,
+        "stamped_at": 5,
+        "payload": 8
+      },
+      "returns": {
+        "admission": "dropped",
+        "reason": "expired"
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 0,
+            "window": 1,
+            "readiness": "stale",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 1,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": true,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 2,
+        "stamped_at": 38,
+        "payload": 8
+      },
+      "returns": {
+        "admission": "buffered",
+        "gap_from": 1
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 1,
+            "window": 1,
+            "readiness": "stale",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 1,
+          "error": 0
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": false
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "fail",
+        "key": "alpha",
+        "error": "decode_failed"
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 1,
+            "window": 1,
+            "readiness": "stale",
+            "consecutive_errors": 1,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": {
+              "attempt": 1,
+              "backoff": 10,
+              "resume_from": 1
+            }
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 1,
+          "error": 1
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": true
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": true
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "fail",
+        "key": "alpha",
+        "error": "authority_lost"
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 1,
+            "window": 1,
+            "readiness": "stale",
+            "consecutive_errors": 2,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": {
+              "attempt": 2,
+              "backoff": 20,
+              "resume_from": 1
+            }
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 1,
+          "error": 2
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": true
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": true
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "fail",
+        "key": "alpha",
+        "error": "transport_closed"
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 1,
+            "window": 1,
+            "readiness": "stale",
+            "consecutive_errors": 3,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": {
+              "attempt": 3,
+              "backoff": 40,
+              "resume_from": 1
+            }
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 1,
+          "error": 3
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": true
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": true
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "fail",
+        "key": "alpha",
+        "error": "transport_closed"
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 1,
+            "window": 1,
+            "readiness": "stale",
+            "consecutive_errors": 4,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": {
+              "attempt": 4,
+              "backoff": 80,
+              "resume_from": 1
+            }
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 1,
+          "error": 4
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": true
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": true
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "fail",
+        "key": "alpha",
+        "error": "transport_closed"
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 0,
+            "buffered": 1,
+            "window": 1,
+            "readiness": "stale",
+            "consecutive_errors": 5,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 0,
+              "stamped_at": 0
+            },
+            "retry": {
+              "attempt": 5,
+              "backoff": 80,
+              "resume_from": 1
+            }
+          }
+        },
+        "receipts": {
+          "accepted": 1,
+          "dropped": 1,
+          "error": 5
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": false,
+              "readiness": false,
+              "authority": false,
+              "retry": true
+            }
+          },
+          "receipts": {
+            "accepted": false,
+            "dropped": false,
+            "error": true
+          }
+        }
+      }
+    },
+    {
+      "op": {
+        "type": "admit",
+        "key": "alpha",
+        "generation": 1,
+        "sequence": 1,
+        "stamped_at": 39,
+        "payload": 2
+      },
+      "returns": {
+        "admission": "conflated",
+        "delivered_through": 2
+      },
+      "expected": {
+        "scopes": {
+          "alpha": {
+            "lifecycle": "live",
+            "generation": 1,
+            "delivered_through": 2,
+            "buffered": 0,
+            "window": 11,
+            "readiness": "ready",
+            "consecutive_errors": 0,
+            "authority": {
+              "generation": 1,
+              "delivered_through": 2,
+              "stamped_at": 39
+            },
+            "retry": null
+          }
+        },
+        "receipts": {
+          "accepted": 2,
+          "dropped": 1,
+          "error": 5
+        },
+        "invalidates": {
+          "scopes": {
+            "alpha": {
+              "value": true,
+              "readiness": true,
+              "authority": true,
+              "retry": true
+            }
+          },
+          "receipts": {
+            "accepted": true,
+            "dropped": false,
+            "error": false
+          }
+        }
+      }
+    }
+  ]
+}
