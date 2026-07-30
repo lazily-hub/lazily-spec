@@ -1182,9 +1182,10 @@ same reason: without the split, "this binding ships no ordering on two flavors"
 and "that binding also ships a convenience helper" both read as divergence and
 both score green.
 
-The split is drawn from a survey of the eight bindings that ship the family
-(lazily-cs does not yet). Normalising for naming convention, nine methods are
-present in **8 of 8** — unanimous, therefore law — and the rest are conveniences.
+The split is drawn from a survey of the bindings that ship the family. When it
+was first written that was eight, lazily-cs excepted; lazily-cs has since landed
+the single-threaded family and satisfies every Core entry below, so the survey is
+now **9 of 9** — unanimous, therefore law — and the rest are conveniences.
 
 #### Core — REQUIRED
 
@@ -1226,9 +1227,36 @@ Three Core entries are load-bearing in ways that are easy to miss:
 Ordering-style reasoning applies to the whole family: none of the Core surface
 touches an entry handle and none of it awaits, so **it is neither
 thread-coloured nor async-coloured** and binds every flavor. Confirmed
-empirically — across all eight bindings the queue-family sources contain **no**
+empirically — across all nine bindings the queue-family sources contain **no**
 `async fn`, `suspend fun`, `Future`, `Task`, `Promise`, or `await` anywhere. A
 flavor is not permitted to colour `pop`.
+
+#### Which flavors each binding actually ships, and how that is proved
+
+Auditing this table against the nine bindings found it wrong in **both**
+directions at once (#lzcoverageaudit), which is worth stating because the two
+failure modes hide from different reviewers:
+
+- **Understated.** lazily-go and lazily-cpp ship and replay all three flavors of
+  all three primitives, and lazily-py / lazily-kt / lazily-dart ship and replay
+  the thread-safe and async `WorkQueueCell` and the async `TopicCell`. All of it
+  read absent. An understated table is the more dangerous of the two: nobody
+  files a bug about coverage they are told they lack, so a "project this family
+  into the bindings" task reads as unstarted work that is in fact done.
+- **Overstated.** lazily-js was marked as shipping the thread-safe and async
+  `QueueCell` and the thread-safe `TopicCell`. It ships none of them — its own
+  flavor ledger records them unshipped and no such type exists in `src/`.
+
+A mark is only clearable by **replay**, never by the type existing. Every
+binding's suite carries a flavor ledger checked against its own sources in both
+directions, so a row cannot claim a flavor with no type and a type cannot exist
+unreplayed; and the replays are fed by a runtime fixture manifest, so "this
+binary opened these bytes" is observed rather than grepped. lazily-zig is the
+case that proves the distinction matters: it ships `TopicCell` and
+`WorkQueueCell` and had tests *named* after the canonical fixtures whose expected
+values were transcribed into the source, with the fixtures themselves listed as
+known-uncovered. The types shipped, the corpus did not run, and the honest fix
+was to add the replay — not to flip the cell.
 
 #### Reader-kind derivation — one design, pinned
 
