@@ -883,42 +883,42 @@
       "feature": "Transport-agnostic reactive ingress (`IngressCell`) — keyed lifecycle scopes, generation/sequence/freshness envelopes, reorder buffer, accepted/dropped/error receipt readers (`#designimplementtransport`)",
       "marks": [
         "✅",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—"
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
       ]
     },
     {
       "feature": "Ingress family — `Send + Sync` flavor (`ThreadSafeIngressCell`): one frontier walk per admission (`#designimplementtransport`)",
       "marks": [
         "✅",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—"
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
       ]
     },
     {
       "feature": "Ingress family — async flavor (`AsyncIngressCell`): admission is not async-coloured (`#designimplementtransport`)",
       "marks": [
         "✅",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—",
-        "—"
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
       ]
     }
   ]

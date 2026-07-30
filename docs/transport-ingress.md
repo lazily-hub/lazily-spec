@@ -1,8 +1,10 @@
 # Transport-agnostic reactive ingress (`#designimplementtransport`)
 
-Status: **Phase 1–3 specified and implemented in the Rust reference** (all three
-execution flavors). Phase 4 — projection into the remaining bindings — tracks the
-`coverage.json` row per binding.
+Status: **specified, implemented, and projected into all nine bindings** (Rust,
+Python, Kotlin, JS, Dart, Zig, Go, C++, C#), each in all three execution flavors.
+The corpus in `conformance/ingress/` is replayed by every binding against every
+flavor it ships; the three `coverage.json` ingress rows are green across the
+board.
 
 ## The problem this replaces
 
@@ -241,6 +243,39 @@ replays the same JSON against each shell. `invalidates` is asserted through a
 cache-validity probe on each reader kind, in **both** directions — a fixture step
 that expects `false` fails if the shell invalidated anyway, which is how
 over-invalidation stays visible.
+
+### What the nine-binding projection settled
+
+Projecting the corpus into every binding turned three things that read like
+implementation detail into contract:
+
+**`invalidates` is a claim about observability, not about a mechanism.** Three
+different probes satisfy it, because three graphs expose different things: a
+cache-validity read (`is_set` / `isCacheValid`), a recompute counter, and a
+version-source delta. All three are bidirectional and all three kill the same
+mutations. What is *not* acceptable is asserting receipt **counts** in place of
+per-channel invalidation — a stale cache recomputes to the right count, so a
+count-only gate reports green. Bindings that assert counts before invalidation
+also report the wrong *thing*: the count mismatch is the symptom, the uncleared
+channel is the defect.
+
+**"One frontier walk" must be stated as "no torn observation", not as an effect-run
+count.** Effect-run counts are not portable: at least one kernel legitimately
+re-runs an effect when it lazily refreshes a second dirty dependency during its
+own run, so "two runs for one admission" is true there with no ingress defect
+present, and a gate phrased that way passes either way. What a second walk
+actually costs is a reader observing `new value, old authority` — a post-handoff
+value under the superseded generation's fence. That is the invariant; the run
+count is one binding's proxy for it.
+
+**Admission is not async-coloured; *reads* may be.** Nothing in the algebra
+awaits — the decision is a function of the fence, the watermark, the reorder
+buffer, and the observed clock, so every mutator is synchronous in all nine
+bindings and no runner has a `settle` step. But a binding whose async graph offers
+no synchronous compute constructor will project the four scope derives as
+`Task`/`Promise`/pending-queue reads. That is a property of the graph, not of the
+primitive, and it does not weaken the row: the requirement is that **admission**
+is synchronous and that one admission is one walk.
 
 ## Formal model
 
