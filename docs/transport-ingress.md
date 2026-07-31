@@ -171,6 +171,19 @@ Conversely, one admission that dirties several kinds clears them in **one fronti
 walk**, so no reader observes `new value, old authority` — the partial fan-out a
 generation handoff must never expose.
 
+**The unit of that guarantee is one observation, not one caller.** An observation
+is a single graph read: one effect run, or one compute closure reading several
+reader kinds. Two *separate* reads — `value()` and then `authority()`, each its
+own lock acquisition — are two observations, and an admission landing between them
+skews the pair with nothing torn anywhere in the shell. The skew goes whichever
+way the reads are ordered: value-then-authority yields `old value, new authority`,
+and authority-then-value yields `new value, old authority`. Neither is a fan-out
+defect, and no amount of batching in a shell can prevent either, so a flavor's
+frontier-walk gate must observe through a single effect or a single derived cell
+(`#lzrstornfanout` — lazily-rs shipped a two-read racing assertion that reddened
+CI roughly once in many runs, and a forced-window probe reproduced both mixed
+pairs 200/200 with the batch fully intact).
+
 ### The derives
 
 ```
