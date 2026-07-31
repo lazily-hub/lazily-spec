@@ -439,6 +439,151 @@ def test_anti_entropy_converge_scenarios_well_formed() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Frame-codec round-trip fixtures (conformance/codec/) — `#lzmsgpackparity`
+# ---------------------------------------------------------------------------
+#
+# protocol.md § Frame codecs makes `json` and `msgpack` MUST-level and requires
+# every frame to round-trip through both for all three `IpcMessage` variants.
+# That requirement lived only in prose: the conformance ladder verifies fixture
+# CONTENT replay (opened / consumed / asserted / every scenario replayed), and
+# content replay never exercises a codec, so a binding could carve out a
+# MUST-level codec and stay green everywhere.
+#
+# These tests guard the fixtures that make the obligation executable. They do
+# NOT test a codec — lazily-spec ships no encoder. They pin the invariants a
+# binding runner depends on: both flavors exist, they cover the same three
+# variants, they carry BYTE-IDENTICAL `wire` values (so one runner shape serves
+# both codecs), and every `wire` validates against its schema.
+
+_CODEC_DIR = FIXTURE_DIR / "codec"
+_CODEC_FLAVORS = {"json": "frame_roundtrip_json.json", "msgpack": "frame_roundtrip_msgpack.json"}
+_VARIANT_SCHEMA = {"Snapshot": "snapshot", "Delta": "delta", "CrdtSync": "distributed"}
+
+
+def _codec_fixture(codec: str) -> dict:
+    return json.loads((_CODEC_DIR / _CODEC_FLAVORS[codec]).read_text())
+
+
+def _codec_scenarios() -> list[tuple[str, dict]]:
+    out: list[tuple[str, dict]] = []
+    for codec, name in _CODEC_FLAVORS.items():
+        if not (_CODEC_DIR / name).is_file():
+            continue
+        for scenario in _codec_fixture(codec)["scenarios"]:
+            out.append((codec, scenario))
+    return out
+
+
+@pytest.mark.parametrize("codec", sorted(_CODEC_FLAVORS))
+def test_codec_fixture_is_well_formed(codec: str) -> None:
+    obj = _codec_fixture(codec)
+    assert obj["protocol_version"] == 1
+    assert obj["kind"] == "FrameCodecRoundTrip"
+    assert obj["codec"] == codec, "the `codec` field must match the file it lives in"
+
+    fixture_assertions = obj["assertions"]
+    assert fixture_assertions["codec"] == codec
+    assert fixture_assertions["required_of_binding"] == "MUST"
+    # Both MUST-level codecs are self-describing; only json is byte-canonical.
+    # Conflating the two senses of "canonical" is the confusion protocol.md
+    # § Frame codecs exists to prevent, so the fixtures pin them separately.
+    assert fixture_assertions["self_describing"] is True
+    assert fixture_assertions["byte_canonical"] is (codec == "json")
+
+    scenarios = obj["scenarios"]
+    assert fixture_assertions["scenario_count"] == len(scenarios)
+    # One scenario per IpcMessage variant, and ids are unique — the scenario
+    # ledger (`#lzscenariocoverage`) resolves `id` first, so a duplicate id
+    # would let one replayed scenario mark another as covered.
+    assert [s["variant"] for s in scenarios] == list(_VARIANT_SCHEMA)
+    ids = [s["id"] for s in scenarios]
+    assert len(set(ids)) == len(ids)
+    for scenario in scenarios:
+        assert scenario["id"] == scenario["name"]
+        assert codec in scenario["id"], (
+            f"scenario id {scenario['id']!r} must name its codec: the two flavors "
+            "share a corpus namespace and a binding excuses them independently"
+        )
+
+
+def test_codec_flavors_pin_identical_wire_values() -> None:
+    """The json and msgpack fixtures differ only in codec, never in payload.
+
+    A runner proves a codec by sending the SAME frame through a different
+    encoder. If the two fixtures drifted apart, a msgpack failure could be a
+    payload difference rather than a codec difference, and the parity claim
+    the pair exists to make would be untestable.
+    """
+    json_scenarios = _codec_fixture("json")["scenarios"]
+    msgpack_scenarios = _codec_fixture("msgpack")["scenarios"]
+    assert len(json_scenarios) == len(msgpack_scenarios)
+    for js, ms in zip(json_scenarios, msgpack_scenarios):
+        assert js["variant"] == ms["variant"]
+        assert js["wire"] == ms["wire"], (
+            f"{js['variant']} wire drifted between the json and msgpack fixtures"
+        )
+
+
+@pytest.mark.parametrize(
+    "codec,scenario", _codec_scenarios(), ids=lambda v: v if isinstance(v, str) else v["id"]
+)
+def test_codec_scenario_wire_validates_schema(codec: str, scenario: dict) -> None:
+    schema = _VARIANT_SCHEMA[scenario["variant"]]
+    errors = sorted(
+        _validator(schema).iter_errors(scenario["wire"]), key=lambda e: list(e.path)
+    )
+    assert not errors, (
+        f"{codec} scenario {scenario['id']!r} wire does not validate against {schema}.json:\n"
+        + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+    )
+
+
+@pytest.mark.parametrize(
+    "codec,scenario", _codec_scenarios(), ids=lambda v: v if isinstance(v, str) else v["id"]
+)
+def test_codec_scenario_expect_block_is_discriminating(codec: str, scenario: dict) -> None:
+    """Every scenario asserts the round trip itself plus real decoded values.
+
+    `round_trip_equals_source` alone is satisfiable by a runner that never
+    re-encodes — it is the runner's own boolean. The value keys are what make
+    the block falsifiable: they are read off the SECOND decode, so a codec that
+    drops or reshapes a field fails them.
+    """
+    expect = scenario["expect"]
+    assert expect["round_trip_equals_source"] is True
+    value_keys = [k for k in expect if k != "round_trip_equals_source"]
+    assert len(value_keys) >= 4, (
+        f"{scenario['id']} pins only {value_keys}; a round-trip flag plus one or two "
+        "scalars cannot distinguish a lossy codec from a correct one"
+    )
+    if codec == "msgpack":
+        # The named-field rule (protocol.md § Frame codecs) is the one msgpack
+        # property a value round trip CANNOT catch: a positional encoder
+        # round-trips correctly and is still non-conforming.
+        assert expect["encoded_envelope_key"] == scenario["variant"]
+        names = expect["encoded_body_field_names"]
+        assert names == sorted(names), (
+            "msgpack map key order is encoder-defined; the fixture must pin a SORTED "
+            "field-name list so a runner compares sets, not encoder order"
+        )
+
+
+def test_coverage_matrix_carries_a_row_per_codec_flavor() -> None:
+    """The feature matrix must show codec parity, not just protocol features.
+
+    This is the surface the carve-out was invisible on: seven bindings declared
+    `msgpack` as an interop-peer carve_out and `coverage.json` had no codec row
+    at all, so a MUST-level codec implemented by two of nine read as full
+    parity.
+    """
+    rows = json.loads((ROOT / "coverage.json").read_text())["rows"]
+    features = [r["feature"] for r in rows]
+    for codec in ("json", "msgpack", "postcard"):
+        matching = [f for f in features if f.startswith("Frame codec —") and f"`{codec}`" in f]
+        assert len(matching) == 1, f"expected exactly one `{codec}` frame-codec row, got {matching}"
+
+
+# ---------------------------------------------------------------------------
 # Causal receipt fixtures — generic outcome projection, not transport ACKs
 # ---------------------------------------------------------------------------
 

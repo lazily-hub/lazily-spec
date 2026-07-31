@@ -387,6 +387,44 @@ MessagePack map's key order is encoder-defined, two conforming bindings MAY emit
 `postcard` (positional) is byte-canonical across encoders. Cross-language `msgpack` fixtures
 therefore pin the *decoded value*, never a golden byte string.
 
+**The codec requirement is executable, not prose (`#lzmsgpackparity`).** Stating "every frame MUST
+round-trip through both `json` and `msgpack`" in this document proved nothing: the conformance
+ladder verifies fixture *content* replay (was the file opened, were its keys consumed, were they
+asserted, were all its scenarios replayed), and content replay never exercises a codec. A binding
+could therefore carve out a MUST-level codec and stay green everywhere. Two canonical fixtures now
+carry the obligation:
+
+| Fixture | Codec | Obligation |
+|---------|-------|------------|
+| [`conformance/codec/frame_roundtrip_json.json`](conformance/codec/frame_roundtrip_json.json) | `json` | **MUST** — the reference codec; every binding replays it |
+| [`conformance/codec/frame_roundtrip_msgpack.json`](conformance/codec/frame_roundtrip_msgpack.json) | `msgpack` | **MUST** — a binding that has not implemented it declares the gap in its conformance-coverage ledger |
+
+Both carry the *same* three `wire` values (one per `IpcMessage` variant) so one runner shape serves
+both codecs. A runner MUST decode `wire`, **re-encode the decoded message**, decode it again, and
+evaluate every `expect` key against that second decode — asserting against the fixture literal
+proves nothing, because the literal never passed through the codec. The msgpack fixture
+additionally pins `encoded_envelope_key` and the **sorted** `encoded_body_field_names`, which is
+the executable form of the named-field rule above: a positional encoder round-trips a value
+correctly and fails those keys. `postcard` carries no cross-language fixture — it is `MAY`, and by
+construction only two peers sharing a struct layout can speak it.
+
+A binding that does not implement `msgpack` is not silently exempt. Its
+`scripts/check-conformance-coverage.sh` sees the canonical fixture and fails until the binding
+either replays it or names it in `KNOWN_UNCOVERED` with a reason — the same ledger every other
+declared gap lives in — and [`coverage.json`](coverage.json) carries one row per codec flavor so
+the matrix shows the carve-out beside every other parity fact.
+
+**Shipping *a* MessagePack codec is not implementing `msgpack`.** The codec token names one
+wire, not a serialization technology: the externally-tagged frame (`{"Snapshot": {…}}`) over
+named-field maps whose keys are the `json` field names, with the same omit-when-absent rule for
+optional fields. A codec that packs the same data as an internally-tagged envelope
+(`{"type": 0, "value": …}`), gives `NodeState`/`IpcValue` integer `kind` discriminators instead
+of the `Payload`/`Inline` external tags, or uses positional arrays, is a private codec that
+happens to use MessagePack framing — a peer that negotiated `msgpack` with it would not decode
+its frames. That distinction is invisible to a file-presence audit and is exactly what the
+round-trip fixture makes checkable, which is why the matrix distinguishes `✅` from `~` on this
+row.
+
 ## Causal Receipts
 
 Some integrations send a command or publish an effectful request and need a durable, queryable outcome for that causation id. lazily supplies a generic **causal receipt** primitive for that use case; it is not a transport ACK and does not make delivery success authoritative.
@@ -575,7 +613,7 @@ via [Capability Negotiation](#capability-negotiation) rather than failing silent
 | Thread-safe reactive context | MUST² | [Reactive Graph § Context layers](reactive-graph.md#context-layers) | — |
 | Async reactive context | MUST² | [Async Reactive Context](async.md) | — |
 | IPC (`Snapshot` + `Delta`) | MUST | [§ IPC](#ipc-snapshot--incremental-update-protocol) | [`conformance/`](conformance/) IPC fixtures |
-| **Frame codecs** (`json` reference + `msgpack` cross-language binary; `postcard` optional) | MUST | [§ Frame codecs](#frame-codecs) | [`conformance/`](conformance/) IPC fixtures round-trip through `json` **and** `msgpack` for all three `IpcMessage` variants (`Snapshot`/`Delta`/`CrdtSync`) |
+| **Frame codecs** (`json` reference + `msgpack` cross-language binary; `postcard` optional) | MUST | [§ Frame codecs](#frame-codecs) | [`conformance/codec/frame_roundtrip_json.json`](conformance/codec/frame_roundtrip_json.json) and [`conformance/codec/frame_roundtrip_msgpack.json`](conformance/codec/frame_roundtrip_msgpack.json) — each carries one scenario per `IpcMessage` variant (`Snapshot`/`Delta`/`CrdtSync`), replayed *through* the codec rather than read as data |
 | **Shared-memory payload path** (`ShmBlobArena` / `ShmBlobRef`) | MUST³ | [§ Shared-memory IPC](#shared-memory-ipc) | [`conformance/`](conformance/) shared-blob fixtures (`snapshot_shared_blob`, `delta_shared_blob`) |
 | **C-ABI FFI boundary** (`LazilyFfiBytes`, `LazilyFfiStatus`, `LazilyFfiMessageKind`) | MUST¹ | [§ FFI Boundary](#ffi-boundary), [`ffi.json`](schemas.md#ffijson) | every binding decodes the FFI frame to `IpcMessage` and re-encodes canonical JSON bytes |
 | **Distributed CRDT plane** (`CrdtSync` / `WireStamp`) | MUST | [§ Distributed: CRDT Cell Plane](#distributed-crdt-cell-plane), [`distributed.json`](schemas.md#distributedjson) | [`conformance/`](conformance/) `CrdtSync` round-trip |
