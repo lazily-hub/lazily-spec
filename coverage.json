@@ -1,5 +1,5 @@
 {
-  "$comment": "Canonical cross-language feature coverage — the single source of truth. Only the Core surface defined in cell-model.md § \"Core surface vs. binding extensions\" is scored; Extended methods (entry/entry_with, is_empty, len_untracked, reconcile, insert, Try* variants) are non-normative and MUST NOT be scored here. Edit THIS file, then run `node scripts/sync-coverage.mjs` to regenerate the table in docs/coverage.md and every sibling binding README (between the coverage-table markers). CI runs `--check` to fail on drift.",
+  "$comment": "Canonical cross-language feature coverage — the single source of truth. Only the Core surface defined in cell-model.md § \"Core surface vs. binding extensions\" is scored; Extended methods (entry/entry_with, is_empty, len_untracked, reconcile, insert, Try* variants) are non-normative and MUST NOT be scored here. Edit THIS file, then run `node scripts/sync-coverage.mjs` to regenerate the table in docs/coverage.md and every sibling binding README (between the coverage-table markers). CI runs `--check` to fail on drift. A row MAY also carry `fixtures`: the canonical conformance fixtures that back it. `node scripts/check-coverage-claims.mjs` then refuses a shipped mark on that row unless the binding actually replays every cited fixture, read from that binding's own KNOWN_UNCOVERED/REQUIRED_AREAS ledger. Scoring having the TYPES rather than speaking the WIRE is what let two lazily-cpp codec gaps survive a family-wide audit (#coveragejsonscores).",
   "legend": "✅ shipped · `~` partial · `—` absent or not applicable",
   "languages": [
     "Rust",
@@ -517,12 +517,15 @@
     },
     {
       "feature": "IPC wire — `Snapshot` + `Delta` + `CrdtSync`",
+      "fixtures": [
+        "distributed/crdt_sync_frames.json"
+      ],
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "✅",
         "✅",
@@ -531,6 +534,9 @@
     },
     {
       "feature": "Frame codec — `json` **reference codec**: dependency-free interop floor, FFI baseline form, byte-canonical (**MUST**) — executable round-trip obligation (`conformance/codec/frame_roundtrip_json.json`, `#lzmsgpackparity`)",
+      "fixtures": [
+        "codec/frame_roundtrip_json.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -545,6 +551,9 @@
     },
     {
       "feature": "Frame codec — `msgpack` **cross-language binary default**: externally-tagged frame over named-field maps, semantic (not byte-identical) round-trip (**MUST**) — executable round-trip obligation (`conformance/codec/frame_roundtrip_msgpack.json`, `#lzmsgpackparity`). `~` = a MessagePack codec exists but is not this wire",
+      "fixtures": [
+        "codec/frame_roundtrip_msgpack.json"
+      ],
       "marks": [
         "✅",
         "—",
@@ -601,6 +610,9 @@
     },
     {
       "feature": "Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy)",
+      "fixtures": [
+        "distributed/anti_entropy_converge.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -685,8 +697,11 @@
     },
     {
       "feature": "Causal receipts (`CausalReceipts` outcome projection)",
+      "fixtures": [
+        "receipts/causal_receipts.json"
+      ],
       "marks": [
-        "✅",
+        "~",
         "✅",
         "✅",
         "✅",
@@ -699,13 +714,23 @@
     },
     {
       "feature": "Message-passing + RPC command plane (`command-plane-v1`)",
+      "fixtures": [
+        "message-passing/accepted_then_applied_receipt.json",
+        "message-passing/cancel_preempts_nonterminal.json",
+        "message-passing/editor_route_submit.json",
+        "message-passing/reconnect_command_projection.json",
+        "message-passing/rpc_call_waits_for_terminal.json",
+        "message-passing/stale_generation_ignored.json",
+        "message-passing/sync_tmux_layout_submit.json",
+        "message-passing/terminal_conflict_fail_closed.json"
+      ],
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "✅",
         "✅"

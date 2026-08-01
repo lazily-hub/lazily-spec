@@ -39,6 +39,23 @@ jobs:
       - name: Check coverage table is generated from coverage.json
         run: make coverage-check
 
+      # The claim guard reads each binding's OWN conformance ledger, so the
+      # siblings have to be present. Only `scripts/` is needed — a blobless
+      # sparse clone keeps this to a few hundred KB per repo. `set -e` plus
+      # `--require-all` below means a clone that silently fails is a red build
+      # rather than a binding whose marks quietly go unchecked.
+      - name: Fetch sibling binding ledgers
+        run: |
+          set -e
+          for repo in rs py kt js dart zig go cpp cs; do
+            git clone --depth 1 --filter=blob:none --sparse \
+              "https://github.com/lazily-hub/lazily-$repo.git" "../lazily-$repo"
+            git -C "../lazily-$repo" sparse-checkout set scripts
+          done
+
+      - name: Check every shipped mark is backed by a replayed fixture
+        run: node scripts/check-coverage-claims.mjs --check --require-all
+
   lean:
     name: Lean formal model
     runs-on: ubuntu-latest

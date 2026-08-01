@@ -8,13 +8,14 @@ check \
 test-schemas \
 test-lean-formal \
 coverage-check \
+coverage-claims-check \
 coverage-sync \
 fixture-copies-check \
 fixture-copies-check-all \
 fixture-copies-sync \
 async-v2-names-check
 
-check: test-schemas test-lean-formal coverage-check fixture-copies-check async-v2-names-check
+check: test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check
 
 # API-shape-only guard. Missing sibling checkouts are reported as staged/skipped;
 # every sibling that is present must expose the canonical async value pair.
@@ -26,6 +27,14 @@ async-v2-names-check:
 # coverage.json, then run `make coverage-sync`.
 coverage-check:
 >node scripts/sync-coverage.mjs --check
+
+# Coverage-CLAIM guard: a shipped mark on a fixture-bearing row must be backed by
+# a fixture the binding actually replays, read from that binding's own ledger.
+# `sync-coverage` above only proves the rendered tables match coverage.json — it
+# has nothing to say about whether coverage.json is TRUE. Sibling checkouts are
+# reported when absent rather than silently skipped.
+coverage-claims-check:
+>node scripts/check-coverage-claims.mjs --check
 
 coverage-sync:
 >node scripts/sync-coverage.mjs
