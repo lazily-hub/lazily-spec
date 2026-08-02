@@ -4,6 +4,7 @@
   "model": "MergeCell",
   "scenarios": [
     {
+      "id": "keep_latest",
       "policy": "KeepLatest",
       "flags": { "commutative": false, "idempotent": true },
       "initial": 0,
@@ -16,6 +17,7 @@
       ]
     },
     {
+      "id": "sum",
       "policy": "Sum",
       "flags": { "commutative": true, "idempotent": false },
       "initial": 0,
@@ -28,6 +30,7 @@
       ]
     },
     {
+      "id": "max",
       "policy": "Max",
       "flags": { "commutative": true, "idempotent": true },
       "initial": 10,

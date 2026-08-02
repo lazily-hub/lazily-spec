@@ -13,9 +13,19 @@ coverage-sync \
 fixture-copies-check \
 fixture-copies-check-all \
 fixture-copies-sync \
-async-v2-names-check
+async-v2-names-check \
+scenario-identity-check
 
-check: test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check
+check: test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check
+
+# Scenario-identity guard (#lzspecscenarioids). Every scenario in the corpus must
+# carry a stable `id` or `name`. Nine bindings resolve scenario identity the same
+# way, and a scenario with neither key falls back to its POSITIONAL index — so
+# inserting one ahead of it silently rebinds every ledger entry and every excuse
+# that names it, with nothing turning red. This is the corpus-side half; the
+# bindings turn their fallback into a hard error.
+scenario-identity-check:
+>node scripts/check-scenario-identity.mjs
 
 # API-shape-only guard. Missing sibling checkouts are reported as staged/skipped;
 # every sibling that is present must expose the canonical async value pair.

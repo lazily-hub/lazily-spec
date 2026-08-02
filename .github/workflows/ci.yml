@@ -39,6 +39,13 @@ jobs:
       - name: Check coverage table is generated from coverage.json
         run: make coverage-check
 
+      # Every scenario must carry a stable `id`/`name`. Nine bindings resolve
+      # scenario identity the same way, and one with neither key falls back to
+      # its positional index — where inserting a scenario ahead of it silently
+      # rebinds every ledger entry naming it (#lzspecscenarioids).
+      - name: Check every corpus scenario carries a stable identifier
+        run: make scenario-identity-check
+
       # The claim guard reads each binding's OWN conformance ledger, so the
       # siblings have to be present. Only `scripts/` is needed — a blobless
       # sparse clone keeps this to a few hundred KB per repo. `set -e` plus
