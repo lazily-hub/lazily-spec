@@ -29,7 +29,13 @@
         "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
         "type_tag": { "type": "string", "description": "Stable cross-process type key for decoding state." },
         "state": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeState" },
-        "key": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeKey", "description": "Optional wire-stable keyed address; omitted in JSON when absent." }
+        "key": {
+          "description": "Optional wire-stable keyed address. A conforming ENCODER omits it when absent; an explicit null is also wire-valid and a decoder MUST read both forms as absent (protocol.md § NodeKey, #lzkeynullstrict). This carried a bare NodeKey $ref until that audit, which made a frame the spec now requires decoders to accept schema-invalid.",
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeKey" }
+          ]
+        }
       }
     },
     "EdgeSnapshot": {

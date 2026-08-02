@@ -625,6 +625,8 @@ def _unpack_msgpack(data: bytes, pos: int = 0):
     """
     tag = data[pos]
     pos += 1
+    if tag == 0xC0:  # nil — the explicit-null form (`#lzkeynullstrict`)
+        return None, pos
     if tag < 0x80:
         return tag, pos
     if 0x80 <= tag <= 0x8F or tag == 0xDE:
@@ -785,6 +787,152 @@ def test_nodeid_scenario_expect_block_is_discriminating() -> None:
     """An outcome plus one scalar cannot tell a rounding decoder from a correct one."""
     for scenario in _nodeid_scenarios():
         value_keys = [k for k in scenario["expect"] if k != "outcome"]
+        assert len(value_keys) >= 4, (
+            f"{scenario['id']} pins only {value_keys}; the block must also force the "
+            "runner to prove it decoded the surrounding frame"
+        )
+
+
+# ---------------------------------------------------------------------------
+# NodeKey null-leniency on decode (conformance/codec/) — `#lzkeynullstrict`
+# ---------------------------------------------------------------------------
+#
+# protocol.md § NodeKey settled the OMITTED form and left an explicit
+# `key: null` undefined. Three bindings diverged there — two refused it and one
+# decoded it into a real key named "null" — so the clause now says
+# omit-when-absent binds the ENCODER and a decoder must read both forms as
+# absent.
+#
+# These tests guard the fixture, not a decoder. The property worth stating
+# plainly: the null scenarios must be schema-VALID. Making them invalid would
+# push a decoder-leniency question into wire validity and contradict the clause,
+# which is exactly the mistake defs.json made for PeerId's upper bound.
+
+_NODEKEY_FIXTURE = FIXTURE_DIR / "codec" / "nodekey_null_leniency.json"
+_NODEKEY_VARIANT_SCHEMA = {"Snapshot": "snapshot", "Delta": "delta"}
+
+
+def _nodekey_fixture() -> dict:
+    return json.loads(_NODEKEY_FIXTURE.read_text())
+
+
+def _nodekey_scenarios() -> list[dict]:
+    if not _NODEKEY_FIXTURE.is_file():
+        return []
+    return _nodekey_fixture()["scenarios"]
+
+
+def _nodekey_wire(scenario: dict) -> dict:
+    if scenario["codec"] == "json":
+        return json.loads(scenario["wire_json"])
+    frame, end = _unpack_msgpack(bytes.fromhex(scenario["wire_msgpack_hex"]))
+    assert end == len(bytes.fromhex(scenario["wire_msgpack_hex"])), "trailing bytes"
+    return frame
+
+
+def test_nodekey_fixture_is_well_formed() -> None:
+    obj = _nodekey_fixture()
+    assert obj["protocol_version"] == 1
+    assert obj["kind"] == "NodeKeyNullLeniency"
+
+    fixture_assertions = obj["assertions"]
+    assert fixture_assertions["required_of_binding"] == "MUST"
+    assert fixture_assertions["codecs"] == ["json", "msgpack"]
+    assert fixture_assertions["fields"] == ["snapshot", "node_add"]
+    assert fixture_assertions["key_forms"] == ["omitted", "null", "present"]
+
+    scenarios = obj["scenarios"]
+    assert fixture_assertions["scenario_count"] == len(scenarios)
+    ids = [s["id"] for s in scenarios]
+    assert len(set(ids)) == len(ids), "duplicate ids let one replayed scenario cover another"
+    for scenario in scenarios:
+        assert scenario["id"] == scenario["name"]
+        assert scenario["codec"] in scenario["id"]
+        assert scenario["key_form"] in scenario["id"]
+
+
+def test_nodekey_fixture_covers_every_field_form_and_codec() -> None:
+    """The cross product, not a sample.
+
+    Every binding that got `NodeSnapshot` wrong got `NodeAdd` wrong the same way,
+    in the same file — and in lazily-kt the two were separate expressions, so a
+    fix applied to one would have left the other inventing a key named "null".
+    Sampling one field would have missed that.
+    """
+    seen = {(s["field"], s["key_form"], s["codec"]) for s in _nodekey_scenarios()}
+    expected = {
+        (field, form, codec)
+        for field in ("snapshot", "node_add")
+        for form in ("omitted", "null", "present")
+        for codec in ("json", "msgpack")
+    }
+    assert seen == expected, f"missing: {sorted(expected - seen)}"
+
+
+@pytest.mark.parametrize("scenario", _nodekey_scenarios(), ids=lambda s: s["id"])
+def test_nodekey_scenario_wire_carries_the_form_it_claims(scenario: dict) -> None:
+    """The bytes really carry an absent field / an explicit null / a real key.
+
+    A generator bug that emitted the omitted form for a `null` scenario would
+    make the whole fixture pass against a decoder that refuses null, which is
+    the defect it exists to catch — so the wire form is verified here rather
+    than trusted.
+    """
+    frame = _nodekey_wire(scenario)
+    if scenario["field"] == "snapshot":
+        node = frame["Snapshot"]["nodes"][0]
+    else:
+        node = frame["Delta"]["ops"][0]["NodeAdd"]
+
+    form = scenario["key_form"]
+    if form == "omitted":
+        assert "key" not in node, "an omitted scenario must not carry the field at all"
+    elif form == "null":
+        assert "key" in node and node["key"] is None, "a null scenario carries an explicit null"
+        if scenario["codec"] == "msgpack":
+            # 0xc0 is msgpack `nil`. Pinned because an encoder that dropped the
+            # entry instead would produce a valid-looking `omitted` scenario.
+            assert b"\xc0" in bytes.fromhex(scenario["wire_msgpack_hex"])
+    else:
+        assert node["key"] == scenario["expect"]["decoded_key"]
+
+    assert node["node"] == scenario["expect"]["node"]
+    assert node["type_tag"] == scenario["expect"]["type_tag"]
+    assert node["state"]["Payload"] == scenario["expect"]["payload"]
+
+
+@pytest.mark.parametrize("scenario", _nodekey_scenarios(), ids=lambda s: s["id"])
+def test_nodekey_scenario_wire_validates_schema(scenario: dict) -> None:
+    """Including the null form — refusing it is a decoder decision, not a validity one.
+
+    snapshot.json and delta.json carried a bare `NodeKey` $ref for this field
+    until the audit, which made a frame the clause now REQUIRES decoders to
+    accept schema-invalid. Same mistake as PeerId's 2^53-1 maximum, one field
+    over.
+    """
+    schema = _NODEKEY_VARIANT_SCHEMA[scenario["variant"]]
+    frame = _nodekey_wire(scenario)
+    errors = sorted(_validator(schema).iter_errors(frame), key=lambda e: list(e.path))
+    assert not errors, (
+        f"{scenario['id']} wire does not validate against {schema}.json:\n"
+        + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+    )
+
+
+def test_nodekey_expect_pins_the_reencode_obligation() -> None:
+    """Reading the null form as absent is only half the rule.
+
+    A binding that round-trips `key: null` straight back out has a correct
+    decoded value and a non-conforming encoder. `reencoded_key_field_present` is
+    the only key in the block a decode assertion cannot reach, so its
+    relationship to `key_form` is pinned here rather than left to each runner.
+    """
+    for scenario in _nodekey_scenarios():
+        expect = scenario["expect"]
+        present = scenario["key_form"] == "present"
+        assert expect["reencoded_key_field_present"] is present, scenario["id"]
+        assert (expect["decoded_key"] is not None) is present, scenario["id"]
+        value_keys = [k for k in expect if k != "reencoded_key_field_present"]
         assert len(value_keys) >= 4, (
             f"{scenario['id']} pins only {value_keys}; the block must also force the "
             "runner to prove it decoded the surrounding frame"

@@ -74,7 +74,40 @@ An **optional, wire-stable keyed address** for a collection entry (a `SourceMap`
 
 Bounds (reject on construction and on the wire): path ≤ 1024 bytes; ≤ 32 `/`-separated segments; empty path and empty segments (leading/trailing/double `/`) are rejected.
 
-**Serialization is format-aware.** Self-describing codecs (JSON, MessagePack) **omit** the `key` field when absent, so pre-`key` encoders/decoders and existing conformance fixtures round-trip unchanged; positional Postcard always carries the optional discriminant for binary schema stability. A decoder that sees no `key` field treats it as absent (`null`). Cross-language implementations (lazily-py, lazily-zig, lazily-js, lazily-kt, lazily-go) add the optional nullable `key` field; they need not emit it when no key is set. Multi-producer key uniqueness (last-writer rule) is owned by the distributed CRDT plane, not this protocol.
+**Serialization is format-aware.** Self-describing codecs (JSON, MessagePack) **omit** the `key` field when absent, so pre-`key` encoders/decoders and existing conformance fixtures round-trip unchanged; positional Postcard always carries the optional discriminant for binary schema stability. Cross-language implementations (lazily-py, lazily-zig, lazily-js, lazily-kt, lazily-go) add the optional nullable `key` field; they need not emit it when no key is set. Multi-producer key uniqueness (last-writer rule) is owned by the distributed CRDT plane, not this protocol.
+
+**Omit-when-absent binds the ENCODER; the decoder is lenient (`#lzkeynullstrict`).** A conforming
+encoder omits `key` when there is no key. A **decoder MUST accept both the omitted field and an
+explicit `key: null`, and read both as absent** — it MUST NOT refuse the null form, and MUST NOT
+construct a key from it. This was previously stated only as "a decoder that sees no `key` field
+treats it as absent", which settled the omitted form and left the null form undefined; three
+bindings then diverged. The null form is not hypothetical: a serde-based peer that simply did not
+apply `skip_serializing_if` emits it, `rmp_serde`'s own decoder reads it back as absent, and a
+decoder that refuses is stricter than the reference implementation on a frame the reference
+implementation produces.
+
+Note the asymmetry that makes this easy to get wrong. `CrdtOp.key` is **always** written, `null`
+when unset, because an anti-entropy op's addressing is part of its merge identity (§ Anti-entropy
+wire format) — so every decoder is already obliged to read `key: null` as absent *one field over*.
+Every binding that got `NodeSnapshot`/`NodeAdd` wrong had `CrdtOp` right, in the same file.
+
+Audited (`#lzkeynullstrict`) — the field appears on `NodeSnapshot` and on the `NodeAdd` delta op:
+
+| Binding | Before the audit |
+|---------|------------------|
+| lazily-rs, lazily-go, lazily-js, lazily-dart, lazily-cs, lazily-cpp | already lenient |
+| lazily-py | **refused** — `"key" in d` was true for the null form, so `None` reached `NodeKey.from_wire` and raised |
+| lazily-zig | **refused** — `error.ExpectedString` on the JSON null |
+| lazily-kt | **silently wrong** — `JsonNull` *is* a `JsonPrimitive` and its `content` is the string `"null"`, so the node decoded with a real wire-stable key literally named `null`, which then re-encoded as `"key": "null"` |
+
+All three are fixed. lazily-kt's is the reason the clause says *MUST NOT construct a key from it*
+rather than only *MUST NOT refuse*: a decoder that invents an entry address is worse than one that
+fails loudly, and a refusal-only rule would have called it conforming.
+
+[`conformance/codec/nodekey_null_leniency.json`](conformance/codec/nodekey_null_leniency.json)
+replays the rule in both codecs and on both fields. It pins the *decoded* key as absent **and**
+pins the re-encoded frame: a decoder may read the null form, but an encoder must still emit only
+the omitted one, so a binding cannot satisfy the clause by round-tripping `null` straight through.
 
 ### IpcValue (payload)
 
