@@ -113,6 +113,16 @@ backend satisfying the contract ([`ZeroCopyTransport.lean`](../formal-model.md))
   optional discriminator against `schemas/delta.json`.
 - [`conformance/delta_shared_blob.json`](../conformance.md) — the legacy
   `backend`-absent (= `shm`) form, unchanged → backward compatibility.
+- [`conformance/codec/blob_backend_discriminator.json`](../conformance.md) — the
+  **decoder** half of the discriminator (`#lzblobbackendstrict`, protocol.md
+  § Shared-memory payload path). The two fixtures above are both *conforming*
+  frames, so between them they establish that a known backend round-trips and an
+  absent one defaults — neither says what happens to a token this build does not
+  know. That gap is where five of nine bindings independently decided to normalize
+  an unknown `backend` to `shm`, which routes a non-`shm` descriptor into the `shm`
+  table and leaves `resolve_wrong_backend` to be discharged by the checksum instead
+  of by routing. The fixture makes the refusal executable and pins `arrow` alongside
+  it, so a binding cannot pass by ignoring the discriminator.
 
 ## Relationship to the wire codec
 

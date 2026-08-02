@@ -828,6 +828,61 @@ advertised, never silent. The shared-blob conformance fixtures
 fix the descriptor shape for bindings that ship the arena; an `Inline`-only binding
 round-trips the same fixtures with the blob bytes inlined.
 
+#### The `backend` discriminator: absence is lenient, an unknown value is not (`#lzblobbackendstrict`)
+
+`ShmBlobRef.backend` selects which pluggable backend resolves a descriptor
+(`shm` | `arrow` | `in_process`, optional, default `shm` — see
+[`docs/zero-copy-transport.md`](docs/zero-copy-transport.md)). The two ways a decoder
+can fail to recognise it are **not** the same fact and MUST get opposite answers:
+
+- **An OMITTED `backend` MUST decode as `shm`.** This is the forward-compatibility
+  channel, and the only one. Every descriptor minted before the field existed has
+  this shape, which is exactly why the field is optional. A conforming encoder MUST
+  also omit it when the backend is `shm`, so a pre-field descriptor round-trips
+  byte-identically — the same encoder/decoder split § NodeKey makes for `key`.
+- **A PRESENT `backend` outside the enum MUST be rejected**, with the offending
+  token named in the error. A decoder MUST NOT normalize it to `shm`, to any other
+  backend, or to a sentinel.
+
+The asymmetry is not stylistic. A new backend enters the protocol by **adding an
+enum value** — a spec change with a fixture, not a wire event (§ Pluggable backends
+in the zero-copy transport doc) — so an unknown token is not a newer peer talking to
+an older one. It is a corrupt frame or a non-conforming producer, and both are
+conditions a peer recovers from by resync (§ Resync / gap handling).
+
+Normalizing it is worse than it looks, and the reason is a theorem the model already
+proves. `resolve_wrong_backend` states that *a descriptor of one kind never resolves
+against a different backend's table — receivers route by kind.* Reading an unknown
+kind as `shm` **is** routing a non-`shm` descriptor into the `shm` table; the
+`{generation, epoch, len, checksum}` verification then usually rejects it, so the
+observable outcome is right most of the time. That is the trap: the guarantee is
+supposed to be **structural**, discharged by routing, and normalization silently
+downgrades it to a **probabilistic** one discharged by a 64-bit checksum, against a
+backend this build genuinely resolves. It is the same substitution the decoder bound
+already outlaws for `NodeId` in § NodeId / PeerId — the frame decodes cleanly,
+addresses something other than what the producer named, and nothing downstream can
+tell.
+
+Audited (`#lzblobbackendstrict`) across the library decode surface of all nine
+bindings, which had split **5–2** — and every one of the five documented its choice
+as deliberate wire forward-compat:
+
+| Binding | Before the audit |
+|---------|------------------|
+| lazily-rs, lazily-js | **rejected** — the conforming behaviour, reached independently |
+| lazily-go, lazily-py, lazily-kt, lazily-zig, lazily-cpp | **normalized to `shm`**, each with a written forward-compat rationale |
+| lazily-cs, lazily-dart | no dispatch site — the descriptor decodes through a field-typed path |
+
+The five agreed with each other on the defence, too: the checksum catches it, so the
+descriptor resolves to nothing rather than to another backend's bytes. That argument
+is what the theorem exists to make unnecessary. An undocumented default and a
+deliberate one are indistinguishable from the outside — and, it turns out, so are two
+deliberate ones pointing in opposite directions.
+[`conformance/codec/blob_backend_discriminator.json`](conformance/codec/blob_backend_discriminator.json)
+replays both halves in both codecs. It carries an `arrow` scenario so the leniency
+cannot be implemented by ignoring the discriminator outright, and pins the re-encoded
+frame so a binding cannot satisfy the clause by round-tripping whatever it received.
+
 ## FFI Boundary
 
 ### Types
