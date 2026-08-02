@@ -4,6 +4,7 @@
   "model": "LosslessTreeCrdt",
   "scenarios": [
     {
+      "id": "split_grows_live_nodes",
       "name": "split_grows_live_nodes",
       "seed": {
         "peer": 1,
@@ -28,6 +29,7 @@
       }
     },
     {
+      "id": "split_then_merge_restores",
       "name": "split_then_merge_restores",
       "seed": {
         "peer": 1,

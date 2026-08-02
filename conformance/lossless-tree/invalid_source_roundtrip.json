@@ -4,6 +4,7 @@
   "model": "LosslessTreeCrdt",
   "scenarios": [
     {
+      "id": "unclosed_fence_and_comment_roundtrip",
       "name": "unclosed_fence_and_comment_roundtrip",
       "seed": {
         "peer": 1,
@@ -36,6 +37,7 @@
       }
     },
     {
+      "id": "edit_adjacent_raw_keeps_error_spans",
       "name": "edit_adjacent_raw_keeps_error_spans",
       "seed": {
         "peer": 1,

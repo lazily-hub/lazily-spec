@@ -4,6 +4,7 @@
   "model": "LosslessTreeCrdt",
   "scenarios": [
     {
+      "id": "both_insert_after_base",
       "name": "both_insert_after_base",
       "seed": {
         "peer": 1,

@@ -5,6 +5,7 @@
   "shape": "scenarios",
   "scenarios": [
     {
+      "id": "scope_teardown",
       "name": "scope_teardown",
       "steps": [
         {
@@ -101,6 +102,7 @@
       ]
     },
     {
+      "id": "individual_disposal",
       "name": "individual_disposal",
       "steps": [
         {

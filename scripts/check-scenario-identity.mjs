@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Scenario-identity guard (#lzspecscenarioids).
 //
-// Every scenario in the canonical corpus must carry a STABLE identifier — an
-// `id`, else a `name`. This is a corpus-side invariant because the nine
-// bindings' scenario ledgers all resolve a scenario the same way, and until
-// this guard existed they all shared the same escape hatch: a scenario with
-// neither key fell back to its POSITIONAL index, spelled `#<n>`.
+// Every scenario in the canonical corpus must carry a STABLE `id`. This is a
+// corpus-side invariant because the nine bindings' scenario ledgers all resolve
+// a scenario the same way, and until this guard existed they all shared the same
+// escape hatch: a scenario with neither key fell back to its POSITIONAL index,
+// spelled `#<n>`.
 //
 // A positional id is fragile in exactly the way the replay ladder cares about.
 // The ledger records "this run replayed `collections/mergecell_algebra.json`
@@ -23,11 +23,29 @@
 // can turn its positional fallback into a hard error, and this guard is what
 // stops a new fixture from quietly re-arming it.
 //
-// Identifier SPELLING is deliberately not settled here: 27 fixtures identify a
-// scenario by `name` and 7 by `id`, and canonicalizing on one would rebind 122
-// ledger entries across ten repositories at once. That is a separate decision.
-// What this guard fixes is the part that is not a matter of taste — a scenario
-// with NO identifier at all.
+// The identifier SPELLING is now settled, and it is `id`
+// (`#recommendedconformanceco`). It used to be a live fork — 27 fixtures
+// identified a scenario by `name`, 8 by `id`, and every binding resolved
+// `id`-else-`name`, so the spelling was invisible right up until someone changed
+// one. Three things decided it:
+//
+//   1. `schemas/stdlib-fixture.schema.json` already REQUIRES `id` and, being
+//      `additionalProperties: false`, forbids `name`. Canonicalizing on `name`
+//      would mean versioning a published `$id` schema to make the corpus legal
+//      against itself.
+//   2. Resolution is `id`-else-`name` in all nine bindings, so wherever both
+//      exist `id` is already the key the ledger records. The four codec fixtures
+//      carry both, spelled identically.
+//   3. 35 of the 75 `name`-only scenarios used a PROSE SENTENCE as their name —
+//      "folds whole subtree; edit recomputes only ancestor chain, not siblings".
+//      A ledger keyed on prose silently rebinds on a copy-edit, which is the
+//      same failure a positional id has and the same one this guard exists to
+//      stop. `name` is a label; a label is not an identity.
+//
+// So `id` is required and `name` is an optional human label. Adding `id` was
+// purely additive — `name` stayed, so no runner that dispatches on it broke, and
+// the 40 scenarios whose name was already a slug took that slug verbatim and did
+// not move their ledger key at all.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -48,7 +66,7 @@ const nonBlank = (value) => typeof value === "string" && value.trim() !== "";
 let problems = 0;
 let checked = 0;
 let scenarios = 0;
-const spelling = { id: 0, name: 0 };
+let labelled = 0;
 
 for (const path of fixtures(ROOT)) {
   let doc;
@@ -71,22 +89,41 @@ for (const path of fixtures(ROOT)) {
       problems += 1;
       return;
     }
-    if (nonBlank(scenario.id)) {
-      spelling.id += 1;
+    if (nonBlank(scenario.name)) labelled += 1;
+    if (!nonBlank(scenario.id)) {
+      console.error(
+        `ERROR: ${rel} scenario at index ${index} carries no \`id\`.`,
+        "\n       `id` is the canonical scenario identifier (#recommendedconformanceco) —",
+        "\n       every binding resolves `id`-else-`name`, and the stdlib fixture schema",
+        "\n       requires it. Without one this scenario's ledger entry is keyed on its",
+        "\n       `name` (a prose label a copy-edit may reword) or on its POSITION, and",
+        "\n       either way inserting or rewording something ahead of it silently rebinds",
+        "\n       that entry — and every excuse naming it — with nothing turning red.",
+        "\n       Give it a stable snake_case `id`; keep `name` as the human label.",
+      );
+      problems += 1;
       return;
     }
-    if (nonBlank(scenario.name)) {
-      spelling.name += 1;
+    if (!/^[a-z0-9_]+$/.test(scenario.id)) {
+      console.error(
+        `ERROR: ${rel} scenario at index ${index} has id ${JSON.stringify(scenario.id)},`,
+        "\n       which is not snake_case. An id is a key ten repositories compare on;",
+        "\n       spell it [a-z0-9_]+ and put the prose in `name`.",
+      );
+      problems += 1;
       return;
     }
-    console.error(
-      `ERROR: ${rel} scenario at index ${index} carries neither \`id\` nor \`name\`.`,
-      "\n       Every binding's replay ledger would record it by POSITION, so inserting a",
-      "\n       scenario ahead of it silently rebinds that ledger entry — and every excuse",
-      "\n       naming it — to a different scenario, with nothing turning red.",
-      "\n       Give it a stable `id` (or `name`); do not rely on the position.",
+    const twin = doc.scenarios.findIndex(
+      (other, at) => at !== index && other?.id === scenario.id,
     );
-    problems += 1;
+    if (twin !== -1 && twin < index) {
+      console.error(
+        `ERROR: ${rel} scenarios at index ${twin} and ${index} share the id`,
+        `${JSON.stringify(scenario.id)}. The ledger records one entry per fixture+id, so`,
+        "\n       one of the two replays would book the other's evidence.",
+      );
+      problems += 1;
+    }
   });
 }
 
@@ -108,7 +145,7 @@ if (problems > 0) {
 }
 
 console.error(
-  `scenario identity OK: ${scenarios} scenarios across ${checked} fixtures all carry a stable` +
-    ` identifier (${spelling.id} by \`id\`, ${spelling.name} by \`name\`; no positional fallback` +
-    " is reachable)",
+  `scenario identity OK: ${scenarios} scenarios across ${checked} fixtures all carry a unique` +
+    ` snake_case \`id\` (${labelled} also carry a human \`name\`; neither the positional` +
+    " fallback nor a prose ledger key is reachable)",
 );

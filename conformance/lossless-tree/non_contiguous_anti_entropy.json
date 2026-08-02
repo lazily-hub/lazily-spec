@@ -4,6 +4,7 @@
   "model": "LosslessTreeCrdt",
   "scenarios": [
     {
+      "id": "hole_before_repair",
       "name": "hole_before_repair",
       "seed": {
         "peer": 1,
@@ -31,6 +32,7 @@
       }
     },
     {
+      "id": "repair_converges",
       "name": "repair_converges",
       "seed": {
         "peer": 1,

@@ -4,6 +4,7 @@
   "model": "LosslessTreeCrdt",
   "scenarios": [
     {
+      "id": "insert_after_multibyte_char",
       "name": "insert_after_multibyte_char",
       "seed": {
         "peer": 1,
@@ -30,6 +31,7 @@
       }
     },
     {
+      "id": "delete_multibyte_char",
       "name": "delete_multibyte_char",
       "seed": {
         "peer": 1,

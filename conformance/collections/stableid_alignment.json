@@ -4,6 +4,7 @@
   "model": "StableId",
   "scenarios": [
     {
+      "id": "content_key_survives_reflow_not_edit",
       "name": "content key survives reflow but not edit",
       "blocks": [
         { "text": "the quick brown fox" },
@@ -13,6 +14,7 @@
       "expect": { "key_equal": [[0, 1]], "key_not_equal": [[0, 2]] }
     },
     {
+      "id": "anchored_key_survives_body_rewrite",
       "name": "anchored key survives full body rewrite",
       "blocks": [
         { "anchor": "item-1", "text": "original body" },
@@ -21,6 +23,7 @@
       "expect": { "key_equal": [[0, 1]] }
     },
     {
+      "id": "pure_reorder_is_all_same",
       "name": "pure reorder is all Same, no removed",
       "old": [{ "text": "alpha" }, { "text": "beta" }, { "text": "gamma" }],
       "new": [{ "text": "gamma" }, { "text": "alpha" }, { "text": "beta" }],
@@ -30,6 +33,7 @@
       }
     },
     {
+      "id": "small_edit_is_edited_not_insert_remove",
       "name": "small edit is Edited not Insert+Remove",
       "old": [{ "text": "the quick brown fox jumps over the lazy dog" }],
       "new": [{ "text": "the quick brown fox jumps over the sleepy dog" }],
@@ -40,6 +44,7 @@
       }
     },
     {
+      "id": "genuine_insert_and_remove",
       "name": "genuine insert and remove",
       "old": [{ "text": "keep me" }, { "text": "delete me entirely" }],
       "new": [{ "text": "keep me" }, { "text": "brand new unrelated content here" }],
@@ -49,6 +54,7 @@
       }
     },
     {
+      "id": "assign_stable_keys_flows_identity_through_edit",
       "name": "assign_stable_keys flows identity through edit",
       "old": [
         { "text": "first paragraph stays the same" },

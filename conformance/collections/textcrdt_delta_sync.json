@@ -4,6 +4,7 @@
   "model": "TextCrdt",
   "scenarios": [
     {
+      "id": "version_vector_covers_inserts_and_tombstones",
       "name": "version vector covers inserts and tombstone delete ids",
       "seed": { "peer": 1, "text": "abc" },
       "steps": [
@@ -19,6 +20,7 @@
       }
     },
     {
+      "id": "bidirectional_delta_exchange_converges",
       "name": "bidirectional delta exchange converges (concurrent insert + delete)",
       "seed": { "peer": 0, "text": "hello\n" },
       "steps": [
@@ -38,6 +40,7 @@
       }
     },
     {
+      "id": "snapshot_fork_preserves_identity_and_merges",
       "name": "whole-snapshot fork preserves identity; concurrent edit still merges",
       "seed": { "peer": 1, "text": "base\n" },
       "steps": [
@@ -52,6 +55,7 @@
       }
     },
     {
+      "id": "delta_apply_is_idempotent",
       "name": "delta apply is idempotent (re-applying a delta is a no-op)",
       "seed": { "peer": 1, "text": "abc\n" },
       "steps": [

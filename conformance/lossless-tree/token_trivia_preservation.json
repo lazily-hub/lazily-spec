@@ -4,6 +4,7 @@
   "model": "LosslessTreeCrdt",
   "scenarios": [
     {
+      "id": "edit_body_preserves_marker_and_newline",
       "name": "edit_body_preserves_marker_and_newline",
       "seed": {
         "peer": 1,
@@ -30,6 +31,7 @@
       }
     },
     {
+      "id": "edit_inside_multibyte_body_keeps_token_trivia",
       "name": "edit_inside_multibyte_body_keeps_token_trivia",
       "seed": {
         "peer": 1,

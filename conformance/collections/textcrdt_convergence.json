@@ -4,6 +4,7 @@
   "model": "TextCrdt",
   "scenarios": [
     {
+      "id": "local_insert_and_delete",
       "name": "local insert and delete",
       "replica": { "peer": 1 },
       "seed": "helo",
@@ -15,6 +16,7 @@
       "expect": { "text": "ello!", "len": 5 }
     },
     {
+      "id": "concurrent_inserts_same_spot_converge",
       "name": "concurrent inserts at same spot converge deterministically",
       "seed": { "peer": 1, "text": "XY" },
       "steps": [
@@ -32,6 +34,7 @@
       }
     },
     {
+      "id": "concurrent_insert_and_delete_both_apply",
       "name": "concurrent insert and delete both apply",
       "seed": { "peer": 1, "text": "abc" },
       "steps": [
@@ -44,6 +47,7 @@
       "expect": { "texts_equal": [["a", "b"]], "text": "acd" }
     },
     {
+      "id": "merge_is_idempotent_and_commutative",
       "name": "merge is idempotent and commutative",
       "seed": { "peer": 1, "text": "one" },
       "steps": [
@@ -61,6 +65,7 @@
       }
     },
     {
+      "id": "gc_collects_stable_leaf_keeps_referenced_tombstone",
       "name": "gc collects a stable deleted leaf, keeps referenced tombstone",
       "replica": { "peer": 1 },
       "seed": "abc",
@@ -72,6 +77,7 @@
       "expect": { "text": "ab", "tombstone_count": 0 }
     },
     {
+      "id": "concurrent_deletes_same_char_converge",
       "name": "concurrent deletes of same char converge",
       "seed": { "peer": 1, "text": "abc" },
       "steps": [

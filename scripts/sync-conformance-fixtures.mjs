@@ -63,6 +63,11 @@ const mirrors = [
   ["lazily-dart", join(siblingsRoot, "lazily-dart", "test", "conformance")],
   ["lazily-rs", join(siblingsRoot, "lazily-rs", "tests", "conformance")],
   ["lazily-go", join(siblingsRoot, "lazily-go", "test", "conformance")],
+  // lazily-zig vendors its subset under the library tree rather than a `tests/`
+  // directory. It carries its own drift test, but that only fires when the Zig
+  // suite runs; listing it here makes the corpus-side gate the single place a
+  // fixture change is reconciled for every mirror.
+  ["lazily-zig", join(siblingsRoot, "lazily-zig", "src", "lazily", "test")],
 ];
 
 function jsonFiles(root) {

@@ -4,6 +4,7 @@
   "model": "LosslessTreeCrdt",
   "scenarios": [
     {
+      "id": "token_trivia_raw_error_multibyte",
       "name": "token_trivia_raw_error_multibyte",
       "seed": {
         "peer": 1,

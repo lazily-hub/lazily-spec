@@ -14,6 +14,24 @@ message in the repo's existing style; push to the current branch on `origin`.
 This standing rule overrides the harness default of "commit only when
 explicitly asked" for this repo.
 
+## Scenario identity
+
+Every scenario in `conformance/` carries a unique snake_case **`id`**. That is
+the canonical identity (`#recommendedconformanceco`): it is what all nine
+bindings resolve to, what each binding's replay ledger records, and what a
+runner dispatches on. `name` is an optional human label — prose is fine there,
+and rewording it must never change what a ledger entry means.
+
+`make check` enforces this through `scenario-identity-check`, which fails on a
+missing `id`, a non-snake_case `id`, an `id` repeated within a fixture, and an
+empty corpus. Adding a scenario means coining an id; renaming one rebinds a
+ledger entry in ten repositories, so do it deliberately and sweep the bindings
+in the same change.
+
+Fixture subsets vendored by lazily-py, lazily-dart, lazily-rs, lazily-go, and
+lazily-zig are reconciled here: run `make fixture-copies-sync` after any corpus
+edit.
+
 <!-- tsift:code-navigation v=0.1.77 -->
 ## Code Navigation
 

@@ -11,6 +11,7 @@ MIRRORS = (
     ("lazily-dart", "test/conformance"),
     ("lazily-rs", "tests/conformance"),
     ("lazily-go", "test/conformance"),
+    ("lazily-zig", "src/lazily/test"),
 )
 FIXTURE = Path("collections/example.json")
 
@@ -54,7 +55,7 @@ def test_check_detects_byte_drift_and_sync_repairs_it(tmp_path: Path) -> None:
         spec_root, siblings_root, "--check", "--require-all"
     )
     assert initial.returncode == 0, initial.stderr
-    assert "4 binding(s)" in initial.stdout
+    assert "5 binding(s)" in initial.stdout
 
     drifted = tmp_path / "lazily-py" / "tests/conformance" / FIXTURE
     drifted.write_text('{"value": 1}\n')

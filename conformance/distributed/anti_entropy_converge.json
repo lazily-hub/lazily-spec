@@ -5,6 +5,7 @@
   "model": "CrdtPlane",
   "scenarios": [
     {
+      "id": "lww_last_writer_wins",
       "name": "lww_last_writer_wins",
       "description": "Highest WireStamp wins per node; peer id is the final tie-break (node/count exercises the (wall,logical) tie -> higher peer wins).",
       "ops": [
@@ -24,6 +25,7 @@
       }
     },
     {
+      "id": "idempotent_redelivery",
       "name": "idempotent_redelivery",
       "description": "Re-ingesting the same frame applies 0 new ops and leaves the converged state unchanged.",
       "ops": [
@@ -41,6 +43,7 @@
       }
     },
     {
+      "id": "out_of_order_converges",
       "name": "out_of_order_converges",
       "description": "Delivering the same op set in reverse order converges to the identical winner.",
       "ops": [

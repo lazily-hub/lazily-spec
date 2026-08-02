@@ -4,6 +4,7 @@
   "model": "LosslessTreeCrdt",
   "scenarios": [
     {
+      "id": "element_wrap_vs_raw_leaf_both_survive",
       "name": "element_wrap_vs_raw_leaf_both_survive",
       "seed": {
         "peer": 1,

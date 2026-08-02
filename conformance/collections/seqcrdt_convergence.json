@@ -4,6 +4,7 @@
   "model": "SeqCrdt",
   "scenarios": [
     {
+      "id": "insert_back_and_front_orders",
       "name": "insert back and front orders",
       "replica": { "peer": 1 },
       "steps": [
@@ -15,6 +16,7 @@
       "expect": { "order": ["z", "a", "b", "c"], "get": { "b": 1 } }
     },
     {
+      "id": "move_is_single_reassignment",
       "name": "move is single reassignment, no duplication",
       "replica": { "peer": 1 },
       "steps": [
@@ -27,6 +29,7 @@
       "expect": { "order": ["b", "c", "d", "a"], "get": { "a": 0 }, "len": 4 }
     },
     {
+      "id": "concurrent_inserts_same_gap_converge",
       "name": "concurrent inserts same gap converge (both survive, peer tiebreak)",
       "seed": { "peer": 1, "inserts": [{ "id": "root", "value": "R", "now": 1 }] },
       "steps": [
@@ -45,6 +48,7 @@
       }
     },
     {
+      "id": "concurrent_move_converges_to_later_stamp",
       "name": "concurrent move converges to later stamp, no duplication",
       "seed": {
         "peer": 1,
@@ -64,6 +68,7 @@
       "expect": { "order_on": { "merged": ["y", "z", "x"] }, "len": 3 }
     },
     {
+      "id": "concurrent_move_and_value_edit_commute",
       "name": "concurrent move and value edit do not conflict",
       "seed": {
         "peer": 1,
@@ -82,6 +87,7 @@
       "expect": { "order_on": { "merged": ["b", "a"] }, "get_on": { "merged": { "a": 99 } } }
     },
     {
+      "id": "remove_tombstone_converges_commutatively",
       "name": "remove tombstone converges; merge is commutative",
       "seed": {
         "peer": 1,

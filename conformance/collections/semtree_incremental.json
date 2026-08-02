@@ -4,6 +4,7 @@
   "model": "SemTree",
   "scenarios": [
     {
+      "id": "edit_recomputes_ancestor_chain_only",
       "name": "folds whole subtree; edit recomputes only ancestor chain, not siblings",
       "fold": "sum",
       "tree": {
@@ -18,6 +19,7 @@
       "expect_after": { "root": 233, "b": 202, "a": 31, "sibling_a_cached": true }
     },
     {
+      "id": "memo_guard_equal_fold_stops_downstream",
       "name": "memo guard: an edit that does not change the folded count does not re-run downstream",
       "fold": "count_positive",
       "tree": {
@@ -32,6 +34,7 @@
       "expect_after": { "root": 1, "downstream_consumer_reran": false }
     },
     {
+      "id": "removal_updates_derivation",
       "name": "removal updates derivation (dropped subtree)",
       "fold": "sum",
       "tree": {

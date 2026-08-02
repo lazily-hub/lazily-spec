@@ -5,6 +5,7 @@
   "description": "CommandCancel terminally rejects a still-non-terminal command (rejected receipt with reason 'cancelled'). A cancel arriving after applied is ignored \u2014 it never rewrites applied into rejected.",
   "scenarios": [
     {
+      "id": "cancel_before_terminal",
       "name": "cancel_before_terminal",
       "frames": [
         {
@@ -362,6 +363,7 @@
       }
     },
     {
+      "id": "cancel_after_applied_ignored",
       "name": "cancel_after_applied_ignored",
       "frames": [
         {
