@@ -11,7 +11,56 @@ NodeId = u64
 PeerId = u64
 ```
 
-Wire-stable identifiers decoupled from internal `SlotId`. Serialized as bare JSON numbers. JavaScript/TypeScript peers must keep values at or below `Number.MAX_SAFE_INTEGER` (2^53).
+Wire-stable identifiers decoupled from internal `SlotId`. Serialized as bare JSON numbers.
+
+**Producer bound.** A peer whose runtime represents integers as IEEE-754 doubles MUST keep emitted
+`NodeId`/`PeerId` values at or below 2^53 − 1 (`Number.MAX_SAFE_INTEGER`). The constraint is the
+*runtime's numeric representation*, not the source language: it binds every JavaScript target —
+which includes Dart, Kotlin, and TypeScript **compiled to** JavaScript — and does not bind a Dart
+or Kotlin peer running on the VM/JVM. Earlier wording named "JavaScript/TypeScript peers", which
+read as a source-language rule and left compiled-to-JS peers apparently exempt.
+
+**Decoder obligation — refuse, never round (`#lzspecdecoderbound`).** A decoder that cannot
+represent a received `NodeId`/`PeerId` **exactly** MUST reject the frame. It MUST NOT round,
+truncate, saturate, wrap, or otherwise substitute a nearby representable value. Rounding is the
+worst available behaviour: the frame decodes cleanly, the identifier now addresses a *different*
+node, and nothing downstream can detect the substitution — whereas a rejected frame is a visible
+protocol error a peer recovers from by resync (§ Resync / gap handling). The producer bound keeps
+a conforming producer from ever provoking this; the decoder clause is what makes a *non*-conforming
+producer, or a corrupted frame, fail loudly instead of silently. The bound stated only the producer
+half until `#lzspecdecoderbound`, and the receiving half is exactly where bindings diverged.
+
+**A binding's exact range MAY be narrower than `u64`.** The wire type stays `u64`; a binding whose
+identity type is narrower is interoperable over the sub-range it represents and satisfies the
+clause by failing the decode outside it — it is not required to widen. Audited ranges:
+
+| Binding | Identity type | Exact range | Outside the range |
+|---------|---------------|-------------|-------------------|
+| lazily-rs | `u64` | full `u64` | serde decode error |
+| lazily-zig | `u64` | full `u64` | `error.Overflow` — `std.json` yields `.number_string`, `parseInt(u64)` refuses |
+| lazily-cs | `ulong` | full `u64` | `FormatException` from `JsonElement.GetUInt64` |
+| lazily-py | `int` | unbounded | n/a — a Python `int` has nothing to round to |
+| lazily-go | `int64` | `[0, 2^63)` | `json: cannot unmarshal number … of type int64` |
+| lazily-kt | `Long` | `[0, 2^63)` | `NumberFormatException` from `JsonPrimitive.long` |
+| lazily-cpp | `int64_t` | `[0, 2^63)` | `std::runtime_error` from the json parser / msgpack reader |
+| lazily-js | `number` | `[0, 2^53)` | `TypeError` — a `Number.isSafeInteger` guard in both codecs |
+| lazily-dart | `int` | `[0, 2^63)` on the VM, `[0, 2^53)` on web | `UnsupportedError` (`#lzdartintwidth`) |
+
+Only lazily-js and lazily-dart carried the rule *deliberately*; the other seven inherited it from a
+parser that happens to fail closed, which is a property no test held in place — and two of them did
+not hold it. lazily-cpp's msgpack reader cast a `uint 64` straight to `int64_t`, so `u64::MAX`
+decoded as `-1`: a well-formed identifier for a different node, with no error anywhere. Its json
+parser refused the same value, but by letting `std::stoll` throw `std::out_of_range`, which is a
+`std::logic_error` and therefore escaped the `std::runtime_error` every caller guards a decode
+with. Both are fixed; the fixture is what found them.
+[`conformance/codec/nodeid_exact_range.json`](conformance/codec/nodeid_exact_range.json)
+makes the clause executable in both `json` and `msgpack` form. Its `wire` frames are carried as
+raw **text** (json) and **hex bytes** (msgpack), and the expected identifier as a decimal
+**string**, because a runner that parsed the fixture as JSON on a double runtime would round the
+expected value before it ever compared anything. The 2^53 − 1 scenarios are `exact` — every
+binding MUST decode them to that value, which is what stops a runner that rejects everything from
+passing vacuously; 2^53 + 1 and `u64::MAX` are `exact_or_reject`. A decoder that yields a
+*different* number fails.
 
 ### NodeKey
 

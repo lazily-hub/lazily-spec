@@ -7,13 +7,14 @@
     "NodeId": {
       "type": "integer",
       "minimum": 0,
-      "description": "Wire-stable node identifier (u64). JavaScript/TypeScript peers must keep values at or below Number.MAX_SAFE_INTEGER (2^53)."
+      "maximum": 18446744073709551615,
+      "description": "Wire-stable node identifier (u64). The full u64 range is wire-valid; the 2^53-1 bound is a PRODUCER obligation on peers whose runtime represents integers as IEEE-754 doubles, and a decoder that cannot represent a received value exactly MUST reject the frame rather than round it (protocol.md § NodeId / PeerId, #lzspecdecoderbound). Schema validity is therefore u64-wide — a narrower binding refuses at decode, not here."
     },
     "PeerId": {
       "type": "integer",
       "minimum": 0,
-      "maximum": 9007199254740991,
-      "description": "Wire-stable peer identifier (u64, must stay ≤ Number.MAX_SAFE_INTEGER)."
+      "maximum": 18446744073709551615,
+      "description": "Wire-stable peer identifier (u64). Same producer bound and decoder obligation as NodeId (#lzspecdecoderbound). This carried maximum 9007199254740991 until that audit, which contradicted both the u64 wire type and protocol.md's producer-only wording."
     },
     "NodeKey": {
       "type": "string",

@@ -584,6 +584,214 @@ def test_coverage_matrix_carries_a_row_per_codec_flavor() -> None:
 
 
 # ---------------------------------------------------------------------------
+# NodeId exact-representation bound (conformance/codec/) — `#lzspecdecoderbound`
+# ---------------------------------------------------------------------------
+#
+# protocol.md § NodeId / PeerId stated the 2^53 bound as a PRODUCER obligation
+# and said nothing about the receiving half, which is where the bindings
+# diverged. The clause is now normative — a decoder that cannot represent a
+# received identifier exactly MUST reject the frame rather than round it — and
+# `nodeid_exact_range.json` replays it.
+#
+# These tests do NOT test a decoder; lazily-spec ships none. They guard the
+# properties a binding runner depends on, and one of them is unusual enough to
+# state plainly: the fixture must not carry any identifier as a JSON *number*.
+# This file is JSON, so a runner that loaded a bare 9007199254740993 through a
+# double-backed parser would round the fixture's own expected value before the
+# test ran, and would then pass against a decoder that rounds. The fixture
+# carries wire frames as text/hex and expectations as decimal strings; that is
+# the invariant `test_nodeid_fixture_carries_no_unsafe_json_number` enforces.
+
+_NODEID_FIXTURE = FIXTURE_DIR / "codec" / "nodeid_exact_range.json"
+_MAX_SAFE = 2**53 - 1
+
+
+def _nodeid_fixture() -> dict:
+    return json.loads(_NODEID_FIXTURE.read_text())
+
+
+def _nodeid_scenarios() -> list[dict]:
+    if not _NODEID_FIXTURE.is_file():
+        return []
+    return _nodeid_fixture()["scenarios"]
+
+
+def _unpack_msgpack(data: bytes, pos: int = 0):
+    """Minimal MessagePack reader — returns (value, next_pos).
+
+    Written independently of `scripts/gen_nodeid_exact_range_fixture.py`'s
+    encoder on purpose: a fixture whose bytes are only ever checked by the
+    encoder that produced them is checked by nothing.
+    """
+    tag = data[pos]
+    pos += 1
+    if tag < 0x80:
+        return tag, pos
+    if 0x80 <= tag <= 0x8F or tag == 0xDE:
+        if tag == 0xDE:
+            count = int.from_bytes(data[pos : pos + 2], "big")
+            pos += 2
+        else:
+            count = tag & 0x0F
+        out = {}
+        for _ in range(count):
+            key, pos = _unpack_msgpack(data, pos)
+            value, pos = _unpack_msgpack(data, pos)
+            out[key] = value
+        return out, pos
+    if 0x90 <= tag <= 0x9F:
+        out_list = []
+        for _ in range(tag & 0x0F):
+            item, pos = _unpack_msgpack(data, pos)
+            out_list.append(item)
+        return out_list, pos
+    if 0xA0 <= tag <= 0xBF:
+        length = tag & 0x1F
+        return data[pos : pos + length].decode("utf-8"), pos + length
+    if tag == 0xD9:
+        length = data[pos]
+        pos += 1
+        return data[pos : pos + length].decode("utf-8"), pos + length
+    if tag in (0xCC, 0xCD, 0xCE, 0xCF):
+        width = {0xCC: 1, 0xCD: 2, 0xCE: 4, 0xCF: 8}[tag]
+        return int.from_bytes(data[pos : pos + width], "big"), pos + width
+    raise AssertionError(f"fixture uses an unexpected msgpack tag 0x{tag:02x} at {pos - 1}")
+
+
+def test_nodeid_fixture_is_well_formed() -> None:
+    obj = _nodeid_fixture()
+    assert obj["protocol_version"] == 1
+    assert obj["kind"] == "NodeIdExactRange"
+
+    fixture_assertions = obj["assertions"]
+    assert fixture_assertions["required_of_binding"] == "MUST"
+    assert fixture_assertions["codecs"] == ["json", "msgpack"]
+
+    scenarios = obj["scenarios"]
+    assert fixture_assertions["scenario_count"] == len(scenarios)
+    ids = [s["id"] for s in scenarios]
+    assert len(set(ids)) == len(ids), "duplicate ids let one replayed scenario cover another"
+    for scenario in scenarios:
+        assert scenario["id"] == scenario["name"]
+        assert scenario["codec"] in ("json", "msgpack")
+        assert scenario["codec"] in scenario["id"], (
+            f"scenario id {scenario['id']!r} must name its codec: a binding excuses the "
+            "two codecs independently, so the ledger has to tell them apart"
+        )
+
+
+def test_nodeid_fixture_carries_an_anti_vacuity_control_per_codec() -> None:
+    """Every codec needs at least one `exact` scenario.
+
+    `exact_or_reject` is satisfiable by a runner that reports "rejected" without
+    decoding anything — the same class of vacuous green the conformance ladder
+    exists to remove. The `exact` scenarios (2^53 - 1, which EVERY binding
+    represents) are what force the runner to prove it decodes at all.
+    """
+    for codec in ("json", "msgpack"):
+        outcomes = [
+            s["expect"]["outcome"] for s in _nodeid_scenarios() if s["codec"] == codec
+        ]
+        assert "exact" in outcomes, f"{codec} has no `exact` control scenario"
+        assert "exact_or_reject" in outcomes, f"{codec} pins no over-range identifier"
+
+
+def test_nodeid_fixture_carries_no_unsafe_json_number() -> None:
+    """No identifier above 2^53 - 1 may appear anywhere as a JSON number.
+
+    The fixture is JSON. A bare 9007199254740993 in it is rounded by any
+    double-backed JSON parser *while the fixture is being loaded*, so the test
+    would compare a rounded expectation against a rounded decode and pass. Wire
+    frames are therefore text (json) or hex (msgpack) and expectations are
+    decimal strings.
+    """
+
+    def walk(node, path: str) -> None:
+        if isinstance(node, bool):
+            return
+        if isinstance(node, int):
+            assert node <= _MAX_SAFE, (
+                f"{path} carries {node} as a JSON number; a double-backed parser rounds "
+                "it while loading the fixture. Use a decimal string."
+            )
+        elif isinstance(node, float):
+            raise AssertionError(f"{path} is a float; identifiers are exact integers")
+        elif isinstance(node, dict):
+            for key, value in node.items():
+                walk(value, f"{path}.{key}")
+        elif isinstance(node, list):
+            for index, value in enumerate(node):
+                walk(value, f"{path}[{index}]")
+
+    walk(_nodeid_fixture(), "fixture")
+
+
+@pytest.mark.parametrize("scenario", _nodeid_scenarios(), ids=lambda s: s["id"])
+def test_nodeid_scenario_wire_matches_its_expectation(scenario: dict) -> None:
+    """The wire frame really carries the identifier the `expect` block names.
+
+    Both codecs are decoded here — the json text with Python's arbitrary-precision
+    parser, the msgpack bytes with the independent reader above — so a generator
+    bug that emitted a rounded or truncated identifier is caught in this repo
+    rather than nine repos downstream.
+    """
+    expect = scenario["expect"]
+    expected = int(expect["node_id_decimal"])
+
+    if scenario["codec"] == "json":
+        frame = json.loads(scenario["wire_json"])
+    else:
+        raw = bytes.fromhex(scenario["wire_msgpack_hex"])
+        frame, end = _unpack_msgpack(raw)
+        assert end == len(raw), "trailing bytes after the msgpack frame"
+        if expected > _MAX_SAFE:
+            # The identifier must ride the `uint 64` family, not a signed or
+            # float encoding — a decoder that reads it through the wrong path is
+            # otherwise invisible.
+            assert b"\xcf" + expected.to_bytes(8, "big") in raw, (
+                f"{scenario['id']} does not encode {expected} as a msgpack uint 64"
+            )
+
+    body = frame["Snapshot"]
+    assert body["epoch"] == expect["epoch"]
+    assert len(body["nodes"]) == expect["node_count"]
+    node = body["nodes"][0]
+    assert node["node"] == expected
+    assert node["type_tag"] == expect["type_tag"]
+    assert node["state"]["Payload"] == expect["payload"]
+    assert body["roots"] == [int(expect["root_id_decimal"])]
+
+
+@pytest.mark.parametrize("scenario", _nodeid_scenarios(), ids=lambda s: s["id"])
+def test_nodeid_scenario_wire_validates_schema(scenario: dict) -> None:
+    """The over-range frames are schema-VALID; refusing them is a decoder decision.
+
+    This is the point defs.json got wrong before the audit: it capped `PeerId`
+    at 2^53 - 1, which made a legal u64 frame schema-invalid and pushed a
+    runtime-capability question into wire validity.
+    """
+    if scenario["codec"] == "json":
+        frame = json.loads(scenario["wire_json"])
+    else:
+        frame, _ = _unpack_msgpack(bytes.fromhex(scenario["wire_msgpack_hex"]))
+    errors = sorted(_validator("snapshot").iter_errors(frame), key=lambda e: list(e.path))
+    assert not errors, (
+        f"{scenario['id']} wire does not validate against snapshot.json:\n"
+        + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+    )
+
+
+def test_nodeid_scenario_expect_block_is_discriminating() -> None:
+    """An outcome plus one scalar cannot tell a rounding decoder from a correct one."""
+    for scenario in _nodeid_scenarios():
+        value_keys = [k for k in scenario["expect"] if k != "outcome"]
+        assert len(value_keys) >= 4, (
+            f"{scenario['id']} pins only {value_keys}; the block must also force the "
+            "runner to prove it decoded the surrounding frame"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Causal receipt fixtures — generic outcome projection, not transport ACKs
 # ---------------------------------------------------------------------------
 

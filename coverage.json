@@ -581,6 +581,23 @@
       ]
     },
     {
+      "feature": "`NodeId` / `PeerId` exact-representation bound (**MUST**) — a decoder that cannot represent a received identifier exactly rejects the frame rather than rounding it (`conformance/codec/nodeid_exact_range.json`, `#lzspecdecoderbound`). A binding's exact range MAY be narrower than the `u64` wire type; ✅ means it refuses outside that range instead of substituting a neighbouring id, not that it carries the full `u64`. Exact ranges: full `u64` in Rust / Zig / C#, unbounded in Python, `[0, 2^63)` in Kotlin / Go / C++, `[0, 2^53)` in JS, and platform-split in Dart (63-bit on the VM, 53-bit on web). protocol.md stated only the PRODUCER half until this audit, and two C++ decoders were substituting rather than refusing.",
+      "fixtures": [
+        "codec/nodeid_exact_range.json"
+      ],
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
       "feature": "Shared-memory blob path (`ShmBlobArena`)",
       "marks": [
         "✅",
