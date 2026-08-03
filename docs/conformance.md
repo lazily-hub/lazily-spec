@@ -175,7 +175,18 @@ structurally guaranteed to run last.
 ### Reserved annotation names
 
 `note`, `description` and `reason` inside a per-step or per-scenario block are
-**annotations**, exempt by name in every binding. That exemption is only safe while they
+**annotations**, exempt by name in every binding.
+
+**A corpus declaration overrides the by-name exemption, and a tracker MUST apply it first.**
+Both `frame_roundtrip_json.json` and `frame_roundtrip_msgpack.json` declare `note` prose. A
+tracker that subtracts its reserved-name set before consulting `assertions.prose` makes that
+declaration invisible: the key is exempt from the unread guard, exempt from the unasserted
+guard, and never discharged — so both fixtures skip the whole convention while the binding
+still reports conforming. Two of the nine hit this independently while implementing the
+clause. Evaluate `prose` on the raw block, before any name-based exemption; the exemption
+applies only to keys the block did not declare.
+
+Everywhere else the exemption stands as-is. That exemption is only safe while they
 annotate; an annotation MUST NOT state an obligation, because a reserved name is a place no
 runner can be made to discharge anything. `scripts/check-prose-keys.mjs` enforces this and
 carries a both-directions allowlist of the instances that already do — five reactive-graph
