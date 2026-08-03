@@ -129,6 +129,19 @@ tracker verifies the naming. A binding's tracker MUST fail the run when:
    rule 6 would wave it through. A paragraph discharged by the declaration that it is a
    paragraph proves nothing. Seed the prose-name set with `prose` itself.
 
+8. an opened fixture whose block declares `prose` never reaches verification. Rules 1-7 are
+   all satisfied over an empty population, so a fixture that is opened and then never
+   replayed passes every one of them while proving nothing — the vacuity the corpus's own
+   `anti_vacuity` keys exist to name, reappearing in the guard meant to enforce them.
+   Derive the required verifications from the corpus, never from a hand-kept count.
+
+Rule 6 means ASSERTED, not merely satisfied: an excused key does not discharge anything,
+because an excuse is precisely the absence of a comparison. A discharge naming a key the
+fixture does not carry at all is a distinct failure — the discharge has rotted, exactly as a
+stale excuse has. One executable key may discharge several paragraphs; `decoded_backend`
+carries five in `blob_backend_discriminator.json`, and that is expected rather than a
+collision.
+
 Rule 6 is the whole convention: the excuse becomes falsifiable, because the tracker can
 check it. "`epoch_disambiguation` is discharged by `frame_epoch` and `blob_epoch`" is a
 claim about the run; "`epoch_disambiguation` is prose" is not.
@@ -186,7 +199,30 @@ still reports conforming. Two of the nine hit this independently while implement
 clause. Evaluate `prose` on the raw block, before any name-based exemption; the exemption
 applies only to keys the block did not declare.
 
-Everywhere else the exemption stands as-is. That exemption is only safe while they
+Inside a block that declares `prose`, the name exemption is off entirely: the corpus wins,
+so a `note` sitting in a declaring block but absent from its array needs an assertion or an
+excuse like any other key. Everywhere else the exemption stands as-is.
+
+### Naming a discharge that discharges nothing
+
+The tracker checks that a named key was asserted. It cannot check that the assertion
+*proves* the paragraph, and three bindings found the gap the same way: a key that compares
+the fixture to itself is asserted, satisfies rule 6, and discharges nothing. Two shapes
+recur.
+
+`scenario_count` asserted against `len(fixture["scenarios"])`, and `codecs` / `key_forms`
+compared to hand-written literals, are green over a runner that decodes nothing — which is
+the exact vacuity `anti_vacuity` exists to name. Compare them against what the run really
+replayed before naming them.
+
+Worse, `nodekey_null_leniency.json`'s `wire_encoding` obligation — that the ABSENT and
+explicit-`null` wire forms stay distinguishable into the runner — was dischargeable by
+nothing at all in at least one binding: `key ?? null` collapses the two the instant the
+value is decoded, and every key in that fixture's `expect` blocks is identical for the
+`omitted` and `null` families. The four `null` scenarios were the four `omitted` ones
+wearing a different id. The fix is a control that reads the raw wire slot BEFORE the decoder
+runs, which is what the sibling blob-backend runner already does for `backend`. Adding the
+missing control is conforming; naming a key that merely happens to be asserted is not. That exemption is only safe while they
 annotate; an annotation MUST NOT state an obligation, because a reserved name is a place no
 runner can be made to discharge anything. `scripts/check-prose-keys.mjs` enforces this and
 carries a both-directions allowlist of the instances that already do — five reactive-graph
