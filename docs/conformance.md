@@ -253,6 +253,30 @@ goes away rather than gaining a sibling, and the free-text `excuse_key` reasons 
 these keys are deleted, not kept alongside. Two paths to satisfy one key is the ambiguity
 this clause removes.
 
+### What this does not check, and what is still open
+
+**A discharge is checked for truth, not for sufficiency.** Rule 6 proves the named key was
+asserted. Nothing proves it is *relevant*: discharging all nine of
+`blob_backend_discriminator.json`'s paragraphs with `scenario_count` alone would satisfy
+every rule. The excuse is now falsifiable, which it was not before, but it is not yet
+load-bearing — that judgement stays with review, which is why the discharge is written at
+the call site rather than in a table. Do not read a green run as "every paragraph is
+proven"; read it as "no paragraph is discharged by a claim the run contradicts".
+
+Two open gaps were found by bindings implementing this and are tracked rather than hidden:
+
+- **`wire_encoding` is an obligation on the RUNNER, not the library.** It says the runner
+  must parse the raw `wire_json` / `wire_msgpack_hex` rather than re-serialize a pre-parsed
+  object. No assertion key reddens when a runner takes the shortcut, so no discharge of it
+  is strong — three bindings reported this independently, and one found the fixture's
+  `omitted` and `null` families were literally indistinguishable in its runner as a result.
+  Closing it needs an executable corpus-side key, not a better discharge.
+- **`generator` is a fourth category the convention does not name.** It is a script path:
+  not prose (the corpus does not declare it, and the shape detector agrees), not a reserved
+  annotation, and carrying nothing a run can compare. Every binding is currently excusing it
+  with its own wording — the same undocumented-default shape this clause exists to remove,
+  one category over.
+
 ### What is checked where
 
 | Half | Where | What |
