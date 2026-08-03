@@ -398,6 +398,35 @@ place, where a probe reddens every other binding concurrently — and confirm th
 RED. A tracker that reports clean over a planted sub-field has not implemented this section,
 whatever its code says.
 
+## Assertion observation ordering (`#lzassertordering`)
+
+An executable assertion has to remain reachable when the behavior it names is
+wrong. Two ordering rules follow:
+
+1. Fully evaluate and finish a fixture-owned assertion block, including its
+   prose obligations, before applying runner-side coverage floors. A redundant
+   floor may still guard the runner, but it must not preempt the fixture
+   assertion that owns the falsifying corpus mutation.
+2. Evaluate an assertion about a run only after performing that run, and compare
+   the declared rule with an observed runtime outcome. Checking a label or
+   literal before ingest, decode, replay, or dispatch is not an assertion of the
+   behavior the label names.
+
+The semantic priority is therefore fixture assertion first, runner floor second.
+This matters for diagnostics as well as coverage: a mutated `scenario_count`
+must fail as `scenario_count`, not disappear behind an earlier hard-coded count.
+
+`scripts/check-assertion-ordering.py` is the cross-binding static guard. Every
+binding invokes its own configured pass from `make check`; missing, duplicated,
+or renamed anchors fail closed. The guard checks order and attachment, not the
+sufficiency of the runtime comparison. Mutation probes remain required for the
+runtime assertion itself.
+
+For `distributed/anti_entropy_converge.json`, `resolution: max_stamp` is tied to
+the runtime state selected after ingest. Its conflict witness delivers the
+greatest-stamp operation before a lower-stamp tail, so arrival-order resolution
+and max-stamp resolution produce different observations.
+
 ## Keyed cell collections conformance
 
 The `conformance/collections/` directory contains canonical fixtures for the

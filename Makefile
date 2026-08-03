@@ -15,9 +15,16 @@ fixture-copies-check-all \
 fixture-copies-sync \
 async-v2-names-check \
 scenario-identity-check \
-prose-keys-check
+prose-keys-check \
+assertion-ordering-check
 
-check: test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check
+check: test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check
+
+# Assertion-observation ordering guard (#lzassertordering). The binding-side
+# invocations check real runner anchors; this self-test proves the guard itself
+# rejects the two reversed shapes it is meant to make unreachable.
+assertion-ordering-check:
+>python3 scripts/check-assertion-ordering.py --self-test
 
 # Prose-key declaration guard (#lzprosekeyconvention). An assertion key carrying
 # an English paragraph states an obligation and carries nothing comparable, and
