@@ -362,6 +362,23 @@ replaced by 1 or 2.
 A key the corpus declares in `assertions.prose` is out of scope here: a paragraph is a
 string, and prose nested inside a data key is not a prose key (see § Prose assertion keys).
 
+### The rule is not scoped to top-level `assertions`
+
+It applies to **every block a runner binds to its assertion-key tracker** — `expect`,
+`expected`, per-step, per-scenario, per-frame — because the defect is identical wherever
+an object value is compared field by field. This matters because it is the one thing about
+this class that is consistently underestimated: a scan of top-level `assertions` blocks
+finds exactly two object-valued keys in the whole corpus, and the guard, once landed,
+found between 14 and 26 distinct key shapes per binding. Do not scope the audit from a
+corpus scan; land the guard and let it name the sites.
+
+The recurring shapes, for orientation rather than as a checklist: `invalidates`, `scopes`,
+`receipts`, `reads`, `subscriptions`, `values`, `handle_stable`, `observe`, `states`,
+`present`, `discovery`, `projection`, `frame`, `state_after`, `converged_nodes`, `text_on`,
+`version_vector_on`, `order_on`, `get` / `get_on`, `final_state`, `after_publish`,
+`authority`, `retry`, `dependents_of`, `readable`, `read`. The ingress fixtures nest four
+levels deep (`invalidates.scopes.<key>.<reader kind>`), and every level is a key set.
+
 ### What is checked where
 
 | Half | Where | What |
