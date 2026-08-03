@@ -113,6 +113,58 @@ function* fixtures(dir) {
   }
 }
 
+// The corpus half of `wire_encoding` (`#lzprosekeyconvention`). Five bindings
+// reported the same thing: that paragraph claims something about how the CORPUS
+// FILE is written — raw text and hex rather than a pre-parsed object — and no
+// assertion a *run* makes can observe it, so every one of its discharges is a
+// proxy resting entirely on review. This moves the observable half somewhere
+// checkable. `wire_json` carried as an OBJECT is the exact defect the paragraph
+// forbids: a pre-parsed value cannot express an absent map entry versus an
+// explicit null, which is the distinction three of these fixtures turn on.
+function checkWireForms(id, doc, declaresWireEncoding, violations) {
+  const scenarios = Array.isArray(doc?.scenarios) ? doc.scenarios : [];
+  let jsonText = 0;
+  let msgpackHex = 0;
+  scenarios.forEach((scenario, index) => {
+    if (scenario === null || typeof scenario !== "object") return;
+    const at = scenario.id ?? scenario.name ?? `scenarios[${index}]`;
+    if ("wire_json" in scenario) {
+      if (typeof scenario.wire_json !== "string") {
+        violations.push(
+          `${id}: \`${at}.wire_json\` is a ${typeof scenario.wire_json}, not RAW TEXT. A ` +
+            `pre-parsed value cannot express an absent map entry versus an explicit null, ` +
+            `which is the distinction these fixtures turn on.`,
+        );
+      } else {
+        jsonText += 1;
+        try {
+          JSON.parse(scenario.wire_json);
+        } catch (error) {
+          violations.push(`${id}: \`${at}.wire_json\` is not parseable JSON: ${error.message}`);
+        }
+      }
+    }
+    if ("wire_msgpack_hex" in scenario) {
+      const hex = scenario.wire_msgpack_hex;
+      if (typeof hex !== "string" || !/^[0-9a-f]*$/.test(hex) || hex.length % 2 !== 0) {
+        violations.push(
+          `${id}: \`${at}.wire_msgpack_hex\` is not even-length lowercase hex. The paragraph ` +
+            `pins the encoding so the exact bytes survive into the runner.`,
+        );
+      } else {
+        msgpackHex += 1;
+      }
+    }
+  });
+  if (declaresWireEncoding && (jsonText === 0 || msgpackHex === 0)) {
+    violations.push(
+      `${id}: declares \`wire_encoding\` prose but carries ${jsonText} raw-text json and ` +
+        `${msgpackHex} hex msgpack scenario(s). The paragraph claims a distinction across both ` +
+        `codecs; a fixture carrying only one cannot support it.`,
+    );
+  }
+}
+
 const violations = [];
 const seenAllowlisted = new Set();
 let blocksWithProse = 0;
@@ -189,6 +241,8 @@ for (const path of fixtures(CORPUS)) {
       }
     }
   }
+
+  checkWireForms(id, doc, declaredSet.has("wire_encoding"), violations);
 
   // ---- Rules 5-6: every guarded block, at any depth. -----------------------
   const walk = (node, trail) => {

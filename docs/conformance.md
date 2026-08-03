@@ -135,6 +135,12 @@ tracker verifies the naming. A binding's tracker MUST fail the run when:
    `anti_vacuity` keys exist to name, reappearing in the guard meant to enforce them.
    Derive the required verifications from the corpus, never from a hand-kept count.
 
+**Evaluate rule 7 before rule 6.** A paragraph can never be asserted — rule 1 forbids it — so
+a discharge naming another paragraph *always* also violates rule 6. Check 6 first and rule 7
+becomes dead code that never reports, and the run fails with "names a key this run never
+asserted" when the real defect is "names a paragraph". The numbering is not the evaluation
+order; this one pair is.
+
 Rule 6 means ASSERTED, not merely satisfied: an excused key does not discharge anything,
 because an excuse is precisely the absence of a comparison. A discharge naming a key the
 fixture does not carry at all is a distinct failure — the discharge has rotted, exactly as a
@@ -279,12 +285,16 @@ proven"; read it as "no paragraph is discharged by a claim the run contradicts".
 
 Two open gaps were found by bindings implementing this and are tracked rather than hidden:
 
-- **`wire_encoding` is an obligation on the RUNNER, not the library.** It says the runner
-  must parse the raw `wire_json` / `wire_msgpack_hex` rather than re-serialize a pre-parsed
-  object. No assertion key reddens when a runner takes the shortcut, so no discharge of it
-  is strong — three bindings reported this independently, and one found the fixture's
-  `omitted` and `null` families were literally indistinguishable in its runner as a result.
-  Closing it needs an executable corpus-side key, not a better discharge.
+- **`wire_encoding` is an obligation on the RUNNER, not the library** — five bindings
+  reported this independently, and five found the `omitted` and `null` families were
+  literally indistinguishable in their runners as a result. Its CORPUS half is now checked:
+  `check-prose-keys.mjs` requires every `wire_json` to be raw parseable text and never a
+  pre-parsed object, every `wire_msgpack_hex` to be even-length lowercase hex, and a fixture
+  declaring `wire_encoding` to carry scenarios in both codecs — a pre-parsed value cannot
+  express an absent map entry versus an explicit null, which is the distinction three of
+  these fixtures turn on. Its RUNNER half is still unreachable: no assertion key reddens when
+  a runner re-serializes a parsed object instead of reading the text, so every discharge of
+  it remains a proxy resting on review.
 - **`generator` is a fourth category the convention does not name.** It is a script path:
   not prose (the corpus does not declare it, and the shape detector agrees), not a reserved
   annotation, and carrying nothing a run can compare. Every binding is currently excusing it
