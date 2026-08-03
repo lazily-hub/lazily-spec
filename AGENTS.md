@@ -32,6 +32,25 @@ Fixture subsets vendored by lazily-py, lazily-dart, lazily-rs, lazily-go, and
 lazily-zig are reconciled here: run `make fixture-copies-sync` after any corpus
 edit.
 
+## Prose assertion keys
+
+An assertion key whose value is an English paragraph states an obligation and
+carries nothing a runner can compare (`#lzprosekeyconvention`). The corpus
+declares which keys those are in `assertions.prose`; a binding never decides for
+itself, because when it did, the nine landed on four different treatments of the
+same four keys. A prose key is **discharged** by naming the executable keys that
+carry its obligation, verified against what the run actually asserted — never
+asserted (that pins wording) and never excused with free text (that is
+unfalsifiable).
+
+Adding a paragraph to an `assertions` block therefore means listing it in that
+block's `prose` array in the same edit; `make check` fails otherwise, and so does
+every binding, because `prose` is itself a key their consumption guards see. The
+full clause, the seven tracker failure modes, and the pinned per-binding API
+spelling are in [`docs/conformance.md`](docs/conformance.md#prose-assertion-keys-lzprosekeyconvention).
+Reserved annotation names — `note`, `description`, `reason` — stay exempt inside
+per-step blocks, so they must not carry a MUST.
+
 <!-- tsift:code-navigation v=0.1.77 -->
 ## Code Navigation
 
