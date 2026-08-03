@@ -168,6 +168,11 @@ reported by the ledger's own teardown, exactly as an unconsumed key is.
 A block declaring `prose` MUST also carry at least one non-prose key. A block that is
 entirely prose has nothing that could discharge it.
 
+**A block is identified by its path in the fixture**, not by a human-written label. Rules 3
+and 4 are block-local, so two blocks whose tracker labels happen to collide would merge
+silently and each would satisfy the other's declaration. Key them on `assertions`,
+`scenarios[3].expect`, `steps[7].expect` — something the fixture determines.
+
 **Which rules are block-local and which are fixture-wide.** The declaration is block-local:
 each block owns its own `prose` array, and rules 3 and 4 compare a block's discharged set
 against that block's array. Only the NAME MATCHING of rules 6 and 7 is fixture-wide, because
@@ -290,7 +295,7 @@ Two open gaps were found by bindings implementing this and are tracked rather th
 
 | Half | Where | What |
 |---|---|---|
-| Corpus | `scripts/check-prose-keys.mjs` (`make prose-keys-check`) | every paragraph declared, no stale or comparable entries, `prose` not self-listing, no obligation hiding in a reserved annotation name |
+| Corpus | `scripts/check-prose-keys.mjs` (`make prose-keys-check`) | every paragraph declared, no stale or comparable entries, `prose` not self-listing, a declaring block carrying at least one non-prose key, no obligation hiding in a reserved annotation name |
 | Binding | the binding's own assertion-key tracker, at runtime | rules 1-7 above |
 | Binding | the binding's **coverage / ledger guard**, beside the fixture-open and scenario-replay rungs | rule 8 |
 
