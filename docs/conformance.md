@@ -193,11 +193,20 @@ structurally guaranteed to run last.
 **A corpus declaration overrides the by-name exemption, and a tracker MUST apply it first.**
 Both `frame_roundtrip_json.json` and `frame_roundtrip_msgpack.json` declare `note` prose. A
 tracker that subtracts its reserved-name set before consulting `assertions.prose` makes that
-declaration invisible: the key is exempt from the unread guard, exempt from the unasserted
-guard, and never discharged — so both fixtures skip the whole convention while the binding
-still reports conforming. Two of the nine hit this independently while implementing the
-clause. Evaluate `prose` on the raw block, before any name-based exemption; the exemption
-applies only to keys the block did not declare.
+declaration invisible to its consumption guards: the key is exempt from the unread guard and
+exempt from the unasserted guard. Three of the nine hit this independently while
+implementing the clause. Evaluate `prose` on the raw block, before any name-based exemption;
+the exemption applies only to keys the block did not declare.
+
+How bad the inversion is depends on where rule 4 reads from, and this is worth stating
+precisely because one binding measured it rather than assuming. Where rule 4's comparison
+reads the RAW block — the declared set kept separately, never subtracted from — the
+inversion degrades to a worse error message: the forgotten `note` is still caught, just by
+the set comparison rather than by the guard that would have named it. Where rule 4 reads
+through the exempted view, nothing is left: both fixtures skip the convention entirely and
+the binding still reports conforming. Keep the declared set independent of the exemption and
+the inversion cannot be fatal — but evaluate in the stated order anyway, because the guard
+that names the key is the one a reader acts on.
 
 Inside a block that declares `prose`, the name exemption is off entirely: the corpus wins,
 so a `note` sitting in a declaring block but absent from its array needs an assertion or an
