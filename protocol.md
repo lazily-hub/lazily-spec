@@ -913,6 +913,13 @@ as deliberate wire forward-compat:
 | lazily-go, lazily-py, lazily-kt, lazily-zig, lazily-cpp | **normalized to `shm`**, each with a written forward-compat rationale |
 | lazily-cs, lazily-dart | no dispatch site — the descriptor decodes through a field-typed path |
 
+The lazily-cs row is **wrong and is left standing as a record of the error**. Replaying
+fixture v2 found a real dispatch site there — `IpcWire.ReadBlob` on decode,
+`IpcWire.WriteBlob` on encode, and `BlobTransport.EffectiveBackend` at every routing
+site. "No dispatch site" was a review conclusion, and it is the kind of conclusion a
+replay overturns: an audit that reads for a `switch` finds nothing when the
+discriminator is read through a field-typed path that dispatches anyway.
+
 The five agreed with each other on the defence, too: the checksum catches it, so the
 descriptor resolves to nothing rather than to another backend's bytes. That argument
 is what the theorem exists to make unnecessary. An undocumented default and a
@@ -971,6 +978,47 @@ must not be read as two implementations agreeing, and a binding whose two codecs
 share a decode path should record that in its own ledger rather than infer
 independence from the scenario count. This one is not fixable in the corpus — it is a
 property of the bindings — so it stays stated rather than pinned.
+
+**What v2 found when the nine bindings replayed it.** The four holes above were
+predictions about what an unexecuted clause hides; this is what was actually behind
+them:
+
+- **Three of nine bindings REFUSED the explicit `null`** — lazily-cs (a `ValueKind`
+  error), lazily-zig (`error.ExpectedString`), lazily-kt (`JsonNull` is a
+  `JsonPrimitive` whose `isString` is false, so it fell into the non-string arm).
+  Each returned a decode error for a frame the reference implementation emits. The
+  bullet stating the rule had been in this document since the clause landed; it was
+  prose, and three bindings read it and still got it wrong. That ratio is the
+  argument for making an adjudication executable rather than writing it down.
+- **Two bindings had no decode-error family at all.** lazily-zig's decode errors were
+  an inferred error set nobody had written down, and lazily-kt raised
+  `IllegalStateException` from one refusal and `IllegalArgumentException` from the
+  other — neither a subtype of the other, so a caller catching the documented one had
+  the other fail *past* the handler. Both now name the family
+  (`ipc.BlobDescriptorDecodeError`; `sealed class IpcDecodeException`). The *It must
+  be catchable* obligation above was unassertable until `rejection_is_decode_error`
+  existed, which is why a refusal being wrong in this specific way survived a
+  nine-binding audit.
+- **`rejected` and `rejection_is_decode_error` are genuinely two facts.** lazily-cpp
+  demonstrated it on demand: throwing `std::invalid_argument` for the non-string
+  turns `rejection_is_decode_error` red while `rejected` stays **green**. A bare
+  is-error assertion passes the hierarchy trap.
+- **A fifth false-green shape, distinct from the four already catalogued.**
+  `rejection_kind` must be asserted against what the LIBRARY raised — a distinct
+  error type, or the message the refusal actually produced. A runner that derives it
+  from the scenario's own `backend_form` compares the fixture to itself and passes
+  while proving nothing. Raised by lazily-kt, which made its two refusals distinct
+  types precisely so the assertion has something of the library's to compare against.
+  The four already on record are: a stale build artifact, a filter matching nothing,
+  a probe aimed at a value the corpus never carries, and a filtered build run
+  reporting N/N passed while selecting the target test not at all.
+
+Two bindings' green is worth less than it looks, and both say so in their own
+runners rather than letting the scenario count imply otherwise: lazily-cpp bridges
+MessagePack into the same `JsonValue` DOM `decode_json` produces, and lazily-py
+bridges into the same DOM as well, so each scenario pair there yields one
+discriminator verdict. The msgpack half still covers the bridge and the msgpack
+encoder, which are distinct failures.
 
 ## FFI Boundary
 
