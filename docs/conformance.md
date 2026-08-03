@@ -292,6 +292,12 @@ Two open gaps were found by bindings implementing this and are tracked rather th
 |---|---|---|
 | Corpus | `scripts/check-prose-keys.mjs` (`make prose-keys-check`) | every paragraph declared, no stale or comparable entries, `prose` not self-listing, no obligation hiding in a reserved annotation name |
 | Binding | the binding's own assertion-key tracker, at runtime | rules 1-7 above |
+| Binding | the binding's **coverage / ledger guard**, beside the fixture-open and scenario-replay rungs | rule 8 |
+
+Rule 8's row is separate on purpose. It cannot live in the test host: a test that never runs
+reports nothing, so the very run rule 8 exists to catch is the run that would have to report
+itself. It belongs where the other "did the suite actually do this?" rungs already live — the
+guard that reads the runtime manifest after the suite finishes.
 
 The split is not arbitrary. Only the run knows which keys it asserted, so rule 6 cannot be
 checked from this repo; and only the corpus can settle which keys are prose, so leaving that
