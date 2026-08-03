@@ -318,6 +318,69 @@ The split is not arbitrary. Only the run knows which keys it asserted, so rule 6
 checked from this repo; and only the corpus can settle which keys are prose, so leaving that
 to nine trackers is what produced four answers.
 
+## Object-valued assertion keys (`#lzsubblockkeyset`)
+
+An assertion key whose value is a JSON **object** carries two obligations, not one: the
+value of each sub-field, and the sub-field **key set**. Bindings were discharging the first
+and not the second, which makes the object the null form one level down — a field added to
+it upstream is compared by nothing, and the fixture reports clean over the very change it
+exists to catch.
+
+### The failure this closes
+
+`arena_blob.json`'s `assertions.descriptor` carries five sub-fields. Every binding that
+replayed it compared those five by name and stopped. Planting a sixth key inside the object
+left lazily-zig's suite **green** while every scalar sibling in the same block reddened —
+found only by the corpus perturbation pass, because no rung above it can see inside a key
+it considers consumed. The consumption ledger saw `descriptor` read and asserted; the
+read-but-not-asserted rung saw an assertion; the bind ledger saw a bound block. All three
+were satisfied by a check that could not fail.
+
+### The rule
+
+A binding's assertion-key tracker MUST fail the run when an assertion key whose value is an
+object is consumed without its key set being checked. The tracker owns this, not the call
+site. Two ways to discharge it, and the tracker MUST recognise both:
+
+1. **Descend.** The tracker hands the caller a CHILD tracker bound to the object. The child
+   owns the same unconsumed-key teardown the parent has, so a sub-field nothing reads fails
+   exactly as an unconsumed top-level key does. This is the form to prefer: the obligation
+   moves down rather than being restated.
+2. **Compare the key set.** The tracker compares the object's key set against the set the
+   run actually produced, in **both** directions — a fixture token nothing replayed and a
+   replayed token the fixture omits are each failures. This is the form for a key whose
+   sub-fields are a vocabulary rather than data: `nodeid_exact_range.json`'s
+   `assertions.outcomes` maps outcome tokens to English glosses, and the assertion is which
+   tokens exist, not what the glosses say.
+
+Anything else — a plain value comparison, a hand-written field-by-field check, a count of
+sub-fields — leaves the run reporting nothing about a field the corpus grows later. **A
+per-call-site field count is not conformance.** It relies on the next author remembering,
+which is the property this rung exists to remove; it is at best a stopgap and MUST be
+replaced by 1 or 2.
+
+A key the corpus declares in `assertions.prose` is out of scope here: a paragraph is a
+string, and prose nested inside a data key is not a prose key (see § Prose assertion keys).
+
+### What is checked where
+
+| Half | Where | What |
+|---|---|---|
+| Corpus | the fixture itself | which assertion keys have object values — the corpus decides, a binding never assumes |
+| Binding | the binding's assertion-key tracker, at runtime | an object-valued key consumed by neither 1 nor 2 fails the run |
+
+Neither half is provable from the other. The corpus cannot know whether a runner descended,
+and a runner cannot be trusted to notice that a value it compared happened to be an object.
+
+### Validating a tracker that claims to enforce this
+
+The guard is only as good as its own falsifiability, and this whole rung exists because a
+check that cannot fail reads identically to one that passes. Plant an extra key inside each
+object-valued assertion value in a **scratch copy** of the corpus — never `lazily-spec` in
+place, where a probe reddens every other binding concurrently — and confirm the suite goes
+RED. A tracker that reports clean over a planted sub-field has not implemented this section,
+whatever its code says.
+
 ## Keyed cell collections conformance
 
 The `conformance/collections/` directory contains canonical fixtures for the
