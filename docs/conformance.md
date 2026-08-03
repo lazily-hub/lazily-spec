@@ -152,6 +152,30 @@ carries a both-directions allowlist of the instances that already do — five re
 step notes, each a real normative rule (`teardown is idempotent`, `a stale cell handle whose
 id has been recycled MUST be a no-op`) that no binding checks today. New instances redden.
 
+### Tracker API
+
+The nine trackers differ in mechanism — a `Drop` guard, a global recorder plus a manifest
+script, a `t.Cleanup`, an `IDisposable` — but the SPELLING is fixed here, because a
+convention whose name drifts per binding is how four treatments of one rule went unnoticed
+in the first place.
+
+| Binding | Discharge | Fixture-end verification |
+|---|---|---|
+| lazily-rs | `exp.prose_key("clause", &["backends", "scenario_count"])` | `expect::verify_prose(fixture)`, armed by a `ProseLedger` guard |
+| lazily-py | `prose_key(block, "clause", discharged_by=["backends"])` | `verify_prose(fixture)` |
+| lazily-js | `proseKey(block, "clause", ["backends"])` | `verifyProse(fixture)` |
+| lazily-go | `proseKey(t, block, "clause", "backends")` | `verifyProse(t, fixture)`, registered with `t.Cleanup` |
+| lazily-dart | `proseKey(block, 'clause', dischargedBy: ['backends'])` | `verifyProse(fixture)`, registered with `addTearDown` |
+| lazily-kt | `proseKey("clause", listOf("backends"))` | `verifyProse(fixture)` |
+| lazily-cs | `ProseKey("clause", "backends")` | `VerifyProse(fixture)` |
+| lazily-cpp | `block.prose_key("clause", {"backends"})` | `verify_prose(fixture)` |
+| lazily-zig | `proseKey("clause", &.{"backends"})` | `verifyProse(fixture)` |
+
+`prose_key` replaces whatever the binding did before — lazily-rs's third `prose()` state
+goes away rather than gaining a sibling, and the free-text `excuse_key` reasons written for
+these keys are deleted, not kept alongside. Two paths to satisfy one key is the ambiguity
+this clause removes.
+
 ### What is checked where
 
 | Half | Where | What |
