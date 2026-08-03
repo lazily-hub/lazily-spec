@@ -928,30 +928,49 @@ field, while a binding can implement strict rejection and still emit
 `backend: "shm"` — which is why the re-encode assertions exist rather than being
 inferred.
 
-**What this fixture does not yet pin** (`#lzblobbackendstrict`, follow-up). Every
-item here was found by a binding *replaying* the fixture, not by review, which is the
-argument for replaying a fixture in nine places before trusting it:
+**Fixture v2** (`#lzblobbackendstrict`) closes four holes v1 left. Every one of them
+was found by a binding *replaying* v1, not by reviewing it — which is the argument
+for replaying a fixture in nine places before trusting it. The fixture is now 14
+scenarios, seven wire shapes in both codecs:
 
-- **`in_process` is declared in `assertions.backends` and carried by no scenario.**
-  A binding that knows only `{shm, arrow}` and rejects `in_process` — naming the
-  token, conformingly — passes all eight scenarios while contradicting the enum this
-  clause declares. The `arrow` control proves the discriminator is *read*; it does
-  not prove the vocabulary is *complete*. Found independently by four bindings.
-- **No `null` scenario**, so the bullet added above is prose the corpus does not yet
-  execute.
-- **No non-string scenario.** The clause is written entirely about *tokens*; a
-  runtime whose JSON reader coerces rather than throws on a number in a string
-  position normalizes silently there — the same failure this clause names, arriving
-  through a door it does not describe. One binding's only real defect was exactly
-  this.
-- **`expect.epoch` is ambiguous**: the `Delta` frame and the `ShmBlobRef` descriptor
-  both carry `9`, so a runner reading the frame's epoch and one reading the
-  descriptor's both pass. Making them differ closes it.
-- **Two codecs are not two implementations.** Several bindings bridge MessagePack
-  into the same DOM the JSON decoder produces, or share one `serde` impl, so the
-  msgpack half yields one discriminator verdict rather than an independent second
-  one. It still covers the bridge and the encoder; it should not be read as two
-  implementations agreeing.
+- **`in_process` is carried, not merely declared.** v1 listed three backends in
+  `assertions.backends` and shipped scenarios for two, so a binding that knew only
+  `{shm, arrow}` rejected `in_process` — naming the token, conformingly, by the
+  letter of this clause — and passed all eight scenarios while implementing a
+  smaller enum than the clause declares. Found independently by three bindings. The
+  `arrow` control proves the discriminator is *read*; `in_process` proves the
+  vocabulary is *complete*, and no scenario count substitutes for it: the missing
+  fact was a set difference, so the corpus-side guard is now a set difference
+  (`test_backend_fixture_carries_every_backend_it_declares`).
+- **The `null` bullet above is executed, not just written.** Four bindings raised it
+  independently while implementing v1 and had already split three ways. It is an
+  `accept` scenario that is deliberately schema-**invalid**: the string-typed enum
+  binds the ENCODER, and the decoder's leniency is the separate fact under test. The
+  re-encode assertion still applies, so the null does not survive a round trip.
+- **A non-string `backend` is a scenario.** The clause is written entirely about
+  *tokens*, so a runtime whose reader coerces rather than throws on a number in a
+  string position normalizes silently there — the same failure this clause names,
+  arriving through a door it does not describe. One binding's only real defect under
+  v1 was exactly this. Both reject forms now assert
+  `expect.rejection_is_decode_error`, which is the *It must be catchable* obligation
+  above made executable; `expect.rejection_kind` distinguishes them, and only
+  `unknown_token` carries `error_names_token`, because a type error has no token to
+  name and requiring the field name would pin a message format no codec's native
+  type error produces.
+- **`expect.epoch` is gone, replaced by `frame_epoch` (9) and `blob_epoch` (5).** v1
+  carried `9` in both the `Delta` frame and the `ShmBlobRef` descriptor, so a runner
+  reading the frame's epoch and one reading the descriptor's both passed a single
+  assertion. Found by two bindings. The key was removed rather than redefined so a
+  runner still reading it fails loudly instead of silently reading the other one.
+
+**Two codecs are still not two implementations.** Several bindings bridge MessagePack
+into the same DOM the JSON decoder produces, or share one `serde` impl, so the
+msgpack half of a scenario pair can yield one discriminator verdict rather than an
+independent second one. It still covers the bridge and the encoder; a fully green run
+must not be read as two implementations agreeing, and a binding whose two codecs
+share a decode path should record that in its own ledger rather than infer
+independence from the scenario count. This one is not fixable in the corpus — it is a
+property of the bindings — so it stays stated rather than pinned.
 
 ## FFI Boundary
 

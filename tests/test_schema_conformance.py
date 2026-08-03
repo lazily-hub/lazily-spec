@@ -1748,6 +1748,17 @@ def test_reliable_sync_control_frame_rejects_unknown_field() -> None:
 _BACKEND_FIXTURE = FIXTURE_DIR / "codec" / "blob_backend_discriminator.json"
 _KNOWN_BACKENDS = ("shm", "arrow", "in_process")
 
+# The seven wire shapes, split by what a conforming PRODUCER may emit. Only the
+# first group is schema-valid: `null` and `non_string` are shapes a decoder must
+# survive, not shapes an encoder may write, and `rdma` is outside the enum
+# outright. Keeping the split here rather than deriving it from `outcome` is the
+# point — `backend_null_*` is an ACCEPT scenario that must NOT validate, and
+# conflating the two questions is how defs.json got PeerId's upper bound wrong.
+_ENCODABLE_FORMS = ("omitted", "shm", "arrow", "in_process")
+_DECODER_ONLY_FORMS = ("null", "non_string", "rdma")
+_BACKEND_FORMS = _ENCODABLE_FORMS + _DECODER_ONLY_FORMS
+_NON_STRING_BACKEND = 7
+
 
 def _backend_fixture() -> dict:
     return json.loads(_BACKEND_FIXTURE.read_text())
@@ -1783,7 +1794,9 @@ def test_backend_fixture_is_well_formed() -> None:
     assert fixture_assertions["required_of_binding"] == "MUST"
     assert fixture_assertions["codecs"] == ["json", "msgpack"]
     assert fixture_assertions["backends"] == list(_KNOWN_BACKENDS)
+    assert sorted(fixture_assertions["backend_forms"]) == sorted(_BACKEND_FORMS)
     assert fixture_assertions["outcomes"] == ["accept", "reject"]
+    assert fixture_assertions["rejection_kinds"] == ["unknown_token", "non_string"]
 
     scenarios = obj["scenarios"]
     assert scenarios, "an empty scenario list satisfies every per-scenario test below"
@@ -1805,12 +1818,27 @@ def test_backend_fixture_covers_every_form_and_codec() -> None:
     right and the other wrong in the same file.
     """
     seen = {(s["backend_form"], s["codec"]) for s in _backend_scenarios()}
-    expected = {
-        (form, codec)
-        for form in ("omitted", "shm", "arrow", "rdma")
-        for codec in ("json", "msgpack")
-    }
+    expected = {(form, codec) for form in _BACKEND_FORMS for codec in ("json", "msgpack")}
     assert seen == expected, f"missing: {sorted(expected - seen)}"
+
+
+def test_backend_fixture_carries_every_backend_it_declares() -> None:
+    """The vocabulary must be exercised, not merely declared (fixture v2).
+
+    v1 listed three backends in `assertions.backends` and carried scenarios for
+    two. A binding that knew only `{shm, arrow}` rejected `in_process` — naming
+    the token, conformingly, by the letter of the clause — and passed all eight
+    scenarios while implementing a smaller enum than the clause declares. Three
+    bindings reported the hole independently while replaying it, and no scenario
+    COUNT would have caught it: the missing fact is a set difference.
+    """
+    declared = set(_backend_fixture()["assertions"]["backends"])
+    carried = {
+        s["expect"]["decoded_backend"] for s in _backend_scenarios() if s["outcome"] == "accept"
+    }
+    assert declared <= carried, (
+        f"declared but never decoded by an accept scenario: {sorted(declared - carried)}"
+    )
 
 
 def test_backend_fixture_has_both_outcomes() -> None:
@@ -1821,8 +1849,10 @@ def test_backend_fixture_has_both_outcomes() -> None:
     decoder that refuses nothing. The clause is the pair.
     """
     outcomes = [s["outcome"] for s in _backend_scenarios()]
-    assert outcomes.count("accept") >= 6, "need omitted + shm + arrow in both codecs"
-    assert outcomes.count("reject") >= 2, "need the unknown token in both codecs"
+    assert outcomes.count("accept") >= 10, (
+        "need omitted + shm + arrow + in_process + null in both codecs"
+    )
+    assert outcomes.count("reject") >= 4, "need the unknown token and the non-string in both codecs"
 
 
 @pytest.mark.parametrize("scenario", _backend_scenarios(), ids=lambda s: s["id"])
@@ -1839,6 +1869,15 @@ def test_backend_scenario_wire_carries_the_form_it_claims(scenario: dict) -> Non
     form = scenario["backend_form"]
     if form == "omitted":
         assert "backend" not in descriptor, "the omitted scenario must omit the key entirely"
+    elif form == "null":
+        assert "backend" in descriptor, "the null scenario must carry the key, explicitly nil"
+        assert descriptor["backend"] is None
+    elif form == "non_string":
+        # The whole point is the TYPE, so assert it: a generator that emitted
+        # `"7"` would make this scenario a token scenario aimed at a token no
+        # decoder resolves, which the unknown-token pair already covers.
+        assert descriptor["backend"] == _NON_STRING_BACKEND
+        assert not isinstance(descriptor["backend"], str)
     else:
         assert descriptor.get("backend") == form
 
@@ -1861,15 +1900,44 @@ def test_backend_json_and_msgpack_halves_are_the_same_frame() -> None:
 
 @pytest.mark.parametrize(
     "scenario",
-    [s for s in _backend_scenarios() if s["outcome"] == "accept"],
+    [s for s in _backend_scenarios() if s["backend_form"] in _ENCODABLE_FORMS],
     ids=lambda s: s["id"],
 )
-def test_backend_accept_scenarios_are_schema_valid(scenario: dict) -> None:
-    """An accepted frame is a frame a conforming producer may emit."""
+def test_backend_encodable_scenarios_are_schema_valid(scenario: dict) -> None:
+    """An accepted frame a conforming PRODUCER may emit must validate."""
+    assert scenario["outcome"] == "accept", "every encodable form is an accept scenario"
     errors = sorted(_validator("delta").iter_errors(_backend_wire(scenario)), key=lambda e: list(e.path))
     assert not errors, (
         f"{scenario['id']} must validate against delta.json:\n"
         + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+    )
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    [s for s in _backend_scenarios() if s["backend_form"] == "null"],
+    ids=lambda s: s["id"],
+)
+def test_backend_null_scenarios_are_accepted_but_schema_invalid(scenario: dict) -> None:
+    """The one place accept and schema-valid deliberately come apart.
+
+    `defs.json` types `backend` as a string, and that binds the ENCODER: a
+    conforming producer omits the field rather than writing `null`. The decoder
+    still MUST accept the null and read it as `shm`, because a serde-style peer
+    that skipped `skip_serializing_if` emits exactly this frame — refusing it is
+    stricter than the reference implementation on output the reference
+    implementation produces. So the scenario is `accept` AND schema-invalid, and
+    stating both here is what stops someone widening the schema to make the
+    fixture "validate cleanly" and silently licensing the null on the wire.
+    """
+    assert scenario["outcome"] == "accept"
+    assert scenario["expect"]["decoded_backend"] == "shm"
+    assert scenario["expect"]["reencoded_backend_field_present"] is False, (
+        "the null must not survive a round trip; the encoder half still omits"
+    )
+    assert list(_validator("delta").iter_errors(_backend_wire(scenario))), (
+        f"{scenario['id']} carries an explicit null, which the string-typed enum "
+        "MUST NOT admit — the enum binds a conforming encoder"
     )
 
 
@@ -1902,10 +1970,64 @@ def test_backend_reject_token_is_absent_from_the_known_enum() -> None:
     scenario aimed at a value that is actually legal. If `rdma` is ever added
     to the enum, this fails and the fixture must pick a new token.
     """
+    checked = 0
     for scenario in _backend_scenarios():
-        if scenario["outcome"] == "reject":
-            assert scenario["expect"]["error_names_token"] not in _KNOWN_BACKENDS
-            assert scenario["backend_form"] == scenario["expect"]["error_names_token"]
+        if scenario["expect"].get("rejection_kind") != "unknown_token":
+            continue
+        assert scenario["expect"]["error_names_token"] not in _KNOWN_BACKENDS
+        assert scenario["backend_form"] == scenario["expect"]["error_names_token"]
+        checked += 1
+    assert checked == 2, f"expected the unknown token in both codecs, checked {checked}"
+
+
+def test_backend_reject_scenarios_declare_their_kind_and_error_family() -> None:
+    """The two refusals are different facts and must be distinguishable.
+
+    An unknown token names the token; a non-string has no token to name, and
+    requiring the field name instead would pin a message format no codec's
+    native type error carries. What both MUST share is the error FAMILY: a
+    refusal raised outside the type every caller already guards a decode with
+    fails past the handler, so the frame is refused and the peer never sees it.
+    One binding's only real defect under v1 was exactly that.
+    """
+    kinds = []
+    for scenario in _backend_scenarios():
+        if scenario["outcome"] != "reject":
+            continue
+        expect = scenario["expect"]
+        assert expect["rejected"] is True
+        assert expect["rejection_is_decode_error"] is True, (
+            f"{scenario['id']}: the refusal must be catchable as a decode error"
+        )
+        kind = expect["rejection_kind"]
+        assert kind in ("unknown_token", "non_string")
+        assert ("error_names_token" in expect) is (kind == "unknown_token"), (
+            f"{scenario['id']}: only an unknown-token refusal names a token"
+        )
+        kinds.append(kind)
+    assert sorted(kinds) == ["non_string", "non_string", "unknown_token", "unknown_token"]
+
+
+def test_backend_frame_and_descriptor_epochs_differ() -> None:
+    """`expect.epoch` was ambiguous and is now two keys with two values.
+
+    v1 carried 9 in both the `Delta` frame and the `ShmBlobRef` descriptor, so a
+    runner reading the frame's epoch and one reading the descriptor's both
+    satisfied a single `expect.epoch`. Two bindings reported it independently.
+    The old key is REMOVED rather than redefined, so a runner still reading it
+    fails loudly instead of silently reading the other one.
+    """
+    for scenario in _backend_scenarios():
+        expect = scenario["expect"]
+        if scenario["outcome"] != "accept":
+            continue
+        assert "epoch" not in expect, "the ambiguous key must stay gone"
+        assert expect["frame_epoch"] != expect["blob_epoch"], (
+            "identical epochs cannot distinguish a runner reading the wrong one"
+        )
+        frame = _backend_wire(scenario)
+        assert frame["Delta"]["epoch"] == expect["frame_epoch"]
+        assert _backend_descriptor(scenario)["epoch"] == expect["blob_epoch"]
 
 
 def test_backend_accept_scenarios_pin_the_encoder_half() -> None:
@@ -1922,4 +2044,4 @@ def test_backend_accept_scenarios_pin_the_encoder_half() -> None:
         expect = scenario["expect"]
         assert expect["reencoded_backend_field_present"] is (expect["decoded_backend"] != "shm")
         checked += 1
-    assert checked == 6, f"expected 6 accept scenarios, checked {checked}"
+    assert checked == 10, f"expected 10 accept scenarios, checked {checked}"

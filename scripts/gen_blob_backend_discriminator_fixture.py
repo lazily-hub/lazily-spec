@@ -43,7 +43,19 @@ OUT = (
 
 NODE = 7
 BASE_EPOCH = 8
-EPOCH = 9
+
+# The Delta frame's epoch and the ShmBlobRef descriptor's epoch are DIFFERENT
+# numbers on purpose. v1 carried 9 in both, so a runner that read the frame's
+# epoch and a runner that read the descriptor's both satisfied a single
+# `expect.epoch` — the assertion could not tell them apart, and two bindings
+# reported it independently. They are separate facts on the wire (the frame
+# epoch orders deltas; the descriptor epoch is the arena incarnation the blob
+# was written into), so the fixture now names both and gives them different
+# values. `expect.epoch` is deliberately GONE rather than redefined: a runner
+# still reading it fails loudly instead of silently reading the other one.
+FRAME_EPOCH = 9
+BLOB_EPOCH = 5
+
 OFFSET = 40
 LEN = 17
 GENERATION = 2
@@ -53,6 +65,15 @@ CHECKSUM = 987654321
 # adapter is named in docs/zero-copy-transport.md as an anticipated backend, so
 # this is exactly the frame a peer running ahead of this build would emit.
 UNKNOWN_BACKEND = "rdma"
+
+# The non-string probe (`#lzblobbackendstrict` v2). The clause is written
+# entirely about TOKENS, so a runtime whose reader coerces rather than throws on
+# a number in a string position normalizes silently through a door the clause
+# does not describe — one binding's only real defect was exactly this, and it
+# escaped as an exception type outside the family its own codec documents. A
+# small positive integer is the cheapest form of it: msgpack encodes it as a
+# single positive-fixint byte in the slot a fixstr would occupy.
+NON_STRING_BACKEND = 7
 
 
 # --- minimal MessagePack encoder ------------------------------------------
@@ -96,17 +117,53 @@ def _map(pairs: list[tuple[str, bytes]]) -> bytes:
 # --- the descriptor under test --------------------------------------------
 
 
+def _nil() -> bytes:
+    return b"\xc0"
+
+
+# A `backend_form` is the fixture's LABEL for a wire shape, not the token itself.
+# Three of the seven forms carry no token at all — `omitted` writes no map entry,
+# `null` writes an explicit nil, and `non_string` writes an integer where a token
+# belongs — so the label and the value are separate from here down.
+_OMITTED = "omitted"
+_NULL = "null"
+_NON_STRING = "non_string"
+_TOKEN_FORMS = ("shm", "arrow", "in_process", UNKNOWN_BACKEND)
+
+
+def _backend_msgpack(backend_form: str) -> bytes | None:
+    """The msgpack value for `backend`, or None when the entry is absent."""
+    if backend_form == _OMITTED:
+        return None
+    if backend_form == _NULL:
+        return _nil()
+    if backend_form == _NON_STRING:
+        return _uint(NON_STRING_BACKEND)
+    return _str(backend_form)
+
+
+def _backend_json(backend_form: str) -> str | None:
+    """The raw json text for `backend`, or None when the entry is absent."""
+    if backend_form == _OMITTED:
+        return None
+    if backend_form == _NULL:
+        return "null"
+    if backend_form == _NON_STRING:
+        return str(NON_STRING_BACKEND)
+    return f'"{backend_form}"'
+
+
 def _descriptor_fields(backend_form: str) -> list[tuple[str, bytes]]:
-    """`backend_form` is 'omitted' or a literal token to place in the field."""
     fields: list[tuple[str, bytes]] = [
         ("offset", _uint(OFFSET)),
         ("len", _uint(LEN)),
         ("generation", _uint(GENERATION)),
-        ("epoch", _uint(EPOCH)),
+        ("epoch", _uint(BLOB_EPOCH)),
         ("checksum", _uint(CHECKSUM)),
     ]
-    if backend_form != "omitted":
-        fields.append(("backend", _str(backend_form)))
+    backend = _backend_msgpack(backend_form)
+    if backend is not None:
+        fields.append(("backend", backend))
     return fields
 
 
@@ -120,7 +177,7 @@ def _delta_msgpack(backend_form: str) -> bytes:
                 _map(
                     [
                         ("base_epoch", _uint(BASE_EPOCH)),
-                        ("epoch", _uint(EPOCH)),
+                        ("epoch", _uint(FRAME_EPOCH)),
                         ("ops", _array([op])),
                     ]
                 ),
@@ -130,19 +187,20 @@ def _delta_msgpack(backend_form: str) -> bytes:
 
 
 def _delta_json(backend_form: str) -> str:
-    backend = "" if backend_form == "omitted" else f', "backend": "{backend_form}"'
+    value = _backend_json(backend_form)
+    backend = "" if value is None else f', "backend": {value}'
     return (
         '{"Delta": {"base_epoch": %d, "epoch": %d, "ops": [{"SlotValue": '
         '{"node": %d, "payload": {"SharedBlob": {"offset": %d, "len": %d, '
         '"generation": %d, "epoch": %d, "checksum": %d%s}}}}]}}'
     ) % (
         BASE_EPOCH,
-        EPOCH,
+        FRAME_EPOCH,
         NODE,
         OFFSET,
         LEN,
         GENERATION,
-        EPOCH,
+        BLOB_EPOCH,
         CHECKSUM,
         backend,
     )
@@ -168,7 +226,7 @@ REJECT_NOTE = (
 )
 
 ANTI_VACUITY_NOTE = (
-    "Three controls, each defeating a different way to pass without implementing "
+    "Four controls, each defeating a different way to pass without implementing "
     "the clause. (1) `backend_omitted` forces a real decode — a runner that reports "
     "`shm` without decoding satisfies it only by accident and fails `backend_arrow`. "
     "(2) `backend_arrow` forces the field to actually be READ — a decoder that "
@@ -176,8 +234,69 @@ ANTI_VACUITY_NOTE = (
     "shm scenarios and fails here. (3) `backend_shm_explicit` forces the ENCODER "
     "half: `reencoded_backend_field_present` is false for shm and true for arrow, so "
     "a binding cannot satisfy the clause by round-tripping whatever it received. "
-    "Without (2) and (3) a decoder that discards the discriminator passes four of "
-    "six scenarios."
+    "(4) `backend_in_process` forces the VOCABULARY to be complete: v1 declared "
+    "three backends in `assertions.backends` and carried scenarios for two, so a "
+    "binding knowing only {shm, arrow} rejected `in_process` — naming the token, "
+    "conformingly — and passed all eight scenarios while contradicting the enum "
+    "this clause declares. Reading the discriminator and knowing the vocabulary are "
+    "different facts and now have different controls. "
+    "TWO CODECS ARE NOT TWO IMPLEMENTATIONS: several bindings bridge MessagePack "
+    "into the same DOM the JSON decoder produces, or share one serde impl, so the "
+    "msgpack half of a scenario pair can yield ONE discriminator verdict rather "
+    "than an independent second one. It still covers the bridge and the encoder; a "
+    "fully green run must not be read as two implementations agreeing. A binding "
+    "whose two codecs share a decode path should record that in its own ledger "
+    "rather than infer independence from the scenario count."
+)
+
+BACKEND_FORMS_NOTE = (
+    "The seven wire shapes `backend` can arrive in, each carried in both codecs. "
+    "Four are TOKENS (`shm`, `arrow`, `in_process`, `rdma`) and three are not: "
+    "`omitted` writes no map entry at all, `null` writes an explicit nil, and "
+    "`non_string` writes an integer in the slot a token belongs in. A runner MUST "
+    "check that every backend in `assertions.backends` appears as the "
+    "`decoded_backend` of some accept scenario — that is the assertion which would "
+    "have caught v1's missing `in_process`, and it cannot be derived from a "
+    "scenario count."
+)
+
+NULL_NOTE = (
+    "An explicit `backend: null` is the ABSENT form, not a present-unknown one, and "
+    "decodes as `shm` (protocol.md § the `backend` discriminator, following § NodeKey "
+    "and `#lzkeynullstrict`). A serde-style peer that did not apply "
+    "`skip_serializing_if` to an optional field emits `null` where a conforming "
+    "encoder omits, so refusing it is stricter than the reference implementation on a "
+    "frame the reference implementation produces. The null frames are therefore "
+    "accept scenarios that are deliberately schema-INVALID: `schemas/defs.json` "
+    "types `backend` as a string, which binds the ENCODER, and the decoder's "
+    "leniency is a separate fact. Four bindings raised this edge independently while "
+    "implementing v1 and had already split three ways on it — accept-as-`shm`, an "
+    "ExpectedString error naming nothing, and a refusal naming the empty token — "
+    "which is why it is a scenario rather than a sentence."
+)
+
+NON_STRING_NOTE = (
+    "A `backend` that is present and not a string MUST be rejected, and the refusal "
+    "MUST arrive through the codec's documented decode-error family — the same "
+    "family the unknown-token refusal uses, so one catch handles both. That second "
+    "half is the whole point of the scenario: a refusal raised as a type outside the "
+    "family every caller already guards a decode with is invisible, because the "
+    "frame still fails but it fails past the handler. `error_names_token` is NOT "
+    "asserted here; there is no token to name, and requiring the field name would "
+    "pin a message format no codec's native type error carries. `rejection_kind` "
+    "tells the runner which of the two refusals it is looking at."
+)
+
+EPOCH_NOTE = (
+    "`expect.frame_epoch` and `expect.blob_epoch` are DIFFERENT numbers, and "
+    "`expect.epoch` no longer exists. v1 carried 9 in both the Delta frame and the "
+    "ShmBlobRef descriptor, so a runner reading the frame's epoch and a runner "
+    "reading the descriptor's both satisfied one `expect.epoch` — the assertion "
+    "could not tell them apart, and two bindings reported it independently. They "
+    "are separate facts (the frame epoch orders deltas; the descriptor epoch is the "
+    "arena incarnation the blob was written into). The old key was REMOVED rather "
+    "than redefined so a runner still reading it fails loudly instead of silently "
+    "reading the other one."
 )
 
 THEOREM_NOTE = (
@@ -194,7 +313,7 @@ def build() -> dict:
     accept_forms = [
         (
             "omitted",
-            "omitted",
+            _OMITTED,
             "shm",
             False,
             "The forward-compatibility channel, and the only one. Every descriptor "
@@ -223,6 +342,35 @@ def build() -> dict:
             "enum is genuinely multi-valued on the wire, which is what makes routing "
             "by `kind` (the resolve_wrong_backend theorem) meaningful at all.",
         ),
+        (
+            "in_process",
+            "in_process",
+            "in_process",
+            True,
+            "The THIRD declared backend, and the one v1 declared without carrying. A "
+            "binding that knows only {shm, arrow} rejects this token — naming it, "
+            "conformingly, by the letter of the clause — and passed every v1 "
+            "scenario while implementing a smaller enum than the clause declares. "
+            "Three bindings reported the hole independently while replaying v1. "
+            "`arrow` proves the discriminator is READ; this proves the vocabulary "
+            "is COMPLETE, and no count of scenarios substitutes for it.",
+        ),
+        (
+            "null",
+            _NULL,
+            "shm",
+            False,
+            "An explicit null is the ABSENT form, not a present-unknown one, and "
+            "decodes as `shm` — the § NodeKey rule (`#lzkeynullstrict`), not the "
+            "unknown-token rule, because a serde-style peer that skipped "
+            "`skip_serializing_if` emits null where a conforming encoder omits. "
+            "Refusing it would be stricter than the reference implementation on a "
+            "frame the reference implementation produces. The encoder half still "
+            "holds: the re-encoded frame carries no `backend` entry, so the null "
+            "does not survive a round trip. This frame is deliberately "
+            "schema-INVALID (see `assertions.null_form`) — the enum binds the "
+            "encoder, and the decoder's leniency is the separate fact under test.",
+        ),
     ]
 
     for suffix, form, expected, reencoded, description in accept_forms:
@@ -247,12 +395,13 @@ def build() -> dict:
                 "offset": OFFSET,
                 "len": LEN,
                 "generation": GENERATION,
-                "epoch": EPOCH,
+                "frame_epoch": FRAME_EPOCH,
+                "blob_epoch": BLOB_EPOCH,
                 "checksum": CHECKSUM,
             }
             scenarios.append(scenario)
 
-    reject_description = (
+    unknown_description = (
         "The clause. A present `backend` outside the enum MUST be refused, naming "
         "the token. Five of nine bindings normalized it to `shm` and documented the "
         "normalization as forward-compat; that is the case this scenario exists to "
@@ -265,25 +414,48 @@ def build() -> dict:
         "checksum collision returns bytes, whereas a refusal is a visible protocol "
         "error the peer recovers from by resync."
     )
-    for codec in ("json", "msgpack"):
-        scenario = {
-            "id": f"backend_unknown_{codec}",
-            "name": f"backend_unknown_{codec}",
-            "codec": codec,
-            "backend_form": UNKNOWN_BACKEND,
-            "outcome": "reject",
-            "variant": "Delta",
-            "description": reject_description,
-        }
-        if codec == "json":
-            scenario["wire_json"] = _delta_json(UNKNOWN_BACKEND)
-        else:
-            scenario["wire_msgpack_hex"] = _delta_msgpack(UNKNOWN_BACKEND).hex()
-        scenario["expect"] = {
-            "rejected": True,
-            "error_names_token": UNKNOWN_BACKEND,
-        }
-        scenarios.append(scenario)
+    non_string_description = (
+        "The same refusal, reached through a door the clause does not describe. The "
+        "clause is written entirely about TOKENS, so a runtime whose reader coerces "
+        "rather than throws on a number in a string position normalizes silently "
+        "here while passing every token scenario. One binding's only real defect "
+        "under v1 was exactly this. The refusal MUST also arrive through the codec's "
+        "documented decode-error family — `rejection_is_decode_error`, asserted on "
+        "both reject forms — because a refusal raised outside the family every "
+        "caller already guards a decode with fails PAST the handler: the frame is "
+        "still refused and the peer still never sees the error. No token is named, "
+        "because there is no token."
+    )
+
+    reject_forms = [
+        ("unknown", UNKNOWN_BACKEND, "unknown_token", unknown_description),
+        ("non_string", _NON_STRING, "non_string", non_string_description),
+    ]
+
+    for suffix, form, rejection_kind, description in reject_forms:
+        for codec in ("json", "msgpack"):
+            scenario = {
+                "id": f"backend_{suffix}_{codec}",
+                "name": f"backend_{suffix}_{codec}",
+                "codec": codec,
+                "backend_form": form,
+                "outcome": "reject",
+                "variant": "Delta",
+                "description": description,
+            }
+            if codec == "json":
+                scenario["wire_json"] = _delta_json(form)
+            else:
+                scenario["wire_msgpack_hex"] = _delta_msgpack(form).hex()
+            expect = {
+                "rejected": True,
+                "rejection_kind": rejection_kind,
+                "rejection_is_decode_error": True,
+            }
+            if rejection_kind == "unknown_token":
+                expect["error_names_token"] = form
+            scenario["expect"] = expect
+            scenarios.append(scenario)
 
     return {
         "description": (
@@ -296,23 +468,43 @@ def build() -> dict:
             "across nine bindings, which split 5-2 the wrong way while each documented "
             "its choice as deliberate; an undocumented default and a deliberate one are "
             "indistinguishable from the outside, and so, it turns out, are two "
-            "deliberate ones pointing in opposite directions."
+            "deliberate ones pointing in opposite directions. FIXTURE v2 adds the "
+            "four shapes v1 declared or implied without carrying — `in_process`, an "
+            "explicit null, a non-string value, and a Delta epoch distinct from the "
+            "descriptor epoch — every one of which was found by a binding REPLAYING "
+            "v1 rather than by reviewing it."
         ),
         "protocol_version": 1,
         "kind": "BlobBackendDiscriminator",
         "assertions": {
             "clause": (
-                "an OMITTED `backend` MUST decode as `shm`; a PRESENT `backend` outside "
-                "{shm, arrow, in_process} MUST be rejected, naming the token, and MUST "
-                "NOT be normalized to `shm` or to any other backend"
+                "an OMITTED or NULL `backend` MUST decode as `shm`; a PRESENT `backend` "
+                "that is not one of {shm, arrow, in_process} MUST be rejected through "
+                "the codec's documented decode-error family — naming the token when "
+                "there is one — and MUST NOT be normalized to `shm` or to any other "
+                "backend"
             ),
             "required_of_binding": "MUST",
             "codecs": ["json", "msgpack"],
             "backends": ["shm", "arrow", "in_process"],
+            "backend_forms": [
+                _OMITTED,
+                "shm",
+                "arrow",
+                "in_process",
+                _NULL,
+                _NON_STRING,
+                UNKNOWN_BACKEND,
+            ],
             "outcomes": ["accept", "reject"],
+            "rejection_kinds": ["unknown_token", "non_string"],
             "scenario_count": len(scenarios),
             "wire_encoding": WIRE_ENCODING_NOTE,
+            "backend_form_vocabulary": BACKEND_FORMS_NOTE,
             "reject_obligation": REJECT_NOTE,
+            "null_form": NULL_NOTE,
+            "non_string_form": NON_STRING_NOTE,
+            "epoch_disambiguation": EPOCH_NOTE,
             "anti_vacuity": ANTI_VACUITY_NOTE,
             "theorem": THEOREM_NOTE,
             "generator": "scripts/gen_blob_backend_discriminator_fixture.py",
