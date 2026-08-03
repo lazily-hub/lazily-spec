@@ -116,11 +116,21 @@ function* fixtures(dir) {
 // The corpus half of `wire_encoding` (`#lzprosekeyconvention`). Five bindings
 // reported the same thing: that paragraph claims something about how the CORPUS
 // FILE is written — raw text and hex rather than a pre-parsed object — and no
-// assertion a *run* makes can observe it, so every one of its discharges is a
-// proxy resting entirely on review. This moves the observable half somewhere
-// checkable. `wire_json` carried as an OBJECT is the exact defect the paragraph
+// assertion a *run* used to observe. `expect.wire_input_fnv1a64` now makes the
+// runner compare the exact bytes it hands to the decoder, while this check
+// independently derives and validates that expectation from the raw corpus
+// field. `wire_json` carried as an OBJECT is the exact defect the paragraph
 // forbids: a pre-parsed value cannot express an absent map entry versus an
 // explicit null, which is the distinction three of these fixtures turn on.
+function fnv1a64Hex(bytes) {
+  let digest = 0xcbf29ce484222325n;
+  for (const byte of bytes) {
+    digest ^= BigInt(byte);
+    digest = BigInt.asUintN(64, digest * 0x100000001b3n);
+  }
+  return digest.toString(16).padStart(16, "0");
+}
+
 function checkWireForms(id, doc, declaresWireEncoding, violations) {
   const scenarios = Array.isArray(doc?.scenarios) ? doc.scenarios : [];
   let jsonText = 0;
@@ -128,6 +138,7 @@ function checkWireForms(id, doc, declaresWireEncoding, violations) {
   scenarios.forEach((scenario, index) => {
     if (scenario === null || typeof scenario !== "object") return;
     const at = scenario.id ?? scenario.name ?? `scenarios[${index}]`;
+    let wireInput;
     if ("wire_json" in scenario) {
       if (typeof scenario.wire_json !== "string") {
         violations.push(
@@ -137,6 +148,7 @@ function checkWireForms(id, doc, declaresWireEncoding, violations) {
         );
       } else {
         jsonText += 1;
+        wireInput = Buffer.from(scenario.wire_json, "utf8");
         try {
           JSON.parse(scenario.wire_json);
         } catch (error) {
@@ -153,6 +165,17 @@ function checkWireForms(id, doc, declaresWireEncoding, violations) {
         );
       } else {
         msgpackHex += 1;
+        wireInput = Buffer.from(hex, "hex");
+      }
+    }
+    if (declaresWireEncoding && wireInput !== undefined) {
+      const expected = scenario?.expect?.wire_input_fnv1a64;
+      const observed = fnv1a64Hex(wireInput);
+      if (expected !== observed) {
+        violations.push(
+          `${id}: \`${at}.expect.wire_input_fnv1a64\` is ${JSON.stringify(expected)}, ` +
+            `expected ${observed} for the exact decoder-input bytes.`,
+        );
       }
     }
   });

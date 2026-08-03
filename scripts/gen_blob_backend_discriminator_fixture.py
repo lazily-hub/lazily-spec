@@ -74,6 +74,17 @@ UNKNOWN_BACKEND = "rdma"
 # small positive integer is the cheapest form of it: msgpack encodes it as a
 # single positive-fixint byte in the slot a fixstr would occupy.
 NON_STRING_BACKEND = 7
+FNV1A64_OFFSET = 0xCBF29CE484222325
+FNV1A64_PRIME = 0x100000001B3
+U64_MASK = 2**64 - 1
+
+
+def _fnv1a64_hex(data: bytes) -> str:
+    digest = FNV1A64_OFFSET
+    for byte in data:
+        digest ^= byte
+        digest = (digest * FNV1A64_PRIME) & U64_MASK
+    return f"{digest:016x}"
 
 
 # --- minimal MessagePack encoder ------------------------------------------
@@ -214,7 +225,9 @@ WIRE_ENCODING_NOTE = (
     "`schemas/defs.json` closes `backend` to an enum, so a fixture embedding "
     '`"backend": "rdma"` as structured JSON would fail the corpus\'s own schema '
     "gate. The enum binds a conforming ENCODER; these frames are what a decoder "
-    "must survive, which is the same split `nodekey_null_leniency.json` makes."
+    "must survive, which is the same split `nodekey_null_leniency.json` makes. A "
+    "runner MUST compare `expect.wire_input_fnv1a64` against the exact bytes it "
+    "hands to the decoder."
 )
 
 REJECT_NOTE = (
@@ -385,10 +398,13 @@ def build() -> dict:
                 "description": description,
             }
             if codec == "json":
-                scenario["wire_json"] = _delta_json(form)
+                wire_input = _delta_json(form).encode("utf-8")
+                scenario["wire_json"] = wire_input.decode("utf-8")
             else:
-                scenario["wire_msgpack_hex"] = _delta_msgpack(form).hex()
+                wire_input = _delta_msgpack(form)
+                scenario["wire_msgpack_hex"] = wire_input.hex()
             scenario["expect"] = {
+                "wire_input_fnv1a64": _fnv1a64_hex(wire_input),
                 "decoded_backend": expected,
                 "reencoded_backend_field_present": reencoded,
                 "node": NODE,
@@ -444,10 +460,13 @@ def build() -> dict:
                 "description": description,
             }
             if codec == "json":
-                scenario["wire_json"] = _delta_json(form)
+                wire_input = _delta_json(form).encode("utf-8")
+                scenario["wire_json"] = wire_input.decode("utf-8")
             else:
-                scenario["wire_msgpack_hex"] = _delta_msgpack(form).hex()
+                wire_input = _delta_msgpack(form)
+                scenario["wire_msgpack_hex"] = wire_input.hex()
             expect = {
+                "wire_input_fnv1a64": _fnv1a64_hex(wire_input),
                 "rejected": True,
                 "rejection_kind": rejection_kind,
                 "rejection_is_decode_error": True,

@@ -27,6 +27,17 @@ PAYLOAD = [1, 2, 3]
 EPOCH = 4
 BASE_EPOCH = 3
 PRESENT_KEY = "scores/alice"
+FNV1A64_OFFSET = 0xCBF29CE484222325
+FNV1A64_PRIME = 0x100000001B3
+U64_MASK = 2**64 - 1
+
+
+def _fnv1a64_hex(data: bytes) -> str:
+    digest = FNV1A64_OFFSET
+    for byte in data:
+        digest ^= byte
+        digest = (digest * FNV1A64_PRIME) & U64_MASK
+    return f"{digest:016x}"
 
 
 # --- minimal MessagePack encoder ------------------------------------------
@@ -215,7 +226,8 @@ WIRE_ENCODING_NOTE = (
     "map entry versus an explicit `null` / msgpack `nil` (0xc0) — survives into the "
     "runner. A pre-parsed object cannot express the difference between the two in every "
     "host language, and re-serializing one from a decoded value would test the runner's "
-    "encoder instead of the fixture's bytes."
+    "encoder instead of the fixture's bytes. A runner MUST compare "
+    "`expect.wire_input_fnv1a64` against the exact bytes it hands to the decoder."
 )
 
 REENCODE_NOTE = (
@@ -242,11 +254,14 @@ def build() -> dict:
             }
             if codec == "json":
                 builder = _snapshot_json if field == "snapshot" else _delta_json
-                scenario["wire_json"] = builder(key_form)
+                wire_input = builder(key_form).encode("utf-8")
+                scenario["wire_json"] = wire_input.decode("utf-8")
             else:
                 builder = _snapshot_msgpack if field == "snapshot" else _delta_msgpack
-                scenario["wire_msgpack_hex"] = builder(key_form).hex()
+                wire_input = builder(key_form)
+                scenario["wire_msgpack_hex"] = wire_input.hex()
             scenario["expect"] = {
+                "wire_input_fnv1a64": _fnv1a64_hex(wire_input),
                 "decoded_key": PRESENT_KEY if key_form == "present" else None,
                 "reencoded_key_field_present": key_form == "present",
                 "node": NODE,

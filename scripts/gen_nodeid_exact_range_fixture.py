@@ -25,10 +25,20 @@ OUT = Path(__file__).resolve().parent.parent / "conformance" / "codec" / "nodeid
 MAX_SAFE = 2**53 - 1  # 9007199254740991
 ABOVE_SAFE = 2**53 + 1  # 9007199254740993 — the smallest odd integer a double cannot hold
 U64_MAX = 2**64 - 1  # 18446744073709551615
+FNV1A64_OFFSET = 0xCBF29CE484222325
+FNV1A64_PRIME = 0x100000001B3
 
 TYPE_TAG = "i32"
 PAYLOAD = [1, 2, 3]
 EPOCH = 1
+
+
+def _fnv1a64_hex(data: bytes) -> str:
+    digest = FNV1A64_OFFSET
+    for byte in data:
+        digest ^= byte
+        digest = (digest * FNV1A64_PRIME) & U64_MAX
+    return f"{digest:016x}"
 
 
 # --- minimal MessagePack encoder ------------------------------------------
@@ -168,7 +178,8 @@ WIRE_ENCODING_NOTE = (
     "own expected value to 9007199254740992 before the test could compare anything, "
     "and the test would pass against a decoder that rounds. A runner MUST parse "
     "`wire_json` with the codec under test, not re-serialize a pre-parsed object, "
-    "and MUST compare the decoded identifier by its decimal rendering."
+    "MUST compare `expect.wire_input_fnv1a64` against the exact bytes it hands to "
+    "that decoder, and MUST compare the decoded identifier by its decimal rendering."
 )
 
 
@@ -184,10 +195,13 @@ def build() -> dict:
                 "description": why,
             }
             if codec == "json":
-                scenario["wire_json"] = _snapshot_json(node_id)
+                wire_input = _snapshot_json(node_id).encode("utf-8")
+                scenario["wire_json"] = wire_input.decode("utf-8")
             else:
-                scenario["wire_msgpack_hex"] = _snapshot_msgpack(node_id).hex()
+                wire_input = _snapshot_msgpack(node_id)
+                scenario["wire_msgpack_hex"] = wire_input.hex()
             scenario["expect"] = {
+                "wire_input_fnv1a64": _fnv1a64_hex(wire_input),
                 "outcome": outcome,
                 "node_id_decimal": str(node_id),
                 "root_id_decimal": str(node_id),

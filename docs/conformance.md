@@ -152,14 +152,13 @@ Rule 6 is the whole convention: the excuse becomes falsifiable, because the trac
 check it. "`epoch_disambiguation` is discharged by `frame_epoch` and `blob_epoch`" is a
 claim about the run; "`epoch_disambiguation` is prose" is not.
 
-A discharge may name a key that carries the obligation only by PROXY, and two in the
-current corpus do. `wire_encoding` is a claim about how the corpus carries its bytes — raw
-text and hex rather than a pre-parsed object — which no assertion a *run* makes can
-observe; the honest proxy is the codec and form vocabulary, which prove the distinction
-survived into the runner. `theorem` names a Lean theorem in another repository; the run can
-only prove its consequence. Naming a proxy is conforming. Naming a key that has nothing to
-do with the obligation is not, and no tracker can tell the two apart — that judgement stays
-with review, which is why the discharge is written at the call site where review sees it.
+A discharge may name a key that carries the obligation only by PROXY. `theorem` names a
+Lean theorem in another repository; the run can only prove its consequence. Naming a proxy
+is conforming. Naming a key that has nothing to do with the obligation is not, and no
+tracker can tell the two apart — that judgement stays with review, which is why the
+discharge is written at the call site where review sees it. `wire_encoding` is no longer a
+proxy: every declaring scenario carries `expect.wire_input_fnv1a64`, and the runner hashes
+the exact UTF-8 JSON bytes or decoded MessagePack bytes it passes to the library decoder.
 
 ### Scope of "the same fixture's run"
 
@@ -283,23 +282,21 @@ load-bearing — that judgement stays with review, which is why the discharge is
 the call site rather than in a table. Do not read a green run as "every paragraph is
 proven"; read it as "no paragraph is discharged by a claim the run contradicts".
 
-Two open gaps were found by bindings implementing this and are tracked rather than hidden:
+One open gap found by bindings implementing this remains tracked rather than hidden:
 
-- **`wire_encoding` is an obligation on the RUNNER, not the library** — five bindings
-  reported this independently, and five found the `omitted` and `null` families were
-  literally indistinguishable in their runners as a result. Its CORPUS half is now checked:
-  `check-prose-keys.mjs` requires every `wire_json` to be raw parseable text and never a
-  pre-parsed object, every `wire_msgpack_hex` to be even-length lowercase hex, and a fixture
-  declaring `wire_encoding` to carry scenarios in both codecs — a pre-parsed value cannot
-  express an absent map entry versus an explicit null, which is the distinction three of
-  these fixtures turn on. Its RUNNER half is still unreachable: no assertion key reddens when
-  a runner re-serializes a parsed object instead of reading the text, so every discharge of
-  it remains a proxy resting on review.
 - **`generator` is a fourth category the convention does not name.** It is a script path:
-  not prose (the corpus does not declare it, and the shape detector agrees), not a reserved
-  annotation, and carrying nothing a run can compare. Every binding is currently excusing it
+not prose (the corpus does not declare it, and the shape detector agrees), not a reserved
+annotation, and carrying nothing a run can compare. Every binding is currently excusing it
   with its own wording — the same undocumented-default shape this clause exists to remove,
-  one category over.
+one category over.
+
+The former `wire_encoding` gap is executable (`#lzwireencodingrunner`).
+`check-prose-keys.mjs` requires every `wire_json` to be raw parseable text, every
+`wire_msgpack_hex` to be even-length lowercase hex, both codecs to be represented, and
+every scenario's `expect.wire_input_fnv1a64` to match those exact bytes. Each binding then
+computes the same digest over the buffer it passes to its library decoder and asserts that
+key before decoding. A re-serialized value therefore changes the decoder-input witness
+instead of silently satisfying a proxy discharge.
 
 ### What is checked where
 
