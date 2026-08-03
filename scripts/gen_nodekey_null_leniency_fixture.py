@@ -261,6 +261,15 @@ def build() -> dict:
         "protocol_version": 1,
         "kind": "NodeKeyNullLeniency",
         "assertions": {
+            # Prose keys (#lzprosekeyconvention) — discharged by naming the
+            # executable keys that carry the obligation, never asserted and never
+            # excused with free text. See docs/conformance.md.
+            "prose": [
+                "clause",
+                "wire_encoding",
+                "reencode_obligation",
+                "anti_vacuity",
+            ],
             "clause": (
                 "omit-when-absent binds the ENCODER; a decoder MUST accept both an "
                 "omitted `key` and an explicit `key: null` and read both as absent, "

@@ -11,10 +11,17 @@ re-serialize to confirm round-trip fidelity.
   "description": "Human-readable summary",
   "protocol_version": 1,
   "kind": "Snapshot" | "Delta" | "Receipt",
-  "assertions": { "…language-agnostic field checks…" },
+  "assertions": {
+    "prose": ["…keys below that are PARAGRAPHS, not comparable values…"],
+    "…language-agnostic field checks…": "…"
+  },
   "wire": { "…canonical protocol JSON…" }
 }
 ```
+
+`assertions.prose` declares which sibling keys state an obligation in English rather than
+carrying a comparable value. A runner discharges those by naming the executable keys that
+prove them — see [Prose assertion keys](#prose-assertion-keys-lzprosekeyconvention).
 
 ## Current fixtures
 
@@ -57,6 +64,104 @@ Exempt fields:
 
 A binding MUST accept an omitted `frontier` on decode and treat it as empty. Rejecting the
 absent form is a conformance failure; re-emitting it as `[]` is not.
+
+## Prose assertion keys (`#lzprosekeyconvention`)
+
+An `assertions` block mixes two kinds of key. Most carry a value a runner can compare
+against observed behaviour — a list, a count, a vocabulary. A few carry an English
+paragraph that states an obligation and nothing comparable: `clause`, `anti_vacuity`,
+`null_form`, `theorem`, `note`. This section says what a runner MUST do with the second
+kind, because nothing did, and the nine bindings each decided.
+
+### The failure this closes
+
+Replaying `blob_backend_discriminator.json` v2 — which added four new paragraphs
+(`backend_form_vocabulary`, `null_form`, `non_string_form`, `epoch_disambiguation`) —
+produced **four different treatments of the same four keys**:
+
+| Binding | Treatment |
+|---|---|
+| lazily-js | excused all four, its own `assert-key.js` warning against comparing an English paragraph to a literal |
+| lazily-py, lazily-dart, lazily-go, lazily-kt, lazily-cs, lazily-zig | excused them with individually-worded reasons naming the assertion that discharges each — falsifiable in principle, checked by nothing |
+| lazily-rs | marked them `Expect::prose`, a third tracker state exempt from every check, which requires a reason and then discards it |
+| lazily-cpp | **asserted** all four against tallies computed from the run |
+
+Every one is defensible alone. That is the point: this is the same shape as the 5-2 split
+the blob-backend clause itself came from — an undocumented default and a deliberate choice
+are indistinguishable from the outside, and so are four deliberate ones.
+
+### Definition
+
+A **prose key** is a key of a fixture's top-level `assertions` block whose value is a
+natural-language paragraph: it states an obligation and carries no value a runner can
+compare against observed behaviour.
+
+The **corpus** declares which keys those are, in `assertions.prose` — an array of sibling
+key names. A binding MUST NOT decide for itself. The declaration is itself a key of the
+block, so the existing consumption guards see it: a runner that ignores it fails with an
+unconsumed key, which is what makes the rollout self-enforcing.
+
+Prose nested inside a data key is **not** a prose key. `assertions.outcomes` maps a
+vocabulary to English glosses; the assertion is the key set, and the parent key's own
+assertion discharges it.
+
+### The rule
+
+A prose key is **discharged**, never asserted and never excused. To discharge it a runner
+names the executable assertion keys that carry its obligation, and its assertion-key
+tracker verifies the naming. A binding's tracker MUST fail the run when:
+
+1. a key listed in `assertions.prose` is **asserted** — comparing a paragraph, or a tally
+   derived from one, to an English string pins wording, not behaviour. A copy-edit reddens
+   the run and a library regression does not. `reject_obligation` says exactly this about
+   error message formats; it applies no less to the paragraph stating it;
+2. a key listed in `assertions.prose` is **excused with free text** — an unfalsifiable
+   reason ("prose", "explains why the wire is text/hex") is indistinguishable from the
+   undocumented default this clause exists to remove;
+3. a key **not** listed in `assertions.prose` is discharged;
+4. the set of discharged keys differs from `assertions.prose` — this is the comparison that
+   consumes `prose` itself, and it is what makes a forgotten key fail rather than vanish;
+5. a discharge names **no** keys;
+6. a discharge names a key that the same fixture's run **did not assert**;
+7. a discharge names a key that is itself prose.
+
+Rule 6 is the whole convention: the excuse becomes falsifiable, because the tracker can
+check it. "`epoch_disambiguation` is discharged by `frame_epoch` and `blob_epoch`" is a
+claim about the run; "`epoch_disambiguation` is prose" is not.
+
+### Scope of "the same fixture's run"
+
+The discharge ledger is **fixture-scoped**, not block-scoped. An obligation stated in
+`assertions` is routinely carried by a per-scenario `expect` key: `epoch_disambiguation` is
+discharged by `expect.frame_epoch` and `expect.blob_epoch`, which are asserted long after
+the `assertions` block itself is finished. A named key is therefore matched by **key name,
+in any block of that fixture**, and verification happens when the fixture's replay is
+finished. A runner that never verifies MUST fail — an unverified discharge claim is
+reported by the ledger's own teardown, exactly as an unconsumed key is.
+
+A block declaring `prose` MUST also carry at least one non-prose key. A block that is
+entirely prose has nothing that could discharge it.
+
+### Reserved annotation names
+
+`note`, `description` and `reason` inside a per-step or per-scenario block are
+**annotations**, exempt by name in every binding. That exemption is only safe while they
+annotate; an annotation MUST NOT state an obligation, because a reserved name is a place no
+runner can be made to discharge anything. `scripts/check-prose-keys.mjs` enforces this and
+carries a both-directions allowlist of the instances that already do — five reactive-graph
+step notes, each a real normative rule (`teardown is idempotent`, `a stale cell handle whose
+id has been recycled MUST be a no-op`) that no binding checks today. New instances redden.
+
+### What is checked where
+
+| Half | Where | What |
+|---|---|---|
+| Corpus | `scripts/check-prose-keys.mjs` (`make prose-keys-check`) | every paragraph declared, no stale or comparable entries, `prose` not self-listing, no obligation hiding in a reserved annotation name |
+| Binding | the binding's own assertion-key tracker, at runtime | rules 1-7 above |
+
+The split is not arbitrary. Only the run knows which keys it asserted, so rule 6 cannot be
+checked from this repo; and only the corpus can settle which keys are prose, so leaving that
+to nine trackers is what produced four answers.
 
 ## Keyed cell collections conformance
 

@@ -477,6 +477,24 @@ def build() -> dict:
         "protocol_version": 1,
         "kind": "BlobBackendDiscriminator",
         "assertions": {
+            # Which of the keys below are PROSE (#lzprosekeyconvention). A prose
+            # key states an obligation in English and carries no value a runner
+            # can compare against observed behaviour, so it is DISCHARGED by
+            # naming the executable keys that do — never asserted (that pins
+            # wording) and never excused with a free-text reason (that is
+            # unfalsifiable). The corpus declares the set so nine runners cannot
+            # each decide it differently. See docs/conformance.md.
+            "prose": [
+                "clause",
+                "wire_encoding",
+                "backend_form_vocabulary",
+                "reject_obligation",
+                "null_form",
+                "non_string_form",
+                "epoch_disambiguation",
+                "anti_vacuity",
+                "theorem",
+            ],
             "clause": (
                 "an OMITTED or NULL `backend` MUST decode as `shm`; a PRESENT `backend` "
                 "that is not one of {shm, arrow, in_process} MUST be rejected through "

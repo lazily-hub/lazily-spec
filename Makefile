@@ -14,9 +14,22 @@ fixture-copies-check \
 fixture-copies-check-all \
 fixture-copies-sync \
 async-v2-names-check \
-scenario-identity-check
+scenario-identity-check \
+prose-keys-check
 
-check: test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check
+check: test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check
+
+# Prose-key declaration guard (#lzprosekeyconvention). An assertion key carrying
+# an English paragraph states an obligation and carries nothing comparable, and
+# nothing said which keys those were — so nine bindings each decided and landed
+# on FOUR different treatments of the same four keys. The corpus now declares the
+# set in `assertions.prose`; this is the corpus-side half (every paragraph
+# declared, no stale entries, no obligation hiding in a reserved annotation
+# name). The binding-side half — a declared key is DISCHARGED by naming
+# executable keys the same run asserted — lives in each binding's tracker,
+# because only the run knows what it asserted.
+prose-keys-check:
+>node scripts/check-prose-keys.mjs
 
 # Scenario-identity guard (#lzspecscenarioids). Every scenario in the corpus must
 # carry a stable `id` or `name`. Nine bindings resolve scenario identity the same

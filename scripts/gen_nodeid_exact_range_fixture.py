@@ -203,6 +203,10 @@ def build() -> dict:
         "protocol_version": 1,
         "kind": "NodeIdExactRange",
         "assertions": {
+            # Prose keys (#lzprosekeyconvention) — discharged by naming the
+            # executable keys that carry the obligation, never asserted and never
+            # excused with free text. See docs/conformance.md.
+            "prose": ["clause", "wire_encoding", "anti_vacuity"],
             "clause": (
                 "a decoder that cannot represent a received NodeId/PeerId exactly MUST "
                 "reject the frame; it MUST NOT round, truncate, saturate, or wrap"
