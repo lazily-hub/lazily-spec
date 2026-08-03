@@ -983,13 +983,26 @@ property of the bindings — so it stays stated rather than pinned.
 predictions about what an unexecuted clause hides; this is what was actually behind
 them:
 
-- **Three of nine bindings REFUSED the explicit `null`** — lazily-cs (a `ValueKind`
-  error), lazily-zig (`error.ExpectedString`), lazily-kt (`JsonNull` is a
-  `JsonPrimitive` whose `isString` is false, so it fell into the non-string arm).
-  Each returned a decode error for a frame the reference implementation emits. The
-  bullet stating the rule had been in this document since the clause landed; it was
-  prose, and three bindings read it and still got it wrong. That ratio is the
-  argument for making an adjudication executable rather than writing it down.
+- **Four of nine bindings REFUSED the explicit `null`** — lazily-rs
+  (`#[serde(default)]` supplies the default when the *key* is missing, so a present
+  `null` still reached `BlobBackendKind::Deserialize` and failed as a type error in
+  **both** codecs), lazily-cs (a `ValueKind` error), lazily-zig
+  (`error.ExpectedString`), lazily-kt (`JsonNull` is a `JsonPrimitive` whose
+  `isString` is false, so it fell into the non-string arm). Each returned a decode
+  error for a frame the reference implementation emits. The bullet stating the rule
+  had been in this document since the clause landed; it was prose, and four bindings
+  read it and still got it wrong — including lazily-rs, which the row above records
+  as reaching the *conforming* answer on the unknown token independently. Being right
+  about the hard half of a clause is not evidence of being right about the easy half.
+  That ratio is the argument for making an adjudication executable rather than
+  writing it down.
+
+  The lazily-rs fix carries a detail the other bindings do not face: `serde_json`'s
+  `deserialize_str` constructs the `invalid_type` error itself on a null and never
+  calls the visitor, so reading the null requires `deserialize_option` — and that
+  forced a branch on `is_human_readable()`, since postcard writes no option tag for
+  this field and asking it for one would misalign the frame. The strict
+  `deserialize_str` path stays for non-self-describing codecs.
 - **Two bindings had no decode-error family at all.** lazily-zig's decode errors were
   an inferred error set nobody had written down, and lazily-kt raised
   `IllegalStateException` from one refusal and `IllegalArgumentException` from the
