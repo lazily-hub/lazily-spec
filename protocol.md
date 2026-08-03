@@ -843,6 +843,46 @@ can fail to recognise it are **not** the same fact and MUST get opposite answers
 - **A PRESENT `backend` outside the enum MUST be rejected**, with the offending
   token named in the error. A decoder MUST NOT normalize it to `shm`, to any other
   backend, or to a sentinel.
+- **An explicit `backend: null` is the ABSENT form, not a present-unknown one**, and
+  MUST decode as `shm`. This follows § NodeKey rather than the bullet above, and for
+  the same reason: a serde-style peer that did not apply `skip_serializing_if` to an
+  optional field emits `null` where a conforming encoder omits, so refusing it is
+  stricter than the reference implementation on a frame the reference implementation
+  produces. Four bindings raised this edge independently while implementing the
+  clause, and they had already split three ways on it — accept-as-`shm`,
+  `error.ExpectedString` naming nothing, and a refusal naming the token `''`.
+- **`shm` is the permanent default.** A future revision MUST NOT redefine which
+  backend an omitted `backend` denotes. The omitted form is the only shape a
+  pre-field descriptor can have, so changing its meaning would silently reinterpret
+  every descriptor ever written rather than break them visibly — the one genuinely
+  undecidable case on this wire, and cheaper to pin as a sentence than to discover
+  as an incident.
+
+**Two obligations on the refusal itself.**
+
+*It must be catchable through the codec's documented decode-error type.* A refusal
+raised as a type outside the family every caller already guards a decode with is
+invisible: the frame still fails, but it fails past the handler. In C++ that means
+`std::runtime_error` and specifically **not** `std::invalid_argument`, which derives
+from `std::logic_error` — the identical hierarchy trap that let a `std::out_of_range`
+from `std::stoll` escape every decode guard until the NodeId bound was audited. The
+general rule: a decoder's refusals belong in one catchable family, and this clause
+adds no exception to it.
+
+*Naming the token is bounded.* A binding MAY truncate the offending token in its
+error (64 bytes is sufficient), and a truncated name satisfies the obligation. The
+refusal path is the path a hostile or corrupt producer controls, so an unbounded
+"echo the token back" requirement is an allocation and log-flood vector; a truncated
+name still identifies the producer, where an absent one does not.
+
+**The cost this accepts, stated plainly.** A refusal fails the *whole frame*, not
+just the descriptor. So a fourth backend added later is a hard break for every older
+peer rather than a degraded read, and at the decoder a corrupt frame and a
+future-version frame are indistinguishable — nothing on the frame carries a protocol
+version, only the session-level `shared-blob` capability flag. That is the deliberate
+trade: a visible break a peer recovers from by resync, in exchange for never
+resolving a descriptor against a backend its producer did not name. The alternative
+buys graceful degradation with a guarantee that holds only until a checksum collides.
 
 The asymmetry is not stylistic. A new backend enters the protocol by **adding an
 enum value** — a spec change with a fixture, not a wire event (§ Pluggable backends
@@ -882,6 +922,36 @@ deliberate ones pointing in opposite directions.
 replays both halves in both codecs. It carries an `arrow` scenario so the leniency
 cannot be implemented by ignoring the discriminator outright, and pins the re-encoded
 frame so a binding cannot satisfy the clause by round-tripping whatever it received.
+The encoder half is a **separate obligation** and is not implied by the decoder half:
+lazily-rs has carried `skip_serializing_if` since the commit that introduced the
+field, while a binding can implement strict rejection and still emit
+`backend: "shm"` — which is why the re-encode assertions exist rather than being
+inferred.
+
+**What this fixture does not yet pin** (`#lzblobbackendstrict`, follow-up). Every
+item here was found by a binding *replaying* the fixture, not by review, which is the
+argument for replaying a fixture in nine places before trusting it:
+
+- **`in_process` is declared in `assertions.backends` and carried by no scenario.**
+  A binding that knows only `{shm, arrow}` and rejects `in_process` — naming the
+  token, conformingly — passes all eight scenarios while contradicting the enum this
+  clause declares. The `arrow` control proves the discriminator is *read*; it does
+  not prove the vocabulary is *complete*. Found independently by four bindings.
+- **No `null` scenario**, so the bullet added above is prose the corpus does not yet
+  execute.
+- **No non-string scenario.** The clause is written entirely about *tokens*; a
+  runtime whose JSON reader coerces rather than throws on a number in a string
+  position normalizes silently there — the same failure this clause names, arriving
+  through a door it does not describe. One binding's only real defect was exactly
+  this.
+- **`expect.epoch` is ambiguous**: the `Delta` frame and the `ShmBlobRef` descriptor
+  both carry `9`, so a runner reading the frame's epoch and one reading the
+  descriptor's both pass. Making them differ closes it.
+- **Two codecs are not two implementations.** Several bindings bridge MessagePack
+  into the same DOM the JSON decoder produces, or share one `serde` impl, so the
+  msgpack half yields one discriminator verdict rather than an independent second
+  one. It still covers the bridge and the encoder; it should not be read as two
+  implementations agreeing.
 
 ## FFI Boundary
 
