@@ -123,11 +123,24 @@ tracker verifies the naming. A binding's tracker MUST fail the run when:
    consumes `prose` itself, and it is what makes a forgotten key fail rather than vanish;
 5. a discharge names **no** keys;
 6. a discharge names a key that the same fixture's run **did not assert**;
-7. a discharge names a key that is itself prose.
+7. a discharge names a key that is itself prose, **or names `prose`**. The second half is
+   not redundant: `prose` never lists itself, so without it rule 7 misses
+   `dischargedBy: ["prose"]` — and rule 4's own comparison marks `prose` asserted, so
+   rule 6 would wave it through. A paragraph discharged by the declaration that it is a
+   paragraph proves nothing. Seed the prose-name set with `prose` itself.
 
 Rule 6 is the whole convention: the excuse becomes falsifiable, because the tracker can
 check it. "`epoch_disambiguation` is discharged by `frame_epoch` and `blob_epoch`" is a
 claim about the run; "`epoch_disambiguation` is prose" is not.
+
+A discharge may name a key that carries the obligation only by PROXY, and two in the
+current corpus do. `wire_encoding` is a claim about how the corpus carries its bytes — raw
+text and hex rather than a pre-parsed object — which no assertion a *run* makes can
+observe; the honest proxy is the codec and form vocabulary, which prove the distinction
+survived into the runner. `theorem` names a Lean theorem in another repository; the run can
+only prove its consequence. Naming a proxy is conforming. Naming a key that has nothing to
+do with the obligation is not, and no tracker can tell the two apart — that judgement stays
+with review, which is why the discharge is written at the call site where review sees it.
 
 ### Scope of "the same fixture's run"
 
@@ -141,6 +154,23 @@ reported by the ledger's own teardown, exactly as an unconsumed key is.
 
 A block declaring `prose` MUST also carry at least one non-prose key. A block that is
 entirely prose has nothing that could discharge it.
+
+**Which rules are block-local and which are fixture-wide.** The declaration is block-local:
+each block owns its own `prose` array, and rules 3 and 4 compare a block's discharged set
+against that block's array. Only the NAME MATCHING of rules 6 and 7 is fixture-wide, because
+that is the half that has to reach a per-scenario `expect` key.
+
+**A "run" is one test, not one process.** Where a fixture is replayed by several tests, the
+ledger is scoped to each and cleared at its verification. Unioning asserted keys across
+tests would let a discharge in one test be satisfied by an assertion in another, which is
+the same accident-of-collocation the fixture-scoped ledger exists to bound.
+
+**Arming the verification net is a LIFO hazard.** Every cleanup mechanism the nine use —
+`Drop`, `t.Cleanup`, `addTearDown`, `IDisposable`, a destructor — runs in reverse
+registration order. A net armed by the first `prose_key` call therefore fires BEFORE a
+verification the runner registered earlier in its body, and reports a false failure. Arm the
+net from the same seam that already owns the block's consumption check, which is
+structurally guaranteed to run last.
 
 ### Reserved annotation names
 
