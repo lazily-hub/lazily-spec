@@ -800,6 +800,9 @@
     },
     {
       "feature": "Capability negotiation (`SessionHandshake`)",
+      "fixtures": [
+        "codec/capability_handshake.json"
+      ],
       "marks": [
         "✅",
         "✅",

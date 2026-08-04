@@ -403,14 +403,31 @@ Each non-local session starts with a compatibility handshake:
 | `protocol_id` | Must be `"lazily-ipc"` |
 | `protocol_major_version` | Breaking change indicator |
 | `codec` | `"json"`, `"msgpack"` (cross-language binary default), or `"postcard"` (Rust/same-schema fast path) — see [§ Frame codecs](#frame-codecs) |
-| `max_frame_size` | Maximum frame size in bytes |
-| `fragmentation_supported` | Whether frame fragmentation is supported |
+| `max_frame_size` | Maximum unfragmented frame this endpoint can receive, in bytes |
+| `fragmentation_supported` | Whether this endpoint can send and reassemble fragmented frames |
 | `ordered_reliable` | Delivery guarantee requirement |
 | `peer_id` | `PeerId` for this session |
-| `session_id` | Session/graph identifier |
+| `session_id` | Shared non-empty session/graph identifier |
 | `features` | Supported feature flags |
 
-If peers disagree on `protocol_major_version`, `codec`, `ordered_reliable`, or required features, they fail closed before applying any `Snapshot` or `Delta`.
+`max_frame_size` is a positive receive ceiling, not an equality constraint. Peers with
+different ceilings remain compatible and negotiate
+`min(local.max_frame_size, remote.max_frame_size)`. Both directions use that common
+ceiling; a binding MUST retain the negotiated value rather than continuing with its local
+advertisement. A zero ceiling is invalid and fails closed.
+
+Fragmentation is available to the session only when **both** peers advertise
+`fragmentation_supported = true`. A true/false pair remains compatible but negotiates
+`false`; treating one peer's support as sufficient would ask the other peer to reassemble a
+frame it said it cannot accept.
+
+`session_id` names the shared graph/session, while `peer_id` names one endpoint. The two
+handshakes MUST carry the same non-empty `session_id`; their `peer_id` values may and normally
+do differ.
+
+If peers disagree on `protocol_major_version`, `codec`, `ordered_reliable`, `session_id`, or
+required features, or if either `max_frame_size` is zero, they fail closed before applying any
+`Snapshot` or `Delta`.
 
 **Feature flags.** The `features` array advertises optional capabilities both peers must offer to use. Defined flags:
 

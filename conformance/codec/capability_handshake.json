@@ -1,0 +1,154 @@
+{
+  "description": "Capability-handshake limits are negotiated state, not decorative wire fields. Frame ceilings reconcile to the smaller positive receive limit, fragmentation requires support at both endpoints, and the session identifier must name the same graph on both sides.",
+  "protocol_version": 1,
+  "kind": "CapabilityHandshake",
+  "scenarios": [
+    {
+      "id": "smaller_remote_ceiling_wins_without_fragmentation",
+      "local": {
+        "protocol_id": "lazily-ipc",
+        "protocol_major_version": 1,
+        "codec": "json",
+        "max_frame_size": 16777216,
+        "fragmentation_supported": true,
+        "ordered_reliable": true,
+        "peer_id": 1,
+        "session_id": "graph-a",
+        "features": []
+      },
+      "remote": {
+        "protocol_id": "lazily-ipc",
+        "protocol_major_version": 1,
+        "codec": "json",
+        "max_frame_size": 1024,
+        "fragmentation_supported": false,
+        "ordered_reliable": true,
+        "peer_id": 2,
+        "session_id": "graph-a",
+        "features": []
+      },
+      "expected": {
+        "compatible": true,
+        "negotiated_max_frame_size": 1024,
+        "negotiated_fragmentation_supported": false
+      }
+    },
+    {
+      "id": "both_fragmentation_capable_use_smaller_ceiling",
+      "local": {
+        "protocol_id": "lazily-ipc",
+        "protocol_major_version": 1,
+        "codec": "json",
+        "max_frame_size": 4096,
+        "fragmentation_supported": true,
+        "ordered_reliable": true,
+        "peer_id": 7,
+        "session_id": "graph-b",
+        "features": []
+      },
+      "remote": {
+        "protocol_id": "lazily-ipc",
+        "protocol_major_version": 1,
+        "codec": "json",
+        "max_frame_size": 8192,
+        "fragmentation_supported": true,
+        "ordered_reliable": true,
+        "peer_id": 8,
+        "session_id": "graph-b",
+        "features": []
+      },
+      "expected": {
+        "compatible": true,
+        "negotiated_max_frame_size": 4096,
+        "negotiated_fragmentation_supported": true
+      }
+    },
+    {
+      "id": "zero_frame_ceiling_fails_closed",
+      "local": {
+        "protocol_id": "lazily-ipc",
+        "protocol_major_version": 1,
+        "codec": "json",
+        "max_frame_size": 0,
+        "fragmentation_supported": true,
+        "ordered_reliable": true,
+        "peer_id": 1,
+        "session_id": "graph-c",
+        "features": []
+      },
+      "remote": {
+        "protocol_id": "lazily-ipc",
+        "protocol_major_version": 1,
+        "codec": "json",
+        "max_frame_size": 1024,
+        "fragmentation_supported": true,
+        "ordered_reliable": true,
+        "peer_id": 2,
+        "session_id": "graph-c",
+        "features": []
+      },
+      "expected": {
+        "compatible": false,
+        "field": "max_frame_size"
+      }
+    },
+    {
+      "id": "different_session_fails_closed",
+      "local": {
+        "protocol_id": "lazily-ipc",
+        "protocol_major_version": 1,
+        "codec": "json",
+        "max_frame_size": 4096,
+        "fragmentation_supported": false,
+        "ordered_reliable": true,
+        "peer_id": 1,
+        "session_id": "graph-d",
+        "features": []
+      },
+      "remote": {
+        "protocol_id": "lazily-ipc",
+        "protocol_major_version": 1,
+        "codec": "json",
+        "max_frame_size": 4096,
+        "fragmentation_supported": false,
+        "ordered_reliable": true,
+        "peer_id": 2,
+        "session_id": "graph-other",
+        "features": []
+      },
+      "expected": {
+        "compatible": false,
+        "field": "session_id"
+      }
+    },
+    {
+      "id": "empty_session_fails_closed",
+      "local": {
+        "protocol_id": "lazily-ipc",
+        "protocol_major_version": 1,
+        "codec": "json",
+        "max_frame_size": 4096,
+        "fragmentation_supported": false,
+        "ordered_reliable": true,
+        "peer_id": 1,
+        "session_id": "",
+        "features": []
+      },
+      "remote": {
+        "protocol_id": "lazily-ipc",
+        "protocol_major_version": 1,
+        "codec": "json",
+        "max_frame_size": 4096,
+        "fragmentation_supported": false,
+        "ordered_reliable": true,
+        "peer_id": 2,
+        "session_id": "",
+        "features": []
+      },
+      "expected": {
+        "compatible": false,
+        "field": "session_id"
+      }
+    }
+  ]
+}
