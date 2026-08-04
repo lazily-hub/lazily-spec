@@ -44,6 +44,8 @@
 //   6. any other nested key stating an obligation must be promoted into the
 //      fixture's `assertions` block and declared, since only a declared key has
 //      a discharge path
+//   7. generator provenance is top-level metadata naming an existing script,
+//      never an assertion key that nine bindings must excuse
 //
 // The BINDING half — that each declared key is discharged by naming executable
 // assertion keys the same fixture run actually asserted — is enforced inside
@@ -205,6 +207,21 @@ for (const path of fixtures(CORPUS)) {
     continue;
   }
 
+  const generator = doc?.generator;
+  if (generator !== undefined) {
+    if (typeof generator !== "string" || generator.length === 0) {
+      violations.push(`${id}: top-level \`generator\` must be a non-empty script path`);
+    } else {
+      try {
+        if (!statSync(join(ROOT, generator)).isFile()) {
+          violations.push(`${id}: top-level \`generator\` does not name a file: ${generator}`);
+        }
+      } catch {
+        violations.push(`${id}: top-level \`generator\` does not exist: ${generator}`);
+      }
+    }
+  }
+
   // ---- Rules 1-4: the fixture's own top-level `assertions` block. ----------
   const block = doc?.assertions;
   const declaredSet = new Set();
@@ -276,6 +293,12 @@ for (const path of fixtures(CORPUS)) {
     if (node === null || typeof node !== "object") return;
     for (const [key, value] of Object.entries(node)) {
       const here = trail === "" ? key : `${trail}.${key}`;
+      if (key === "generator" && trail !== "") {
+        violations.push(
+          `${id}: \`${here}\` is provenance metadata, not an assertion; ` +
+            "move it to the fixture root",
+        );
+      }
       const isTopLevelAssertions = here === "assertions";
       const isBlock =
         BLOCK_KEYS.has(key) && value !== null && typeof value === "object" && !Array.isArray(value);

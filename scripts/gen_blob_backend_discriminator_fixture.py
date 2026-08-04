@@ -495,6 +495,7 @@ def build() -> dict:
         ),
         "protocol_version": 1,
         "kind": "BlobBackendDiscriminator",
+        "generator": "scripts/gen_blob_backend_discriminator_fixture.py",
         "assertions": {
             # Which of the keys below are PROSE (#lzprosekeyconvention). A prose
             # key states an obligation in English and carries no value a runner
@@ -544,7 +545,6 @@ def build() -> dict:
             "epoch_disambiguation": EPOCH_NOTE,
             "anti_vacuity": ANTI_VACUITY_NOTE,
             "theorem": THEOREM_NOTE,
-            "generator": "scripts/gen_blob_backend_discriminator_fixture.py",
         },
         "scenarios": scenarios,
     }

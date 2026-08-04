@@ -275,6 +275,7 @@ def build() -> dict:
         "description": DESCRIPTION,
         "protocol_version": 1,
         "kind": "NodeKeyNullLeniency",
+        "generator": "scripts/gen_nodekey_null_leniency_fixture.py",
         "assertions": {
             # Prose keys (#lzprosekeyconvention) — discharged by naming the
             # executable keys that carry the obligation, never asserted and never
@@ -303,7 +304,6 @@ def build() -> dict:
                 "one that never decodes at all satisfies all of them; `present` forces a "
                 "real key through and `omitted` forces a real decode."
             ),
-            "generator": "scripts/gen_nodekey_null_leniency_fixture.py",
         },
         "scenarios": scenarios,
     }

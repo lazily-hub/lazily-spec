@@ -282,13 +282,11 @@ load-bearing — that judgement stays with review, which is why the discharge is
 the call site rather than in a table. Do not read a green run as "every paragraph is
 proven"; read it as "no paragraph is discharged by a claim the run contradicts".
 
-One open gap found by bindings implementing this remains tracked rather than hidden:
-
-- **`generator` is a fourth category the convention does not name.** It is a script path:
-not prose (the corpus does not declare it, and the shape detector agrees), not a reserved
-annotation, and carrying nothing a run can compare. Every binding is currently excusing it
-  with its own wording — the same undocumented-default shape this clause exists to remove,
-one category over.
+**`generator` is provenance metadata, not an assertion.** A generated fixture that records
+its source script places the path in the top-level `generator` field. It MUST NOT place that
+field under `assertions`: a replay cannot observe which script emitted its input, so an
+assertion tracker would have nothing executable to compare. Binding runners do not consume
+top-level provenance metadata.
 
 The former `wire_encoding` gap is executable (`#lzwireencodingrunner`).
 `check-prose-keys.mjs` requires every `wire_json` to be raw parseable text, every

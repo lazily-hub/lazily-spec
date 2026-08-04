@@ -216,6 +216,7 @@ def build() -> dict:
         "description": DESCRIPTION,
         "protocol_version": 1,
         "kind": "NodeIdExactRange",
+        "generator": "scripts/gen_nodeid_exact_range_fixture.py",
         "assertions": {
             # Prose keys (#lzprosekeyconvention) — discharged by naming the
             # executable keys that carry the obligation, never asserted and never
@@ -241,7 +242,6 @@ def build() -> dict:
                 "satisfied by a runner that never decodes anything, so a binding must "
                 "prove it decodes the boundary value correctly before its refusals count."
             ),
-            "generator": "scripts/gen_nodeid_exact_range_fixture.py",
         },
         "scenarios": scenarios,
     }
