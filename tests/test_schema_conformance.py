@@ -1647,6 +1647,7 @@ _RELIABLE_SYNC_MODELS = {
     "ResyncCoordinator",
     "DurableOutbox",
     "OutboxStore",
+    "OutboxJournalDecode",
     "LivenessCells",
     "OutboxCoalesce",
     "PartitionEviction",

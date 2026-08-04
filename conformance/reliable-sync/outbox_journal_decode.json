@@ -1,0 +1,43 @@
+{
+  "description": "Append-only durable outbox journals fail closed on complete unknown opcodes while forgiving exactly one crash-torn trailing record.",
+  "protocol_version": 1,
+  "kind": "ReliableSync",
+  "model": "OutboxJournalDecode",
+  "scenarios": [
+    {
+      "id": "unknown_interior_opcode_is_refused",
+      "name": "unknown interior opcode is refused",
+      "records": [
+        { "op": "put", "epoch": 1, "frame": [11] },
+        { "op": "future_delete", "epoch": 1 },
+        { "op": "put", "epoch": 2, "frame": [22] }
+      ],
+      "scan_after": 0,
+      "expect": {
+        "outcome": "reject"
+      }
+    },
+    {
+      "id": "torn_trailing_record_is_forgiven",
+      "name": "torn trailing record is forgiven",
+      "records": [
+        { "op": "put", "epoch": 1, "frame": [11] },
+        { "op": "delete", "epoch": 1 },
+        { "op": "put", "epoch": 2, "frame": [22] }
+      ],
+      "tail_fault": {
+        "kind": "torn_record",
+        "op": "put",
+        "epoch": 3,
+        "frame": [33],
+        "keep_bytes": 5
+      },
+      "scan_after": 0,
+      "expect": {
+        "outcome": "accept",
+        "retained_epochs": [2],
+        "retained_frames": [[22]]
+      }
+    }
+  ]
+}

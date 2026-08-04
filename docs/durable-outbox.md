@@ -29,3 +29,19 @@ bindings ship append-only file journals. SQLite is never a default/WASM feature.
 [`conformance/reliable-sync/outbox_store_protocol.json`](../conformance/reliable-sync/outbox_store_protocol.json)
 pins the storage-independent behavior. `LazilyFormal.Replication` proves cursor
 monotonicity and that replay never contains a pruned epoch.
+
+An append-only journal is a versioned durable wire surface: a later process, and
+possibly a different build of the same binding, reads records written earlier.
+Readers MUST reject a complete record whose opcode they do not recognize. They
+MUST NOT skip it as though it were a cursor marker, because an ignored pruning
+operation can resurrect acknowledged frames and redeliver them while reporting a
+successful scan.
+
+The sole recovery exception is a torn trailing record. A crash may interrupt the
+last append, so a reader MUST forgive one incomplete final record and preserve
+every complete record before it. The same malformed bytes in an interior record
+are corruption and MUST be rejected. The logical, encoding-neutral cases are
+pinned by
+[`conformance/reliable-sync/outbox_journal_decode.json`](../conformance/reliable-sync/outbox_journal_decode.json);
+bindings encode them into their native JSON-lines or binary journal format before
+replay.

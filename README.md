@@ -275,6 +275,7 @@ control frames MUST round-trip through both `json` and `msgpack`, the same disci
 | `reliable-sync/resync_gap_converge.json` | ResyncCoordinator | drop a delta suffix → `RequestSnapshot` → apply `Snapshot` → same graph as the no-drop receiver; single request per gap |
 | `reliable-sync/idempotent_redelivery.json` | ResyncCoordinator | a re-delivered (`base_epoch < last_epoch`) delta is `Ignore`d; net state unchanged (at-least-once ⇒ exactly-once effect, receiver half) |
 | `reliable-sync/outbox_replay_after_crash.json` | DurableOutbox | append-before-send, replay-from-cursor after a simulated crash, `ack_through` retention, send-failure retain; exactly-once effect under replay |
+| `reliable-sync/outbox_journal_decode.json` | FileOutboxStore | a complete unknown interior opcode is rejected; one torn trailing record is forgiven without losing earlier complete records |
 | `reliable-sync/liveness_orset_lww.json` | LivenessCells | OR-set open-set membership + LWW `alive`/lease; whole-editor-death cascade; derived live-doc aggregate converges under retry/re-delivery; per-doc isolation |
 
 The correctness backstop is `lazily-formal` `ReliableSync.lean`; the fixtures are the cross-language
