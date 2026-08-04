@@ -1,0 +1,128 @@
+{
+  "description": "Malformed state charts are rejected before execution: declared kind is authoritative, structural marker types are strict, and every id reference resolves inside the chart.",
+  "kind": "StateChartMalformed",
+  "cases": [
+    {
+      "name": "unknown_kind",
+      "chart": {
+        "initial": "root",
+        "states": {
+        "root": { "kind": "banana" }
+        }
+      }
+    },
+    {
+      "name": "declared_kind_contradicts_inference",
+      "chart": {
+        "initial": "leaf",
+        "states": {
+          "root": { "kind": "parallel", "initial": "leaf" },
+          "leaf": { "parent": "root" }
+        }
+      }
+    },
+    {
+      "name": "parallel_must_be_boolean",
+      "chart": {
+        "initial": "root",
+        "states": {
+          "root": { "parallel": "true" }
+        }
+      }
+    },
+    {
+      "name": "internal_must_be_boolean",
+      "chart": {
+        "initial": "leaf",
+        "states": {
+          "root": { "initial": "leaf" },
+          "leaf": {
+            "parent": "root",
+            "on": { "SELF": { "target": "leaf", "internal": "false" } }
+          }
+        }
+      }
+    },
+    {
+      "name": "history_must_be_string",
+      "chart": {
+        "initial": "history",
+        "states": {
+          "root": { "initial": "history" },
+          "history": { "parent": "root", "history": true, "default": "leaf" },
+          "leaf": { "parent": "root" }
+        }
+      }
+    },
+    {
+      "name": "parent_must_be_string",
+      "chart": {
+        "initial": "leaf",
+        "states": {
+          "root": { "initial": "leaf" },
+          "leaf": { "parent": 7 }
+        }
+      }
+    },
+    {
+      "name": "initial_must_be_string",
+      "chart": {
+        "initial": "leaf",
+        "states": {
+          "root": { "initial": 7 },
+          "leaf": { "parent": "root" }
+        }
+      }
+    },
+    {
+      "name": "default_must_be_string",
+      "chart": {
+        "initial": "history",
+        "states": {
+          "root": { "initial": "history" },
+          "history": { "parent": "root", "history": "shallow", "default": 7 }
+        }
+      }
+    },
+    {
+      "name": "parent_must_be_declared",
+      "chart": {
+        "initial": "leaf",
+        "states": {
+          "root": { "initial": "leaf" },
+          "leaf": { "parent": "missing" }
+        }
+      }
+    },
+    {
+      "name": "initial_must_be_declared",
+      "chart": {
+        "initial": "leaf",
+        "states": {
+          "root": { "initial": "missing" },
+          "leaf": { "parent": "root" }
+        }
+      }
+    },
+    {
+      "name": "default_must_be_declared",
+      "chart": {
+        "initial": "history",
+        "states": {
+          "root": { "initial": "history" },
+          "history": { "parent": "root", "history": "shallow", "default": "missing" }
+        }
+      }
+    },
+    {
+      "name": "transition_target_must_be_declared",
+      "chart": {
+        "initial": "leaf",
+        "states": {
+          "root": { "initial": "leaf" },
+          "leaf": { "parent": "root", "on": { "GO": "missing" } }
+        }
+      }
+    }
+  ]
+}

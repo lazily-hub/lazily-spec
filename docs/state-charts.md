@@ -77,7 +77,20 @@ States form a tree via `parent`. The full form:
 
 `kind` is optional and inferred: `history` when `history` is set; `parallel`
 when `parallel` is true; `compound` when the state has children; otherwise
-`atomic`. A `<transition>` is a bare target-id string (shorthand for
+`atomic`. When `kind` is present it is authoritative, not an annotation: it
+MUST be one of the five values above and MUST agree with the structural fields
+and child relation. `final` is the only kind that cannot be inferred; it MUST
+have no children, `initial`, `parallel`, or `history`. A contradictory or
+unknown declared kind makes the entire chart malformed.
+
+Every id-valued reference MUST name a state declared in the same `states` map
+before the chart can execute. This includes `parent`, compound `initial`,
+history `default`, transition `target`, and the chart-level `initial`.
+Implementations MUST reject an unresolved reference while building the chart;
+they MUST NOT infer an undeclared id as an atomic leaf or allow it into the
+active configuration.
+
+A `<transition>` is a bare target-id string (shorthand for
 `{"target": id}`) or an object:
 
 ```json

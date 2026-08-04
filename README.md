@@ -255,6 +255,7 @@ The `conformance/statechart/` directory contains canonical Harel/SCXML state-cha
 | `statechart/history_shallow.json` | shallow history: resume last direct child; first-entry default |
 | `statechart/history_deep.json` | deep history: resume full nested leaf configuration |
 | `statechart/entry_exit_actions.json` | entry/exit/transition action ordering across LCA boundaries |
+| `statechart/malformed_rejected.json` | authoritative `kind`, strict field types, and declared-state reference closure |
 
 ## Reliable Sync Conformance
 

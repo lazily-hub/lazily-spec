@@ -31,7 +31,7 @@
           "type": "string"
         },
         "kind": {
-          "description": "Structural kind. If omitted, it is inferred: `history` when `history` is set; `parallel` when `parallel` is true; `compound` when the state has children; otherwise `atomic`.",
+        "description": "Authoritative structural kind. If present, it MUST agree with the state's structural fields and child relation; contradictory declarations are malformed. If omitted, it is inferred: `history` when `history` is set; `parallel` when `parallel` is true; `compound` when the state has children; otherwise `atomic`. `final` cannot be inferred.",
           "enum": ["atomic", "compound", "parallel", "history", "final"]
         },
         "parallel": {
