@@ -34,7 +34,7 @@
       "op": { "type": "read", "id": "reader" },
       "expect": {
         "error": "read_after_dispose",
-        "note": "a live reader that still names a disposed dependency errors on its next recompute; it MUST NOT return the value it computed before the disposal"
+        "note": "The error assertion distinguishes recomputation failure from returning the value cached before dependency disposal."
       }
     },
     {

@@ -87,7 +87,7 @@
       "expect": {
         "readable": { "successor": true },
         "read": { "successor": 1 },
-        "note": "a stale *cell* handle whose id has been recycled onto a slot MUST be a no-op — read the node's kind from the arena before tearing it down. Same-kind recycling (a slot id handed to another slot) is NOT distinguishable by kind and is out of contract: a binding that wants that safety needs generational ids or reference-counted handles, and the spec does not require either."
+        "note": "The successor readable and read assertions make disposal through the recycled stale cell handle observable as a no-op. Same-kind recycling (a slot id handed to another slot) is not distinguishable by kind and is out of contract; a binding that wants that safety needs generational ids or reference-counted handles."
       }
     }
   ]

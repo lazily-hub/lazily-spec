@@ -31,7 +31,7 @@
       "op": { "type": "read", "id": "outside_reader" },
       "expect": {
         "error": "read_after_dispose",
-        "note": "REQUIRED failure. A binding that returns 3 here — keeping `in_scope` alive because something still read it — is non-conforming. Callers must not be able to rely on cross-scope reads outliving the scope, because most bindings cannot offer that."
+        "note": "The error assertion distinguishes disposal from returning 3 by keeping in_scope alive for an outside reader."
       }
     },
     {
@@ -65,7 +65,7 @@
       "expect": {
         "error": null,
         "readable": { "h_member": false, "topic": true },
-        "note": "ending a scope whose members read already-disposed nodes MUST NOT itself error; teardown is idempotent over already-gone dependencies"
+        "note": "The null error and readable assertions cover idempotent teardown when a scope member names an already-disposed dependency."
       }
     }
   ]

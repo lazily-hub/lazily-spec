@@ -39,8 +39,7 @@
 //      entirely prose has nothing that could discharge it
 //   5. `note` / `description` / `reason` inside a per-step or per-scenario
 //      block are ANNOTATIONS, exempt by reserved name in every binding, so they
-//      MUST NOT state an obligation; the ones that already do are allowlisted
-//      below, in both directions
+//      MUST NOT state an obligation
 //   6. any other nested key stating an obligation must be promoted into the
 //      fixture's `assertions` block and declared, since only a declared key has
 //      a discharge path
@@ -81,21 +80,6 @@ const BLOCK_KEYS = new Set(["assertions", "expect", "expected"]);
 // RFC-2119 vocabulary. A paragraph carrying one of these is stating an
 // obligation on the binding, not annotating the fixture.
 const OBLIGATION = /\b(MUST|SHALL|REQUIRED)\b/;
-
-// Reserved-name annotations that state an obligation TODAY. Every one is a
-// reactive-graph step note carrying a real normative rule that no runner
-// discharges, because the reserved name exempts it in all nine — the same defect
-// this file's clause fixes one level up, found by this guard's first run. The
-// list runs in BOTH directions: an entry whose note no longer states an
-// obligation fails as stale, exactly as `KNOWN_UNCOVERED` does. It is a
-// stop-the-bleeding ledger, not a carve-out — new instances redden.
-const ANNOTATIONS_STATING_OBLIGATIONS = new Set([
-  "conformance/reactive-graph/churn_returns_to_baseline.json|steps[2].expect.note",
-  "conformance/reactive-graph/cross_scope_teardown_hazard.json|steps[7].expect.note",
-  "conformance/reactive-graph/cross_scope_teardown_hazard.json|steps[14].expect.note",
-  "conformance/reactive-graph/read_after_dispose_is_an_error.json|steps[6].expect.note",
-  "conformance/reactive-graph/recycled_id_inherits_nothing.json|steps[12].expect.note",
-]);
 
 /// A value is prose when it is a string that reads as a sentence: it has
 /// whitespace AND either runs long or terminates like one. Both halves matter —
@@ -191,7 +175,6 @@ function checkWireForms(id, doc, declaresWireEncoding, violations) {
 }
 
 const violations = [];
-const seenAllowlisted = new Set();
 let blocksWithProse = 0;
 let declaredKeys = 0;
 let blocksScanned = 0;
@@ -313,11 +296,6 @@ for (const path of fixtures(CORPUS)) {
           if (ANNOTATION_KEYS.has(inner)) {
             annotationsScanned += 1;
             if (!OBLIGATION.test(text)) continue;
-            const entry = `${id}|${at}`;
-            if (ANNOTATIONS_STATING_OBLIGATIONS.has(entry)) {
-              seenAllowlisted.add(entry);
-              continue;
-            }
             violations.push(
               `${id}: \`${at}\` is a reserved annotation name, which every binding exempts ` +
                 `by name, but it states an obligation (${JSON.stringify(text.slice(0, 60))}…). ` +
@@ -341,19 +319,9 @@ for (const path of fixtures(CORPUS)) {
   walk(doc, "");
 }
 
-for (const entry of ANNOTATIONS_STATING_OBLIGATIONS) {
-  if (!seenAllowlisted.has(entry)) {
-    violations.push(
-      `stale allowlist entry ${entry}: it no longer names an annotation stating an ` +
-        `obligation. Delete it — an allowlist that outlives its instance hides the next one.`,
-    );
-  }
-}
-
 console.log(
   `prose keys: ${declaredKeys} declared across ${blocksWithProse} assertion block(s) of ` +
-    `${blocksScanned} scanned; ${annotationsScanned} reserved annotation(s) checked, ` +
-    `${ANNOTATIONS_STATING_OBLIGATIONS.size} allowlisted as stating an obligation`,
+    `${blocksScanned} scanned; ${annotationsScanned} reserved annotation(s) checked`,
 );
 
 if (violations.length > 0) {

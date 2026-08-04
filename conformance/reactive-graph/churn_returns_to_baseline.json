@@ -35,7 +35,7 @@
       },
       "expect": {
         "dependents_of": { "topic": 8 },
-        "note": "REQUIRED: after 500 subscribe/unsubscribe cycles the dependent set tracks live subscribers (8), not total ever created (508). A binding that leaks shows 508 here."
+        "note": "The dependents_of assertion distinguishes the 8 live subscribers from all 508 subscribers ever created; a leaking binding reports 508."
       }
     },
     {
