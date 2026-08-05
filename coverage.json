@@ -208,6 +208,20 @@
       ]
     },
     {
+      "feature": "Exact-key dependency availability (`DependencyMap`: observe before publish, unrelated-key isolation, stable identity; `#lzdependencyavailability`)",
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
+      ]
+    },
+    {
       "feature": "Atomic ordered move replayed against **all three flavors** (`cellmap_atomic_move` + `cellmap_independence`)",
       "marks": [
         "✅",

@@ -1006,7 +1006,16 @@ def _collection_fixtures() -> list[str]:
 # nine independent runners read — at least one of them dispatches on it. Rejecting the old
 # spelling would break every binding that has not migrated yet, in the same commit that renames
 # the fixtures. They are accepted, not emitted: no fixture in this repo carries them any more.
-_KEYED_MODELS = {"SourceMap", "SourceTree", "CellMap", "CellTree"}
+_KEYED_MODELS = {
+    "SourceMap",
+    "SourceTree",
+    "CellMap",
+    "CellTree",
+}
+# Exact-key availability sources. Their expected block reports the source state
+# and recompute count directly rather than the generic collection invalidation
+# matrix.
+_DEPENDENCY_MODELS = {"DependencyMap"}
 # Queue models: reactive queue shell + storage backend.
 _QUEUE_MODELS = {"QueueCell"}
 # Broadcast topic: keyed per-subscriber cursor state and retention.
@@ -1019,6 +1028,7 @@ _SCENARIO_MODELS = {"SemTree", "SeqCrdt", "StableId", "TextCrdt"}
 _MERGE_MODELS = {"MergeCell"}
 _KNOWN_MODELS = (
     _KEYED_MODELS
+    | _DEPENDENCY_MODELS
     | _QUEUE_MODELS
     | _TOPIC_MODELS
     | _WORK_QUEUE_MODELS
@@ -1039,6 +1049,27 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
     assert obj["kind"] == "Collection", f"{name}: kind must be 'Collection'"
     assert obj["model"] in _KNOWN_MODELS, f"{name}: unknown model {obj['model']!r}"
     assert isinstance(obj["description"], str) and obj["description"], f"{name}: missing description"
+
+    if obj["model"] in _DEPENDENCY_MODELS:
+        assert isinstance(obj.get("key"), str) and obj["key"], (
+            f"{name}: DependencyMap needs a non-empty key"
+        )
+        steps = obj.get("steps")
+        assert isinstance(steps, list) and steps, (
+            f"{name}: DependencyMap needs non-empty 'steps'"
+        )
+        for step in steps:
+            assert "op" in step and "expected" in step, (
+                f"{name}: dependency step missing op/expected"
+            )
+            expected = step["expected"]
+            assert {
+                "state",
+                "recomputes",
+                "present_count",
+                "identity",
+            } <= set(expected), f"{name}: dependency expected state is incomplete"
+        return
 
     if obj["model"] in _MERGE_MODELS:
         scenarios = obj.get("scenarios")

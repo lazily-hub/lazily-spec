@@ -12,6 +12,7 @@
 import {
   copyFileSync,
   existsSync,
+  mkdirSync,
   readFileSync,
   readdirSync,
   statSync,
@@ -68,6 +69,9 @@ const mirrors = [
   // suite runs; listing it here makes the corpus-side gate the single place a
   // fixture change is reconciled for every mirror.
   ["lazily-zig", join(siblingsRoot, "lazily-zig", "src", "lazily", "test")],
+];
+const requiredFixtures = [
+  "collections/dependency_reactive_availability.json",
 ];
 
 function jsonFiles(root) {
@@ -142,6 +146,28 @@ for (const [binding, mirrorRoot] of mirrors) {
     } else {
       copyFileSync(canonicalPath, mirrorPath);
       console.log(`✓ ${binding}: updated ${fixture}`);
+      updated += 1;
+    }
+  }
+
+  for (const fixture of requiredFixtures) {
+    const canonicalPath = join(canonicalRoot, fixture);
+    // A custom/minimal corpus used by this tool's own tests may not contain
+    // production-only required fixtures. "Required" means every checked-out
+    // mirror must carry it when the canonical corpus does.
+    if (!existsSync(canonicalPath)) {
+      continue;
+    }
+    const mirrorPath = join(mirrorRoot, fixture);
+    if (existsSync(mirrorPath)) {
+      continue;
+    }
+    if (mode === "check") {
+      failures.push(`${binding}: required mirror is absent: ${mirrorPath}`);
+    } else {
+      mkdirSync(dirname(mirrorPath), { recursive: true });
+      copyFileSync(canonicalPath, mirrorPath);
+      console.log(`✓ ${binding}: added ${fixture}`);
       updated += 1;
     }
   }

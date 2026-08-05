@@ -262,6 +262,20 @@
       }
     },
     {
+      "title": "collections/dependency_reactive_availability.json#/steps/*/expected",
+      "properties": {
+        "fixture": {
+          "const": "collections/dependency_reactive_availability.json"
+        },
+        "pointer": {
+          "const": "/steps/*/expected"
+        },
+        "value": {
+          "$ref": "#/$defs/route_0018"
+        }
+      }
+    },
+    {
       "title": "collections/keyed_reconciliation_lis.json#/expected",
       "properties": {
         "fixture": {
@@ -271,7 +285,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0018"
+          "$ref": "#/$defs/route_0019"
         }
       }
     },
@@ -285,7 +299,7 @@
           "const": "/scenarios/*/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0019"
+          "$ref": "#/$defs/route_0020"
         }
       }
     },
@@ -299,7 +313,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0020"
+          "$ref": "#/$defs/route_0021"
         }
       }
     },
@@ -313,7 +327,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0021"
+          "$ref": "#/$defs/route_0022"
         }
       }
     },
@@ -327,7 +341,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0022"
+          "$ref": "#/$defs/route_0023"
         }
       }
     },
@@ -341,7 +355,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0023"
+          "$ref": "#/$defs/route_0024"
         }
       }
     },
@@ -355,7 +369,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0024"
+          "$ref": "#/$defs/route_0025"
         }
       }
     },
@@ -369,7 +383,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0025"
+          "$ref": "#/$defs/route_0026"
         }
       }
     },
@@ -383,7 +397,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0026"
+          "$ref": "#/$defs/route_0027"
         }
       }
     },
@@ -397,7 +411,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0027"
+          "$ref": "#/$defs/route_0028"
         }
       }
     },
@@ -411,7 +425,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0028"
+          "$ref": "#/$defs/route_0029"
         }
       }
     },
@@ -425,7 +439,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0029"
+          "$ref": "#/$defs/route_0030"
         }
       }
     },
@@ -439,7 +453,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0030"
+          "$ref": "#/$defs/route_0031"
         }
       }
     },
@@ -453,7 +467,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0031"
+          "$ref": "#/$defs/route_0032"
         }
       }
     },
@@ -467,7 +481,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0032"
+          "$ref": "#/$defs/route_0033"
         }
       }
     },
@@ -481,7 +495,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0033"
+          "$ref": "#/$defs/route_0034"
         }
       }
     },
@@ -495,7 +509,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0034"
+          "$ref": "#/$defs/route_0035"
         }
       }
     },
@@ -509,7 +523,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0035"
+          "$ref": "#/$defs/route_0036"
         }
       }
     },
@@ -523,7 +537,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0036"
+          "$ref": "#/$defs/route_0037"
         }
       }
     },
@@ -537,7 +551,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0037"
+          "$ref": "#/$defs/route_0038"
         }
       }
     },
@@ -551,7 +565,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0038"
+          "$ref": "#/$defs/route_0039"
         }
       }
     },
@@ -565,7 +579,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0039"
+          "$ref": "#/$defs/route_0040"
         }
       }
     },
@@ -579,7 +593,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0040"
+          "$ref": "#/$defs/route_0041"
         }
       }
     },
@@ -593,7 +607,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0041"
+          "$ref": "#/$defs/route_0042"
         }
       }
     },
@@ -607,7 +621,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0042"
+          "$ref": "#/$defs/route_0043"
         }
       }
     },
@@ -621,7 +635,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0043"
+          "$ref": "#/$defs/route_0044"
         }
       }
     },
@@ -635,7 +649,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0044"
+          "$ref": "#/$defs/route_0045"
         }
       }
     },
@@ -649,7 +663,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0045"
+          "$ref": "#/$defs/route_0046"
         }
       }
     },
@@ -663,7 +677,7 @@
           "const": "/frames/*/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0046"
+          "$ref": "#/$defs/route_0047"
         }
       }
     },
@@ -677,7 +691,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0047"
+          "$ref": "#/$defs/route_0048"
         }
       }
     },
@@ -691,7 +705,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0048"
+          "$ref": "#/$defs/route_0049"
         }
       }
     },
@@ -705,7 +719,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0049"
+          "$ref": "#/$defs/route_0050"
         }
       }
     },
@@ -719,7 +733,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0050"
+          "$ref": "#/$defs/route_0051"
         }
       }
     },
@@ -733,7 +747,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0051"
+          "$ref": "#/$defs/route_0052"
         }
       }
     },
@@ -747,7 +761,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0052"
+          "$ref": "#/$defs/route_0053"
         }
       }
     },
@@ -761,7 +775,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0053"
+          "$ref": "#/$defs/route_0054"
         }
       }
     },
@@ -775,7 +789,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0054"
+          "$ref": "#/$defs/route_0055"
         }
       }
     },
@@ -789,7 +803,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0055"
+          "$ref": "#/$defs/route_0056"
         }
       }
     },
@@ -803,7 +817,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0056"
+          "$ref": "#/$defs/route_0057"
         }
       }
     },
@@ -817,7 +831,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0057"
+          "$ref": "#/$defs/route_0058"
         }
       }
     },
@@ -831,7 +845,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0058"
+          "$ref": "#/$defs/route_0059"
         }
       }
     },
@@ -845,7 +859,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0059"
+          "$ref": "#/$defs/route_0060"
         }
       }
     },
@@ -859,7 +873,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0060"
+          "$ref": "#/$defs/route_0061"
         }
       }
     },
@@ -873,7 +887,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0061"
+          "$ref": "#/$defs/route_0062"
         }
       }
     },
@@ -887,7 +901,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0062"
+          "$ref": "#/$defs/route_0063"
         }
       }
     },
@@ -901,7 +915,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0063"
+          "$ref": "#/$defs/route_0064"
         }
       }
     },
@@ -915,7 +929,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0064"
+          "$ref": "#/$defs/route_0065"
         }
       }
     },
@@ -929,7 +943,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0065"
+          "$ref": "#/$defs/route_0066"
         }
       }
     },
@@ -943,7 +957,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0066"
+          "$ref": "#/$defs/route_0067"
         }
       }
     },
@@ -957,7 +971,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0067"
+          "$ref": "#/$defs/route_0068"
         }
       }
     },
@@ -971,7 +985,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0068"
+          "$ref": "#/$defs/route_0069"
         }
       }
     },
@@ -985,7 +999,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0069"
+          "$ref": "#/$defs/route_0070"
         }
       }
     },
@@ -999,7 +1013,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0070"
+          "$ref": "#/$defs/route_0071"
         }
       }
     },
@@ -1013,7 +1027,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0071"
+          "$ref": "#/$defs/route_0072"
         }
       }
     },
@@ -1027,7 +1041,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0072"
+          "$ref": "#/$defs/route_0073"
         }
       }
     },
@@ -1041,7 +1055,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0073"
+          "$ref": "#/$defs/route_0074"
         }
       }
     },
@@ -1055,7 +1069,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0074"
+          "$ref": "#/$defs/route_0075"
         }
       }
     },
@@ -1069,7 +1083,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0075"
+          "$ref": "#/$defs/route_0076"
         }
       }
     },
@@ -1083,7 +1097,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0076"
+          "$ref": "#/$defs/route_0077"
         }
       }
     },
@@ -1097,7 +1111,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0077"
+          "$ref": "#/$defs/route_0078"
         }
       }
     },
@@ -1111,7 +1125,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0078"
+          "$ref": "#/$defs/route_0079"
         }
       }
     },
@@ -1125,7 +1139,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0079"
+          "$ref": "#/$defs/route_0080"
         }
       }
     },
@@ -1139,7 +1153,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0080"
+          "$ref": "#/$defs/route_0081"
         }
       }
     },
@@ -1153,7 +1167,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0081"
+          "$ref": "#/$defs/route_0082"
         }
       }
     },
@@ -1167,7 +1181,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0082"
+          "$ref": "#/$defs/route_0083"
         }
       }
     },
@@ -1181,7 +1195,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0083"
+          "$ref": "#/$defs/route_0084"
         }
       }
     },
@@ -1195,7 +1209,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0084"
+          "$ref": "#/$defs/route_0085"
         }
       }
     },
@@ -1209,7 +1223,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0085"
+          "$ref": "#/$defs/route_0086"
         }
       }
     },
@@ -1223,7 +1237,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0086"
+          "$ref": "#/$defs/route_0087"
         }
       }
     },
@@ -1237,7 +1251,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0087"
+          "$ref": "#/$defs/route_0088"
         }
       }
     },
@@ -1251,7 +1265,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0088"
+          "$ref": "#/$defs/route_0089"
         }
       }
     },
@@ -1265,7 +1279,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0089"
+          "$ref": "#/$defs/route_0090"
         }
       }
     },
@@ -1279,7 +1293,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0090"
+          "$ref": "#/$defs/route_0091"
         }
       }
     },
@@ -1293,7 +1307,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0091"
+          "$ref": "#/$defs/route_0092"
         }
       }
     },
@@ -1307,7 +1321,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0092"
+          "$ref": "#/$defs/route_0093"
         }
       }
     },
@@ -1321,7 +1335,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0093"
+          "$ref": "#/$defs/route_0094"
         }
       }
     },
@@ -1335,7 +1349,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0094"
+          "$ref": "#/$defs/route_0095"
         }
       }
     },
@@ -1349,7 +1363,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0095"
+          "$ref": "#/$defs/route_0096"
         }
       }
     },
@@ -1363,7 +1377,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0096"
+          "$ref": "#/$defs/route_0097"
         }
       }
     },
@@ -1377,7 +1391,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0097"
+          "$ref": "#/$defs/route_0098"
         }
       }
     },
@@ -1391,7 +1405,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0098"
+          "$ref": "#/$defs/route_0099"
         }
       }
     },
@@ -1405,7 +1419,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0099"
+          "$ref": "#/$defs/route_0100"
         }
       }
     },
@@ -1419,7 +1433,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0100"
+          "$ref": "#/$defs/route_0101"
         }
       }
     },
@@ -1433,7 +1447,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0101"
+          "$ref": "#/$defs/route_0102"
         }
       }
     },
@@ -1447,7 +1461,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0102"
+          "$ref": "#/$defs/route_0103"
         }
       }
     },
@@ -1461,7 +1475,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0103"
+          "$ref": "#/$defs/route_0104"
         }
       }
     },
@@ -1475,7 +1489,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0104"
+          "$ref": "#/$defs/route_0105"
         }
       }
     },
@@ -1489,7 +1503,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0105"
+          "$ref": "#/$defs/route_0106"
         }
       }
     },
@@ -1503,7 +1517,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0106"
+          "$ref": "#/$defs/route_0107"
         }
       }
     },
@@ -1517,7 +1531,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0107"
+          "$ref": "#/$defs/route_0108"
         }
       }
     },
@@ -1531,7 +1545,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0108"
+          "$ref": "#/$defs/route_0109"
         }
       }
     },
@@ -1545,7 +1559,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0109"
+          "$ref": "#/$defs/route_0110"
         }
       }
     },
@@ -1559,7 +1573,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0110"
+          "$ref": "#/$defs/route_0111"
         }
       }
     },
@@ -1573,7 +1587,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0111"
+          "$ref": "#/$defs/route_0112"
         }
       }
     },
@@ -1587,7 +1601,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0112"
+          "$ref": "#/$defs/route_0113"
         }
       }
     },
@@ -1601,7 +1615,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0113"
+          "$ref": "#/$defs/route_0114"
         }
       }
     },
@@ -1615,7 +1629,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0114"
+          "$ref": "#/$defs/route_0115"
         }
       }
     },
@@ -1629,7 +1643,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0115"
+          "$ref": "#/$defs/route_0116"
         }
       }
     },
@@ -1643,7 +1657,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0116"
+          "$ref": "#/$defs/route_0117"
         }
       }
     },
@@ -1657,7 +1671,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0117"
+          "$ref": "#/$defs/route_0118"
         }
       }
     },
@@ -1671,7 +1685,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0118"
+          "$ref": "#/$defs/route_0119"
         }
       }
     },
@@ -1685,7 +1699,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0119"
+          "$ref": "#/$defs/route_0120"
         }
       }
     },
@@ -1699,7 +1713,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0120"
+          "$ref": "#/$defs/route_0121"
         }
       }
     },
@@ -1713,7 +1727,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0121"
+          "$ref": "#/$defs/route_0122"
         }
       }
     },
@@ -1727,7 +1741,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0122"
+          "$ref": "#/$defs/route_0123"
         }
       }
     },
@@ -1741,7 +1755,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0123"
+          "$ref": "#/$defs/route_0124"
         }
       }
     },
@@ -1755,7 +1769,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0124"
+          "$ref": "#/$defs/route_0125"
         }
       }
     },
@@ -1769,7 +1783,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0125"
+          "$ref": "#/$defs/route_0126"
         }
       }
     },
@@ -1783,7 +1797,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0126"
+          "$ref": "#/$defs/route_0127"
         }
       }
     },
@@ -1797,7 +1811,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0127"
+          "$ref": "#/$defs/route_0128"
         }
       }
     },
@@ -1811,7 +1825,7 @@
           "const": "/frames/*/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0128"
+          "$ref": "#/$defs/route_0129"
         }
       }
     },
@@ -1825,7 +1839,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0129"
+          "$ref": "#/$defs/route_0130"
         }
       }
     },
@@ -1839,7 +1853,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0130"
+          "$ref": "#/$defs/route_0131"
         }
       }
     },
@@ -1853,7 +1867,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0131"
+          "$ref": "#/$defs/route_0132"
         }
       }
     },
@@ -1867,7 +1881,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0132"
+          "$ref": "#/$defs/route_0133"
         }
       }
     },
@@ -1881,7 +1895,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0133"
+          "$ref": "#/$defs/route_0134"
         }
       }
     },
@@ -1895,7 +1909,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0134"
+          "$ref": "#/$defs/route_0135"
         }
       }
     },
@@ -1909,7 +1923,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0135"
+          "$ref": "#/$defs/route_0136"
         }
       }
     },
@@ -1923,7 +1937,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0136"
+          "$ref": "#/$defs/route_0137"
         }
       }
     },
@@ -1937,7 +1951,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0137"
+          "$ref": "#/$defs/route_0138"
         }
       }
     },
@@ -1951,7 +1965,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0138"
+          "$ref": "#/$defs/route_0139"
         }
       }
     },
@@ -1965,7 +1979,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0139"
+          "$ref": "#/$defs/route_0140"
         }
       }
     },
@@ -1979,7 +1993,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0140"
+          "$ref": "#/$defs/route_0141"
         }
       }
     },
@@ -1993,7 +2007,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0141"
+          "$ref": "#/$defs/route_0142"
         }
       }
     },
@@ -2007,7 +2021,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0142"
+          "$ref": "#/$defs/route_0143"
         }
       }
     }
@@ -3020,6 +3034,46 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "identity": {
+          "type": "string"
+        },
+        "present_count": {
+          "type": "integer"
+        },
+        "recomputes": {
+          "type": "integer"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "Available": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "Available"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "identity",
+        "present_count",
+        "recomputes",
+        "state"
+      ]
+    },
+    "route_0019": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
         "ops": {
           "type": "array",
           "items": {
@@ -3061,7 +3115,7 @@
         "stable_keys_not_invalidated"
       ]
     },
-    "route_0019": {
+    "route_0020": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3077,7 +3131,7 @@
         "value"
       ]
     },
-    "route_0020": {
+    "route_0021": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3131,7 +3185,7 @@
         "len"
       ]
     },
-    "route_0021": {
+    "route_0022": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3184,7 +3238,7 @@
         "invalidates"
       ]
     },
-    "route_0022": {
+    "route_0023": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3243,7 +3297,7 @@
         "len"
       ]
     },
-    "route_0023": {
+    "route_0024": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3288,7 +3342,7 @@
         "invalidates"
       ]
     },
-    "route_0024": {
+    "route_0025": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3359,7 +3413,7 @@
         "len"
       ]
     },
-    "route_0025": {
+    "route_0026": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3452,7 +3506,7 @@
         }
       }
     },
-    "route_0026": {
+    "route_0027": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3500,7 +3554,7 @@
         }
       }
     },
-    "route_0027": {
+    "route_0028": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3530,7 +3584,7 @@
         }
       }
     },
-    "route_0028": {
+    "route_0029": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3620,7 +3674,7 @@
         }
       }
     },
-    "route_0029": {
+    "route_0030": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3730,7 +3784,7 @@
         "subscriptions"
       ]
     },
-    "route_0030": {
+    "route_0031": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3839,75 +3893,6 @@
         "subscriptions"
       ]
     },
-    "route_0031": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "base_offset": {
-          "type": "integer"
-        },
-        "elements": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "ephemeral": {
-              "type": "boolean"
-            }
-          }
-        },
-        "reads": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "ephemeral": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "subscriptions": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "ephemeral": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "connected": {
-                  "type": "boolean"
-                },
-                "cursor": {
-                  "type": "integer"
-                },
-                "durability": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "connected",
-                "cursor",
-                "durability"
-              ]
-            }
-          }
-        }
-      },
-      "required": [
-        "base_offset",
-        "elements",
-        "invalidates",
-        "reads",
-        "subscriptions"
-      ]
-    },
     "route_0032": {
       "type": "object",
       "additionalProperties": false,
@@ -3925,6 +3910,75 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
+            "ephemeral": {
+              "type": "boolean"
+            }
+          }
+        },
+        "reads": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ephemeral": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "subscriptions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ephemeral": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "connected": {
+                  "type": "boolean"
+                },
+                "cursor": {
+                  "type": "integer"
+                },
+                "durability": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "connected",
+                "cursor",
+                "durability"
+              ]
+            }
+          }
+        }
+      },
+      "required": [
+        "base_offset",
+        "elements",
+        "invalidates",
+        "reads",
+        "subscriptions"
+      ]
+    },
+    "route_0033": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "base_offset": {
+          "type": "integer"
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
             "worker": {
               "type": "boolean"
             }
@@ -3983,7 +4037,7 @@
         "subscriptions"
       ]
     },
-    "route_0033": {
+    "route_0034": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4105,7 +4159,7 @@
         "reads"
       ]
     },
-    "route_0034": {
+    "route_0035": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4251,7 +4305,7 @@
         "reads"
       ]
     },
-    "route_0035": {
+    "route_0036": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4287,7 +4341,7 @@
         "role"
       ]
     },
-    "route_0036": {
+    "route_0037": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4327,7 +4381,7 @@
         "invalidates"
       ]
     },
-    "route_0037": {
+    "route_0038": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4356,7 +4410,7 @@
         "is_locked"
       ]
     },
-    "route_0038": {
+    "route_0039": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4385,7 +4439,7 @@
         "votes"
       ]
     },
-    "route_0039": {
+    "route_0040": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4410,7 +4464,7 @@
         "permits_available"
       ]
     },
-    "route_0040": {
+    "route_0041": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4437,7 +4491,7 @@
         }
       }
     },
-    "route_0041": {
+    "route_0042": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4461,7 +4515,7 @@
         "resync_after_epoch_10"
       ]
     },
-    "route_0042": {
+    "route_0043": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4489,7 +4543,7 @@
         "op_count"
       ]
     },
-    "route_0043": {
+    "route_0044": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4517,7 +4571,7 @@
         "op_count"
       ]
     },
-    "route_0044": {
+    "route_0045": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4549,7 +4603,7 @@
         "op_count"
       ]
     },
-    "route_0045": {
+    "route_0046": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4607,7 +4661,7 @@
         "resolution"
       ]
     },
-    "route_0046": {
+    "route_0047": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4631,7 +4685,7 @@
         "op_count"
       ]
     },
-    "route_0047": {
+    "route_0048": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4677,7 +4731,7 @@
         "target_values"
       ]
     },
-    "route_0048": {
+    "route_0049": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4822,194 +4876,6 @@
                       "type": "integer"
                     }
                   ]
-                }
-              },
-              "required": [
-                "authority",
-                "buffered",
-                "consecutive_errors",
-                "delivered_through",
-                "generation",
-                "lifecycle",
-                "readiness",
-                "retry",
-                "window"
-              ]
-            }
-          },
-          "required": [
-            "alpha"
-          ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "receipts",
-        "scopes"
-      ]
-    },
-    "route_0049": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "receipts": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "accepted": {
-                  "type": "boolean"
-                },
-                "dropped": {
-                  "type": "boolean"
-                },
-                "error": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "accepted",
-                "dropped",
-                "error"
-              ]
-            },
-            "scopes": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "alpha": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "authority": {
-                      "type": "boolean"
-                    },
-                    "readiness": {
-                      "type": "boolean"
-                    },
-                    "retry": {
-                      "type": "boolean"
-                    },
-                    "value": {
-                      "type": "boolean"
-                    }
-                  },
-                  "required": [
-                    "authority",
-                    "readiness",
-                    "retry",
-                    "value"
-                  ]
-                }
-              },
-              "required": [
-                "alpha"
-              ]
-            }
-          },
-          "required": [
-            "receipts",
-            "scopes"
-          ]
-        },
-        "receipts": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "accepted": {
-              "type": "integer"
-            },
-            "dropped": {
-              "type": "integer"
-            },
-            "error": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "accepted",
-            "dropped",
-            "error"
-          ]
-        },
-        "scopes": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "alpha": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "authority": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "delivered_through": {
-                      "type": "integer"
-                    },
-                    "generation": {
-                      "type": "integer"
-                    },
-                    "stamped_at": {
-                      "type": "integer"
-                    }
-                  },
-                  "required": [
-                    "delivered_through",
-                    "generation",
-                    "stamped_at"
-                  ]
-                },
-                "buffered": {
-                  "type": "integer"
-                },
-                "consecutive_errors": {
-                  "type": "integer"
-                },
-                "delivered_through": {
-                  "type": "integer"
-                },
-                "generation": {
-                  "type": "integer"
-                },
-                "lifecycle": {
-                  "type": "string"
-                },
-                "readiness": {
-                  "type": "string"
-                },
-                "retry": {
-                  "anyOf": [
-                    {
-                      "type": "null"
-                    },
-                    {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "attempt": {
-                          "type": "integer"
-                        },
-                        "backoff": {
-                          "type": "integer"
-                        },
-                        "resume_from": {
-                          "type": "integer"
-                        }
-                      },
-                      "required": [
-                        "attempt",
-                        "backoff",
-                        "resume_from"
-                      ]
-                    }
-                  ]
-                },
-                "window": {
-                  "type": "integer"
                 }
               },
               "required": [
@@ -5320,6 +5186,194 @@
               "additionalProperties": false,
               "properties": {
                 "authority": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "delivered_through": {
+                      "type": "integer"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "stamped_at": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "delivered_through",
+                    "generation",
+                    "stamped_at"
+                  ]
+                },
+                "buffered": {
+                  "type": "integer"
+                },
+                "consecutive_errors": {
+                  "type": "integer"
+                },
+                "delivered_through": {
+                  "type": "integer"
+                },
+                "generation": {
+                  "type": "integer"
+                },
+                "lifecycle": {
+                  "type": "string"
+                },
+                "readiness": {
+                  "type": "string"
+                },
+                "retry": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "attempt": {
+                          "type": "integer"
+                        },
+                        "backoff": {
+                          "type": "integer"
+                        },
+                        "resume_from": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "attempt",
+                        "backoff",
+                        "resume_from"
+                      ]
+                    }
+                  ]
+                },
+                "window": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "authority",
+                "buffered",
+                "consecutive_errors",
+                "delivered_through",
+                "generation",
+                "lifecycle",
+                "readiness",
+                "retry",
+                "window"
+              ]
+            }
+          },
+          "required": [
+            "alpha"
+          ]
+        }
+      },
+      "required": [
+        "invalidates",
+        "receipts",
+        "scopes"
+      ]
+    },
+    "route_0052": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "receipts": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "accepted": {
+                  "type": "boolean"
+                },
+                "dropped": {
+                  "type": "boolean"
+                },
+                "error": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "accepted",
+                "dropped",
+                "error"
+              ]
+            },
+            "scopes": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "alpha": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "authority": {
+                      "type": "boolean"
+                    },
+                    "readiness": {
+                      "type": "boolean"
+                    },
+                    "retry": {
+                      "type": "boolean"
+                    },
+                    "value": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "authority",
+                    "readiness",
+                    "retry",
+                    "value"
+                  ]
+                }
+              },
+              "required": [
+                "alpha"
+              ]
+            }
+          },
+          "required": [
+            "receipts",
+            "scopes"
+          ]
+        },
+        "receipts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "accepted": {
+              "type": "integer"
+            },
+            "dropped": {
+              "type": "integer"
+            },
+            "error": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "accepted",
+            "dropped",
+            "error"
+          ]
+        },
+        "scopes": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "alpha": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "authority": {
                   "anyOf": [
                     {
                       "type": "null"
@@ -5416,7 +5470,7 @@
         "scopes"
       ]
     },
-    "route_0052": {
+    "route_0053": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -5672,7 +5726,7 @@
         "scopes"
       ]
     },
-    "route_0053": {
+    "route_0054": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -5857,7 +5911,7 @@
         "scopes"
       ]
     },
-    "route_0054": {
+    "route_0055": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6021,42 +6075,6 @@
         "scopes"
       ]
     },
-    "route_0055": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "converged": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "live_nodes": {
-          "type": "integer"
-        },
-        "render_on": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "a": {
-              "type": "string"
-            },
-            "b": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "a",
-            "b"
-          ]
-        }
-      },
-      "required": [
-        "converged",
-        "live_nodes",
-        "render_on"
-      ]
-    },
     "route_0056": {
       "type": "object",
       "additionalProperties": false,
@@ -6103,6 +6121,9 @@
             "type": "string"
           }
         },
+        "live_nodes": {
+          "type": "integer"
+        },
         "render_on": {
           "type": "object",
           "additionalProperties": false,
@@ -6122,42 +6143,11 @@
       },
       "required": [
         "converged",
+        "live_nodes",
         "render_on"
       ]
     },
     "route_0058": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "live_nodes": {
-          "type": "integer"
-        },
-        "render": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "live_nodes",
-        "render"
-      ]
-    },
-    "route_0059": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "live_nodes": {
-          "type": "integer"
-        },
-        "render": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "live_nodes",
-        "render"
-      ]
-    },
-    "route_0060": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6185,7 +6175,40 @@
         }
       },
       "required": [
+        "converged",
         "render_on"
+      ]
+    },
+    "route_0059": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "live_nodes": {
+          "type": "integer"
+        },
+        "render": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "live_nodes",
+        "render"
+      ]
+    },
+    "route_0060": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "live_nodes": {
+          "type": "integer"
+        },
+        "render": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "live_nodes",
+        "render"
       ]
     },
     "route_0061": {
@@ -6216,11 +6239,42 @@
         }
       },
       "required": [
-        "converged",
         "render_on"
       ]
     },
     "route_0062": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "converged": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "render_on": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "string"
+            },
+            "b": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "required": [
+        "converged",
+        "render_on"
+      ]
+    },
+    "route_0063": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6236,7 +6290,7 @@
         "render"
       ]
     },
-    "route_0063": {
+    "route_0064": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6273,7 +6327,7 @@
         "live_nodes"
       ]
     },
-    "route_0064": {
+    "route_0065": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6335,7 +6389,7 @@
         "present_after_each_read"
       ]
     },
-    "route_0065": {
+    "route_0066": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6393,7 +6447,7 @@
         "observe"
       ]
     },
-    "route_0066": {
+    "route_0067": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6448,7 +6502,7 @@
         "observe"
       ]
     },
-    "route_0067": {
+    "route_0068": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6483,7 +6537,7 @@
         "states"
       ]
     },
-    "route_0068": {
+    "route_0069": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6548,7 +6602,7 @@
         "terminal_after_frame_index"
       ]
     },
-    "route_0069": {
+    "route_0070": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6629,7 +6683,7 @@
         "projection"
       ]
     },
-    "route_0070": {
+    "route_0071": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6690,7 +6744,7 @@
         "projection"
       ]
     },
-    "route_0071": {
+    "route_0072": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6758,7 +6812,7 @@
         "projection"
       ]
     },
-    "route_0072": {
+    "route_0073": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6847,7 +6901,7 @@
         "rpc"
       ]
     },
-    "route_0073": {
+    "route_0074": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6915,7 +6969,7 @@
         "projection"
       ]
     },
-    "route_0074": {
+    "route_0075": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6976,7 +7030,7 @@
         "projection"
       ]
     },
-    "route_0075": {
+    "route_0076": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7049,7 +7103,7 @@
         "projection_before_conflict"
       ]
     },
-    "route_0076": {
+    "route_0077": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7083,7 +7137,7 @@
         "present"
       ]
     },
-    "route_0077": {
+    "route_0078": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7115,7 +7169,7 @@
         "value"
       ]
     },
-    "route_0078": {
+    "route_0079": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7149,7 +7203,7 @@
         "present"
       ]
     },
-    "route_0079": {
+    "route_0080": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7188,7 +7242,7 @@
         "ordinary_snapshot_count"
       ]
     },
-    "route_0080": {
+    "route_0081": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7213,31 +7267,6 @@
               "type": "string"
             }
           ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "output"
-      ]
-    },
-    "route_0081": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "output": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "output"
-          ]
-        },
-        "output": {
-          "type": "string"
         }
       },
       "required": [
@@ -7262,14 +7291,7 @@
           ]
         },
         "output": {
-          "anyOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "string"
-            }
-          ]
+          "type": "string"
         }
       },
       "required": [
@@ -7326,7 +7348,14 @@
           ]
         },
         "output": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
         }
       },
       "required": [
@@ -7335,6 +7364,31 @@
       ]
     },
     "route_0085": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "output": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "output"
+          ]
+        },
+        "output": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "invalidates",
+        "output"
+      ]
+    },
+    "route_0086": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7366,7 +7420,7 @@
         "output"
       ]
     },
-    "route_0086": {
+    "route_0087": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7405,7 +7459,7 @@
         "note"
       ]
     },
-    "route_0087": {
+    "route_0088": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7460,7 +7514,7 @@
         }
       }
     },
-    "route_0088": {
+    "route_0089": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7549,7 +7603,7 @@
         }
       }
     },
-    "route_0089": {
+    "route_0090": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7586,7 +7640,7 @@
         "note"
       ]
     },
-    "route_0090": {
+    "route_0091": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7658,7 +7712,7 @@
         }
       }
     },
-    "route_0091": {
+    "route_0092": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7698,7 +7752,7 @@
         "note"
       ]
     },
-    "route_0092": {
+    "route_0093": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7726,7 +7780,7 @@
         "note"
       ]
     },
-    "route_0093": {
+    "route_0094": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7757,7 +7811,7 @@
         "note"
       ]
     },
-    "route_0094": {
+    "route_0095": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7772,7 +7826,7 @@
         "note"
       ]
     },
-    "route_0095": {
+    "route_0096": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7814,7 +7868,7 @@
         "note"
       ]
     },
-    "route_0096": {
+    "route_0097": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7865,7 +7919,7 @@
         "note"
       ]
     },
-    "route_0097": {
+    "route_0098": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7904,7 +7958,7 @@
         "note"
       ]
     },
-    "route_0098": {
+    "route_0099": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7931,7 +7985,7 @@
         "note"
       ]
     },
-    "route_0099": {
+    "route_0100": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7968,7 +8022,7 @@
         }
       }
     },
-    "route_0100": {
+    "route_0101": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8034,7 +8088,7 @@
         }
       }
     },
-    "route_0101": {
+    "route_0102": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8173,7 +8227,7 @@
         "observationally_equal"
       ]
     },
-    "route_0102": {
+    "route_0103": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8208,7 +8262,7 @@
         }
       }
     },
-    "route_0103": {
+    "route_0104": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8297,34 +8351,6 @@
         }
       }
     },
-    "route_0104": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "computes_of": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "sig": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "sig"
-          ]
-        },
-        "note": {
-          "type": "string"
-        },
-        "value": {
-          "type": "integer"
-        }
-      },
-      "required": [
-        "computes_of",
-        "note"
-      ]
-    },
     "route_0105": {
       "type": "object",
       "additionalProperties": false,
@@ -8354,6 +8380,34 @@
       ]
     },
     "route_0106": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "computes_of": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "sig": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "sig"
+          ]
+        },
+        "note": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "computes_of",
+        "note"
+      ]
+    },
+    "route_0107": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8389,7 +8443,7 @@
         "note"
       ]
     },
-    "route_0107": {
+    "route_0108": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8422,7 +8476,7 @@
         "note"
       ]
     },
-    "route_0108": {
+    "route_0109": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8460,7 +8514,7 @@
         "terminal_outcome"
       ]
     },
-    "route_0109": {
+    "route_0110": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8505,7 +8559,7 @@
         }
       }
     },
-    "route_0110": {
+    "route_0111": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8537,7 +8591,7 @@
         "state_after"
       ]
     },
-    "route_0111": {
+    "route_0112": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8597,7 +8651,7 @@
         }
       }
     },
-    "route_0112": {
+    "route_0113": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8648,7 +8702,7 @@
         }
       }
     },
-    "route_0113": {
+    "route_0114": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8676,7 +8730,7 @@
         "span"
       ]
     },
-    "route_0114": {
+    "route_0115": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8705,7 +8759,7 @@
         "receiver_last_epoch_after"
       ]
     },
-    "route_0115": {
+    "route_0116": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8732,7 +8786,7 @@
         "outcome"
       ]
     },
-    "route_0116": {
+    "route_0117": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8792,7 +8846,7 @@
         }
       }
     },
-    "route_0117": {
+    "route_0118": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8828,7 +8882,7 @@
         }
       }
     },
-    "route_0118": {
+    "route_0119": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8876,7 +8930,7 @@
         "resync_requests_emitted"
       ]
     },
-    "route_0119": {
+    "route_0120": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8901,7 +8955,7 @@
         "invalidates"
       ]
     },
-    "route_0120": {
+    "route_0121": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8926,7 +8980,7 @@
         "state"
       ]
     },
-    "route_0121": {
+    "route_0122": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8951,7 +9005,7 @@
         "invalidates"
       ]
     },
-    "route_0122": {
+    "route_0123": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8976,7 +9030,7 @@
         "is_timed_out"
       ]
     },
-    "route_0123": {
+    "route_0124": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9010,7 +9064,7 @@
         "invalidates"
       ]
     },
-    "route_0124": {
+    "route_0125": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9035,7 +9089,7 @@
         "invalidates"
       ]
     },
-    "route_0125": {
+    "route_0126": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9060,7 +9114,7 @@
         "ready"
       ]
     },
-    "route_0126": {
+    "route_0127": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9097,7 +9151,7 @@
         "projection"
       ]
     },
-    "route_0127": {
+    "route_0128": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9117,7 +9171,7 @@
         "roster_sorted_ascending"
       ]
     },
-    "route_0128": {
+    "route_0129": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9156,7 +9210,7 @@
         }
       }
     },
-    "route_0129": {
+    "route_0130": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9184,7 +9238,7 @@
         "root_count"
       ]
     },
-    "route_0130": {
+    "route_0131": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9216,7 +9270,7 @@
         "root_count"
       ]
     },
-    "route_0131": {
+    "route_0132": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9256,7 +9310,7 @@
         "root_count"
       ]
     },
-    "route_0132": {
+    "route_0133": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9282,7 +9336,7 @@
         "revision"
       ]
     },
-    "route_0133": {
+    "route_0134": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9309,7 +9363,7 @@
         "outcome"
       ]
     },
-    "route_0134": {
+    "route_0135": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9330,7 +9384,7 @@
         "outcome"
       ]
     },
-    "route_0135": {
+    "route_0136": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9359,7 +9413,7 @@
         "next_fire"
       ]
     },
-    "route_0136": {
+    "route_0137": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9388,7 +9442,7 @@
         "value"
       ]
     },
-    "route_0137": {
+    "route_0138": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9417,7 +9471,7 @@
         "next_fire"
       ]
     },
-    "route_0138": {
+    "route_0139": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9464,7 +9518,7 @@
         "value"
       ]
     },
-    "route_0139": {
+    "route_0140": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9489,31 +9543,6 @@
               "type": "integer"
             }
           ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "output"
-      ]
-    },
-    "route_0140": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "output": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "output"
-          ]
-        },
-        "output": {
-          "type": "integer"
         }
       },
       "required": [
@@ -9538,6 +9567,31 @@
           ]
         },
         "output": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "invalidates",
+        "output"
+      ]
+    },
+    "route_0142": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "output": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "output"
+          ]
+        },
+        "output": {
           "anyOf": [
             {
               "type": "null"
@@ -9553,7 +9607,7 @@
         "output"
       ]
     },
-    "route_0142": {
+    "route_0143": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9678,629 +9732,634 @@
       "schema": "route_0017"
     },
     {
+      "fixture": "collections/dependency_reactive_availability.json",
+      "pointer": "/steps/*/expected",
+      "schema": "route_0018"
+    },
+    {
       "fixture": "collections/keyed_reconciliation_lis.json",
       "pointer": "/expected",
-      "schema": "route_0018"
+      "schema": "route_0019"
     },
     {
       "fixture": "collections/mergecell_algebra.json",
       "pointer": "/scenarios/*/steps/*/expected",
-      "schema": "route_0019"
+      "schema": "route_0020"
     },
     {
       "fixture": "collections/queuecell_bounded_backpressure.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0020"
+      "schema": "route_0021"
     },
     {
       "fixture": "collections/queuecell_closure_lifecycle.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0021"
+      "schema": "route_0022"
     },
     {
       "fixture": "collections/queuecell_mpsc_multi_writer.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0022"
+      "schema": "route_0023"
     },
     {
       "fixture": "collections/queuecell_popped_head_observation.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0023"
+      "schema": "route_0024"
     },
     {
       "fixture": "collections/queuecell_spsc_push_pop.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0024"
+      "schema": "route_0025"
     },
     {
       "fixture": "collections/seqcrdt_convergence.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0025"
+      "schema": "route_0026"
     },
     {
       "fixture": "collections/stableid_alignment.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0026"
+      "schema": "route_0027"
     },
     {
       "fixture": "collections/textcrdt_convergence.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0027"
+      "schema": "route_0028"
     },
     {
       "fixture": "collections/textcrdt_delta_sync.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0028"
+      "schema": "route_0029"
     },
     {
       "fixture": "collections/topiccell_broadcast_cursor_isolation.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0029"
+      "schema": "route_0030"
     },
     {
       "fixture": "collections/topiccell_durable_replay_gc.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0030"
+      "schema": "route_0031"
     },
     {
       "fixture": "collections/topiccell_ephemeral_lifecycle.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0031"
+      "schema": "route_0032"
     },
     {
       "fixture": "collections/topiccell_offline_tail_bounds.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0032"
+      "schema": "route_0033"
     },
     {
       "fixture": "collections/workqueue_competing_delivery.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0033"
+      "schema": "route_0034"
     },
     {
       "fixture": "collections/workqueue_lease_deadletter.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0034"
+      "schema": "route_0035"
     },
     {
       "fixture": "coordination/leader.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0035"
+      "schema": "route_0036"
     },
     {
       "fixture": "coordination/lease.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0036"
+      "schema": "route_0037"
     },
     {
       "fixture": "coordination/lock.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0037"
+      "schema": "route_0038"
     },
     {
       "fixture": "coordination/quorum.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0038"
+      "schema": "route_0039"
     },
     {
       "fixture": "coordination/semaphore.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0039"
+      "schema": "route_0040"
     },
     {
       "fixture": "crdt-tree/algebra.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0040"
+      "schema": "route_0041"
     },
     {
       "fixture": "delta_non_sequential.json",
       "pointer": "/assertions",
-      "schema": "route_0041"
+      "schema": "route_0042"
     },
     {
       "fixture": "delta_sequential.json",
       "pointer": "/assertions",
-      "schema": "route_0042"
+      "schema": "route_0043"
     },
     {
       "fixture": "delta_shared_blob.json",
       "pointer": "/assertions",
-      "schema": "route_0043"
+      "schema": "route_0044"
     },
     {
       "fixture": "delta_zero_copy_arrow.json",
       "pointer": "/assertions",
-      "schema": "route_0044"
+      "schema": "route_0045"
     },
     {
       "fixture": "distributed/anti_entropy_converge.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0045"
+      "schema": "route_0046"
     },
     {
       "fixture": "distributed/crdt_sync_frames.json",
       "pointer": "/frames/*/assertions",
-      "schema": "route_0046"
+      "schema": "route_0047"
     },
     {
       "fixture": "familysync/materialize_on_ingest.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0047"
+      "schema": "route_0048"
     },
     {
       "fixture": "ingress/ingress_backpressure.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0048"
+      "schema": "route_0049"
     },
     {
       "fixture": "ingress/ingress_disconnect_replay.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0049"
+      "schema": "route_0050"
     },
     {
       "fixture": "ingress/ingress_freshness_and_retry.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0050"
+      "schema": "route_0051"
     },
     {
       "fixture": "ingress/ingress_generation_handoff.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0051"
+      "schema": "route_0052"
     },
     {
       "fixture": "ingress/ingress_ordered_delivery.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0052"
+      "schema": "route_0053"
     },
     {
       "fixture": "ingress/ingress_reorder_and_duplication.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0053"
+      "schema": "route_0054"
     },
     {
       "fixture": "ingress/ingress_reorder_window_overflow.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0054"
+      "schema": "route_0055"
     },
     {
       "fixture": "lossless-tree/concurrent_conflict_preserves_text.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0055"
+      "schema": "route_0056"
     },
     {
       "fixture": "lossless-tree/concurrent_insert_same_parent.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0056"
+      "schema": "route_0057"
     },
     {
       "fixture": "lossless-tree/concurrent_reorder_and_leaf_edit.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0057"
+      "schema": "route_0058"
     },
     {
       "fixture": "lossless-tree/exact_roundtrip.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0058"
+      "schema": "route_0059"
     },
     {
       "fixture": "lossless-tree/invalid_source_roundtrip.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0059"
+      "schema": "route_0060"
     },
     {
       "fixture": "lossless-tree/non_contiguous_anti_entropy.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0060"
+      "schema": "route_0061"
     },
     {
       "fixture": "lossless-tree/one_leaf_edit_delta.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0061"
+      "schema": "route_0062"
     },
     {
       "fixture": "lossless-tree/split_merge.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0062"
+      "schema": "route_0063"
     },
     {
       "fixture": "lossless-tree/token_trivia_preservation.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0063"
+      "schema": "route_0064"
     },
     {
       "fixture": "materialization/deferral_not_deallocation.json",
       "pointer": "/expected",
-      "schema": "route_0064"
+      "schema": "route_0065"
     },
     {
       "fixture": "materialization/entry_kind_orthogonal_to_mode.json",
       "pointer": "/expected",
-      "schema": "route_0065"
+      "schema": "route_0066"
     },
     {
       "fixture": "materialization/observational_transparency.json",
       "pointer": "/expected",
-      "schema": "route_0066"
+      "schema": "route_0067"
     },
     {
       "fixture": "membership/membership_lifecycle.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0067"
+      "schema": "route_0068"
     },
     {
       "fixture": "message-passing/accepted_then_applied_receipt.json",
       "pointer": "/expect",
-      "schema": "route_0068"
+      "schema": "route_0069"
     },
     {
       "fixture": "message-passing/cancel_preempts_nonterminal.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0069"
+      "schema": "route_0070"
     },
     {
       "fixture": "message-passing/editor_route_submit.json",
       "pointer": "/expect",
-      "schema": "route_0070"
+      "schema": "route_0071"
     },
     {
       "fixture": "message-passing/reconnect_command_projection.json",
       "pointer": "/expect",
-      "schema": "route_0071"
+      "schema": "route_0072"
     },
     {
       "fixture": "message-passing/rpc_call_waits_for_terminal.json",
       "pointer": "/expect",
-      "schema": "route_0072"
+      "schema": "route_0073"
     },
     {
       "fixture": "message-passing/stale_generation_ignored.json",
       "pointer": "/expect",
-      "schema": "route_0073"
+      "schema": "route_0074"
     },
     {
       "fixture": "message-passing/sync_tmux_layout_submit.json",
       "pointer": "/expect",
-      "schema": "route_0074"
+      "schema": "route_0075"
     },
     {
       "fixture": "message-passing/terminal_conflict_fail_closed.json",
       "pointer": "/expect",
-      "schema": "route_0075"
+      "schema": "route_0076"
     },
     {
       "fixture": "presence/awareness.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0076"
+      "schema": "route_0077"
     },
     {
       "fixture": "presence/ephemeral.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0077"
+      "schema": "route_0078"
     },
     {
       "fixture": "presence/presence.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0078"
+      "schema": "route_0079"
     },
     {
       "fixture": "protobuf/graph_boundary_traces.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0079"
+      "schema": "route_0080"
     },
     {
       "fixture": "rateshape/debounce.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0080"
+      "schema": "route_0081"
     },
     {
       "fixture": "rateshape/probabilistic_sample.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0081"
+      "schema": "route_0082"
     },
     {
       "fixture": "rateshape/sample_count.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0082"
+      "schema": "route_0083"
     },
     {
       "fixture": "rateshape/sample_time.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0083"
+      "schema": "route_0084"
     },
     {
       "fixture": "rateshape/throttle_leading.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0084"
+      "schema": "route_0085"
     },
     {
       "fixture": "rateshape/throttle_trailing.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0085"
+      "schema": "route_0086"
     },
     {
       "fixture": "reactive-graph/churn_returns_to_baseline.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0086"
+      "schema": "route_0087"
     },
     {
       "fixture": "reactive-graph/cross_scope_teardown_hazard.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0087"
+      "schema": "route_0088"
     },
     {
       "fixture": "reactive-graph/disarm_disposes_nothing.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0088"
+      "schema": "route_0089"
     },
     {
       "fixture": "reactive-graph/disposal_does_not_run_surviving_effects.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0089"
+      "schema": "route_0090"
     },
     {
       "fixture": "reactive-graph/dispose_detaches_edges_both_directions.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0090"
+      "schema": "route_0091"
     },
     {
       "fixture": "reactive-graph/dispose_signal_reverts_to_lazy.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0091"
+      "schema": "route_0092"
     },
     {
       "fixture": "reactive-graph/exact_fold_paths_stay_exact.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0092"
+      "schema": "route_0093"
     },
     {
       "fixture": "reactive-graph/failed_compute_is_never_cached.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0093"
+      "schema": "route_0094"
     },
     {
       "fixture": "reactive-graph/feedback_drain_bound_reports_exhaustion.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0094"
+      "schema": "route_0095"
     },
     {
       "fixture": "reactive-graph/merge_cell_acquires_no_dependency_edge.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0095"
+      "schema": "route_0096"
     },
     {
       "fixture": "reactive-graph/merge_feed_through_a_formula_coalesces.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0096"
+      "schema": "route_0097"
     },
     {
       "fixture": "reactive-graph/merge_folds_synchronously_in_batch.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0097"
+      "schema": "route_0098"
     },
     {
       "fixture": "reactive-graph/merge_per_settled_cone_not_per_write.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0098"
+      "schema": "route_0099"
     },
     {
       "fixture": "reactive-graph/read_after_dispose_is_an_error.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0099"
+      "schema": "route_0100"
     },
     {
       "fixture": "reactive-graph/recycled_id_inherits_nothing.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0100"
-    },
-    {
-      "fixture": "reactive-graph/scope_teardown_equals_fold_of_disposals.json",
-      "pointer": "/expected",
       "schema": "route_0101"
     },
     {
       "fixture": "reactive-graph/scope_teardown_equals_fold_of_disposals.json",
-      "pointer": "/scenarios/*/steps/*/expect",
+      "pointer": "/expected",
       "schema": "route_0102"
+    },
+    {
+      "fixture": "reactive-graph/scope_teardown_equals_fold_of_disposals.json",
+      "pointer": "/scenarios/*/steps/*/expect",
+      "schema": "route_0103"
     },
     {
       "fixture": "reactive-graph/scoping_bounds_teardown_not_visibility.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0103"
+      "schema": "route_0104"
     },
     {
       "fixture": "reactive-graph/signal_materializes_once_per_batch.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0104"
+      "schema": "route_0105"
     },
     {
       "fixture": "reactive-graph/signal_materializes_without_a_read.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0105"
+      "schema": "route_0106"
     },
     {
       "fixture": "reactive-graph/teardown_runs_members_in_reverse_creation_order.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0106"
+      "schema": "route_0107"
     },
     {
       "fixture": "reactive-graph/transitive_invalidation_reaches_depth.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0107"
+      "schema": "route_0108"
     },
     {
       "fixture": "receipts/causal_receipts.json",
       "pointer": "/assertions",
-      "schema": "route_0108"
+      "schema": "route_0109"
     },
     {
       "fixture": "reliable-sync/coalesce_bounds_outbox.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0109"
+      "schema": "route_0110"
     },
     {
       "fixture": "reliable-sync/idempotent_redelivery.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0110"
+      "schema": "route_0111"
     },
     {
       "fixture": "reliable-sync/liveness_lease_eviction.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0111"
+      "schema": "route_0112"
     },
     {
       "fixture": "reliable-sync/liveness_orset_lww.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0112"
-    },
-    {
-      "fixture": "reliable-sync/multi_epoch_delta.json",
-      "pointer": "/assertions",
       "schema": "route_0113"
     },
     {
       "fixture": "reliable-sync/multi_epoch_delta.json",
-      "pointer": "/scenarios/*/expect",
+      "pointer": "/assertions",
       "schema": "route_0114"
     },
     {
-      "fixture": "reliable-sync/outbox_journal_decode.json",
+      "fixture": "reliable-sync/multi_epoch_delta.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0115"
     },
     {
-      "fixture": "reliable-sync/outbox_replay_after_crash.json",
+      "fixture": "reliable-sync/outbox_journal_decode.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0116"
     },
     {
-      "fixture": "reliable-sync/outbox_store_protocol.json",
+      "fixture": "reliable-sync/outbox_replay_after_crash.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0117"
     },
     {
-      "fixture": "reliable-sync/resync_gap_converge.json",
+      "fixture": "reliable-sync/outbox_store_protocol.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0118"
     },
     {
-      "fixture": "resilience/bulkhead.json",
-      "pointer": "/steps/*/expected",
+      "fixture": "reliable-sync/resync_gap_converge.json",
+      "pointer": "/scenarios/*/expect",
       "schema": "route_0119"
     },
     {
-      "fixture": "resilience/circuit_breaker.json",
+      "fixture": "resilience/bulkhead.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0120"
     },
     {
-      "fixture": "resilience/retry.json",
+      "fixture": "resilience/circuit_breaker.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0121"
     },
     {
-      "fixture": "resilience/timeout.json",
+      "fixture": "resilience/retry.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0122"
     },
     {
-      "fixture": "service/discovery.json",
+      "fixture": "resilience/timeout.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0123"
     },
     {
-      "fixture": "service/health.json",
+      "fixture": "service/discovery.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0124"
     },
     {
-      "fixture": "service/readiness.json",
+      "fixture": "service/health.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0125"
     },
     {
-      "fixture": "service/service_registry.json",
+      "fixture": "service/readiness.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0126"
     },
     {
+      "fixture": "service/service_registry.json",
+      "pointer": "/steps/*/expected",
+      "schema": "route_0127"
+    },
+    {
       "fixture": "signaling/anti_spoof_session.json",
       "pointer": "/assertions",
-      "schema": "route_0127"
+      "schema": "route_0128"
     },
     {
       "fixture": "signaling/frames.json",
       "pointer": "/frames/*/assertions",
-      "schema": "route_0128"
+      "schema": "route_0129"
     },
     {
       "fixture": "snapshot_minimal.json",
       "pointer": "/assertions",
-      "schema": "route_0129"
+      "schema": "route_0130"
     },
     {
       "fixture": "snapshot_multi_node.json",
       "pointer": "/assertions",
-      "schema": "route_0130"
+      "schema": "route_0131"
     },
     {
       "fixture": "snapshot_shared_blob.json",
       "pointer": "/assertions",
-      "schema": "route_0131"
+      "schema": "route_0132"
     },
     {
       "fixture": "stdlib/revision_barrier.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0132"
+      "schema": "route_0133"
     },
     {
       "fixture": "stdlib/timeout.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0133"
+      "schema": "route_0134"
     },
     {
       "fixture": "stdlib/timer.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0134"
+      "schema": "route_0135"
     },
     {
       "fixture": "temporal/cron_pattern.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0135"
+      "schema": "route_0136"
     },
     {
       "fixture": "temporal/deadline_expiry.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0136"
+      "schema": "route_0137"
     },
     {
       "fixture": "temporal/interval_periodic.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0137"
+      "schema": "route_0138"
     },
     {
       "fixture": "temporal/timer_single_shot.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0138"
+      "schema": "route_0139"
     },
     {
       "fixture": "windowing/session.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0139"
+      "schema": "route_0140"
     },
     {
       "fixture": "windowing/sliding_count.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0140"
+      "schema": "route_0141"
     },
     {
       "fixture": "windowing/tumbling_count.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0141"
+      "schema": "route_0142"
     },
     {
       "fixture": "windowing/tumbling_time.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0142"
+      "schema": "route_0143"
     }
   ]
 }

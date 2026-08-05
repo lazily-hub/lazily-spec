@@ -482,8 +482,40 @@ It conforms to the cell model when:
 3. A key resolves to a **stable handle** for the key's lifetime; membership and order
    changes are signalled by their dedicated cells, never by mutating sibling entries.
 4. **Atomic ordered move** (`move_to` / `move_before` / `move_after`): reordering a key MUST
-   keep the entry's same cell handle, dependents, and lineage (not remove + re-mint) and
-   bump only the order signal once.
+keep the entry's same cell handle, dependents, and lineage (not remove + re-mint) and
+bump only the order signal once.
+
+### Exact-key dependency availability (`#lzdependencyavailability`)
+
+A non-minting `observe(key)` correctly reports that an entry is absent, but it cannot
+register an edge to a node that does not exist. A computed that must react when an
+exact key is published later therefore uses a **dependency reactive**:
+
+```text
+DependencyReactive<T> = Unavailable | Available(T)
+```
+
+`DependencyMap<K, T>` is the `SourceMap<K, DependencyReactive<T>>` specialization
+whose lifecycle is explicit:
+
+- `observe_dependency(key)` materializes one stable input cell for the exact key,
+  seeded with `Unavailable`, and observes it. This materializes only the dependency
+  handle; it does not fabricate `T` or run an expensive value factory.
+- `publish(key, value)` is an ordinary source transition to `Available(value)`.
+  If observation happened first, publication invalidates exactly that key's
+  consumers. Publishing an unrelated key does not invalidate them.
+- `unpublish(key)` transitions the same source back to `Unavailable`; it does not
+  remove or re-mint the handle. A later `publish` reuses the same identity.
+- Multiple first observers, including concurrent observers on thread-safe and async
+  flavors, converge on one stored handle without orphan nodes.
+- The dependency handle lives until its owning graph scope is torn down. Logical
+  unavailability is a value transition, not disposal.
+
+This API is deliberately separate from `observe(key)`: the existing Core observation
+remains pure and non-minting. Implementations MUST NOT approximate exact-key
+availability by observing the whole membership cell, polling/retrying, sleeping, or
+consulting durable storage. Those mechanisms either invalidate unrelated readers or
+move live transition authority outside the graph.
 
 ### Core surface vs. binding extensions
 
