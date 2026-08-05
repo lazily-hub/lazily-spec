@@ -60,6 +60,27 @@ The initializer preserves existing evidence and creates new entries as explicit 
 claims. Replace that status only after running the cited library-source mutant and confirming
 that a canonical fixture—not merely an independent unit test—reddens.
 
+## Custom assertion callback consumption (`#lzassertwithseam`)
+
+Every binding exposes a custom assertion helper for relations that plain equality cannot
+express: tolerances, containment, decoding, and derived projections. The helper passes the
+fixture value to a callback. Calling the callback is not itself proof that the callback used
+that value: an ignored parameter previously marked the key asserted while comparing nothing.
+
+A binding MUST therefore:
+
+1. require the callback to expose and syntactically read its fixture-value parameter;
+2. record the key as asserted only after the callback completes successfully; and
+3. keep extraction explicit by using a projection helper (for example Python's
+   `assert_key_into`) when the caller performs the comparison after the helper returns.
+
+`scripts/check-assert-with-consumption.py` enforces rule 1 for every maintained binding.
+`scripts/check-assertion-ordering.py` runs it as part of the existing binding conformance
+gate, so comments and string literals do not count as reads and unsupported callback forms
+fail closed. Its self-test includes an accepted and an ignored callback for every supported
+language. The runtime helper ordering enforces rule 2: a callback that throws, rejects, or
+returns a failing verdict cannot leave the assertion ledger green.
+
 ## Current fixtures
 
 | Fixture | Kind | Description |

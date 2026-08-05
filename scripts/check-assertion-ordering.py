@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
-"""Fail closed when conformance assertions move ahead of their observations."""
+"""Fail closed on cross-language conformance assertion source seams.
+
+The original checks pin observation-before-assertion ordering. The companion
+guard also rejects `assertKeyWith` callbacks that never read their fixture-value
+parameter. They share this entry point because all nine binding Makefiles and
+CI workflows already invoke it; a new standalone target would be a guard every
+existing workflow could silently omit.
+"""
 
 from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -268,6 +276,29 @@ def self_test() -> list[str]:
     return failures
 
 
+def consumption_errors(
+    binding: str | None,
+    *,
+    self_test_mode: bool,
+    root: Path | None = None,
+) -> list[str]:
+    script = Path(__file__).with_name("check-assert-with-consumption.py")
+    command = [sys.executable, str(script)]
+    if self_test_mode:
+        command.append("--self-test")
+    else:
+        assert binding is not None
+        assert root is not None
+        command.extend(("--binding", binding, "--root", str(root)))
+    result = subprocess.run(command, text=True, capture_output=True, check=False)
+    if result.returncode == 0:
+        return []
+    output = "\n".join(part.strip() for part in (result.stdout, result.stderr) if part.strip())
+    if not output:
+        output = f"callback-consumption guard exited {result.returncode} without diagnostics"
+    return output.splitlines()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binding", choices=sorted(CHECKS))
@@ -277,9 +308,18 @@ def main() -> int:
 
     if args.self_test:
         errors = self_test()
+        errors.extend(consumption_errors(None, self_test_mode=True))
         label = "self-test"
     elif args.binding:
-        errors = run_binding(args.binding, args.root.resolve())
+        root = args.root.resolve()
+        errors = run_binding(args.binding, root)
+        errors.extend(
+            consumption_errors(
+                args.binding,
+                self_test_mode=False,
+                root=root,
+            )
+        )
         label = f"{args.binding} ({len(CHECKS[args.binding])} checks)"
     else:
         parser.error("choose --self-test or --binding")
