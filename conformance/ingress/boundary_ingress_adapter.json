@@ -1,0 +1,525 @@
+{
+  "schema_version": 1,
+  "model": "BoundaryIngressAdapter",
+  "transport": "event_channel",
+  "policy": {
+    "max_buffered": 2,
+    "freshness_horizon": 10
+  },
+  "scenarios": [
+    {
+      "id": "restart_during_bootstrap",
+      "steps": [
+        {
+          "op": {
+            "type": "subscribe",
+            "generation": 1
+          },
+          "expected": {
+            "phase": "bootstrapping",
+            "generation": 1,
+            "cursor": null,
+            "buffered_cursors": [],
+            "revision": 1
+          }
+        },
+        {
+          "op": {
+            "type": "event",
+            "generation": 1,
+            "cursor": 3,
+            "stamped_at": 3,
+            "action": "upsert",
+            "key": "old"
+          },
+          "expected": {
+            "phase": "bootstrapping",
+            "generation": 1,
+            "cursor": null,
+            "buffered_cursors": [
+              3
+            ],
+            "source_keys": [],
+            "revision": 2
+          }
+        },
+        {
+          "op": {
+            "type": "subscribe",
+            "generation": 2
+          },
+          "expected": {
+            "phase": "bootstrapping",
+            "generation": 2,
+            "cursor": null,
+            "buffered_cursors": [],
+            "source_keys": [],
+            "revision": 3
+          }
+        },
+        {
+          "op": {
+            "type": "snapshot",
+            "generation": 2,
+            "cursor": 4,
+            "stamped_at": 4,
+            "source_keys": [
+              "current"
+            ],
+            "members": [
+              "editor-a"
+            ],
+            "validation": "valid"
+          },
+          "expected": {
+            "phase": "live",
+            "generation": 2,
+            "cursor": 4,
+            "source_keys": [
+              "current"
+            ],
+            "members": [
+              "editor-a"
+            ],
+            "validation": "valid",
+            "revision": 4
+          }
+        },
+        {
+          "op": {
+            "type": "event",
+            "generation": 1,
+            "cursor": 5,
+            "stamped_at": 5,
+            "action": "upsert",
+            "key": "zombie"
+          },
+          "expected": {
+            "phase": "live",
+            "generation": 2,
+            "cursor": 4,
+            "source_keys": [
+              "current"
+            ],
+            "stale_events": 1,
+            "revision": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "cursor_gap_requires_cold_replay",
+      "steps": [
+        {
+          "op": {
+            "type": "subscribe",
+            "generation": 7
+          },
+          "expected": {
+            "phase": "bootstrapping",
+            "generation": 7,
+            "revision": 1
+          }
+        },
+        {
+          "op": {
+            "type": "snapshot",
+            "generation": 7,
+            "cursor": 10,
+            "stamped_at": 10,
+            "source_keys": [
+              "a"
+            ],
+            "members": [],
+            "validation": "valid"
+          },
+          "expected": {
+            "phase": "live",
+            "cursor": 10,
+            "source_keys": [
+              "a"
+            ],
+            "revision": 2
+          }
+        },
+        {
+          "op": {
+            "type": "event",
+            "generation": 7,
+            "cursor": 12,
+            "stamped_at": 12,
+            "action": "upsert",
+            "key": "c"
+          },
+          "expected": {
+            "phase": "replay_required",
+            "cursor": 10,
+            "replay_from": 11,
+            "buffered_cursors": [
+              12
+            ],
+            "source_keys": [
+              "a"
+            ],
+            "revision": 3
+          }
+        },
+        {
+          "op": {
+            "type": "snapshot",
+            "generation": 7,
+            "cursor": 11,
+            "stamped_at": 11,
+            "source_keys": [
+              "a",
+              "b"
+            ],
+            "members": [],
+            "validation": "valid"
+          },
+          "expected": {
+            "phase": "live",
+            "cursor": 12,
+            "replay_from": null,
+            "buffered_cursors": [],
+            "source_keys": [
+              "a",
+              "b",
+              "c"
+            ],
+            "revision": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "zero_member_delivery_is_not_convergence",
+      "steps": [
+        {
+          "op": {
+            "type": "subscribe",
+            "generation": 1
+          },
+          "expected": {
+            "phase": "bootstrapping",
+            "revision": 1
+          }
+        },
+        {
+          "op": {
+            "type": "snapshot",
+            "generation": 1,
+            "cursor": 0,
+            "stamped_at": 0,
+            "source_keys": [],
+            "members": [],
+            "validation": "valid"
+          },
+          "expected": {
+            "phase": "live",
+            "members": [],
+            "revision": 2
+          }
+        },
+        {
+          "op": {
+            "type": "open_receipt",
+            "receipt_id": "response-1"
+          },
+          "expected": {
+            "delivery": {
+              "receipt_id": "response-1",
+              "targets": [],
+              "acked": [],
+              "converged": false
+            },
+            "revision": 3
+          }
+        },
+        {
+          "op": {
+            "type": "member_join",
+            "member": "editor-a"
+          },
+          "expected": {
+            "members": [
+              "editor-a"
+            ],
+            "delivery": {
+              "receipt_id": "response-1",
+              "targets": [
+                "editor-a"
+              ],
+              "acked": [],
+              "converged": false
+            },
+            "revision": 4
+          }
+        },
+        {
+          "op": {
+            "type": "member_leave",
+            "member": "editor-a"
+          },
+          "expected": {
+            "members": [],
+            "delivery": {
+              "receipt_id": "response-1",
+              "targets": [
+                "editor-a"
+              ],
+              "acked": [],
+              "converged": false
+            },
+            "revision": 5
+          }
+        },
+        {
+          "op": {
+            "type": "ack",
+            "receipt_id": "response-1",
+            "member": "editor-a"
+          },
+          "expected": {
+            "delivery": {
+              "receipt_id": "response-1",
+              "targets": [
+                "editor-a"
+              ],
+              "acked": [
+                "editor-a"
+              ],
+              "converged": true
+            },
+            "revision": 6
+          }
+        },
+        {
+          "op": {
+            "type": "ack",
+            "receipt_id": "response-1",
+            "member": "editor-a"
+          },
+          "expected": {
+            "delivery": {
+              "receipt_id": "response-1",
+              "targets": [
+                "editor-a"
+              ],
+              "acked": [
+                "editor-a"
+              ],
+              "converged": true
+            },
+            "revision": 6
+          }
+        }
+      ]
+    },
+    {
+      "id": "buffer_backpressure_requests_snapshot",
+      "policy": {
+        "max_buffered": 1
+      },
+      "steps": [
+        {
+          "op": {
+            "type": "subscribe",
+            "generation": 3
+          },
+          "expected": {
+            "phase": "bootstrapping",
+            "revision": 1
+          }
+        },
+        {
+          "op": {
+            "type": "event",
+            "generation": 3,
+            "cursor": 2,
+            "stamped_at": 2,
+            "action": "upsert",
+            "key": "a"
+          },
+          "expected": {
+            "phase": "bootstrapping",
+            "buffered_cursors": [
+              2
+            ],
+            "revision": 2
+          }
+        },
+        {
+          "op": {
+            "type": "event",
+            "generation": 3,
+            "cursor": 3,
+            "stamped_at": 3,
+            "action": "upsert",
+            "key": "b"
+          },
+          "expected": {
+            "phase": "backpressured",
+            "replay_from": 0,
+            "buffered_cursors": [
+              2
+            ],
+            "revision": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "snapshot_is_one_observation",
+      "steps": [
+        {
+          "op": {
+            "type": "subscribe",
+            "generation": 9
+          },
+          "expected": {
+            "phase": "bootstrapping",
+            "revision": 1
+          }
+        },
+        {
+          "op": {
+            "type": "snapshot",
+            "generation": 9,
+            "cursor": 20,
+            "stamped_at": 20,
+            "source_keys": [
+              "alpha",
+              "beta"
+            ],
+            "members": [
+              "editor-a",
+              "editor-b"
+            ],
+            "validation": "valid"
+          },
+          "expected": {
+            "phase": "live",
+            "generation": 9,
+            "cursor": 20,
+            "source_keys": [
+              "alpha",
+              "beta"
+            ],
+            "members": [
+              "editor-a",
+              "editor-b"
+            ],
+            "validation": "valid",
+            "observation_revision": 2,
+            "revision": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "template_validation_is_derived",
+      "steps": [
+        {
+          "op": {
+            "type": "subscribe",
+            "generation": 4
+          },
+          "expected": {
+            "phase": "bootstrapping",
+            "revision": 1
+          }
+        },
+        {
+          "op": {
+            "type": "snapshot",
+            "generation": 4,
+            "cursor": 5,
+            "stamped_at": 5,
+            "source_keys": [
+              "document"
+            ],
+            "members": [
+              "editor-a"
+            ],
+            "validation": "invalid"
+          },
+          "expected": {
+            "phase": "invalid",
+            "validation": "invalid",
+            "ready": false,
+            "revision": 2
+          }
+        },
+        {
+          "op": {
+            "type": "event",
+            "generation": 4,
+            "cursor": 6,
+            "stamped_at": 6,
+            "action": "validate",
+            "validation": "valid"
+          },
+          "expected": {
+            "phase": "live",
+            "validation": "valid",
+            "ready": true,
+            "cursor": 6,
+            "revision": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "freshness_is_a_clock_derive",
+      "steps": [
+        {
+          "op": {
+            "type": "subscribe",
+            "generation": 5
+          },
+          "expected": {
+            "phase": "bootstrapping",
+            "revision": 1
+          }
+        },
+        {
+          "op": {
+            "type": "snapshot",
+            "generation": 5,
+            "cursor": 1,
+            "stamped_at": 10,
+            "source_keys": [],
+            "members": [],
+            "validation": "valid"
+          },
+          "expected": {
+            "phase": "live",
+            "fresh": true,
+            "revision": 2
+          }
+        },
+        {
+          "op": {
+            "type": "tick",
+            "now": 20
+          },
+          "expected": {
+            "fresh": true,
+            "revision": 2
+          }
+        },
+        {
+          "op": {
+            "type": "tick",
+            "now": 21
+          },
+          "expected": {
+            "fresh": false,
+            "revision": 3
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -236,6 +236,56 @@ nothing for a non-conflating `⊕`. At `high_water`:
 `Block` refuses *without* advancing the watermark, which is what makes the
 producer's retry in-order rather than a duplicate.
 
+## Boundary-ingress adapters
+
+`IngressCell` owns admission after a frame has been decoded. A
+`BoundaryIngressAdapter` owns the preceding non-reactive/reactive seam; it does
+not admit values independently and therefore is not a second ingress primitive.
+Its only value-plane action is to feed decoded envelopes into the existing
+`IngressCell` flavor.
+
+The preferred boundary is an event channel, subscription, or watch stream.
+RPC-triggered observation is allowed only when an external system cannot push
+the fact itself. Bounded polling is the final fallback and MUST publish both its
+freshness evidence and its bound into Sources. After the boundary, internal
+owners communicate through the graph rather than through another RPC, poll, or
+request/ack round trip.
+
+The adapter owns one monotone channel cursor inside a producer/controller
+generation. Bootstrap is snapshot-plus-event:
+
+1. subscribe to the event channel and record its generation;
+2. buffer generation-matching events while the snapshot is in flight;
+3. apply the snapshot and every contiguous buffered successor as one graph
+   batch;
+4. if the next cursor is missing, derive `ReplayRequired(from)` and let an
+   Effect request a cold snapshot/replay;
+5. when the producer generation advances, fence the old subscription and hot
+   resubscribe. Events from the old generation become dropped receipt facts.
+
+Snapshot application updates one state Source plus keyed SourceMap membership in
+one batch. Readiness, authority, freshness, membership, delivery convergence,
+and template validation are Computeds whose closures perform every reactive
+read they need. Subscription lifecycle, transport I/O, replay, acknowledgements,
+retry, persistence, and commit remain Effects; their outcomes re-enter through
+receipt Sources.
+
+Delivery receipts capture a one-shot target frontier. The target set survives
+membership churn, duplicate acknowledgements are no-ops, and an empty target
+set is explicitly pending—not vacuously converged. If the first subscriber
+arrives while such a receipt is pending, that subscriber becomes its durable
+target. This is the ingress counterpart to `EgressCore`'s cumulative ACK
+watermark; it coordinates with egress rather than duplicating its queue,
+backoff, or generation fence.
+
+Agent Doc is the reference integration: the controller state-event channel is
+the ingress Effect; controller generation, state-plane version, editor
+membership, visible document projection, and durable receipt observations are
+Sources; retained closeout readiness and template validity are Computeds; editor
+delivery, native save, and commit are Effects. An editor ACK is merely a receipt
+event. It never authorizes the closeout transition and is never requested as a
+foreground proof.
+
 ## Phase 4 — conformance schedules
 
 `conformance/ingress/` carries the cross-language corpus. One fixture per named
@@ -243,8 +293,10 @@ schedule:
 
 | Fixture | Pins |
 |---------|------|
+| `boundary_ingress_adapter.json` | restart during bootstrap, generation fencing, cursor-gap cold replay, zero-member durable delivery, duplicate ACKs, backpressure, atomic snapshot observation, template validation, and freshness |
 | `ingress_ordered_delivery.json` | in-order delivery, conflation, drain, receipt channel isolation, negative invalidation on empty drain |
 | `ingress_reorder_and_duplication.json` | buffer→flush in sequence order, both duplicate classes, reorder-window overflow, buffered envelopes invalidate nothing |
+| `ingress_reorder_window_overflow.json` | a full reorder window rejects a later gap without moving any value/authority reader |
 | `ingress_disconnect_replay.json` | suspend retains window+watermark, replay request, reconnect clears the error streak |
 | `ingress_backpressure.json` | `Block` refuses losslessly and the retry is in-order |
 | `ingress_generation_handoff.json` | build skew: stale fenced before dedupe, newer generation resets the baseline |
