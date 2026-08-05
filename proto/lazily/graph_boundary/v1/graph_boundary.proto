@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package lazily.graph_boundary.v1;
+
+option java_multiple_files = true;
+option java_package = "io.github.lazily.protobuf.v1";
+
+// A negotiated encoding envelope for facts crossing a Lazily graph boundary.
+// The graph runtime remains the semantic owner; this envelope is never a graph.
+message ProtocolEnvelope {
+  uint32 protocol_version = 1;
+  string schema_version = 2;
+  string graph_id = 3;
+  string source_id = 4;
+  uint64 source_generation = 5;
+  uint64 causal_epoch = 6;
+  uint64 sequence = 7;
+  string correlation_id = 8;
+
+  reserved 9 to 19;
+
+  oneof body {
+    CapabilityHandshake capability_handshake = 20;
+    GraphInput graph_input = 21;
+    DerivedProjection derived_projection = 22;
+    EffectIntent effect_intent = 23;
+    DeliveryReceipt delivery_receipt = 24;
+  }
+}
+
+message CapabilityHandshake {
+  uint32 minimum_protocol_version = 1;
+  uint32 maximum_protocol_version = 2;
+  repeated string codecs = 3;
+  repeated string features = 4;
+}
+
+message GraphInput {
+  oneof input {
+    SourceValueSet source_value_set = 1;
+    KeyedMemberUpsert keyed_member_upsert = 2;
+    KeyedMemberRemove keyed_member_remove = 3;
+    CellTextSplice cell_text_splice = 4;
+    GraphSnapshot bootstrap_snapshot = 5;
+    SurfaceObservation surface_observation = 6;
+  }
+}
+
+message SourceValueSet {
+  string source_key = 1;
+  bytes canonical_json_value = 2;
+  string logical_hash = 3;
+}
+
+message KeyedMemberUpsert {
+  string collection_id = 1;
+  string member_key = 2;
+  bytes canonical_json_value = 3;
+  string logical_hash = 4;
+}
+
+message KeyedMemberRemove {
+  string collection_id = 1;
+  string member_key = 2;
+}
+
+// The ordinary text mutation primitive. Offsets are local to one stable cell.
+message CellTextSplice {
+  string document_id = 1;
+  string cell_id = 2;
+  uint64 expected_cell_revision = 3;
+  uint32 local_offset_utf8 = 4;
+  uint32 delete_length_utf8 = 5;
+  string insert_text = 6;
+}
+
+// Full snapshots are legal only for bootstrap, explicit recovery, or compaction.
+message GraphSnapshot {
+  SnapshotPurpose purpose = 1;
+  bytes canonical_json = 2;
+  string logical_hash = 3;
+}
+
+enum SnapshotPurpose {
+  SNAPSHOT_PURPOSE_UNSPECIFIED = 0;
+  SNAPSHOT_PURPOSE_BOOTSTRAP = 1;
+  SNAPSHOT_PURPOSE_RECOVERY = 2;
+  SNAPSHOT_PURPOSE_COMPACTION = 3;
+}
+
+message SurfaceObservation {
+  string surface_id = 1;
+  SurfaceObservationKind kind = 2;
+  string cell_id = 3;
+  bytes canonical_json_value = 4;
+}
+
+enum SurfaceObservationKind {
+  SURFACE_OBSERVATION_KIND_UNSPECIFIED = 0;
+  SURFACE_OBSERVATION_KIND_VISIBLE = 1;
+  SURFACE_OBSERVATION_KIND_FOCUSED = 2;
+  SURFACE_OBSERVATION_KIND_LAYOUT = 3;
+  SURFACE_OBSERVATION_KIND_NATIVE_RELOAD = 4;
+}
+
+message DerivedProjection {
+  uint64 projection_version = 1;
+  string logical_hash = 2;
+  repeated CellProjection cells = 3;
+}
+
+message CellProjection {
+  string document_id = 1;
+  string cell_id = 2;
+  uint64 revision = 3;
+  string text = 4;
+}
+
+message EffectIntent {
+  string intent_id = 1;
+  string effect_type = 2;
+  string delivery_id = 3;
+  bytes canonical_json_payload = 4;
+  string logical_payload_hash = 5;
+}
+
+message DeliveryReceipt {
+  string receipt_id = 1;
+  string delivery_id = 2;
+  string intent_id = 3;
+  ReceiptOutcome outcome = 4;
+  string logical_projection_hash = 5;
+}
+
+enum ReceiptOutcome {
+  RECEIPT_OUTCOME_UNSPECIFIED = 0;
+  RECEIPT_OUTCOME_OBSERVED = 1;
+  RECEIPT_OUTCOME_APPLIED = 2;
+  RECEIPT_OUTCOME_REJECTED = 3;
+}

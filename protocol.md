@@ -437,6 +437,14 @@ required features, or if either `max_frame_size` is zero, they fail closed befor
 | `signaling-relay` | A signaling relay may mediate peer discovery (§ signaling). |
 | `command-plane-v1` | The command/RPC message plane is active (§ message-passing). |
 | `json-base64` (`#lzspecbase64`) | Over the `json` codec, `Inline`/`Payload` byte arrays MAY be encoded as a base64 string instead of a JSON array of `0..255` integers (~4× smaller, ~3× faster to parse). The array form (`json-u8`) remains the canonical form for conformance fixtures; a decoder that advertises `json-base64` MUST accept both forms. |
+| `protobuf-graph-boundary-v1` | Peers may exchange the generated, versioned graph-boundary algebra described in [Protobuf graph-boundary interoperability](docs/protobuf-interop.md). |
+
+`protobuf-graph-boundary-v1` is an additive typed boundary family, not another
+encoding of `IpcMessage` and not a second graph runtime. Its
+`ProtocolEnvelope` carries stable identity, causality, bounded mutations,
+projections, effect intents, and receipts. Canonical JSON remains the fixture
+and diagnostic authority, and logical identity hashes canonical values rather
+than Protobuf bytes.
 
 ### Frame codecs
 

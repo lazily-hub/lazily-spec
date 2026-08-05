@@ -1,0 +1,64 @@
+{
+  "protocol_version": 1,
+  "schema_version": "1.0.0-experimental",
+  "scenarios": [
+    {
+      "id": "partial_typing_stays_one_cell",
+      "description": "Incremental typing updates one stable cell without manufacturing sibling cells.",
+      "steps": [
+        { "source_generation": 1, "causal_epoch": 1, "sequence": 1, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-a", "expected_revision": 0, "offset": 0, "delete_length": 0, "insert_text": "Temp" },
+        { "source_generation": 1, "causal_epoch": 1, "sequence": 2, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-a", "expected_revision": 1, "offset": 4, "delete_length": 0, "insert_text": "or" },
+        { "source_generation": 1, "causal_epoch": 1, "sequence": 3, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-a", "expected_revision": 2, "offset": 6, "delete_length": 0, "insert_text": "al" }
+      ],
+      "expect": { "cells": { "cell-a": "Temporal" }, "decisions": ["apply", "apply", "apply"], "ordinary_snapshot_count": 0, "logical_projection": "cell-a@3=Temporal" }
+    },
+    {
+      "id": "cross_cell_edits_stay_bounded",
+      "description": "Edits in different cells remain two local splices.",
+      "steps": [
+        { "source_generation": 1, "causal_epoch": 1, "sequence": 1, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-a", "expected_revision": 0, "offset": 0, "delete_length": 0, "insert_text": "A" },
+        { "source_generation": 1, "causal_epoch": 1, "sequence": 2, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-b", "expected_revision": 0, "offset": 0, "delete_length": 0, "insert_text": "B" }
+      ],
+      "expect": { "cells": { "cell-a": "A", "cell-b": "B" }, "decisions": ["apply", "apply"], "ordinary_snapshot_count": 0, "logical_projection": "cell-a@1=A|cell-b@1=B" }
+    },
+    {
+      "id": "cache_reload_fences_queued_operator_splices",
+      "description": "A bootstrap from a newer generation and epoch fences a queued local splice.",
+      "steps": [
+        { "source_generation": 3, "causal_epoch": 7, "sequence": 1, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-a", "expected_revision": 0, "offset": 0, "delete_length": 0, "insert_text": "old" },
+        { "source_generation": 4, "causal_epoch": 8, "sequence": 1, "kind": "bootstrap_snapshot", "purpose": "bootstrap", "cells": { "cell-a": "fresh" } },
+        { "source_generation": 3, "causal_epoch": 7, "sequence": 2, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-a", "expected_revision": 1, "offset": 3, "delete_length": 0, "insert_text": "-queued" }
+      ],
+      "expect": { "cells": { "cell-a": "fresh" }, "decisions": ["apply", "bootstrap", "reject_stale"], "ordinary_snapshot_count": 0, "logical_projection": "cell-a@1=fresh" }
+    },
+    {
+      "id": "remote_projection_native_reload_does_not_republish",
+      "description": "A native reload is an observation after a remote projection, not local mutation authority.",
+      "steps": [
+        { "source_generation": 5, "causal_epoch": 9, "sequence": 1, "kind": "derived_projection", "cells": { "cell-a": "remote" } },
+        { "source_generation": 5, "causal_epoch": 9, "sequence": 2, "kind": "surface_observation", "observation": "native_reload", "cell_id": "cell-a" }
+      ],
+      "expect": { "cells": { "cell-a": "remote" }, "decisions": ["project", "observe"], "ordinary_snapshot_count": 0, "logical_projection": "cell-a@1=remote" }
+    },
+    {
+      "id": "duplicates_and_reordering_are_deterministic",
+      "description": "Duplicate sequences are idempotent and gaps fail closed.",
+      "steps": [
+        { "source_generation": 1, "causal_epoch": 1, "sequence": 1, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-a", "expected_revision": 0, "offset": 0, "delete_length": 0, "insert_text": "A" },
+        { "source_generation": 1, "causal_epoch": 1, "sequence": 1, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-a", "expected_revision": 0, "offset": 0, "delete_length": 0, "insert_text": "A" },
+        { "source_generation": 1, "causal_epoch": 1, "sequence": 3, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-a", "expected_revision": 1, "offset": 1, "delete_length": 0, "insert_text": "C" },
+        { "source_generation": 1, "causal_epoch": 1, "sequence": 2, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-a", "expected_revision": 1, "offset": 1, "delete_length": 0, "insert_text": "B" }
+      ],
+      "expect": { "cells": { "cell-a": "AB" }, "decisions": ["apply", "duplicate", "reject_gap", "apply"], "ordinary_snapshot_count": 0, "logical_projection": "cell-a@2=AB" }
+    },
+    {
+      "id": "bootstrap_and_mutation_variants_are_distinct",
+      "description": "Bootstrap snapshot is explicit and cannot be confused with an ordinary splice.",
+      "steps": [
+        { "source_generation": 1, "causal_epoch": 1, "sequence": 1, "kind": "bootstrap_snapshot", "purpose": "bootstrap", "cells": { "cell-a": "boot" } },
+        { "source_generation": 1, "causal_epoch": 1, "sequence": 2, "kind": "cell_text_splice", "document_id": "doc", "cell_id": "cell-a", "expected_revision": 1, "offset": 4, "delete_length": 0, "insert_text": "strap" }
+      ],
+      "expect": { "cells": { "cell-a": "bootstrap" }, "decisions": ["bootstrap", "apply"], "ordinary_snapshot_count": 0, "logical_projection": "cell-a@2=bootstrap" }
+    }
+  ]
+}

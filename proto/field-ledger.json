@@ -1,0 +1,53 @@
+{
+  "package": "lazily.graph_boundary.v1",
+  "schema_version": "1.0.0-experimental",
+  "canonical_logical_hash": "canonical-json-fnv1a64",
+  "capability": {
+    "codec": "protobuf",
+    "feature": "protobuf-graph-boundary-v1",
+    "default": "disabled",
+    "rule": "Both peers must advertise the codec, feature, and an overlapping protocol range."
+  },
+  "binding_parity": {
+    "rust": "generated-and-six-trace-conformant",
+    "kotlin": "generated-and-six-trace-conformant",
+    "typescript": "generated-and-six-trace-conformant",
+    "python": "capability-gated-known-uncovered",
+    "go": "capability-gated-known-uncovered",
+    "cpp": "capability-gated-known-uncovered",
+    "dart": "capability-gated-known-uncovered",
+    "zig": "capability-gated-known-uncovered",
+    "csharp": "capability-gated-known-uncovered"
+  },
+  "messages": {
+    "ProtocolEnvelope": {
+      "identity": ["graph_id", "source_id", "correlation_id"],
+      "causality": ["source_generation", "causal_epoch", "sequence"],
+      "payload": ["body"]
+    },
+    "CellTextSplice": {
+      "identity": ["document_id", "cell_id"],
+      "causality": ["expected_cell_revision"],
+      "payload": ["local_offset_utf8", "delete_length_utf8", "insert_text"]
+    },
+    "DerivedProjection": {
+      "projection": ["projection_version", "logical_hash", "cells"]
+    },
+    "EffectIntent": {
+      "identity": ["intent_id", "delivery_id"],
+      "effect": ["effect_type", "canonical_json_payload", "logical_payload_hash"]
+    },
+    "DeliveryReceipt": {
+      "identity": ["receipt_id", "delivery_id", "intent_id"],
+      "receipt": ["outcome", "logical_projection_hash"]
+    }
+  },
+  "rules": [
+    "GraphInput.cell_text_splice is the ordinary text mutation variant.",
+    "GraphInput.bootstrap_snapshot is admitted only for bootstrap, recovery, or compaction.",
+    "Source generation and causal epoch fence queued older mutations.",
+    "Sequence is monotonic per source generation and epoch; duplicates are idempotent.",
+    "Logical identity hashes canonical JSON values, never protobuf bytes.",
+    "Unknown enum discriminants fail closed at semantic admission."
+  ]
+}
