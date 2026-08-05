@@ -532,6 +532,13 @@
     {
       "feature": "IPC wire — `Snapshot` + `Delta` + `CrdtSync`",
       "fixtures": [
+        "snapshot_minimal.json",
+        "snapshot_multi_node.json",
+        "snapshot_shared_blob.json",
+        "delta_non_sequential.json",
+        "delta_sequential.json",
+        "delta_shared_blob.json",
+        "delta_zero_copy_arrow.json",
         "distributed/crdt_sync_frames.json"
       ],
       "marks": [
@@ -630,15 +637,18 @@
     },
     {
       "feature": "Shared-memory blob path (`ShmBlobArena`)",
+      "fixtures": [
+        "arena_blob.json"
+      ],
       "marks": [
         "✅",
         "✅",
         "✅",
+        "~",
+        "~",
         "✅",
         "✅",
-        "✅",
-        "✅",
-        "✅",
+        "~",
         "✅"
       ]
     },

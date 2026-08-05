@@ -14,7 +14,9 @@
 //
 // The rule this enforces
 // ----------------------
-// A row MAY carry `"fixtures": ["<area>/<file>.json", ...]`. When it does:
+// A row MAY carry `"fixtures": ["<area>/<file>.json", ...]`. The eight legacy
+// root-level Snapshot/Delta/Arena fixtures are classified as area `ipc` without
+// changing their canonical paths. When a row carries fixtures:
 //
 //   ✅  every cited fixture must be replayed by that binding
 //   ~   nothing is required — `~` is a VISIBLY qualified mark, and it is the
@@ -114,11 +116,23 @@ function loadBinding(dir) {
   };
 }
 
+function fixtureArea(fixture) {
+  if (fixture.includes("/")) return fixture.slice(0, fixture.indexOf("/"));
+  if (
+    fixture === "arena_blob.json" ||
+    /^snapshot_.*\.json$/.test(fixture) ||
+    /^delta_.*\.json$/.test(fixture)
+  ) {
+    return "ipc";
+  }
+  return null;
+}
+
 function replays(binding, fixture) {
   if (binding.uncovered.has(fixture)) return false;
-  if (binding.requiredAreas !== null && fixture.includes("/")) {
-    const area = fixture.slice(0, fixture.indexOf("/"));
-    if (!binding.requiredAreas.has(area)) return false;
+  if (binding.requiredAreas !== null) {
+    const area = fixtureArea(fixture);
+    if (area === null || !binding.requiredAreas.has(area)) return false;
   }
   return true;
 }
