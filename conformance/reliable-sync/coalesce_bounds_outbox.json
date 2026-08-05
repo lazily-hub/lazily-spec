@@ -78,13 +78,13 @@
     {
       "id": "non_ack_fills_then_ack_drains_cursor_queue",
       "name": "non_ack_fills_then_ack_drains_cursor_queue",
-      "description": "Backpressure as a queue property. With the peer not acking, three appends leave retained depth 3 (queue fills toward is_full). An OutboxAck { through_epoch: 2 } dequeues the acked front (epochs 1,2) FIFO, leaving only epoch 3 — retained depth 1 (queue drains below watermark; is_full clears; producer may resume). Formalized ReliableSync.outbox_is_bounded_queue (enqueue grows depth by one; ack dequeues the front; coalesced suffix is one frame).",
-      "appended_epochs": [1, 2, 3],
-      "retained_before_ack": 3,
+      "description": "Backpressure as a queue property. With the peer not acking, four appends leave retained depth 4 (queue fills toward is_full). An OutboxAck { through_epoch: 2 } dequeues the acked front (epochs 1,2) FIFO, leaving epochs 3,4 in that order — retained depth 2 (queue drains below watermark; is_full clears; producer may resume). Formalized ReliableSync.outbox_is_bounded_queue (enqueue grows depth by one; ack dequeues the front; coalesced suffix is one frame).",
+      "appended_epochs": [1, 2, 3, 4],
+      "retained_before_ack": 4,
       "outbox_ack": { "through_epoch": 2 },
       "expect": {
-        "retained_after_ack": 1,
-        "retained_epochs_after": [3],
+        "retained_after_ack": 2,
+        "retained_epochs_after": [3, 4],
         "dequeue_is_fifo_front": true
       }
     }

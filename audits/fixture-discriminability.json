@@ -3,248 +3,448 @@
   "scope": "Single-valued boolean routes in assertions/expect/expected blocks. Exact values and boolean routes with both outcomes are audited automatically.",
   "claims": {
     "agent-doc/delta_agent_doc_state.json#/assertions/all_type_tags_in_vocabulary": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='conformance agent-doc delta' test/ipc.test.js",
+      "mutation": "DeltaOpNodeAdd decoded every type_tag as the valid but unknown `mutant.unknown` tag",
+      "expected_failure": "canonical agent-doc delta replay reports the decoded NodeAdd tag outside the agent-doc vocabulary",
+      "witness": "ipc-agent-doc-delta-vocabulary"
     },
     "agent-doc/snapshot_agent_doc_state.json#/assertions/all_type_tags_in_vocabulary": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='conformance agent-doc snapshot' test/ipc.test.js",
+      "mutation": "NodeSnapshot decoded every type_tag as the valid but unknown `mutant.unknown` tag",
+      "expected_failure": "canonical agent-doc snapshot replay reports all decoded node tags outside the agent-doc vocabulary",
+      "witness": "ipc-agent-doc-snapshot-vocabulary"
     },
     "codec/blob_backend_discriminator.json#/scenarios/*/expect/rejected": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='absent discriminator' test/blob-backend-discriminator.test.js",
+      "mutation": "ShmBlobRef normalized every unknown or non-string backend to `shm` instead of throwing",
+      "expected_failure": "canonical backend_unknown_json replay reports rejected false, expected true",
+      "witness": "blob-backend-rejection"
     },
     "codec/blob_backend_discriminator.json#/scenarios/*/expect/rejection_is_decode_error": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='absent discriminator' test/blob-backend-discriminator.test.js",
+      "mutation": "ShmBlobRef changed its documented unknown-backend TypeError to RangeError",
+      "expected_failure": "canonical backend_unknown_json replay reports rejection_is_decode_error false, expected true",
+      "witness": "blob-backend-decode-error-family"
     },
     "codec/frame_roundtrip_json.json#/assertions/byte_canonical": {
       "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "reason": "The canonical runners compare byte_canonical to fixture metadata; none derives JSON byte canonicality from two independently produced library encodings, so a production-source mutation has no executable boolean oracle."
     },
     "codec/frame_roundtrip_json.json#/assertions/self_describing": {
       "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "reason": "The JSON runner validates decoded fields but reads self_describing as a literal declaration; it has no schema-free decode experiment whose library result can make this boolean false."
     },
     "codec/frame_roundtrip_json.json#/scenarios/*/expect/first_op_key_absent": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='json frames round-trip' test/codec.test.js",
+      "mutation": "CrdtOp.fromWire decoded an absent key as the valid non-null key `mutant-key`",
+      "expected_failure": "canonical crdt_sync_frame_round_trips_json replay reports first_op_key_absent false, expected true",
+      "witness": "codec-round-trip-keyless-op"
     },
     "codec/frame_roundtrip_json.json#/scenarios/*/expect/round_trip_equals_source": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='json frames round-trip' test/codec.test.js",
+      "mutation": "CrdtOp.toWire encoded a null key as the valid non-null key `mutant-key`",
+      "expected_failure": "canonical crdt_sync_frame_round_trips_json replay reports round_trip_equals_source false, expected true",
+      "witness": "codec-round-trip-source-equality"
     },
     "codec/frame_roundtrip_msgpack.json#/assertions/byte_canonical": {
       "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+      "reason": "The fixture declares MessagePack bytes non-canonical but supplies no alternative valid encoding pair; the runner cannot derive the universal negative from library output, so no source mutant reaches this route."
     },
     "codec/frame_roundtrip_msgpack.json#/assertions/self_describing": {
       "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "reason": "The MessagePack runner proves exact decode and field-name behavior, but self_describing remains literal metadata rather than a schema-free library observation that a source mutant can falsify."
     },
     "codec/frame_roundtrip_msgpack.json#/scenarios/*/expect/first_op_key_absent": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='msgpack frames round-trip' test/codec.test.js",
+      "mutation": "CrdtOp.fromWire decoded an absent key as the valid non-null key `mutant-key`",
+      "expected_failure": "canonical crdt_sync_frame_round_trips_msgpack replay reports first_op_key_absent false, expected true",
+      "witness": "codec-round-trip-keyless-op"
     },
     "codec/frame_roundtrip_msgpack.json#/scenarios/*/expect/round_trip_equals_source": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='msgpack frames round-trip' test/codec.test.js",
+      "mutation": "CrdtOp.toWire encoded a null key as the valid non-null key `mutant-key`",
+      "expected_failure": "canonical crdt_sync_frame_round_trips_msgpack replay reports round_trip_equals_source false, expected true",
+      "witness": "codec-round-trip-source-equality"
     },
     "collections/queuecell_bounded_backpressure.json#/steps/*/expected/is_empty": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='queuecell_bounded_backpressure' test/queue.test.js",
+      "mutation": "QueueCell.isEmpty returned true for every queue state",
+      "expected_failure": "canonical bounded-backpressure replay reports is_empty true for a non-empty queue, expected false",
+      "witness": "queue-state-nonempty"
     },
     "collections/queuecell_closure_lifecycle.json#/steps/*/expected/is_empty": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='queuecell_closure_lifecycle' test/queue.test.js",
+      "mutation": "QueueCore.isEmpty returned false after a closed queue drained to zero elements",
+      "expected_failure": "canonical closure-lifecycle replay reports is_empty false after the final element drains, expected true",
+      "witness": "queue-state-empty-after-drain"
     },
     "collections/queuecell_spsc_push_pop.json#/steps/*/expected/closed": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='queuecell_spsc_push_pop' test/queue.test.js",
+      "mutation": "QueueCore.isClosed returned true for an open queue",
+      "expected_failure": "canonical SPSC replay reports closed true for an open queue, expected false",
+      "witness": "queue-state-open"
     },
     "collections/queuecell_spsc_push_pop.json#/steps/*/expected/is_full": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='queuecell_spsc_push_pop' test/queue.test.js",
+      "mutation": "QueueCore.isFull returned true for an unbounded queue",
+      "expected_failure": "canonical SPSC replay reports is_full true for an unbounded queue, expected false",
+      "witness": "queue-state-unbounded-not-full"
     },
     "crdt-tree/algebra.json#/scenarios/*/expect/apply_changed": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='algebra.json canonical fixture' test/text-crdt.test.js",
+      "mutation": "TextCrdt.applyDelta returned true even when the supplied delta was empty",
+      "expected_failure": "canonical own_frontier_emits_empty_delta replay reports apply_changed true, expected false",
+      "witness": "crdt-tree-empty-delta-no-change"
     },
     "crdt-tree/algebra.json#/scenarios/*/expect/op_ids_equal": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='algebra.json canonical fixture' test/text-crdt.test.js",
+      "mutation": "TextCrdt.applyDelta reminted every restored operation and origin under the restore peer",
+      "expected_failure": "canonical snapshot replay preserves text but reports op_ids_equal false, expected true",
+      "witness": "crdt-tree-snapshot-op-identity"
     },
     "crdt-tree/algebra.json#/scenarios/*/expect/restored_text_equal": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='algebra.json canonical fixture' test/text-crdt.test.js",
+      "mutation": "TextCrdt.applyDelta dropped the final operation from every snapshot delta",
+      "expected_failure": "canonical snapshot replay reports restored_text_equal false, expected true",
+      "witness": "crdt-tree-snapshot-text"
     },
     "crdt-tree/algebra.json#/scenarios/*/expect/texts_equal": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='algebra.json canonical fixture' test/text-crdt.test.js",
+      "mutation": "TextCrdt.merge discarded previously merged non-seed operations before each subsequent replica",
+      "expected_failure": "canonical three-order merge replay reports texts_equal false, expected true",
+      "witness": "crdt-tree-merge-text"
     },
     "crdt-tree/algebra.json#/scenarios/*/expect/version_vectors_equal": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='algebra.json canonical fixture' test/text-crdt.test.js",
+      "mutation": "TextCrdt.versionVector inserted the local fold peer with a zero counter",
+      "expected_failure": "canonical merge replay reports version_vectors_equal false across fold peers, expected true",
+      "witness": "crdt-tree-merge-version-vector"
     },
     "delta_non_sequential.json#/assertions/is_sequential": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='conformance delta non sequential' test/ipc.test.js",
+      "mutation": "Delta.isNextAfter returned false for every decoded delta",
+      "expected_failure": "canonical delta_non_sequential replay reports is_sequential false for the 12-to-13 span, expected true",
+      "witness": "ipc-delta-sequential"
     },
     "delta_non_sequential.json#/assertions/resync_after_epoch_10": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='conformance delta non sequential' test/ipc.test.js",
+      "mutation": "Delta.applyStatus returned Apply even when the receiver epoch did not equal the delta base epoch",
+      "expected_failure": "canonical delta_non_sequential replay returns apply after epoch 10 instead of resync_required",
+      "witness": "ipc-delta-resync-after-10"
     },
     "delta_sequential.json#/assertions/has_all_op_variants": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='conformance delta sequential' test/ipc.test.js",
+      "mutation": "DeltaOp.fromWire decoded NodeRemove as Invalidate, eliminating one operation variant",
+      "expected_failure": "canonical delta_sequential replay produces six operation constructors instead of all seven variants",
+      "witness": "ipc-delta-all-op-variants"
     },
     "delta_sequential.json#/assertions/is_sequential": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='conformance delta sequential' test/ipc.test.js",
+      "mutation": "Delta.isNextAfter returned false for every decoded delta",
+      "expected_failure": "canonical delta_sequential replay reports is_sequential false for the 40-to-41 span, expected true",
+      "witness": "ipc-delta-sequential"
     },
     "distributed/anti_entropy_converge.json#/scenarios/*/expect/order_independent": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='anti_entropy_converge' test/distributed.test.js",
+      "mutation": "LwwStateCell accepted the wall_time 10 operation after a newer operation had already won",
+      "expected_failure": "canonical out_of_order_converges reverse replay reports order_independent false, expected true",
+      "witness": "distributed-anti-entropy-order"
     },
     "distributed/crdt_sync_frames.json#/frames/*/assertions/frontier_omitted": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='crdt_sync_frames' test/distributed.test.js",
+      "mutation": "CrdtSync.fromWire decoded an omitted frontier as a synthetic peer-99 entry",
+      "expected_failure": "canonical crdt_sync_frontier_suppressed round trip produces a non-empty frontier instead of the exact empty default",
+      "witness": "distributed-frontier-omission"
     },
     "distributed/crdt_sync_frames.json#/frames/*/assertions/has_keyed_op": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='crdt_sync_frames' test/distributed.test.js",
+      "mutation": "CrdtOp.fromWire decoded every operation key as null",
+      "expected_failure": "canonical keyed-and-keyless frame loses the exact scores/alice key, making has_keyed_op false",
+      "witness": "distributed-keyed-op"
     },
     "distributed/crdt_sync_frames.json#/frames/*/assertions/has_keyless_op": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='crdt_sync_frames' test/distributed.test.js",
+      "mutation": "CrdtOp.fromWire decoded a null key as the valid non-null key `mutant-key`",
+      "expected_failure": "canonical keyed-and-keyless frame replaces its exact null key, making has_keyless_op false",
+      "witness": "distributed-keyless-op"
     },
     "familysync/materialize_on_ingest.json#/scenarios/*/expect/target_epoch_bumped": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='materialize on ingest' test/familysync.test.js",
+      "mutation": "CrdtPlaneRuntime stopped advancing its family membership epoch when a remote key materialized",
+      "expected_failure": "canonical materialize-on-ingest replay reports target_epoch_bumped false, expected true",
+      "witness": "family-materialization-epoch"
     },
     "message-passing/terminal_conflict_fail_closed.json#/expect/conflict": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='terminal conflict fails closed fixture' test/message-passing.test.js",
+      "mutation": "CommandProjection.hasConflict returned false after recording a conflicting terminal receipt",
+      "expected_failure": "canonical terminal-conflict replay reports conflict false, expected true",
+      "witness": "terminal-conflict-sequence"
     },
     "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/dequeue_is_fifo_front": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-cs",
+      "command": "dotnet test --filter 'FullyQualifiedName~Coalesce_corpus_bounds_state_and_fuses_queue_batches_without_loss'",
+      "mutation": "DurableOutbox.ReplayFrom returned empty-delta heartbeat frames newest-first",
+      "expected_failure": "strengthened canonical ACK replay returns epochs [4,3], so dequeue_is_fifo_front is false instead of true",
+      "witness": "reliable-coalesce-fifo-front"
     },
     "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/effects_observed_identical": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-cs",
+      "command": "dotnet test --filter 'FullyQualifiedName~Coalesce_corpus_bounds_state_and_fuses_queue_batches_without_loss'",
+      "mutation": "DurableOutbox.CoalesceToSnapshot persisted an empty snapshot instead of the supplied materialized snapshot",
+      "expected_failure": "canonical coalesced replay produces an empty projected state instead of the exact full-run state",
+      "witness": "reliable-coalesce-state-equivalence"
     },
     "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/element_multiset_preserved": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-cs",
+      "command": "dotnet test --filter 'FullyQualifiedName~Coalesce_corpus_bounds_state_and_fuses_queue_batches_without_loss'",
+      "mutation": "DurableOutbox.FuseQueueDeltaBatch dropped the final queue operation from the fused batch",
+      "expected_failure": "canonical fused replay yields payloads [97,98] instead of the exact [97,98,99] multiset",
+      "witness": "reliable-coalesce-fusion-multiset"
     },
     "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/fold_equivalent": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-cs",
+      "command": "dotnet test --filter 'FullyQualifiedName~Coalesce_corpus_bounds_state_and_fuses_queue_batches_without_loss'",
+      "mutation": "DurableOutbox.FuseQueueDeltaBatch dropped the final queue operation from the fused batch",
+      "expected_failure": "canonical fused replay yields two operations rather than the three-operation unit-delta fold",
+      "witness": "reliable-coalesce-fusion-fold"
     },
     "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/graph_equals_full_run": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-cs",
+      "command": "dotnet test --filter 'FullyQualifiedName~Coalesce_corpus_bounds_state_and_fuses_queue_batches_without_loss'",
+      "mutation": "DurableOutbox.CoalesceToSnapshot persisted an empty snapshot instead of the supplied materialized snapshot",
+      "expected_failure": "canonical coalesced replay produces [] instead of the full-run projected state [1:0B,2:14]",
+      "witness": "reliable-coalesce-state-equivalence"
     },
     "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/order_preserved": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-cs",
+      "command": "dotnet test --filter 'FullyQualifiedName~Coalesce_corpus_bounds_state_and_fuses_queue_batches_without_loss'",
+      "mutation": "DurableOutbox.FuseQueueDeltaBatch reversed the flattened queue operations before persistence",
+      "expected_failure": "canonical fused replay yields payload order [99,98,97] instead of [97,98,99]",
+      "witness": "reliable-coalesce-fusion-order"
     },
     "reliable-sync/idempotent_redelivery.json#/scenarios/*/expect/net_effect_unchanged": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='idempotent_redelivery' test/reliable-sync.test.js",
+      "mutation": "ResyncCoordinator classified a stale delta as Apply instead of Ignore",
+      "expected_failure": "canonical replayed_delta_is_ignored scenario applies the stale frame whose payload would change the seeded state",
+      "witness": "reliable-idempotent-net-effect"
     },
     "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/A_stalled_by_B": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-cs",
+      "command": "dotnet test --filter 'FullyQualifiedName~Lease_eviction_corpus_is_peer_isolated_and_rejoins_from_a_fresh_snapshot'",
+      "mutation": "PeerEvictionPolicy.Evaluate classified a healthy non-full peer as Backpressure",
+      "expected_failure": "canonical slow-peer replay reports A_stalled_by_B true, expected false",
+      "witness": "reliable-lease-peer-isolation"
     },
     "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/add_wins_over_stale_remove": {
       "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "reason": "The canonical lease-eviction runner never applies a rejoin add tag or a stale removal to the library OR-set; it only checks snapshot adoption, so this fixture route currently has no library-produced observation."
     },
     "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/adopts_snapshot": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-cs",
+      "command": "dotnet test --filter 'FullyQualifiedName~Lease_eviction_corpus_is_peer_isolated_and_rejoins_from_a_fresh_snapshot'",
+      "mutation": "ResyncCoordinator.Ingest(SnapshotMessage) returned Ignore after advancing the receiver cursor",
+      "expected_failure": "canonical evicted-peer rejoin replay returns Ignore instead of Apply for the covering snapshot",
+      "witness": "reliable-lease-adopts-snapshot"
     },
     "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/B_is_full": {
       "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "reason": "The C# runner computes B_is_full directly from fixture retained >= 3 before calling PeerEvictionPolicy; no library method owns that calculation, so a library-source mutant cannot falsify this route."
     },
     "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/graph_equals_full_run": {
       "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "reason": "The rejoin runner feeds an empty covering snapshot and checks only action and epoch; it does not construct or compare the full-run graph, leaving graph_equals_full_run without a canonical library observation."
     },
     "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/minority_reads_may_be_stale": {
       "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "reason": "The distributed-queue scenario invokes only the write-admission policy and performs no minority-side read, so the canonical runner cannot observe or mutation-test the stale-read allowance."
     },
     "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/minority_writes_blocked": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-cs",
+      "command": "dotnet test --filter 'FullyQualifiedName~Lease_eviction_corpus_is_peer_isolated_and_rejoins_from_a_fresh_snapshot'",
+      "mutation": "PeerEvictionPolicy.DistributedQueueAllowsWrite returned true without quorum",
+      "expected_failure": "canonical minority partition replay allows a write where the exact policy assertion expects false",
+      "witness": "reliable-lease-minority-write-block"
     },
     "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/orset_presence_removed": {
       "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "reason": "The lease-expiry runner evaluates the eviction rung and reclaims the outbox but never calls LivenessRegistry.RemoveOpen or inspects OR-set presence, so this route has no executable replay oracle."
     },
     "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/outbox_reclaimed": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-cs",
+      "command": "dotnet test --filter 'FullyQualifiedName~Lease_eviction_corpus_is_peer_isolated_and_rejoins_from_a_fresh_snapshot'",
+      "mutation": "DurableOutbox.ReclaimUnacked became a no-op",
+      "expected_failure": "canonical lease-expiry replay retains depth 3 after reclaim instead of exact depth 0",
+      "witness": "reliable-lease-outbox-reclaimed"
     },
     "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/peer_dropped_on_partition": {
       "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+      "reason": "The partition scenario checks queue write admission only and never invokes peer eviction with Partitioned=true or observes membership, so peer_dropped_on_partition is not produced by the canonical runner."
     },
     "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/replays_stale_cursor": {
       "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+      "reason": "The rejoin scenario constructs a fresh ResyncCoordinator and applies a snapshot but never calls DurableOutbox.ReplayFrom with the stale cursor, so this negative claim has no replay-path observation."
     },
     "reliable-sync/liveness_orset_lww.json#/scenarios/*/expect/cascade": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='liveness_orset_lww' test/reliable-sync.test.js",
+      "mutation": "WireLwwRegister ignored the dominating death write at wall_time 30",
+      "expected_failure": "canonical whole_editor_death_cascades replay keeps docA and docB live instead of reducing the exact live-doc set to [docC]",
+      "witness": "reliable-liveness-cascade"
     },
     "reliable-sync/liveness_orset_lww.json#/scenarios/*/expect/order_independent": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='liveness_orset_lww' test/reliable-sync.test.js",
+      "mutation": "OrSet.removeObserved tombstoned every add already delivered, not only the observed tags",
+      "expected_failure": "canonical open_set_add_wins_over_stale_remove replay reports order_independent false, expected true",
+      "witness": "reliable-orset-order"
     },
     "reliable-sync/liveness_orset_lww.json#/scenarios/*/expect/per_doc_isolation": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-cs",
+      "command": "dotnet test --filter 'FullyQualifiedName~Liveness_corpus_replays_orset_lww_cascade_and_retry_convergence'",
+      "mutation": "LivenessRegistry.LiveDocuments omitted its per-document Distinct fold",
+      "expected_failure": "strengthened canonical replay emits [docA,docA,docB] for docA's two live processes instead of the unique aggregate [docA,docB]",
+      "witness": "reliable-liveness-per-doc"
     },
     "reliable-sync/liveness_orset_lww.json#/scenarios/*/expect/present": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='liveness_orset_lww' test/reliable-sync.test.js",
+      "mutation": "OrSet.present returned false even when an unremoved add tag survived",
+      "expected_failure": "canonical open_set_add_wins_over_stale_remove replay reports present false, expected true",
+      "witness": "reliable-orset-present"
     },
     "reliable-sync/liveness_orset_lww.json#/scenarios/*/expect/value": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='liveness_orset_lww' test/reliable-sync.test.js",
+      "mutation": "WireLwwRegister.set ignored every dominating write and retained its initial true value",
+      "expected_failure": "canonical lww_alive_highest_stamp_wins replay reports value true, expected false",
+      "witness": "reliable-lww-value"
     },
     "reliable-sync/multi_epoch_delta.json#/assertions/is_multi_epoch": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='multi_epoch_delta' test/reliable-sync.test.js",
+      "mutation": "Delta construction clamped every span to base_epoch + 1",
+      "expected_failure": "canonical wire replay decodes epoch 41 instead of 43, so is_multi_epoch becomes false",
+      "witness": "reliable-multi-epoch-shape"
     },
     "reliable-sync/multi_epoch_delta.json#/scenarios/*/expect/atomic_advance": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='multi_epoch_delta' test/reliable-sync.test.js",
+      "mutation": "ResyncCoordinator advanced a span delta only to base_epoch + 1 instead of its terminal epoch",
+      "expected_failure": "canonical span_3_applies_equal_to_unit_fold replay leaves receiver_last_epoch_after at 41 instead of 43, making atomic_advance false",
+      "witness": "reliable-multi-epoch-atomic"
     },
     "reliable-sync/multi_epoch_delta.json#/scenarios/*/expect/fold_equivalent": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='multi_epoch_delta' test/reliable-sync.test.js",
+      "mutation": "Delta construction dropped the final op only from multi-epoch spans",
+      "expected_failure": "canonical replay decodes op_count 2 instead of 3; the batch therefore cannot equal the three-op unit fold",
+      "witness": "reliable-multi-epoch-fold"
     },
     "reliable-sync/outbox_replay_after_crash.json#/scenarios/*/expect/exactly_once_effect": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='outbox_replay_after_crash' test/reliable-sync.test.js",
+      "mutation": "Delta construction duplicated the epoch-42 operation during durable replay",
+      "expected_failure": "canonical crash replay reports ops_doubled 7 instead of 0, making exactly_once_effect false",
+      "witness": "reliable-outbox-exactly-once"
     },
     "reliable-sync/outbox_replay_after_crash.json#/scenarios/*/expect/frame_retained_after_failed_send": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='outbox_replay_after_crash' test/reliable-sync.test.js",
+      "mutation": "Outbox.append discarded epoch 44 before the simulated failed send",
+      "expected_failure": "canonical send_failure_retains_frame_for_next_tick replay reports frame_retained_after_failed_send false, expected true",
+      "witness": "reliable-outbox-retained"
     },
     "reliable-sync/outbox_replay_after_crash.json#/scenarios/*/expect/permanent_gap": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='outbox_replay_after_crash' test/reliable-sync.test.js",
+      "mutation": "Outbox.replayFrom returned no retained frame at reconnect cursor 43",
+      "expected_failure": "canonical replay yields resent_on_next_tick [] instead of [44], which makes permanent_gap true",
+      "witness": "reliable-outbox-no-gap"
     },
     "reliable-sync/resync_gap_converge.json#/scenarios/*/expect/equals_no_drop_receiver": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='resync_gap_converge' test/reliable-sync.test.js",
+      "mutation": "ResyncCoordinator advanced the snapshot epoch but classified the snapshot as Ignore",
+      "expected_failure": "canonical gap replay rejects the expected Apply action and would retain only node 1 instead of the exact three-node converged snapshot",
+      "witness": "reliable-resync-convergence"
     },
     "signaling/anti_spoof_session.json#/assertions/forwarded_from_is_server_registered": {
       "status": "mutation-killed",
@@ -271,16 +471,28 @@
       "witness": "signaling-roster-order"
     },
     "signaling/frames.json#/frames/*/assertions/roster_excludes_self": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='assertions metadata' test/signaling.test.js",
+      "mutation": "ServerWelcome appended the joining `peer` to its decoded `peers` roster and removed the self-exclusion guard",
+      "expected_failure": "canonical frames replay fails for server_welcome: actual peers [1,2], expected [1]",
+      "witness": "signaling-frames-roster-exclusion"
     },
     "signaling/frames.json#/frames/*/assertions/server_stamped_from": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='assertions metadata' test/signaling.test.js",
+      "mutation": "ServerOffer decoded the server-stamped `from` field as null instead of the wire peer",
+      "expected_failure": "canonical frames replay fails for server_offer_forwarded: actual from null, expected 1",
+      "witness": "signaling-frames-server-stamped-from"
     },
     "snapshot_multi_node.json#/assertions/has_opaque_node": {
-      "status": "untested",
-      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test --test-name-pattern='conformance snapshot multi node' test/ipc.test.js",
+      "mutation": "NodeState.fromWire decoded the Opaque unit variant as an empty Payload",
+      "expected_failure": "canonical snapshot_multi_node replay has no NodeStateOpaque instance, expected node 3 to be opaque",
+      "witness": "ipc-snapshot-opaque-node"
     }
   }
 }
