@@ -675,16 +675,20 @@
     },
     {
       "feature": "Reliable sync — resync coordinator + at-least-once durable outbox + OR-set/LWW liveness (`#lzsync`)",
+      "fixtures": [
+        "reliable-sync/coalesce_bounds_outbox.json",
+        "reliable-sync/liveness_lease_eviction.json"
+      ],
       "marks": [
-        "✅",
-        "✅",
-        "✅",
-        "✅",
-        "✅",
-        "✅",
-        "✅",
-        "✅",
-        "✅"
+        "~",
+        "~",
+        "~",
+        "~",
+        "~",
+        "~",
+        "~",
+        "~",
+        "~"
       ]
     },
     {
