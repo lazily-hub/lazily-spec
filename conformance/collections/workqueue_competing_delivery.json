@@ -2,11 +2,9 @@
   "description": "WorkQueueCell competing consumers: FIFO claims are exclusive, delivery ownership rejects stale/wrong-worker acknowledgements, nack requeues at the tail, and redelivery keeps the item identity while minting a new delivery identity.",
   "kind": "Collection",
   "model": "WorkQueueCell",
-  "config": {
-    "visibility_timeout": 10,
-    "max_deliveries": 3
-  },
   "initial": {
+    "visibility_timeout": 10,
+    "max_deliveries": 3,
     "pending": [],
     "in_flight": [],
     "dead_letters": []

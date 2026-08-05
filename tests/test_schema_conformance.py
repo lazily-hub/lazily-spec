@@ -1164,15 +1164,6 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
         return
 
     if obj["model"] in _WORK_QUEUE_MODELS:
-        config = obj.get("config")
-        assert isinstance(config, dict), f"{name}: WorkQueueCell needs config"
-        assert isinstance(config.get("visibility_timeout"), int) and config["visibility_timeout"] > 0, (
-            f"{name}: visibility_timeout must be a positive integer"
-        )
-        assert isinstance(config.get("max_deliveries"), int) and config["max_deliveries"] >= 1, (
-            f"{name}: max_deliveries must be at least one"
-        )
-
         def assert_workqueue_state(state: dict, label: str) -> None:
             assert {"pending", "in_flight", "dead_letters", "reads", "invalidates"} <= set(state), (
                 f"{name}: {label} is incomplete"
@@ -1196,6 +1187,17 @@ def test_collection_fixture_is_well_formed(name: str) -> None:
 
         initial = obj.get("initial")
         assert isinstance(initial, dict), f"{name}: WorkQueueCell needs initial state"
+        assert "config" not in obj, (
+            f"{name}: WorkQueueCell lease configuration belongs in initial, not a top-level config"
+        )
+        assert (
+            isinstance(initial.get("visibility_timeout"), int)
+            and initial["visibility_timeout"] > 0
+        ), f"{name}: initial.visibility_timeout must be a positive integer"
+        assert (
+            isinstance(initial.get("max_deliveries"), int)
+            and initial["max_deliveries"] >= 1
+        ), f"{name}: initial.max_deliveries must be at least one"
         initial_with_observation = {
             **initial,
             "reads": {

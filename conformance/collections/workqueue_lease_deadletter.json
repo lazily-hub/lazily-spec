@@ -2,11 +2,9 @@
   "description": "WorkQueueCell visibility timeout and poison handling: a lease is live at its deadline, expires strictly after it, preserves the item for at-least-once redelivery, and routes the item to the DLQ once max_deliveries is reached.",
   "kind": "Collection",
   "model": "WorkQueueCell",
-  "config": {
-    "visibility_timeout": 10,
-    "max_deliveries": 2
-  },
   "initial": {
+    "visibility_timeout": 10,
+    "max_deliveries": 2,
     "pending": [],
     "in_flight": [],
     "dead_letters": []
