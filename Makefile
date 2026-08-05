@@ -16,9 +16,17 @@ fixture-copies-sync \
 async-v2-names-check \
 scenario-identity-check \
 prose-keys-check \
+assertion-block-schema-check \
 assertion-ordering-check
 
-check: test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check
+check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check
+
+# Canonical assertion-block schema guard (#lzassertionblockschema). The
+# generated schema routes every assertions/expect/expected object by fixture and
+# normalized JSON pointer, so all fixture families get fail-closed keys without
+# pretending Protobuf unknown-field handling is validation.
+assertion-block-schema-check:
+>python3 scripts/gen_assertion_block_schema.py --check
 
 # Assertion-observation ordering guard (#lzassertordering). The binding-side
 # invocations check real runner anchors; this self-test proves the guard itself

@@ -16,6 +16,7 @@ codecs encode the same shapes.
 | `message-passing.json` | Command / RPC message plane (`CommandSubmit` / `CommandCancel` / `CommandEvents` / `CommandProjection`) |
 | `statechart.json` | Compute (Harel/SCXML chart form — not a wire message) |
 | `stdlib-fixture.schema.json` | Deterministic `Timer`, `Timeout`, and `RevisionBarrier` conformance scenarios |
+| `assertion-blocks.json` | Routed, fail-closed schemas for every canonical `assertions` / `expect` / `expected` object |
 
 The IPC schemas describe the **normative externally-tagged envelope** that
 every binding serializes (the single-key `{"Snapshot": …}` / `{"Delta": …}` /
@@ -24,6 +25,11 @@ of `u8` (not base64). Shared wire primitives live in `defs.json` and are
 referenced via absolute `$ref` so the primitive definitions never copy-drift.
 Every conformance fixture's `wire` field validates against its schema — enforced
 by `make test-schemas` (see `tests/test_schema_conformance.py`).
+
+Assertion blocks are validated independently of their fixture's wire or compute
+schema, so families without a whole-fixture schema still reject unknown claim
+keys and stale value shapes. See
+[Assertion-Block Schemas](assertion-block-schemas.md).
 
 ## `defs.json`
 

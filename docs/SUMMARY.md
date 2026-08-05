@@ -15,6 +15,7 @@
 - [Cross-Language Coverage](coverage.md)
 - [Wire Protocol](protocol.md)
 - [Protobuf Graph-Boundary Interoperability](protobuf-interop.md)
+- [Assertion-Block Schemas](assertion-block-schemas.md)
 - [Causal Receipts](receipts.md)
 - [Command / RPC Message Plane](message-passing.md)
 - [Cross-Process Zero-Copy Transport](zero-copy-transport.md)
