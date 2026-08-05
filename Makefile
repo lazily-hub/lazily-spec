@@ -17,9 +17,17 @@ async-v2-names-check \
 scenario-identity-check \
 prose-keys-check \
 assertion-block-schema-check \
-assertion-ordering-check
+assertion-ordering-check \
+fixture-discriminability-check
 
-check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check
+check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check
+
+# Fixture-discriminability guard (#lzfixturediscrim). Exact-value assertions and
+# boolean routes with both outcomes carry their own controls. Every remaining
+# single-valued boolean claim must either cite a killed library-source mutant or
+# remain explicitly `untested` with a reason in the fail-closed audit ledger.
+fixture-discriminability-check:
+>node scripts/check-fixture-discriminability.mjs
 
 # Canonical assertion-block schema guard (#lzassertionblockschema). The
 # generated schema routes every assertions/expect/expected object by fixture and

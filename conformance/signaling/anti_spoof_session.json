@@ -1,5 +1,5 @@
 {
-  "description": "Signaling room routing transcript. A binding that implements the server room (RoomCore) replays `inputs` and MUST produce `expect` frames. The load-bearing invariant is anti-spoof: a client sends a directed frame carrying `to`; the server forwards it to the target carrying `from` set to the SENDER's server-registered peer id, never a client-supplied value. The roster in `welcome` excludes the joining peer's own id. `to`/`from` are never both present on one frame.",
+  "description": "Signaling room routing transcript. A binding that implements the server room (RoomCore) replays `inputs` and MUST produce `expect` frames. The load-bearing invariant is anti-spoof: a client sends a directed frame carrying `to`; the server forwards it to the target carrying `from` set to the SENDER's server-registered peer id, never a client-supplied value. The roster in `welcome` excludes the joining peer's own id. Three peers join so the third welcome's two-element `[1, 2]` roster distinguishes ascending order from reverse order without imposing an order on peer-joined broadcasts. `to`/`from` are never both present on one frame.",
   "protocol_version": 1,
   "kind": "SignalingSession",
   "mode": "open",
@@ -21,6 +21,14 @@
       ]
     },
     {
+      "input": { "conn": "c", "recv": { "type": "join", "peer": 9 } },
+      "expect": [
+        { "to": "c", "frame": { "type": "welcome", "peer": 9, "peers": [1, 2] } },
+        { "to": "a", "frame": { "type": "peer-joined", "peer": 9 } },
+        { "to": "b", "frame": { "type": "peer-joined", "peer": 9 } }
+      ]
+    },
+    {
       "input": { "conn": "a", "recv": { "type": "offer", "to": 2, "sdp": "SDP-A" } },
       "expect": [ { "to": "b", "frame": { "type": "offer", "from": 1, "sdp": "SDP-A" } } ]
     },
@@ -38,7 +46,10 @@
     },
     {
       "input": { "conn": "b", "recv": { "type": "leave" } },
-      "expect": [ { "to": "a", "frame": { "type": "peer-left", "peer": 2 } } ]
+      "expect": [
+        { "to": "a", "frame": { "type": "peer-left", "peer": 2 } },
+        { "to": "c", "frame": { "type": "peer-left", "peer": 2 } }
+      ]
     }
   ],
   "rejects": [

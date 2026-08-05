@@ -1,0 +1,286 @@
+{
+  "version": 1,
+  "scope": "Single-valued boolean routes in assertions/expect/expected blocks. Exact values and boolean routes with both outcomes are audited automatically.",
+  "claims": {
+    "agent-doc/delta_agent_doc_state.json#/assertions/all_type_tags_in_vocabulary": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "agent-doc/snapshot_agent_doc_state.json#/assertions/all_type_tags_in_vocabulary": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "codec/blob_backend_discriminator.json#/scenarios/*/expect/rejected": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "codec/blob_backend_discriminator.json#/scenarios/*/expect/rejection_is_decode_error": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "codec/frame_roundtrip_json.json#/assertions/byte_canonical": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "codec/frame_roundtrip_json.json#/assertions/self_describing": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "codec/frame_roundtrip_json.json#/scenarios/*/expect/first_op_key_absent": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "codec/frame_roundtrip_json.json#/scenarios/*/expect/round_trip_equals_source": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "codec/frame_roundtrip_msgpack.json#/assertions/byte_canonical": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+    },
+    "codec/frame_roundtrip_msgpack.json#/assertions/self_describing": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "codec/frame_roundtrip_msgpack.json#/scenarios/*/expect/first_op_key_absent": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "codec/frame_roundtrip_msgpack.json#/scenarios/*/expect/round_trip_equals_source": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "collections/queuecell_bounded_backpressure.json#/steps/*/expected/is_empty": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+    },
+    "collections/queuecell_closure_lifecycle.json#/steps/*/expected/is_empty": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "collections/queuecell_spsc_push_pop.json#/steps/*/expected/closed": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+    },
+    "collections/queuecell_spsc_push_pop.json#/steps/*/expected/is_full": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+    },
+    "crdt-tree/algebra.json#/scenarios/*/expect/apply_changed": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+    },
+    "crdt-tree/algebra.json#/scenarios/*/expect/op_ids_equal": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "crdt-tree/algebra.json#/scenarios/*/expect/restored_text_equal": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "crdt-tree/algebra.json#/scenarios/*/expect/texts_equal": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "crdt-tree/algebra.json#/scenarios/*/expect/version_vectors_equal": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "delta_non_sequential.json#/assertions/is_sequential": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "delta_non_sequential.json#/assertions/resync_after_epoch_10": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "delta_sequential.json#/assertions/has_all_op_variants": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "delta_sequential.json#/assertions/is_sequential": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "distributed/anti_entropy_converge.json#/scenarios/*/expect/order_independent": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "distributed/crdt_sync_frames.json#/frames/*/assertions/frontier_omitted": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "distributed/crdt_sync_frames.json#/frames/*/assertions/has_keyed_op": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "distributed/crdt_sync_frames.json#/frames/*/assertions/has_keyless_op": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "familysync/materialize_on_ingest.json#/scenarios/*/expect/target_epoch_bumped": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "message-passing/terminal_conflict_fail_closed.json#/expect/conflict": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/dequeue_is_fifo_front": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/effects_observed_identical": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/element_multiset_preserved": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/fold_equivalent": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/graph_equals_full_run": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/order_preserved": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/idempotent_redelivery.json#/scenarios/*/expect/net_effect_unchanged": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/A_stalled_by_B": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/add_wins_over_stale_remove": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/adopts_snapshot": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/B_is_full": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/graph_equals_full_run": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/minority_reads_may_be_stale": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/minority_writes_blocked": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/orset_presence_removed": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/outbox_reclaimed": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/peer_dropped_on_partition": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_lease_eviction.json#/scenarios/*/expect/replays_stale_cursor": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_orset_lww.json#/scenarios/*/expect/cascade": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_orset_lww.json#/scenarios/*/expect/order_independent": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_orset_lww.json#/scenarios/*/expect/per_doc_isolation": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_orset_lww.json#/scenarios/*/expect/present": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/liveness_orset_lww.json#/scenarios/*/expect/value": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+    },
+    "reliable-sync/multi_epoch_delta.json#/assertions/is_multi_epoch": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/multi_epoch_delta.json#/scenarios/*/expect/atomic_advance": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/multi_epoch_delta.json#/scenarios/*/expect/fold_equivalent": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/outbox_replay_after_crash.json#/scenarios/*/expect/exactly_once_effect": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/outbox_replay_after_crash.json#/scenarios/*/expect/frame_retained_after_failed_send": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "reliable-sync/outbox_replay_after_crash.json#/scenarios/*/expect/permanent_gap": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value false); it remains explicitly unproven."
+    },
+    "reliable-sync/resync_gap_converge.json#/scenarios/*/expect/equals_no_drop_receiver": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "signaling/anti_spoof_session.json#/assertions/forwarded_from_is_server_registered": {
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test test/signaling.test.js",
+      "mutation": "SignalingRoom forward path stamped `from` with the target peer instead of the registered sender",
+      "expected_failure": "canonical replay fails at conn=a: actual from 2, expected registered sender 1",
+      "witness": "signaling-forwarded-from-registration"
+    },
+    "signaling/anti_spoof_session.json#/assertions/roster_excludes_self": {
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test test/signaling.test.js",
+      "mutation": "SignalingRoom join path stopped filtering the joining peer from `roster()`",
+      "expected_failure": "canonical replay fails because ServerWelcome rejects a roster containing its own peer",
+      "witness": "signaling-roster-excludes-self"
+    },
+    "signaling/anti_spoof_session.json#/assertions/roster_sorted_ascending": {
+      "status": "mutation-killed",
+      "binding": "lazily-js",
+      "command": "node --test test/signaling.test.js",
+      "mutation": "SignalingRoom.roster comparator `(a, b) => a - b` changed to `(a, b) => b - a`",
+      "expected_failure": "canonical replay fails at conn=c: actual peers [2,1], expected [1,2]",
+      "witness": "signaling-roster-order"
+    },
+    "signaling/frames.json#/frames/*/assertions/roster_excludes_self": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "signaling/frames.json#/frames/*/assertions/server_stamped_from": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    },
+    "snapshot_multi_node.json#/assertions/has_opaque_node": {
+      "status": "untested",
+      "reason": "No library-source mutant is registered for this single-valued boolean claim (canonical value true); it remains explicitly unproven."
+    }
+  }
+}

@@ -23,6 +23,43 @@ re-serialize to confirm round-trip fidelity.
 carrying a comparable value. A runner discharges those by naming the executable keys that
 prove them — see [Prose assertion keys](#prose-assertion-keys-lzprosekeyconvention).
 
+## Fixture discriminability (`#lzfixturediscrim`)
+
+Opening a fixture, consuming every key, and comparing every executable value still does not
+prove that the fixture data can distinguish the behavior it names. For example, every ordering
+predicate returns `true` for an empty or singleton roster. A runner can faithfully assert
+`roster_sorted_ascending: true` while a library that reverses its roster order remains green.
+
+`scripts/check-fixture-discriminability.mjs` audits this fourth rung:
+
+1. Non-boolean routes are exact-value oracles. A changed observation differs from the canonical
+   value.
+2. Boolean routes carrying both `true` and `false` somewhere at the same normalized fixture
+   pointer have an in-corpus control that rejects either constant mutant.
+3. Every remaining single-valued boolean route must appear in
+   `audits/fixture-discriminability.json`. A claim is either `mutation-killed`, with the binding,
+   library-source mutation, command, observed failure, and a fixture witness, or `untested` with
+   a reason. Missing and stale ledger entries fail CI.
+
+`untested` is deliberately not a weaker spelling of pass. It records that the corpus claim has
+no registered library mutation proof, so coverage reports and follow-up audits cannot silently
+treat an asserted predicate as behavior-discriminating.
+
+The signaling transcript is the first recorded proof. Three peers join; the third welcome
+must carry the two-element roster `[1, 2]`. Reversing `SignalingRoom.roster` in `lazily-js`
+now fails the canonical replay with actual `[2, 1]`, while removing self-filtering and stamping `from` with
+the target rather than the registered sender fail the other two signaling assertions.
+
+To initialize ledger entries after intentionally adding claims:
+
+```sh
+node scripts/check-fixture-discriminability.mjs --write-initial-ledger
+```
+
+The initializer preserves existing evidence and creates new entries as explicit `untested`
+claims. Replace that status only after running the cited library-source mutant and confirming
+that a canonical fixture—not merely an independent unit test—reddens.
+
 ## Current fixtures
 
 | Fixture | Kind | Description |
@@ -568,7 +605,10 @@ reference TypeScript signaling server.
   implements the server room replays each `input` and asserts the emitted `expect`
   frames. It pins the load-bearing invariants — the `welcome` roster excludes the
   joining peer, a forwarded frame's `from` is the sender's server-registered id
-  (never client-supplied), and an unknown target yields an `error` frame.
+  (never client-supplied), and an unknown target yields an `error` frame. Its
+  three-peer join makes roster sorting observable: the third welcome must be
+  `[1, 2]`, not reverse order `[2, 1]`. Peer-joined broadcast order remains outside
+  this fixture's claim.
 
 ## Distributed (CRDT plane) conformance
 
