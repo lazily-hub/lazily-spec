@@ -1,0 +1,162 @@
+{
+  "description": "Sequence assignment, ordered claims, cumulative acknowledgement, and no-op acknowledgement invalidation.",
+  "kind": "Egress",
+  "model": "EgressCore",
+  "generation": 1,
+  "policy": {
+    "inflight_limit": 2,
+    "retry_budget": 2,
+    "retry_base": 5,
+    "retry_ceiling": 20
+  },
+  "steps": [
+    {
+      "op": { "type": "enqueue", "payload": 10 },
+      "returns": { "sequence": 0 },
+      "expected": {
+        "generation": 1,
+        "next_sequence": 1,
+        "pending": [
+          { "generation": 1, "sequence": 0, "attempt": 0, "payload": 10 }
+        ],
+        "inflight": [],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "enqueue", "payload": 20 },
+      "returns": { "sequence": 1 },
+      "expected": {
+        "generation": 1,
+        "next_sequence": 2,
+        "pending": [
+          { "generation": 1, "sequence": 0, "attempt": 0, "payload": 10 },
+          { "generation": 1, "sequence": 1, "attempt": 0, "payload": 20 }
+        ],
+        "inflight": [],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "claim", "generation": 1 },
+      "returns": {
+        "claim": "claimed",
+        "envelope": { "generation": 1, "sequence": 0, "attempt": 1, "payload": 10 }
+      },
+      "expected": {
+        "generation": 1,
+        "next_sequence": 2,
+        "pending": [
+          { "generation": 1, "sequence": 1, "attempt": 0, "payload": 20 }
+        ],
+        "inflight": [
+          { "generation": 1, "sequence": 0, "attempt": 1, "payload": 10 }
+        ],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": true,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "claim", "generation": 1 },
+      "returns": {
+        "claim": "claimed",
+        "envelope": { "generation": 1, "sequence": 1, "attempt": 1, "payload": 20 }
+      },
+      "expected": {
+        "generation": 1,
+        "next_sequence": 2,
+        "pending": [],
+        "inflight": [
+          { "generation": 1, "sequence": 0, "attempt": 1, "payload": 10 },
+          { "generation": 1, "sequence": 1, "attempt": 1, "payload": 20 }
+        ],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": true,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "ack", "generation": 1, "through": 0 },
+      "returns": { "ack": "advanced", "through": 0 },
+      "expected": {
+        "generation": 1,
+        "next_sequence": 2,
+        "pending": [],
+        "inflight": [
+          { "generation": 1, "sequence": 1, "attempt": 1, "payload": 20 }
+        ],
+        "acked_through": 0,
+        "retry": null,
+        "invalidates": {
+          "pending": false,
+          "inflight": true,
+          "acked_through": true,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "ack", "generation": 1, "through": 0 },
+      "returns": { "ack": "unchanged", "through": 0 },
+      "expected": {
+        "generation": 1,
+        "next_sequence": 2,
+        "pending": [],
+        "inflight": [
+          { "generation": 1, "sequence": 1, "attempt": 1, "payload": 20 }
+        ],
+        "acked_through": 0,
+        "retry": null,
+        "invalidates": {
+          "pending": false,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "ack", "generation": 1, "through": 1 },
+      "returns": { "ack": "advanced", "through": 1 },
+      "expected": {
+        "generation": 1,
+        "next_sequence": 2,
+        "pending": [],
+        "inflight": [],
+        "acked_through": 1,
+        "retry": null,
+        "invalidates": {
+          "pending": false,
+          "inflight": true,
+          "acked_through": true,
+          "retry": false
+        }
+      }
+    }
+  ]
+}

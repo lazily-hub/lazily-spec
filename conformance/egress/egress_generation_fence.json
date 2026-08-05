@@ -1,0 +1,191 @@
+{
+  "description": "Reconnect fences the old send attachment, preserves sequence and acknowledgement state, and replays unacknowledged records under the new generation.",
+  "kind": "Egress",
+  "model": "EgressCore",
+  "generation": 3,
+  "policy": {
+    "inflight_limit": 2,
+    "retry_budget": 2,
+    "retry_base": 5,
+    "retry_ceiling": 20
+  },
+  "steps": [
+    {
+      "op": { "type": "enqueue", "payload": 11 },
+      "returns": { "sequence": 0 },
+      "expected": {
+        "generation": 3,
+        "next_sequence": 1,
+        "pending": [
+          { "generation": 3, "sequence": 0, "attempt": 0, "payload": 11 }
+        ],
+        "inflight": [],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "enqueue", "payload": 12 },
+      "returns": { "sequence": 1 },
+      "expected": {
+        "generation": 3,
+        "next_sequence": 2,
+        "pending": [
+          { "generation": 3, "sequence": 0, "attempt": 0, "payload": 11 },
+          { "generation": 3, "sequence": 1, "attempt": 0, "payload": 12 }
+        ],
+        "inflight": [],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "claim", "generation": 3 },
+      "returns": {
+        "claim": "claimed",
+        "envelope": { "generation": 3, "sequence": 0, "attempt": 1, "payload": 11 }
+      },
+      "expected": {
+        "generation": 3,
+        "next_sequence": 2,
+        "pending": [
+          { "generation": 3, "sequence": 1, "attempt": 0, "payload": 12 }
+        ],
+        "inflight": [
+          { "generation": 3, "sequence": 0, "attempt": 1, "payload": 11 }
+        ],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": true,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "reconnect", "generation": 4 },
+      "returns": { "reconnect": "advanced", "generation": 4, "replayed": 1 },
+      "expected": {
+        "generation": 4,
+        "next_sequence": 2,
+        "pending": [
+          { "generation": 4, "sequence": 0, "attempt": 1, "payload": 11 },
+          { "generation": 4, "sequence": 1, "attempt": 0, "payload": 12 }
+        ],
+        "inflight": [],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": true,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "claim", "generation": 3 },
+      "returns": { "claim": "stale_generation", "current": 4 },
+      "expected": {
+        "generation": 4,
+        "next_sequence": 2,
+        "pending": [
+          { "generation": 4, "sequence": 0, "attempt": 1, "payload": 11 },
+          { "generation": 4, "sequence": 1, "attempt": 0, "payload": 12 }
+        ],
+        "inflight": [],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": false,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "ack", "generation": 3, "through": 0 },
+      "returns": { "ack": "stale_generation", "current": 4 },
+      "expected": {
+        "generation": 4,
+        "next_sequence": 2,
+        "pending": [
+          { "generation": 4, "sequence": 0, "attempt": 1, "payload": 11 },
+          { "generation": 4, "sequence": 1, "attempt": 0, "payload": 12 }
+        ],
+        "inflight": [],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": false,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "claim", "generation": 4 },
+      "returns": {
+        "claim": "claimed",
+        "envelope": { "generation": 4, "sequence": 0, "attempt": 2, "payload": 11 }
+      },
+      "expected": {
+        "generation": 4,
+        "next_sequence": 2,
+        "pending": [
+          { "generation": 4, "sequence": 1, "attempt": 0, "payload": 12 }
+        ],
+        "inflight": [
+          { "generation": 4, "sequence": 0, "attempt": 2, "payload": 11 }
+        ],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": true,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "enqueue", "payload": 13 },
+      "returns": { "sequence": 2 },
+      "expected": {
+        "generation": 4,
+        "next_sequence": 3,
+        "pending": [
+          { "generation": 4, "sequence": 1, "attempt": 0, "payload": 12 },
+          { "generation": 4, "sequence": 2, "attempt": 0, "payload": 13 }
+        ],
+        "inflight": [
+          { "generation": 4, "sequence": 0, "attempt": 2, "payload": 11 }
+        ],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    }
+  ]
+}

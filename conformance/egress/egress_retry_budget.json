@@ -1,0 +1,160 @@
+{
+  "description": "A failed send is parked, explicit retry scheduling preserves order, backoff doubles, and exhaustion is terminal.",
+  "kind": "Egress",
+  "model": "EgressCore",
+  "generation": 2,
+  "policy": {
+    "inflight_limit": 2,
+    "retry_budget": 1,
+    "retry_base": 5,
+    "retry_ceiling": 20
+  },
+  "steps": [
+    {
+      "op": { "type": "enqueue", "payload": 9 },
+      "returns": { "sequence": 0 },
+      "expected": {
+        "generation": 2,
+        "next_sequence": 1,
+        "pending": [
+          { "generation": 2, "sequence": 0, "attempt": 0, "payload": 9 }
+        ],
+        "inflight": [],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "claim", "generation": 2 },
+      "returns": {
+        "claim": "claimed",
+        "envelope": { "generation": 2, "sequence": 0, "attempt": 1, "payload": 9 }
+      },
+      "expected": {
+        "generation": 2,
+        "next_sequence": 1,
+        "pending": [],
+        "inflight": [
+          { "generation": 2, "sequence": 0, "attempt": 1, "payload": 9 }
+        ],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": true,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "fail", "generation": 2, "sequence": 0 },
+      "returns": {
+        "failure": "retrying",
+        "retry": { "sequence": 0, "attempt": 1, "backoff": 5, "exhausted": false }
+      },
+      "expected": {
+        "generation": 2,
+        "next_sequence": 1,
+        "pending": [],
+        "inflight": [],
+        "acked_through": null,
+        "retry": { "sequence": 0, "attempt": 1, "backoff": 5, "exhausted": false },
+        "invalidates": {
+          "pending": false,
+          "inflight": true,
+          "acked_through": false,
+          "retry": true
+        }
+      }
+    },
+    {
+      "op": { "type": "retry_now", "generation": 2, "sequence": 0 },
+      "returns": { "retry_action": "scheduled", "sequence": 0 },
+      "expected": {
+        "generation": 2,
+        "next_sequence": 1,
+        "pending": [
+          { "generation": 2, "sequence": 0, "attempt": 1, "payload": 9 }
+        ],
+        "inflight": [],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": false,
+          "acked_through": false,
+          "retry": true
+        }
+      }
+    },
+    {
+      "op": { "type": "claim", "generation": 2 },
+      "returns": {
+        "claim": "claimed",
+        "envelope": { "generation": 2, "sequence": 0, "attempt": 2, "payload": 9 }
+      },
+      "expected": {
+        "generation": 2,
+        "next_sequence": 1,
+        "pending": [],
+        "inflight": [
+          { "generation": 2, "sequence": 0, "attempt": 2, "payload": 9 }
+        ],
+        "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": true,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "fail", "generation": 2, "sequence": 0 },
+      "returns": {
+        "failure": "exhausted",
+        "retry": { "sequence": 0, "attempt": 2, "backoff": 10, "exhausted": true }
+      },
+      "expected": {
+        "generation": 2,
+        "next_sequence": 1,
+        "pending": [],
+        "inflight": [],
+        "acked_through": null,
+        "retry": { "sequence": 0, "attempt": 2, "backoff": 10, "exhausted": true },
+        "invalidates": {
+          "pending": false,
+          "inflight": true,
+          "acked_through": false,
+          "retry": true
+        }
+      }
+    },
+    {
+      "op": { "type": "retry_now", "generation": 2, "sequence": 0 },
+      "returns": { "retry_action": "unknown_sequence" },
+      "expected": {
+        "generation": 2,
+        "next_sequence": 1,
+        "pending": [],
+        "inflight": [],
+        "acked_through": null,
+        "retry": { "sequence": 0, "attempt": 2, "backoff": 10, "exhausted": true },
+        "invalidates": {
+          "pending": false,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    }
+  ]
+}

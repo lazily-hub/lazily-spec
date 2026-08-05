@@ -12,6 +12,7 @@
 - [CrdtTree Contract](crdt-tree.md)
 - [Durable Outbox Stores](durable-outbox.md)
 - [Durable Effect Sinks](durable-sinks.md)
+- [Reactive Egress](transport-egress.md)
 - [Cross-Language Coverage](coverage.md)
 - [Wire Protocol](protocol.md)
 - [Protobuf Graph-Boundary Interoperability](protobuf-interop.md)
