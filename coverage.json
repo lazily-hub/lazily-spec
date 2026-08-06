@@ -1,5 +1,5 @@
 {
-  "$comment": "Canonical cross-language feature coverage — the single source of truth. Only the Core surface defined in cell-model.md § \"Core surface vs. binding extensions\" is scored; Extended methods (entry/entry_with, is_empty, len_untracked, reconcile, insert, Try* variants) are non-normative and MUST NOT be scored here. Edit THIS file, then run `node scripts/sync-coverage.mjs` to regenerate the table in docs/coverage.md and every sibling binding README (between the coverage-table markers). CI runs `--check` to fail on drift. A row MAY also carry `fixtures`: the canonical conformance fixtures that back it. `node scripts/check-coverage-claims.mjs` then refuses a shipped mark on that row unless the binding actually replays every cited fixture, read from that binding's own KNOWN_UNCOVERED/REQUIRED_AREAS ledger. Scoring having the TYPES rather than speaking the WIRE is what let two lazily-cpp codec gaps survive a family-wide audit (#coveragejsonscores).",
+  "$comment": "Canonical cross-language feature coverage — the single source of truth. Only the Core surface defined in cell-model.md § \"Core surface vs. binding extensions\" is scored; Extended methods (entry/entry_with, is_empty, len_untracked, reconcile, insert, Try* variants) are non-normative and MUST NOT be scored here. Edit THIS file, then run `node scripts/sync-coverage.mjs` to regenerate the table in docs/coverage.md and every sibling binding README (between the coverage-table markers). CI runs `--check` to fail on drift. Each row carries `id` (a stable snake_case footnote key), `label` (the short text rendered in the table cell), and `feature` (the 80–200 char normative prose, rendered as a footnote below the table so the row width scales with the language axis, not the prose). A row MAY also carry `fixtures`: the canonical conformance fixtures that back it. `node scripts/check-coverage-claims.mjs` then refuses a shipped mark on that row unless the binding actually replays every cited fixture, read from that binding's own KNOWN_UNCOVERED/REQUIRED_AREAS ledger. Scoring having the TYPES rather than speaking the WIRE is what let two lazily-cpp codec gaps survive a family-wide audit (#coveragejsonscores).",
   "legend": "✅ shipped · `~` partial · `—` absent or not applicable",
   "languages": [
     "Rust",
@@ -26,6 +26,8 @@
   ],
   "rows": [
     {
+      "id": "reactive-graph",
+      "label": "Reactive graph",
       "feature": "Reactive graph — two cell kinds (nodes `SourceCell` / `ComputedCell`; handles `Source<T, M>` / `Computed<T>`) + `Effect` sink + eager `Computed` (`computed().eager()`) / all cells guarded / batch",
       "marks": [
         "✅",
@@ -40,6 +42,8 @@
       ]
     },
     {
+      "id": "keyed-map-materialization",
+      "label": "Keyed-map materialization",
       "feature": "Keyed-map materialization (`ComputedMap`) — mint-on-access derived slots: transparency + deferral (`#lzmatmode`)",
       "marks": [
         "✅",
@@ -54,6 +58,8 @@
       ]
     },
     {
+      "id": "thread-safe-keyed-map",
+      "label": "Thread-safe keyed map",
       "feature": "Thread-safe keyed map (`ThreadSafeComputedMap`) — `Send + Sync` + materialization confluence (`#lzmatmode`)",
       "marks": [
         "✅",
@@ -68,6 +74,8 @@
       ]
     },
     {
+      "id": "async-keyed-map",
+      "label": "Async keyed map",
       "feature": "Async keyed map (`AsyncComputedMap`) — eventual transparency (`#lzmatmode`)",
       "marks": [
         "✅",
@@ -82,6 +90,8 @@
       ]
     },
     {
+      "id": "keyed-map-sync",
+      "label": "Keyed-map sync",
       "feature": "Keyed-map sync — membership propagation + materialize-on-ingest + derived-aggregate transparency (`#lzfamilysync`)",
       "marks": [
         "✅",
@@ -96,6 +106,8 @@
       ]
     },
     {
+      "id": "thread-safe-context",
+      "label": "Thread-safe context",
       "feature": "Thread-safe context (lock-backed)",
       "marks": [
         "✅",
@@ -110,6 +122,8 @@
       ]
     },
     {
+      "id": "async-reactive-context",
+      "label": "Async reactive context",
       "feature": "Async reactive context",
       "marks": [
         "✅",
@@ -124,6 +138,8 @@
       ]
     },
     {
+      "id": "flat-state-machine",
+      "label": "Flat state machine",
       "feature": "Flat state machine",
       "marks": [
         "✅",
@@ -138,6 +154,8 @@
       ]
     },
     {
+      "id": "harel-state-charts",
+      "label": "Harel state charts",
       "feature": "Harel state charts",
       "marks": [
         "✅",
@@ -152,6 +170,8 @@
       ]
     },
     {
+      "id": "keyed-reactive-maps",
+      "label": "Keyed reactive maps",
       "feature": "Keyed reactive maps (`ReactiveMap`: `SourceMap` / `ComputedMap`) + `SourceTree` + reconcile",
       "marks": [
         "✅",
@@ -166,6 +186,8 @@
       ]
     },
     {
+      "id": "reactivemap-core-single-threaded",
+      "label": "ReactiveMap core — single-threaded",
       "feature": "`ReactiveMap` **Core surface** — single-threaded flavor (cell-model.md § Core surface vs. binding extensions)",
       "marks": [
         "✅",
@@ -180,6 +202,8 @@
       ]
     },
     {
+      "id": "reactivemap-core-thread-safe",
+      "label": "ReactiveMap core — thread-safe",
       "feature": "`ReactiveMap` **Core surface** — thread-safe flavor (ordering + membership reactivity)",
       "marks": [
         "✅",
@@ -194,6 +218,8 @@
       ]
     },
     {
+      "id": "reactivemap-core-async",
+      "label": "ReactiveMap core — async",
       "feature": "`ReactiveMap` **Core surface** — async flavor (ordering + membership reactivity)",
       "marks": [
         "✅",
@@ -208,6 +234,8 @@
       ]
     },
     {
+      "id": "exact-key-dependency-availability",
+      "label": "Exact-key dependency availability",
       "feature": "Exact-key dependency availability (`DependencyMap`: observe before publish, unrelated-key isolation, stable identity; `#lzdependencyavailability`)",
       "marks": [
         "✅",
@@ -222,6 +250,8 @@
       ]
     },
     {
+      "id": "atomic-ordered-move",
+      "label": "Atomic ordered move",
       "feature": "Atomic ordered move replayed against **all three flavors** (`cellmap_atomic_move` + `cellmap_independence`)",
       "marks": [
         "✅",
@@ -236,6 +266,8 @@
       ]
     },
     {
+      "id": "memoized-semantic-tree",
+      "label": "Memoized semantic tree",
       "feature": "Memoized semantic tree (`SemTree`)",
       "marks": [
         "✅",
@@ -250,6 +282,8 @@
       ]
     },
     {
+      "id": "stable-id-alignment",
+      "label": "Stable-id alignment",
       "feature": "Stable-id alignment (manufactured identity)",
       "marks": [
         "✅",
@@ -264,6 +298,8 @@
       ]
     },
     {
+      "id": "reactive-queue-core-single-threaded",
+      "label": "Reactive queue core — single-threaded",
       "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — single-threaded flavor",
       "marks": [
         "✅",
@@ -278,6 +314,8 @@
       ]
     },
     {
+      "id": "reactive-queue-core-thread-safe",
+      "label": "Reactive queue core — thread-safe",
       "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle)",
       "marks": [
         "✅",
@@ -292,6 +330,8 @@
       ]
     },
     {
+      "id": "reactive-queue-core-async",
+      "label": "Reactive queue core — async",
       "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — async flavor (reader kinds + eventual transparency)",
       "marks": [
         "✅",
@@ -306,6 +346,8 @@
       ]
     },
     {
+      "id": "broadcast-topic-core-single-threaded",
+      "label": "Broadcast topic core — single-threaded",
       "feature": "Broadcast topic (`TopicCell`) **Core surface** — single-threaded flavor — independent cursors + durable replay + safe GC (`#lztopiccell`)",
       "marks": [
         "✅",
@@ -320,6 +362,8 @@
       ]
     },
     {
+      "id": "broadcast-topic-core-thread-safe",
+      "label": "Broadcast topic core — thread-safe",
       "feature": "Broadcast topic (`TopicCell`) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle)",
       "marks": [
         "✅",
@@ -334,6 +378,8 @@
       ]
     },
     {
+      "id": "broadcast-topic-core-async",
+      "label": "Broadcast topic core — async",
       "feature": "Broadcast topic (`TopicCell`) **Core surface** — async flavor (reader kinds + eventual transparency)",
       "marks": [
         "✅",
@@ -348,6 +394,8 @@
       ]
     },
     {
+      "id": "work-queue-core-single-threaded",
+      "label": "Work queue core — single-threaded",
       "feature": "Competing-consumer work queue (`WorkQueueCell`) **Core surface** — single-threaded flavor — exclusive leases + ack/nack + redelivery + DLQ (`#lzworkqueue`)",
       "marks": [
         "✅",
@@ -362,6 +410,8 @@
       ]
     },
     {
+      "id": "work-queue-core-thread-safe",
+      "label": "Work queue core — thread-safe",
       "feature": "Competing-consumer work queue (`WorkQueueCell`) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle)",
       "marks": [
         "✅",
@@ -376,6 +426,8 @@
       ]
     },
     {
+      "id": "work-queue-core-async",
+      "label": "Work queue core — async",
       "feature": "Competing-consumer work queue (`WorkQueueCell`) **Core surface** — async flavor (reader kinds + eventual transparency)",
       "marks": [
         "✅",
@@ -390,6 +442,8 @@
       ]
     },
     {
+      "id": "merge-algebra",
+      "label": "Merge algebra",
       "feature": "Merge algebra + `Source<T, M>` — associative `MergePolicy` (`KeepLatest`/`Sum`/`Max`/`SetUnion`/`RawFifo`), `Cell ≡ Source<KeepLatest>`, read-any-cell/write-`Source` split (`#relaycell`)",
       "marks": [
         "✅",
@@ -404,6 +458,8 @@
       ]
     },
     {
+      "id": "relaycell",
+      "label": "RelayCell",
       "feature": "RelayCell — conflating relay + `BackpressurePolicy` + `SpillStore` + `Transport` + Inbox/Outbox + Rate/Window/Expiry/Priority/keyed policies (`#relaycell`)",
       "marks": [
         "✅",
@@ -418,6 +474,8 @@
       ]
     },
     {
+      "id": "free-text-character-crdt",
+      "label": "Free-text character CRDT",
       "feature": "Free-text character CRDT (`TextCrdt`)",
       "marks": [
         "✅",
@@ -432,6 +490,8 @@
       ]
     },
     {
+      "id": "textcrdt-delta-sync",
+      "label": "TextCrdt delta sync",
       "feature": "`TextCrdt` delta sync (`version_vector` / `delta_since` / `apply_delta`)",
       "marks": [
         "✅",
@@ -446,6 +506,8 @@
       ]
     },
     {
+      "id": "crdttree-lossless-document",
+      "label": "CrdtTree lossless document",
       "feature": "`CrdtTree` lossless document contract (`#lzcrdttree`)",
       "marks": [
         "✅",
@@ -460,6 +522,8 @@
       ]
     },
     {
+      "id": "move-aware-sequence-crdt",
+      "label": "Move-aware sequence CRDT",
       "feature": "Move-aware sequence CRDT (`SeqCrdt`)",
       "marks": [
         "✅",
@@ -474,6 +538,8 @@
       ]
     },
     {
+      "id": "lossless-tree-crdt-core",
+      "label": "Lossless tree CRDT core",
       "feature": "Lossless tree CRDT core (`LosslessTreeCrdt`, M1)",
       "marks": [
         "✅",
@@ -488,6 +554,8 @@
       ]
     },
     {
+      "id": "lossless-tree-anti-entropy",
+      "label": "Lossless tree — anti-entropy",
       "feature": "Lossless tree — dotted-frontier anti-entropy",
       "marks": [
         "✅",
@@ -502,6 +570,8 @@
       ]
     },
     {
+      "id": "lossless-tree-merge-convergence",
+      "label": "Lossless tree — merge convergence",
       "feature": "Lossless tree — concurrent merge convergence",
       "marks": [
         "✅",
@@ -516,6 +586,8 @@
       ]
     },
     {
+      "id": "registers",
+      "label": "Registers (LWW/MV) + PnCounter",
       "feature": "Registers (LWW / MV) + `PnCounter` + `CellCrdt`",
       "marks": [
         "✅",
@@ -530,6 +602,8 @@
       ]
     },
     {
+      "id": "ipc-wire",
+      "label": "IPC wire — Snapshot/Delta/CrdtSync",
       "feature": "IPC wire — `Snapshot` + `Delta` + `CrdtSync`",
       "fixtures": [
         "snapshot_minimal.json",
@@ -554,6 +628,8 @@
       ]
     },
     {
+      "id": "frame-codec-json",
+      "label": "Frame codec — json",
       "feature": "Frame codec — `json` **reference codec**: dependency-free interop floor, FFI baseline form, byte-canonical (**MUST**) — executable round-trip obligation (`conformance/codec/frame_roundtrip_json.json`, `#lzmsgpackparity`)",
       "fixtures": [
         "codec/frame_roundtrip_json.json"
@@ -571,6 +647,8 @@
       ]
     },
     {
+      "id": "frame-codec-msgpack",
+      "label": "Frame codec — msgpack",
       "feature": "Frame codec — `msgpack` **cross-language binary default**: externally-tagged frame over named-field maps, semantic (not byte-identical) round-trip (**MUST**) — executable round-trip obligation (`conformance/codec/frame_roundtrip_msgpack.json`, `#lzmsgpackparity`). Shipping *a* MessagePack codec does not earn this mark: lazily-cpp read `~` here while its private internally-tagged framing wore the token, and only flipped once it shipped the spec wire (`#lzcppmsgpackwire`)",
       "fixtures": [
         "codec/frame_roundtrip_msgpack.json"
@@ -588,6 +666,8 @@
       ]
     },
     {
+      "id": "frame-codec-postcard",
+      "label": "Frame codec — postcard",
       "feature": "Frame codec — `postcard` positional same-schema fast path: smallest + byte-canonical, not cross-language (**MAY**)",
       "marks": [
         "✅",
@@ -602,6 +682,8 @@
       ]
     },
     {
+      "id": "nodeid-peerid-exact-representation",
+      "label": "NodeId/PeerId exact-representation",
       "feature": "`NodeId` / `PeerId` exact-representation bound (**MUST**) — a decoder that cannot represent a received identifier exactly rejects the frame rather than rounding it (`conformance/codec/nodeid_exact_range.json`, `#lzspecdecoderbound`). A binding's exact range MAY be narrower than the `u64` wire type; ✅ means it refuses outside that range instead of substituting a neighbouring id, not that it carries the full `u64`. Exact ranges: full `u64` in Rust / Zig / C#, unbounded in Python, `[0, 2^63)` in Kotlin / Go / C++, `[0, 2^53)` in JS, and platform-split in Dart (63-bit on the VM, 53-bit on web). protocol.md stated only the PRODUCER half until this audit, and two C++ decoders were substituting rather than refusing.",
       "fixtures": [
         "codec/nodeid_exact_range.json"
@@ -619,6 +701,8 @@
       ]
     },
     {
+      "id": "nodekey-null-leniency",
+      "label": "NodeKey null-leniency",
       "feature": "`NodeKey` null-leniency on decode (**MUST**) — omit-when-absent binds the ENCODER; a decoder reads both an omitted `key` and an explicit `key: null` as absent, refusing neither and constructing a key from neither (`conformance/codec/nodekey_null_leniency.json`, `#lzkeynullstrict`). Replayed on BOTH optional-key sites (`NodeSnapshot`, the `NodeAdd` delta op) in both codecs, and the fixture pins the RE-ENCODED field set as well: reading null as absent and writing it back out is a correct decode with a non-conforming encoder. Before the audit lazily-py and lazily-zig refused the null form, and lazily-kt decoded it into a real key named `null` — all three had the same field right on `CrdtOp`, in the same file.",
       "fixtures": [
         "codec/nodekey_null_leniency.json"
@@ -636,6 +720,8 @@
       ]
     },
     {
+      "id": "shared-memory-blob-path",
+      "label": "Shared-memory blob path",
       "feature": "Shared-memory blob path (`ShmBlobArena`)",
       "fixtures": [
         "arena_blob.json"
@@ -653,6 +739,8 @@
       ]
     },
     {
+      "id": "cross-process-zero-copy-transport",
+      "label": "Cross-process zero-copy transport",
       "feature": "Cross-process zero-copy transport (`BlobBackend` / shm / arrow)",
       "marks": [
         "✅",
@@ -667,6 +755,8 @@
       ]
     },
     {
+      "id": "distributed-crdt-plane",
+      "label": "Distributed CRDT plane",
       "feature": "Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy)",
       "fixtures": [
         "distributed/anti_entropy_converge.json"
@@ -684,6 +774,8 @@
       ]
     },
     {
+      "id": "reliable-sync",
+      "label": "Reliable sync",
       "feature": "Reliable sync — resync coordinator + at-least-once durable outbox + OR-set/LWW liveness (`#lzsync`)",
       "fixtures": [
         "reliable-sync/coalesce_bounds_outbox.json",
@@ -702,6 +794,8 @@
       ]
     },
     {
+      "id": "storage-independent-durable-outbox",
+      "label": "Storage-independent durable outbox",
       "feature": "Storage-independent durable outbox (`OutboxStore` + shared outbox protocol; SQLite/Room/IndexedDB/file adapters)",
       "marks": [
         "✅",
@@ -716,6 +810,8 @@
       ]
     },
     {
+      "id": "reliable-sync-transport-seam",
+      "label": "Reliable-sync transport seam",
       "feature": "Reliable-sync transport seam + full-duplex `SyncDriver` loop (`IpcSink`/`IpcSource`, `#sync-driver`)",
       "marks": [
         "✅",
@@ -730,6 +826,8 @@
       ]
     },
     {
+      "id": "distributed-plane-webrtc",
+      "label": "Distributed plane — WebRTC",
       "feature": "Distributed plane — WebRTC transport + signaling",
       "marks": [
         "✅",
@@ -744,6 +842,8 @@
       ]
     },
     {
+      "id": "state-projection-mirror",
+      "label": "State projection / mirror",
       "feature": "State projection / mirror",
       "marks": [
         "✅",
@@ -758,6 +858,8 @@
       ]
     },
     {
+      "id": "causal-receipts",
+      "label": "Causal receipts",
       "feature": "Causal receipts (`CausalReceipts` outcome projection)",
       "fixtures": [
         "receipts/causal_receipts.json"
@@ -775,6 +877,8 @@
       ]
     },
     {
+      "id": "message-passing-rpc-command-plane",
+      "label": "Message-passing + RPC command plane",
       "feature": "Message-passing + RPC command plane (`command-plane-v1`)",
       "fixtures": [
         "message-passing/accepted_then_applied_receipt.json",
@@ -799,6 +903,8 @@
       ]
     },
     {
+      "id": "c-abi-ffi-boundary",
+      "label": "C-ABI FFI boundary",
       "feature": "C-ABI FFI boundary",
       "marks": [
         "✅",
@@ -813,6 +919,8 @@
       ]
     },
     {
+      "id": "permission-boundary",
+      "label": "Permission boundary",
       "feature": "Permission boundary (`PeerPermissions` / `RemoteOp`)",
       "marks": [
         "✅",
@@ -827,6 +935,8 @@
       ]
     },
     {
+      "id": "capability-negotiation",
+      "label": "Capability negotiation",
       "feature": "Capability negotiation (`SessionHandshake`)",
       "fixtures": [
         "codec/capability_handshake.json"
@@ -844,6 +954,8 @@
       ]
     },
     {
+      "id": "instrumentation-benchmarks",
+      "label": "Instrumentation / benchmarks",
       "feature": "Instrumentation / benchmarks",
       "marks": [
         "✅",
@@ -858,6 +970,8 @@
       ]
     },
     {
+      "id": "temporal-sources",
+      "label": "Temporal sources",
       "feature": "Temporal sources — `TimerCell` / `IntervalCell` / `CronCell` / `DeadlineCell` over a logical clock (`#lztime`)",
       "marks": [
         "✅",
@@ -872,6 +986,8 @@
       ]
     },
     {
+      "id": "rate-shaping-operators",
+      "label": "Rate-shaping operators",
       "feature": "Rate-shaping operators — `DebounceCell` / `ThrottleCell` / `SampleCell` / `ProbabilisticSampleCell` (`#lzrateshape`)",
       "marks": [
         "✅",
@@ -886,6 +1002,8 @@
       ]
     },
     {
+      "id": "membership-failure-detection",
+      "label": "Membership + failure detection",
       "feature": "Membership + failure detection — `MembershipCell` (SWIM + Phi-accrual) / `PeerSet` / `PeerChangeEvent` (`#lzmemb`)",
       "marks": [
         "✅",
@@ -900,6 +1018,8 @@
       ]
     },
     {
+      "id": "distributed-coordination",
+      "label": "Distributed coordination",
       "feature": "Distributed coordination — `LeaseCell` / `LeaderCell` / `LockCell` / `SemaphoreCell` / `BarrierCell`+`QuorumCell` (`#lzcoord`)",
       "marks": [
         "✅",
@@ -914,6 +1034,8 @@
       ]
     },
     {
+      "id": "presence-ephemeral-plane",
+      "label": "Presence + ephemeral plane",
       "feature": "Presence + ephemeral plane — `PresenceCell` / `AwarenessCell` / `EphemeralCell` + `Ephemeral`/`Durable` markers (`#lzpresence`)",
       "marks": [
         "✅",
@@ -928,6 +1050,8 @@
       ]
     },
     {
+      "id": "stream-windowing",
+      "label": "Stream windowing",
       "feature": "Stream windowing — `TumblingWindow` / `SlidingWindow` / `SessionWindow` over the merge algebra (`#lzwindow`)",
       "marks": [
         "✅",
@@ -942,6 +1066,8 @@
       ]
     },
     {
+      "id": "fault-tolerance",
+      "label": "Fault tolerance",
       "feature": "Fault tolerance — `CircuitBreakerCell` / `RetryPolicyCell` / `BulkheadCell` / `TimeoutCell` (`#lzresilience`)",
       "marks": [
         "✅",
@@ -956,6 +1082,8 @@
       ]
     },
     {
+      "id": "portable-stdlib-timer",
+      "label": "Portable stdlib Timer",
       "feature": "Portable stdlib `Timer` (`stdlib_timer_v1`) — canonical fixture + mutation-gate verified",
       "marks": [
         "✅",
@@ -970,6 +1098,8 @@
       ]
     },
     {
+      "id": "portable-stdlib-timeout",
+      "label": "Portable stdlib Timeout",
       "feature": "Portable stdlib caller-driven `Timeout<T>` (`stdlib_timeout_v1`) — distinct from reactive `TimeoutCell`",
       "marks": [
         "✅",
@@ -984,6 +1114,8 @@
       ]
     },
     {
+      "id": "portable-stdlib-revision-barrier",
+      "label": "Portable stdlib RevisionBarrier",
       "feature": "Portable stdlib `RevisionBarrier` (`stdlib_revision_barrier_v1`) — register/recheck lost-wakeup guard",
       "marks": [
         "✅",
@@ -998,6 +1130,8 @@
       ]
     },
     {
+      "id": "embedded-service-plane",
+      "label": "Embedded-service plane",
       "feature": "Embedded-service plane — `HealthCell` / `ReadinessCell` / `DiscoveryCell` / `ServiceRegistry` (`#lzservice`)",
       "marks": [
         "✅",
@@ -1012,6 +1146,8 @@
       ]
     },
     {
+      "id": "reactive-ingress",
+      "label": "Reactive ingress",
       "feature": "Transport-agnostic reactive ingress (`IngressCell`) — keyed lifecycle scopes, generation/sequence/freshness envelopes, reorder buffer, accepted/dropped/error receipt readers (`#designimplementtransport`)",
       "marks": [
         "✅",
@@ -1026,6 +1162,8 @@
       ]
     },
     {
+      "id": "ingress-thread-safe",
+      "label": "Ingress — thread-safe",
       "feature": "Ingress family — `Send + Sync` flavor (`ThreadSafeIngressCell`): one frontier walk per admission (`#designimplementtransport`)",
       "marks": [
         "✅",
@@ -1040,6 +1178,8 @@
       ]
     },
     {
+      "id": "ingress-async",
+      "label": "Ingress — async",
       "feature": "Ingress family — async flavor (`AsyncIngressCell`): admission is not async-coloured (`#designimplementtransport`)",
       "marks": [
         "✅",

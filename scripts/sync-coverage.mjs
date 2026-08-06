@@ -44,12 +44,24 @@ const TARGETS = [
 
 function renderTable() {
   const data = JSON.parse(readFileSync(join(ROOT, "coverage.json"), "utf8"));
+  for (const [i, r] of data.rows.entries()) {
+    if (typeof r.id !== "string" || typeof r.label !== "string") {
+      throw new Error(
+        `coverage.json row ${i} is missing a string \`id\`/\`label\` — every row needs both (the short cell text and the footnote key).`,
+      );
+    }
+  }
   const header = `| Feature | ${data.languages.join(" | ")} |`;
   const align = `| ${data.align.join(" | ").replace("Feature", "---------")} |`;
+  // Narrow table: the cell shows the short `label` plus a footnote reference
+  // (`[^id]`); the normative `feature` prose is relocated to footnote
+  // definitions below the table so row width follows the language axis, not
+  // the prose (#lzcoveragelayout).
   const rows = data.rows.map(
-    (r) => `| ${r.feature} | ${r.marks.join(" | ")} |`,
+    (r) => `| ${r.label} [^${r.id}] | ${r.marks.join(" | ")} |`,
   );
-  return [header, align, ...rows].join("\n");
+  const footnotes = data.rows.map((r) => `[^${r.id}]: ${r.feature}`);
+  return [header, align, ...rows, "", ...footnotes].join("\n");
 }
 
 function inject(source, table) {
