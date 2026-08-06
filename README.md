@@ -40,7 +40,7 @@ executable reference behind the state-chart conformance fixtures (see **Formal M
 
 The full `lazily` capability set and its cross-language coverage across every
 binding (`lazily-rs`, `lazily-py`, `lazily-kt`, `lazily-js`, `lazily-dart`,
-`lazily-zig`, `lazily-go`, `lazily-cpp`, `lazily-cs`). Legend: ✅ shipped · `~` partial · `—` absent or not applicable.
+`lazily-zig`, `lazily-go`, `lazily-cpp`, `lazily-cs`). Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable.
 This table is generated from [`coverage.json`](coverage.json) — the canonical
 matrix with per-cell notes and platform carve-outs lives in
 [Cross-Language Coverage](docs/coverage.md). Edit `coverage.json` and run

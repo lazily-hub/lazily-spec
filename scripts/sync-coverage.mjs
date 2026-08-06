@@ -44,12 +44,37 @@ const TARGETS = [
 
 function renderTable() {
   const data = JSON.parse(readFileSync(join(ROOT, "coverage.json"), "utf8"));
+  // Four marks (#lzcoveragelayout Phase 2): ✅ shipped, ~ partial,
+  // — absent (not yet implemented), ⊘ not applicable (structurally cannot).
+  // A ⊘ cell MUST carry a reason in the row's `na` map (language name →
+  // reason); the guard below refuses a ⊘ without a reason and a reason
+  // without a ⊘, so 'cannot' is never confused with 'has not'.
+  const NA = "⊘";
+  const naNotes = [];
   for (const [i, r] of data.rows.entries()) {
     if (typeof r.id !== "string" || typeof r.label !== "string") {
       throw new Error(
         `coverage.json row ${i} is missing a string \`id\`/\`label\` — every row needs both (the short cell text and the footnote key).`,
       );
     }
+    const na = r.na ?? {};
+    data.languages.forEach((lang, li) => {
+      const mark = r.marks[li];
+      const hasReason = Object.prototype.hasOwnProperty.call(na, lang);
+      if (mark === NA && !hasReason) {
+        throw new Error(
+          `coverage.json row '${r.id}' marks ${lang} as '${NA}' (not applicable) but gives no reason in \`na\`. Use \`—\` for absent, or record why ${lang} cannot support it.`,
+        );
+      }
+      if (hasReason && mark !== NA) {
+        throw new Error(
+          `coverage.json row '${r.id}' records an \`na\` reason for ${lang} but marks it '${mark}', not '${NA}'. An \`na\` reason belongs only on a not-applicable cell.`,
+        );
+      }
+      if (hasReason) {
+        naNotes.push(`- ${lang} — ${r.label}: ${na[lang]}`);
+      }
+    });
   }
   const header = `| Feature | ${data.languages.join(" | ")} |`;
   const align = `| ${data.align.join(" | ").replace("Feature", "---------")} |`;
@@ -61,7 +86,11 @@ function renderTable() {
     (r) => `| ${r.label} [^${r.id}] | ${r.marks.join(" | ")} |`,
   );
   const footnotes = data.rows.map((r) => `[^${r.id}]: ${r.feature}`);
-  return [header, align, ...rows, "", ...footnotes].join("\n");
+  const parts = [header, align, ...rows, "", ...footnotes];
+  if (naNotes.length > 0) {
+    parts.push("", "**Not applicable:**", ...naNotes);
+  }
+  return parts.join("\n");
 }
 
 function inject(source, table) {

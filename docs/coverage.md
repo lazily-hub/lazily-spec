@@ -6,7 +6,7 @@ binding's README reproduces it; this page is the source of truth. It is a
 [Binding Conformance Matrix](protocol.md#binding-conformance-matrix), which fixes
 what every binding *must* eventually provide.
 
-Legend: ✅ shipped · `~` partial · `—` absent or not applicable (see notes).
+Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see notes).
 
 > The table below is **generated** from [`coverage.json`](../coverage.json) by
 > [`scripts/sync-coverage.mjs`](../scripts/sync-coverage.mjs). Edit `coverage.json`
