@@ -9,7 +9,7 @@
 //     <!-- coverage-table:end -->
 //
 // in this repo's `README.md`, `docs/coverage.md`, and every sibling binding
-// README (`../lazily-{rs,py,kt,js,dart,zig,go,cpp,cs,formal}/README.md`). Edit coverage.json,
+// README (`../lazily-{rs,py,kt,js,dart,zig,go,cpp,cs,gd,formal}/README.md`). Edit coverage.json,
 // then run `node scripts/sync-coverage.mjs` to update every table in one shot.
 //
 //   node scripts/sync-coverage.mjs          # write/update all present targets
@@ -22,8 +22,8 @@
 // ONLY place the 70-row detail lives; every README carries the family × language
 // roll-up plus a link to it. That is not just brevity: a row mark usually does not
 // move its family's roll-up cell, so the common coverage.json edit now rewrites one
-// file instead of twelve, and a row-level change stops fanning a commit out across
-// eleven repos. Row-level parity is not lost — it was never the README's job to
+// file instead of thirteen, and a row-level change stops fanning a commit out across
+// twelve repos. Row-level parity is not lost — it was never the README's job to
 // guard it. `scripts/check-coverage-claims.mjs` ties every wire-bearing mark to a
 // fixture the binding replays, and each binding's `scripts/check-conformance-coverage.sh`
 // fails on a canonical fixture it does not replay. Both run in CI, on the data, not
@@ -53,6 +53,7 @@ const TARGETS = [
   { path: join(ROOT, "..", "lazily-go", "README.md"), detail: false },
   { path: join(ROOT, "..", "lazily-cpp", "README.md"), detail: false },
   { path: join(ROOT, "..", "lazily-cs", "README.md"), detail: false },
+  { path: join(ROOT, "..", "lazily-gd", "README.md"), detail: false },
   { path: join(ROOT, "..", "lazily-formal", "README.md"), detail: false },
 ];
 

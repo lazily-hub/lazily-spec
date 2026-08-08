@@ -27,12 +27,36 @@
 //
 // "Replayed" is read from the binding's OWN committed ledger, not from a claim
 // in this repo: `scripts/check-conformance-coverage.sh` names every canonical
-// fixture the binding does not replay in `KNOWN_UNCOVERED`, and the two
-// area-scoped bindings additionally restrict the audit to `REQUIRED_AREAS`. So a
-// fixture counts as replayed when it is absent from KNOWN_UNCOVERED and — where
-// the binding declares one — its area is required. Both halves matter: before
-// `#lzcppjsoncodec`, lazily-cpp kept `codec` out of REQUIRED_AREAS entirely,
-// which is how a whole area went unreplayed without appearing in any gap list.
+// fixture the binding does not replay in `KNOWN_UNCOVERED`, and a binding may
+// additionally narrow WHICH fixtures its ledger is even about. So a fixture
+// counts as replayed when it is absent from KNOWN_UNCOVERED and inside every
+// scope the binding declares. Both halves matter: before `#lzcppjsoncodec`,
+// lazily-cpp kept `codec` out of REQUIRED_AREAS entirely, which is how a whole
+// area went unreplayed without appearing in any gap list.
+//
+// Two scoping ledgers exist, and reading only one is unsound
+// ----------------------------------------------------------
+// `REQUIRED_AREAS` (kt, cpp) names the top-level areas the audit covers.
+// `IMPLEMENTED_FAMILY_PREFIXES` (gd) names the fixture-path prefixes the binding
+// CLAIMS, excusing everything outside them automatically so the list does not
+// rot as the corpus grows. They are the same idea at different granularity, and
+// a binding declaring neither audits the whole corpus — a strictly stronger
+// invariant.
+//
+// Reading only `REQUIRED_AREAS` is exactly the bug this section exists to
+// record. lazily-gd entered staged, replaying 9 of 21 `reactive-graph` fixtures
+// and excusing 128 others BY FAMILY rather than naming each one. To a parser
+// that knows only KNOWN_UNCOVERED and REQUIRED_AREAS, that binding reads as
+// "audits the whole corpus, declares 12 gaps" — so all 128 family-excused
+// fixtures counted as replayed, and a shipped mark on any of them would have
+// passed. The unread ledger did not make the claim guard weaker in a visible
+// way; it silently inverted it for one binding.
+//
+// So an unrecognized scoping array is a HARD FAILURE, not a shrug: see
+// SCOPING_ARRAYS / NON_SCOPING_ARRAYS below. The next binding that invents a
+// third narrowing mechanism must be classified here before its marks are
+// trusted, because the failure mode of ignoring one is a green audit over
+// fixtures nobody replays.
 //
 // Skips are reported, never silent
 // --------------------------------
@@ -61,10 +85,31 @@ const BINDING_DIRS = {
   Go: "lazily-go",
   "C++": "lazily-cpp",
   "C#": "lazily-cs",
+  GDScript: "lazily-gd",
 };
 
 const SHIPPED = "✅";
 const PARTIAL = "~";
+
+// Arrays that NARROW which canonical fixtures a binding's ledger speaks for.
+// Every one of these must be read, or the fixtures it excludes silently count as
+// replayed (see the header). Adding a binding that declares a new one is a
+// change to this file, not just to that binding.
+const SCOPING_ARRAYS = new Set(["REQUIRED_AREAS", "IMPLEMENTED_FAMILY_PREFIXES"]);
+
+// Arrays that exist in these guards for reasons unrelated to WHICH canonical
+// fixture files the binding replays: gap ledgers at a finer grain than the
+// fixture (scenarios, assertion blocks) and file-discovery mechanics. Listed
+// explicitly so the unknown-array check below stays fail-closed — an
+// unclassified array is treated as a possible scoping ledger nobody read.
+const NON_SCOPING_ARRAYS = new Set([
+  "KNOWN_UNCOVERED", // the gap ledger itself, read directly
+  "KNOWN_UNREPLAYED_SCENARIOS", // scenario-level gaps inside a replayed fixture
+  "SCENARIO_EXCUSES", // same, older spelling
+  "KNOWN_UNBOUND_BLOCKS", // assertion-block-level gaps
+  "TEST_DIRS", // where the guard looks for test sources
+  "EXTS", // which extensions count as test sources
+]);
 
 /// Extract a bash array literal's entries, skipping comment lines.
 ///
@@ -102,17 +147,36 @@ function bareEntries(lines) {
   return out;
 }
 
+/// Every top-level bash array a guard declares, by name.
+///
+/// `^` anchored so a local assignment inside a function body is not mistaken for
+/// a ledger, and uppercase-only because every ledger in this family is a
+/// SCREAMING_CASE constant while the loop counters are not.
+function declaredArrays(source) {
+  const out = new Set();
+  for (const match of source.matchAll(/^([A-Z][A-Z0-9_]*)=\(/gm)) out.add(match[1]);
+  return out;
+}
+
 function loadBinding(dir) {
   const guard = join(ROOT, "..", dir, "scripts", "check-conformance-coverage.sh");
   if (!existsSync(guard)) return null;
   const source = readFileSync(guard, "utf8");
   const requiredLines = bashArray(source, "REQUIRED_AREAS");
+  const familyLines = bashArray(source, "IMPLEMENTED_FAMILY_PREFIXES");
   return {
     dir,
     uncovered: quotedEntries(bashArray(source, "KNOWN_UNCOVERED")),
     // `null` means the binding audits the whole corpus rather than a set of
     // required areas — a strictly stronger invariant, so nothing to check.
     requiredAreas: requiredLines === null ? null : bareEntries(requiredLines),
+    // Same contract one level finer: fixture-path prefixes the binding claims.
+    // `null` = claims the whole corpus.
+    implementedFamilies:
+      familyLines === null ? null : [...quotedEntries(familyLines)],
+    unknownArrays: [...declaredArrays(source)].filter(
+      (name) => !SCOPING_ARRAYS.has(name) && !NON_SCOPING_ARRAYS.has(name),
+    ),
   };
 }
 
@@ -130,11 +194,36 @@ function fixtureArea(fixture) {
 
 function replays(binding, fixture) {
   if (binding.uncovered.has(fixture)) return false;
+  if (binding.implementedFamilies !== null) {
+    // Outside every family the binding claims. Its own guard excuses this
+    // fixture silently and by design, which means it is NOT replayed — the
+    // opposite of what absence from KNOWN_UNCOVERED would otherwise imply.
+    if (!binding.implementedFamilies.some((prefix) => fixture.startsWith(prefix))) {
+      return false;
+    }
+  }
   if (binding.requiredAreas !== null) {
     const area = fixtureArea(fixture);
     if (area === null || !binding.requiredAreas.has(area)) return false;
   }
   return true;
+}
+
+/// Which ledger excluded this fixture. Three different edits fix the three
+/// cases, so naming "not replayed" without naming the reason sends the reader
+/// to the wrong file.
+function whyNotReplayed(binding, fixture) {
+  if (binding.uncovered.has(fixture)) return "named in its KNOWN_UNCOVERED";
+  if (
+    binding.implementedFamilies !== null &&
+    !binding.implementedFamilies.some((prefix) => fixture.startsWith(prefix))
+  ) {
+    return `outside its IMPLEMENTED_FAMILY_PREFIXES (${binding.implementedFamilies.join(", ")})`;
+  }
+  if (binding.requiredAreas !== null) {
+    return `its area is not in REQUIRED_AREAS (${[...binding.requiredAreas].join(", ")})`;
+  }
+  return "reason unresolved — this is a guard bug";
 }
 
 const data = JSON.parse(readFileSync(join(ROOT, "coverage.json"), "utf8"));
@@ -147,6 +236,21 @@ for (const [language, dir] of Object.entries(BINDING_DIRS)) {
 }
 
 const violations = [];
+
+// Fail closed on a ledger nobody classified. An unread scoping array does not
+// weaken the audit visibly — it inverts it for that binding, which is how
+// lazily-gd's 128 family-excused fixtures would have read as replayed.
+for (const [language, binding] of bindings) {
+  for (const name of binding.unknownArrays) {
+    violations.push(
+      `${binding.dir} declares an unrecognized ledger array \`${name}\` (${language} column). ` +
+        `Classify it in check-coverage-claims.mjs: SCOPING_ARRAYS if it narrows which canonical ` +
+        `fixtures the guard audits, NON_SCOPING_ARRAYS otherwise. An unread scoping ledger makes ` +
+        `every fixture it excludes count as replayed`,
+    );
+  }
+}
+
 let claims = 0;
 let qualified = 0;
 let rowsWithFixtures = 0;
@@ -173,7 +277,7 @@ for (const row of data.rows) {
     if (missing.length > 0) {
       violations.push(
         `${language} is marked ${SHIPPED} on "${row.feature.slice(0, 60)}…" but ${binding.dir} does ` +
-          `not replay ${missing.join(", ")} (declared in its KNOWN_UNCOVERED, or its area is not required)`,
+          `not replay ${missing.map((f) => `${f} [${whyNotReplayed(binding, f)}]`).join(", ")}`,
       );
     }
   });
@@ -191,8 +295,9 @@ if (violations.length > 0) {
   console.error("");
   for (const violation of violations) console.error(`✗ ${violation}`);
   console.error(
-    `\n${violations.length} unbacked coverage claim(s). Either the binding replays the fixture ` +
-      `(delete its KNOWN_UNCOVERED entry) or the mark is wrong — do not "fix" this by deleting the citation.`,
+    `\n${violations.length} coverage-claim problem(s). For an unbacked mark: either the binding ` +
+      `replays the fixture (delete its KNOWN_UNCOVERED entry, or widen the family/area ledger the ` +
+      `message names) or the mark is wrong — do not "fix" this by deleting the citation.`,
   );
   process.exit(1);
 }

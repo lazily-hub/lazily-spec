@@ -54,7 +54,7 @@ jobs:
       - name: Fetch sibling binding ledgers
         run: |
           set -e
-          for repo in rs py kt js dart zig go cpp cs; do
+          for repo in rs py kt js dart zig go cpp cs gd; do
             git clone --depth 1 --filter=blob:none --sparse \
               "https://github.com/lazily-hub/lazily-$repo.git" "../lazily-$repo"
             git -C "../lazily-$repo" sparse-checkout set scripts
