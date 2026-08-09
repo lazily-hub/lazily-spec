@@ -1,0 +1,436 @@
+{
+  "description": "Register CRDTs (cell-model.md § Registers): LWW, MV, and PnCounter, plus the CellCrdt projection clause that ties all three to the reactive graph. The Registers coverage row was marked shipped in nine bindings and backed by NO canonical fixture, so `check-coverage-claims.mjs` could not verify one of those marks; seqcrdt_convergence.json exercises LWW registers only incidentally, as the substrate for move-aware sequence order, and backs the SeqCrdt row instead. LWW resolves on the total order (wall_time, logical, peer) — the peer component is not decoration, it is what makes equal (wall, logical) still a total order, so two replicas that merge in opposite directions land on the same value. MV keeps every value whose version vector is not dominated by another, which is the whole difference from LWW: it refuses to pick. PnCounter merges per-peer increment and decrement tallies by MAXIMUM, so re-merging the same state is a no-op and the value is sum(incr) - sum(decr). The CellCrdt clause is `merge_from` reporting whether the OBSERVED value changed: a merge that lands on the value already held must report false, because that boolean is what decides whether the reactive cell invalidates its dependents. A binding that always reported true would converge correctly and cascade on every anti-entropy round.",
+  "kind": "Collection",
+  "model": "Registers",
+  "scenarios": [
+    {
+      "id": "lww_highest_stamp_wins_in_both_directions",
+      "name": "LWW: the highest stamp wins, whichever way the merge runs",
+      "register": "lww",
+      "seed": {
+        "peer": 1,
+        "value": "seed",
+        "wall": 1,
+        "logical": 0
+      },
+      "steps": [
+        {
+          "fork": "b",
+          "peer": 2
+        },
+        {
+          "on": "a",
+          "op": "set",
+          "value": "A",
+          "wall": 10,
+          "logical": 0,
+          "peer": 1
+        },
+        {
+          "on": "b",
+          "op": "set",
+          "value": "B",
+          "wall": 20,
+          "logical": 0,
+          "peer": 2
+        },
+        {
+          "merge": {
+            "into": "a",
+            "from": "b"
+          }
+        },
+        {
+          "merge": {
+            "into": "b",
+            "from": "a"
+          }
+        }
+      ],
+      "expect": {
+        "value_on": {
+          "a": "B",
+          "b": "B"
+        },
+        "stamp_on": {
+          "a": {
+            "wall": 20,
+            "logical": 0,
+            "peer": 2
+          }
+        },
+        "note": "20 beats 10 on wall_time alone; both directions agree, which is what commutativity means here"
+      }
+    },
+    {
+      "id": "lww_equal_wall_and_logical_break_on_peer",
+      "name": "LWW: equal (wall, logical) is still a total order — the peer breaks the tie",
+      "register": "lww",
+      "seed": {
+        "peer": 1,
+        "value": "seed",
+        "wall": 1,
+        "logical": 0
+      },
+      "steps": [
+        {
+          "fork": "b",
+          "peer": 2
+        },
+        {
+          "on": "a",
+          "op": "set",
+          "value": "A",
+          "wall": 10,
+          "logical": 3,
+          "peer": 1
+        },
+        {
+          "on": "b",
+          "op": "set",
+          "value": "B",
+          "wall": 10,
+          "logical": 3,
+          "peer": 2
+        },
+        {
+          "merge": {
+            "into": "a",
+            "from": "b"
+          }
+        },
+        {
+          "merge": {
+            "into": "b",
+            "from": "a"
+          }
+        }
+      ],
+      "expect": {
+        "value_on": {
+          "a": "B",
+          "b": "B"
+        },
+        "stamp_on": {
+          "a": {
+            "wall": 10,
+            "logical": 3,
+            "peer": 2
+          }
+        },
+        "note": "THE tiebreak assertion. wall and logical are identical, so a binding comparing only (wall, logical) has no order here: `a` keeps A and `b` keeps B, and the two never converge. Peer 2 > peer 1 decides it."
+      }
+    },
+    {
+      "id": "lww_stale_write_is_dropped_and_reports_no_change",
+      "name": "LWW: a losing write changes nothing and says so",
+      "register": "lww",
+      "seed": {
+        "peer": 1,
+        "value": "seed",
+        "wall": 1,
+        "logical": 0
+      },
+      "steps": [
+        {
+          "fork": "b",
+          "peer": 2
+        },
+        {
+          "on": "a",
+          "op": "set",
+          "value": "A",
+          "wall": 30,
+          "logical": 0,
+          "peer": 1
+        },
+        {
+          "on": "b",
+          "op": "set",
+          "value": "B",
+          "wall": 5,
+          "logical": 0,
+          "peer": 2
+        },
+        {
+          "merge": {
+            "into": "a",
+            "from": "b"
+          }
+        }
+      ],
+      "expect": {
+        "value_on": {
+          "a": "A"
+        },
+        "changed": false,
+        "note": "the CellCrdt projection clause: merging a strictly older state must report false so the reactive cell does not invalidate its dependents on an anti-entropy round that carried nothing new"
+      }
+    },
+    {
+      "id": "lww_winning_merge_reports_change",
+      "name": "LWW: a merge that moves the observed value reports true",
+      "register": "lww",
+      "seed": {
+        "peer": 1,
+        "value": "seed",
+        "wall": 1,
+        "logical": 0
+      },
+      "steps": [
+        {
+          "fork": "b",
+          "peer": 2
+        },
+        {
+          "on": "b",
+          "op": "set",
+          "value": "B",
+          "wall": 40,
+          "logical": 0,
+          "peer": 2
+        },
+        {
+          "merge": {
+            "into": "a",
+            "from": "b"
+          }
+        }
+      ],
+      "expect": {
+        "value_on": {
+          "a": "B"
+        },
+        "changed": true,
+        "note": "the other half of the same boolean. With only the false case above, a binding hard-coding false would pass; with only this one, a binding hard-coding true would."
+      }
+    },
+    {
+      "id": "lww_merge_is_idempotent",
+      "name": "LWW: re-merging the same state reports no change",
+      "register": "lww",
+      "seed": {
+        "peer": 1,
+        "value": "seed",
+        "wall": 1,
+        "logical": 0
+      },
+      "steps": [
+        {
+          "fork": "b",
+          "peer": 2
+        },
+        {
+          "on": "b",
+          "op": "set",
+          "value": "B",
+          "wall": 40,
+          "logical": 0,
+          "peer": 2
+        },
+        {
+          "merge": {
+            "into": "a",
+            "from": "b"
+          }
+        },
+        {
+          "merge": {
+            "into": "a",
+            "from": "b"
+          }
+        }
+      ],
+      "expect": {
+        "value_on": {
+          "a": "B"
+        },
+        "changed": false,
+        "note": "`changed` is the LAST merge's result. Idempotence is not just value stability: the second delivery of an op a replica already holds must not re-cascade."
+      }
+    },
+    {
+      "id": "mv_concurrent_writes_are_both_retained",
+      "name": "MV: concurrent writes are kept, not resolved",
+      "register": "mv",
+      "seed": {
+        "peer": 1
+      },
+      "steps": [
+        {
+          "fork": "b",
+          "peer": 2
+        },
+        {
+          "on": "a",
+          "op": "set",
+          "value": "A",
+          "peer": 1
+        },
+        {
+          "on": "b",
+          "op": "set",
+          "value": "B",
+          "peer": 2
+        },
+        {
+          "merge": {
+            "into": "a",
+            "from": "b"
+          }
+        }
+      ],
+      "expect": {
+        "values_on": {
+          "a": [
+            "A",
+            "B"
+          ]
+        },
+        "note": "THE difference from LWW, and the reason both register kinds exist. `b` forks BEFORE either write, so neither write observed the other and neither version vector dominates. The fork order is load-bearing: forking after `a` writes A makes B causally later, and the set collapses to [B] — which is what a first draft of this fixture asserted, and what the reference runner caught. A binding that collapses here has implemented LWW twice. Compared as a SET — the corpus does not pin an iteration order."
+      }
+    },
+    {
+      "id": "mv_causal_write_supersedes_the_set",
+      "name": "MV: a write that observed both collapses them",
+      "register": "mv",
+      "seed": {
+        "peer": 1
+      },
+      "steps": [
+        {
+          "fork": "b",
+          "peer": 2
+        },
+        {
+          "on": "a",
+          "op": "set",
+          "value": "A",
+          "peer": 1
+        },
+        {
+          "on": "b",
+          "op": "set",
+          "value": "B",
+          "peer": 2
+        },
+        {
+          "merge": {
+            "into": "a",
+            "from": "b"
+          }
+        },
+        {
+          "on": "a",
+          "op": "set",
+          "value": "C",
+          "peer": 1
+        }
+      ],
+      "expect": {
+        "values_on": {
+          "a": [
+            "C"
+          ]
+        },
+        "note": "the counterpart to the previous scenario: MV retains CONCURRENT values, not every value ever written. A and B are concurrent and both survive the merge; C is written after `a` has observed both, so it supersedes both. A binding that only ever accumulates is as wrong as one that only ever resolves."
+      }
+    },
+    {
+      "id": "pncounter_converges_and_merges_by_maximum",
+      "name": "PnCounter: increments and decrements converge; merge is per-peer maximum",
+      "register": "pncounter",
+      "seed": {
+        "peer": 1
+      },
+      "steps": [
+        {
+          "on": "a",
+          "op": "incr",
+          "peer": 1,
+          "amount": 5
+        },
+        {
+          "fork": "b",
+          "peer": 2
+        },
+        {
+          "on": "a",
+          "op": "incr",
+          "peer": 1,
+          "amount": 2
+        },
+        {
+          "on": "b",
+          "op": "decr",
+          "peer": 2,
+          "amount": 3
+        },
+        {
+          "merge": {
+            "into": "a",
+            "from": "b"
+          }
+        },
+        {
+          "merge": {
+            "into": "b",
+            "from": "a"
+          }
+        }
+      ],
+      "expect": {
+        "value_on": {
+          "a": 4,
+          "b": 4
+        },
+        "note": "5 + 2 - 3. `b` forked holding peer 1's tally at 5 and never saw the +2, so a merge that ADDED tallies instead of taking the per-peer maximum would double-count peer 1 and land on 9."
+      }
+    },
+    {
+      "id": "pncounter_remerge_reports_no_change",
+      "name": "PnCounter: re-merging the same state reports no change",
+      "register": "pncounter",
+      "seed": {
+        "peer": 1
+      },
+      "steps": [
+        {
+          "on": "a",
+          "op": "incr",
+          "peer": 1,
+          "amount": 5
+        },
+        {
+          "fork": "b",
+          "peer": 2
+        },
+        {
+          "on": "b",
+          "op": "decr",
+          "peer": 2,
+          "amount": 1
+        },
+        {
+          "merge": {
+            "into": "a",
+            "from": "b"
+          }
+        },
+        {
+          "merge": {
+            "into": "a",
+            "from": "b"
+          }
+        }
+      ],
+      "expect": {
+        "value_on": {
+          "a": 4
+        },
+        "changed": false,
+        "note": "per-peer maximum is what makes this idempotent. A binding accumulating tallies would report true here AND drift to 3 on the second merge."
+      }
+    }
+  ]
+}

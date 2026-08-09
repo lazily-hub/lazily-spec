@@ -26,7 +26,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Reactive queue | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Broadcast topic | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Work queue | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| CRDT data types | ✅ | ✅ | ✅ | ✅ | ✅ | ~ | ✅ | ✅ | ✅ | — |
+| CRDT data types | ✅ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | — |
 | Lossless tree | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Egress | ✅ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | — |
 | Ingress | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -125,7 +125,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | TextCrdt delta sync [^textcrdt-delta-sync] | ✅ | ✅ | ✅ | ✅ | ✅ | ~ | ✅ | ✅ | ✅ | — |
 | CrdtTree lossless document [^crdttree-lossless-document] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Move-aware sequence CRDT [^move-aware-sequence-crdt] | ✅ | ✅ | ✅ | ✅ | ✅ | ~ | ✅ | ✅ | ✅ | — |
-| Registers (LWW/MV) + PnCounter [^registers] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| Registers (LWW/MV) + PnCounter [^registers] | ✅ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | — |
 
 #### Lossless tree
 

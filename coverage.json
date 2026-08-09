@@ -1010,16 +1010,19 @@
       "label": "Registers (LWW/MV) + PnCounter",
       "family": "crdt",
       "feature": "Registers (LWW / MV) + `PnCounter` + `CellCrdt`",
+      "fixtures": [
+        "collections/registers_convergence.json"
+      ],
       "marks": [
         "✅",
-        "✅",
-        "✅",
-        "✅",
-        "✅",
-        "✅",
-        "✅",
-        "✅",
-        "✅",
+        "~",
+        "~",
+        "~",
+        "~",
+        "~",
+        "~",
+        "~",
+        "~",
         "—"
       ]
     },

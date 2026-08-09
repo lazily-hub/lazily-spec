@@ -1023,7 +1023,7 @@ _TOPIC_MODELS = {"TopicCell"}
 # Competing-consumer work queue: pending/in-flight/dead-letter lifecycle.
 _WORK_QUEUE_MODELS = {"WorkQueueCell"}
 # Compute/convergence models: `scenarios`-based CRDT / semantic-tree fixtures.
-_SCENARIO_MODELS = {"SemTree", "SeqCrdt", "StableId", "TextCrdt"}
+_SCENARIO_MODELS = {"SemTree", "SeqCrdt", "StableId", "TextCrdt", "Registers"}
 # Merge-algebra models (#relaycell): `scenarios` of {policy, flags, initial, steps}.
 _MERGE_MODELS = {"MergeCell"}
 _KNOWN_MODELS = (
