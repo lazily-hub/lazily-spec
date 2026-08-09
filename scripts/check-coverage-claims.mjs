@@ -66,6 +66,38 @@
 // when it verified nothing at all, and `--require-all` (what CI uses, after
 // cloning the siblings) refuses to pass on a PARTIAL audit — otherwise a repo
 // that silently stopped cloning one binding would keep reporting green for it.
+//
+// The other direction: a `~` nobody revisits (#lzcoverageunderclaim)
+// ------------------------------------------------------------------
+// Everything above guards OVER-claiming. Nothing guarded a binding that sat at
+// `~` after it had EARNED the row, and that is not hypothetical: lazily-cs
+// finished `collections/registers_convergence.json` and its row kept reading `~`
+// until a hand-written backlog note caught it, because a partial mark requires
+// nothing and so is never re-examined.
+//
+// This does NOT become a hard failure, and the reason is written into the rule
+// above: `~` requires nothing BY DESIGN — it is the honest place to record
+// "implemented, but not this wire", where the shortfall is in a dimension the
+// cited fixtures do not pin. A row's `fixtures` list is not a complete
+// specification of its feature, so "replays every cited fixture" does not imply
+// "shipped", and failing on it would punish the exact honesty `~` exists to
+// permit.
+//
+// What it CAN say soundly is narrower and still useful: this mark is now
+// INDISTINGUISHABLE FROM SHIPPED on ledger evidence alone. Deciding it needs
+// binding-specific evidence a spec-side guard does not have, so these print as
+// review candidates on every run rather than passing silently into the
+// "unverified by design" bucket. That turns 28 marks nobody looks at into a
+// short list somebody can.
+//
+// One limit worth stating: the finer-grained gap ledgers
+// (KNOWN_UNREPLAYED_SCENARIOS / SCENARIO_EXCUSES / KNOWN_UNBOUND_BLOCKS) are
+// declared empty in all ten bindings and populated at RUNTIME by
+// `excuse_scenario`, so a static read cannot see a scenario-level excuse. They
+// are read anyway, so a binding that starts listing entries statically narrows
+// this report instead of silently widening it. Today no binding has a single
+// excuse call site, which is why a replayed fixture here has nothing finer
+// standing behind its `~`.
 
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -164,9 +196,23 @@ function loadBinding(dir) {
   const source = readFileSync(guard, "utf8");
   const requiredLines = bashArray(source, "REQUIRED_AREAS");
   const familyLines = bashArray(source, "IMPLEMENTED_FAMILY_PREFIXES");
+  // Finer-grained gap ledgers: a scenario or assertion block excused INSIDE a
+  // fixture the binding does replay. Any entry here is a standing reason for a
+  // `~`, so it removes that row from the review report below. Declared empty in
+  // every binding today and appended to at runtime, so this read narrows the
+  // report when a binding starts listing them and never widens it.
+  const finerGaps = new Set();
+  for (const name of ["KNOWN_UNREPLAYED_SCENARIOS", "SCENARIO_EXCUSES", "KNOWN_UNBOUND_BLOCKS"]) {
+    for (const entry of quotedEntries(bashArray(source, name))) {
+      // Entries are `corpus/fixture.json|scenario-id|reason`; the fixture is the
+      // only part that joins back to a coverage row.
+      finerGaps.add(entry.split("|")[0].trim());
+    }
+  }
   return {
     dir,
     uncovered: quotedEntries(bashArray(source, "KNOWN_UNCOVERED")),
+    finerGaps,
     // `null` means the binding audits the whole corpus rather than a set of
     // required areas — a strictly stronger invariant, so nothing to check.
     requiredAreas: requiredLines === null ? null : bareEntries(requiredLines),
@@ -236,6 +282,9 @@ for (const [language, dir] of Object.entries(BINDING_DIRS)) {
 }
 
 const violations = [];
+// Partial marks a reader should re-examine. Reported, never fatal — see the
+// `#lzcoverageunderclaim` section of the header for why this cannot be a gate.
+const reviewCandidates = [];
 
 // Fail closed on a ledger nobody classified. An unread scoping array does not
 // weaken the audit visibly — it inverts it for that binding, which is how
@@ -270,7 +319,23 @@ for (const row of data.rows) {
     const binding = bindings.get(language);
     if (binding === undefined) return; // not checked out, or not a binding column
     const mark = row.marks[column];
-    if (mark === PARTIAL) qualified += 1;
+    if (mark === PARTIAL) {
+      qualified += 1;
+      // Indistinguishable from shipped on ledger evidence: every cited fixture
+      // is replayed and nothing finer is excused inside any of them. Not a
+      // violation — see the header — but the only partial marks worth a look.
+      if (
+        fixtures.every((fixture) => replays(binding, fixture)) &&
+        !fixtures.some((fixture) => binding.finerGaps.has(fixture))
+      ) {
+        reviewCandidates.push(
+          `${language} is ${PARTIAL} on "${row.feature.slice(0, 60)}…" (row ${row.id}) but ${binding.dir} ` +
+            `replays every fixture it cites (${fixtures.join(", ")}) with no scenario- or block-level ` +
+            `excuse — either it has outgrown the mark, or the shortfall is real and not pinned by ` +
+            `these fixtures`,
+        );
+      }
+    }
     if (mark !== SHIPPED) return;
     claims += 1;
     const missing = fixtures.filter((fixture) => !replays(binding, fixture));
@@ -286,10 +351,25 @@ for (const row of data.rows) {
 const check = process.argv.includes("--check");
 console.log(
   `coverage claims: ${claims} shipped mark(s) checked (${qualified} partial mark(s) left unverified by ` +
-    `design) across ${rowsWithFixtures} fixture-bearing row(s); ` +
+    `design, ${reviewCandidates.length} of them indistinguishable from shipped) across ` +
+    `${rowsWithFixtures} fixture-bearing row(s); ` +
     `${bindings.size}/${Object.keys(BINDING_DIRS).length} binding ledgers read` +
     (skipped.length > 0 ? `, ${skipped.length} skipped (not checked out): ${skipped.join(", ")}` : ""),
 );
+
+// Printed on every run, including a green one: the whole failure this addresses
+// is a mark nobody revisits, and a report that only surfaces on failure would
+// never surface at all.
+if (reviewCandidates.length > 0) {
+  console.log("");
+  for (const candidate of reviewCandidates) console.log(`· ${candidate}`);
+  console.log(
+    `\n${reviewCandidates.length} partial mark(s) to re-examine. NOT a failure: \`~\` requires nothing ` +
+      `by design and is the honest record for a shortfall these fixtures do not pin. Resolve each by ` +
+      `checking the binding, then either promote the mark (and re-run sync-coverage.mjs — a row flip ` +
+      `can carry its family roll-up cell with it) or cite a fixture that does pin the gap.`,
+  );
+}
 
 if (violations.length > 0) {
   console.error("");
