@@ -150,6 +150,12 @@
       "label": "Reactive graph",
       "family": "reactive-graph",
       "feature": "Reactive graph — two cell kinds (nodes `SourceCell` / `ComputedCell`; handles `Source<T, M>` / `Computed<T>`) + `Effect` sink + eager `Computed` (`computed().eager()`) / all cells guarded / batch",
+      "fixtures": [
+        "reactive-graph/transitive_invalidation_reaches_depth.json",
+        "reactive-graph/signal_materializes_without_a_read.json",
+        "reactive-graph/signal_materializes_once_per_batch.json",
+        "reactive-graph/dispose_signal_reverts_to_lazy.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -168,6 +174,11 @@
       "label": "Keyed-map materialization",
       "family": "materialization",
       "feature": "Keyed-map materialization (`ComputedMap`) — mint-on-access derived slots: transparency + deferral (`#lzmatmode`)",
+      "fixtures": [
+        "materialization/observational_transparency.json",
+        "materialization/deferral_not_deallocation.json",
+        "materialization/entry_kind_orthogonal_to_mode.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -176,7 +187,7 @@
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "—"
       ]
@@ -186,6 +197,10 @@
       "label": "Thread-safe keyed map",
       "family": "materialization",
       "feature": "Thread-safe keyed map (`ThreadSafeComputedMap`) — `Send + Sync` + materialization confluence (`#lzmatmode`)",
+      "fixtures": [
+        "materialization/observational_transparency.json",
+        "materialization/deferral_not_deallocation.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -194,7 +209,7 @@
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "—"
       ]
@@ -204,6 +219,9 @@
       "label": "Async keyed map",
       "family": "materialization",
       "feature": "Async keyed map (`AsyncComputedMap`) — eventual transparency (`#lzmatmode`)",
+      "fixtures": [
+        "materialization/observational_transparency.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -212,7 +230,7 @@
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "—"
       ]
@@ -222,6 +240,9 @@
       "label": "Keyed-map sync",
       "family": "familysync",
       "feature": "Keyed-map sync — membership propagation + materialize-on-ingest + derived-aggregate transparency (`#lzfamilysync`)",
+      "fixtures": [
+        "familysync/materialize_on_ingest.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -240,6 +261,9 @@
       "label": "Thread-safe context",
       "family": "reactive-graph",
       "feature": "Thread-safe context (lock-backed)",
+      "fixtures": [
+        "reactive-graph/transitive_invalidation_reaches_depth.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -258,6 +282,9 @@
       "label": "Async reactive context",
       "family": "reactive-graph",
       "feature": "Async reactive context",
+      "fixtures": [
+        "reactive-graph/transitive_invalidation_reaches_depth.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -276,6 +303,11 @@
       "label": "Flat state machine",
       "family": "statechart",
       "feature": "Flat state machine",
+      "fixtures": [
+        "statechart/flat_cycle.json",
+        "statechart/guarded_door.json",
+        "statechart/malformed_rejected.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -294,6 +326,13 @@
       "label": "Harel state charts",
       "family": "statechart",
       "feature": "Harel state charts",
+      "fixtures": [
+        "statechart/hierarchical_player.json",
+        "statechart/parallel_regions.json",
+        "statechart/history_shallow.json",
+        "statechart/history_deep.json",
+        "statechart/entry_exit_actions.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -312,6 +351,11 @@
       "label": "Keyed reactive maps",
       "family": "collections",
       "feature": "Keyed reactive maps (`ReactiveMap`: `SourceMap` / `ComputedMap`) + `SourceTree` + reconcile",
+      "fixtures": [
+        "collections/cellmap_independence.json",
+        "collections/cellmap_atomic_move.json",
+        "collections/keyed_reconciliation_lis.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -330,6 +374,10 @@
       "label": "ReactiveMap core — single-threaded",
       "family": "collections",
       "feature": "`ReactiveMap` **Core surface** — single-threaded flavor (cell-model.md § Core surface vs. binding extensions)",
+      "fixtures": [
+        "collections/cellmap_independence.json",
+        "collections/cellmap_atomic_move.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -348,6 +396,10 @@
       "label": "ReactiveMap core — thread-safe",
       "family": "collections",
       "feature": "`ReactiveMap` **Core surface** — thread-safe flavor (ordering + membership reactivity)",
+      "fixtures": [
+        "collections/cellmap_independence.json",
+        "collections/cellmap_atomic_move.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -366,6 +418,10 @@
       "label": "ReactiveMap core — async",
       "family": "collections",
       "feature": "`ReactiveMap` **Core surface** — async flavor (ordering + membership reactivity)",
+      "fixtures": [
+        "collections/cellmap_independence.json",
+        "collections/cellmap_atomic_move.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -384,6 +440,9 @@
       "label": "Exact-key dependency availability",
       "family": "collections",
       "feature": "Exact-key dependency availability (`DependencyMap`: observe before publish, unrelated-key isolation, stable identity; `#lzdependencyavailability`)",
+      "fixtures": [
+        "collections/dependency_reactive_availability.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -402,6 +461,10 @@
       "label": "Atomic ordered move",
       "family": "collections",
       "feature": "Atomic ordered move replayed against **all three flavors** (`cellmap_atomic_move` + `cellmap_independence`)",
+      "fixtures": [
+        "collections/cellmap_atomic_move.json",
+        "collections/cellmap_independence.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -420,6 +483,9 @@
       "label": "Memoized semantic tree",
       "family": "collections",
       "feature": "Memoized semantic tree (`SemTree`)",
+      "fixtures": [
+        "collections/semtree_incremental.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -438,6 +504,9 @@
       "label": "Stable-id alignment",
       "family": "collections",
       "feature": "Stable-id alignment (manufactured identity)",
+      "fixtures": [
+        "collections/stableid_alignment.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -456,6 +525,13 @@
       "label": "Reactive queue core — single-threaded",
       "family": "queue",
       "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — single-threaded flavor",
+      "fixtures": [
+        "collections/queuecell_spsc_push_pop.json",
+        "collections/queuecell_mpsc_multi_writer.json",
+        "collections/queuecell_bounded_backpressure.json",
+        "collections/queuecell_popped_head_observation.json",
+        "collections/queuecell_closure_lifecycle.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -474,6 +550,13 @@
       "label": "Reactive queue core — thread-safe",
       "family": "queue",
       "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle)",
+      "fixtures": [
+        "collections/queuecell_spsc_push_pop.json",
+        "collections/queuecell_mpsc_multi_writer.json",
+        "collections/queuecell_bounded_backpressure.json",
+        "collections/queuecell_popped_head_observation.json",
+        "collections/queuecell_closure_lifecycle.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -492,6 +575,13 @@
       "label": "Reactive queue core — async",
       "family": "queue",
       "feature": "Reactive queue (`QueueCell` SPSC/MPSC + `QueueStorage` adapter) **Core surface** — async flavor (reader kinds + eventual transparency)",
+      "fixtures": [
+        "collections/queuecell_spsc_push_pop.json",
+        "collections/queuecell_mpsc_multi_writer.json",
+        "collections/queuecell_bounded_backpressure.json",
+        "collections/queuecell_popped_head_observation.json",
+        "collections/queuecell_closure_lifecycle.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -510,6 +600,12 @@
       "label": "Broadcast topic core — single-threaded",
       "family": "topic",
       "feature": "Broadcast topic (`TopicCell`) **Core surface** — single-threaded flavor — independent cursors + durable replay + safe GC (`#lztopiccell`)",
+      "fixtures": [
+        "collections/topiccell_broadcast_cursor_isolation.json",
+        "collections/topiccell_durable_replay_gc.json",
+        "collections/topiccell_ephemeral_lifecycle.json",
+        "collections/topiccell_offline_tail_bounds.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -528,6 +624,12 @@
       "label": "Broadcast topic core — thread-safe",
       "family": "topic",
       "feature": "Broadcast topic (`TopicCell`) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle)",
+      "fixtures": [
+        "collections/topiccell_broadcast_cursor_isolation.json",
+        "collections/topiccell_durable_replay_gc.json",
+        "collections/topiccell_ephemeral_lifecycle.json",
+        "collections/topiccell_offline_tail_bounds.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -546,6 +648,12 @@
       "label": "Broadcast topic core — async",
       "family": "topic",
       "feature": "Broadcast topic (`TopicCell`) **Core surface** — async flavor (reader kinds + eventual transparency)",
+      "fixtures": [
+        "collections/topiccell_broadcast_cursor_isolation.json",
+        "collections/topiccell_durable_replay_gc.json",
+        "collections/topiccell_ephemeral_lifecycle.json",
+        "collections/topiccell_offline_tail_bounds.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -564,6 +672,10 @@
       "label": "Work queue core — single-threaded",
       "family": "work-queue",
       "feature": "Competing-consumer work queue (`WorkQueueCell`) **Core surface** — single-threaded flavor — exclusive leases + ack/nack + redelivery + DLQ (`#lzworkqueue`)",
+      "fixtures": [
+        "collections/workqueue_competing_delivery.json",
+        "collections/workqueue_lease_deadletter.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -582,6 +694,10 @@
       "label": "Work queue core — thread-safe",
       "family": "work-queue",
       "feature": "Competing-consumer work queue (`WorkQueueCell`) **Core surface** — thread-safe flavor (reader kinds + closure lifecycle)",
+      "fixtures": [
+        "collections/workqueue_competing_delivery.json",
+        "collections/workqueue_lease_deadletter.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -600,6 +716,10 @@
       "label": "Work queue core — async",
       "family": "work-queue",
       "feature": "Competing-consumer work queue (`WorkQueueCell`) **Core surface** — async flavor (reader kinds + eventual transparency)",
+      "fixtures": [
+        "collections/workqueue_competing_delivery.json",
+        "collections/workqueue_lease_deadletter.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -618,6 +738,14 @@
       "label": "Merge algebra",
       "family": "reactive-graph",
       "feature": "Merge algebra + `Source<T, M>` — associative `MergePolicy` (`KeepLatest`/`Sum`/`Max`/`SetUnion`/`RawFifo`), `Cell ≡ Source<KeepLatest>`, read-any-cell/write-`Source` split (`#relaycell`)",
+      "fixtures": [
+        "collections/mergecell_algebra.json",
+        "reactive-graph/merge_cell_acquires_no_dependency_edge.json",
+        "reactive-graph/merge_folds_synchronously_in_batch.json",
+        "reactive-graph/merge_per_settled_cone_not_per_write.json",
+        "reactive-graph/merge_feed_through_a_formula_coalesces.json",
+        "reactive-graph/exact_fold_paths_stay_exact.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -625,7 +753,7 @@
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "✅",
         "—"
@@ -636,6 +764,9 @@
       "label": "RelayCell",
       "family": "egress",
       "feature": "RelayCell — conflating relay + `BackpressurePolicy` + `SpillStore` + `Transport` + Inbox/Outbox + Rate/Window/Expiry/Priority/keyed policies (`#relaycell`)",
+      "fixtures": [
+        "collections/mergecell_algebra.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -654,13 +785,16 @@
       "label": "Free-text character CRDT",
       "family": "crdt",
       "feature": "Free-text character CRDT (`TextCrdt`)",
+      "fixtures": [
+        "collections/textcrdt_convergence.json"
+      ],
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "✅",
         "✅",
@@ -672,13 +806,16 @@
       "label": "TextCrdt delta sync",
       "family": "crdt",
       "feature": "`TextCrdt` delta sync (`version_vector` / `delta_since` / `apply_delta`)",
+      "fixtures": [
+        "collections/textcrdt_delta_sync.json"
+      ],
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "✅",
         "✅",
@@ -690,6 +827,9 @@
       "label": "CrdtTree lossless document",
       "family": "crdt",
       "feature": "`CrdtTree` lossless document contract (`#lzcrdttree`)",
+      "fixtures": [
+        "crdt-tree/algebra.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -708,13 +848,16 @@
       "label": "Move-aware sequence CRDT",
       "family": "crdt",
       "feature": "Move-aware sequence CRDT (`SeqCrdt`)",
+      "fixtures": [
+        "collections/seqcrdt_convergence.json"
+      ],
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "✅",
         "✅",
@@ -726,13 +869,20 @@
       "label": "Lossless tree CRDT core",
       "family": "lossless-tree",
       "feature": "Lossless tree CRDT core (`LosslessTreeCrdt`, M1)",
+      "fixtures": [
+        "lossless-tree/exact_roundtrip.json",
+        "lossless-tree/invalid_source_roundtrip.json",
+        "lossless-tree/token_trivia_preservation.json",
+        "lossless-tree/split_merge.json",
+        "lossless-tree/one_leaf_edit_delta.json"
+      ],
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "✅",
         "✅",
@@ -744,13 +894,16 @@
       "label": "Lossless tree — anti-entropy",
       "family": "lossless-tree",
       "feature": "Lossless tree — dotted-frontier anti-entropy",
+      "fixtures": [
+        "lossless-tree/non_contiguous_anti_entropy.json"
+      ],
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "✅",
         "✅",
@@ -762,13 +915,18 @@
       "label": "Lossless tree — merge convergence",
       "family": "lossless-tree",
       "feature": "Lossless tree — concurrent merge convergence",
+      "fixtures": [
+        "lossless-tree/concurrent_insert_same_parent.json",
+        "lossless-tree/concurrent_reorder_and_leaf_edit.json",
+        "lossless-tree/concurrent_conflict_preserves_text.json"
+      ],
       "marks": [
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
-        "✅",
+        "~",
         "✅",
         "✅",
         "✅",
@@ -1333,6 +1491,9 @@
       "label": "Portable stdlib Timer",
       "family": "stdlib",
       "feature": "Portable stdlib `Timer` (`stdlib_timer_v1`) — canonical fixture + mutation-gate verified",
+      "fixtures": [
+        "stdlib/timer.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -1351,6 +1512,9 @@
       "label": "Portable stdlib Timeout",
       "family": "stdlib",
       "feature": "Portable stdlib caller-driven `Timeout<T>` (`stdlib_timeout_v1`) — distinct from reactive `TimeoutCell`",
+      "fixtures": [
+        "stdlib/timeout.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -1369,6 +1533,9 @@
       "label": "Portable stdlib RevisionBarrier",
       "family": "stdlib",
       "feature": "Portable stdlib `RevisionBarrier` (`stdlib_revision_barrier_v1`) — register/recheck lost-wakeup guard",
+      "fixtures": [
+        "stdlib/revision_barrier.json"
+      ],
       "marks": [
         "✅",
         "✅",
