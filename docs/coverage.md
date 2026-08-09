@@ -151,6 +151,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Reactive ingress [^reactive-ingress] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Ingress — thread-safe [^ingress-thread-safe] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Ingress — async [^ingress-async] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| Boundary-ingress adapter [^boundary-ingress-adapter] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 
 #### Wire codec
 
@@ -341,6 +342,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 [^reactive-ingress]: Transport-agnostic reactive ingress (`IngressCell`) — keyed lifecycle scopes, generation/sequence/freshness envelopes, reorder buffer, accepted/dropped/error receipt readers (`#designimplementtransport`)
 [^ingress-thread-safe]: Ingress family — `Send + Sync` flavor (`ThreadSafeIngressCell`): one frontier walk per admission (`#designimplementtransport`)
 [^ingress-async]: Ingress family — async flavor (`AsyncIngressCell`): admission is not async-coloured (`#designimplementtransport`)
+[^boundary-ingress-adapter]: Boundary-ingress adapter (`BoundaryIngressAdapter`) — the non-reactive/reactive seam ahead of `IngressCell`: one monotone channel cursor per producer generation, snapshot-plus-event bootstrap applied as one batch, derived `ReplayRequired(from)` on a cursor gap, generation fence + hot resubscribe (`#designimplementtransport`)
 <!-- coverage-table:end -->
 
 Convergence and the wire protocol are pinned by the shared conformance fixtures

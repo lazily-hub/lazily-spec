@@ -1719,6 +1719,27 @@
         "✅",
         "—"
       ]
+    },
+    {
+      "id": "boundary-ingress-adapter",
+      "label": "Boundary-ingress adapter",
+      "family": "ingress",
+      "feature": "Boundary-ingress adapter (`BoundaryIngressAdapter`) — the non-reactive/reactive seam ahead of `IngressCell`: one monotone channel cursor per producer generation, snapshot-plus-event bootstrap applied as one batch, derived `ReplayRequired(from)` on a cursor gap, generation fence + hot resubscribe (`#designimplementtransport`)",
+      "fixtures": [
+        "ingress/boundary_ingress_adapter.json"
+      ],
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "—"
+      ]
     }
   ]
 }
