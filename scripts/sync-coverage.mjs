@@ -19,7 +19,7 @@
 // has no siblings checked out, still enforces docs/coverage.md ↔ coverage.json).
 //
 // Two renderings, one source (#lzcoveragereadmerollup). `docs/coverage.md` is the
-// ONLY place the 70-row detail lives; every README carries the family × language
+// ONLY place the 73-row detail lives; every README carries the family × language
 // roll-up plus a link to it. That is not just brevity: a row mark usually does not
 // move its family's roll-up cell, so the common coverage.json edit now rewrites one
 // file instead of thirteen, and a row-level change stops fanning a commit out across
@@ -99,7 +99,7 @@ function renderTable(withDetail) {
   // without a ⊘, so 'cannot' is never confused with 'has not'.
   const naNotes = [];
   // Families are authored, not inferred — the feature text does not encode them
-  // (54 distinct prefixes across 70 rows). `families` fixes the render order.
+  // (54 distinct prefixes across 73 rows). `families` fixes the render order.
   if (!Array.isArray(data.families) || data.families.length === 0) {
     throw new Error(
       "coverage.json is missing a non-empty `families` array — each entry needs `id` and `title`, and it fixes the order the family tables render in.",

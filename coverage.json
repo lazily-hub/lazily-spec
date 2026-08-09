@@ -760,6 +760,78 @@
       ]
     },
     {
+      "id": "reactive-egress",
+      "label": "Reactive egress",
+      "family": "egress",
+      "feature": "Transport-agnostic reactive egress (`EgressCore`) — monotone sequence assignment, bounded unacknowledged window, cumulative ACK watermark, bounded retry/backoff/exhaustion, producer-generation fence (`#lzegress`)",
+      "fixtures": [
+        "egress/egress_ordered_ack.json",
+        "egress/egress_inflight_window.json",
+        "egress/egress_retry_budget.json",
+        "egress/egress_generation_fence.json"
+      ],
+      "marks": [
+        "✅",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "id": "egress-thread-safe",
+      "label": "Egress — thread-safe",
+      "family": "egress",
+      "feature": "Egress family — `Send + Sync` flavor (`ThreadSafeEgressCell`): delivery authority stays in the shared core, one attached transport Effect per incarnation (`#lzegress`)",
+      "fixtures": [
+        "egress/egress_ordered_ack.json",
+        "egress/egress_inflight_window.json",
+        "egress/egress_retry_budget.json",
+        "egress/egress_generation_fence.json"
+      ],
+      "marks": [
+        "✅",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
+      "id": "egress-async",
+      "label": "Egress — async",
+      "family": "egress",
+      "feature": "Egress family — async flavor (`AsyncEgressCell`): the delivery-state readers stay synchronous Computeds; only the transport attachment is async-coloured (`#lzegress`)",
+      "fixtures": [
+        "egress/egress_ordered_ack.json",
+        "egress/egress_inflight_window.json",
+        "egress/egress_retry_budget.json",
+        "egress/egress_generation_fence.json"
+      ],
+      "marks": [
+        "✅",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
       "id": "relaycell",
       "label": "RelayCell",
       "family": "egress",
@@ -1572,6 +1644,15 @@
       "label": "Reactive ingress",
       "family": "ingress",
       "feature": "Transport-agnostic reactive ingress (`IngressCell`) — keyed lifecycle scopes, generation/sequence/freshness envelopes, reorder buffer, accepted/dropped/error receipt readers (`#designimplementtransport`)",
+      "fixtures": [
+        "ingress/ingress_ordered_delivery.json",
+        "ingress/ingress_reorder_and_duplication.json",
+        "ingress/ingress_reorder_window_overflow.json",
+        "ingress/ingress_backpressure.json",
+        "ingress/ingress_freshness_and_retry.json",
+        "ingress/ingress_disconnect_replay.json",
+        "ingress/ingress_generation_handoff.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -1590,6 +1671,15 @@
       "label": "Ingress — thread-safe",
       "family": "ingress",
       "feature": "Ingress family — `Send + Sync` flavor (`ThreadSafeIngressCell`): one frontier walk per admission (`#designimplementtransport`)",
+      "fixtures": [
+        "ingress/ingress_ordered_delivery.json",
+        "ingress/ingress_reorder_and_duplication.json",
+        "ingress/ingress_reorder_window_overflow.json",
+        "ingress/ingress_backpressure.json",
+        "ingress/ingress_freshness_and_retry.json",
+        "ingress/ingress_disconnect_replay.json",
+        "ingress/ingress_generation_handoff.json"
+      ],
       "marks": [
         "✅",
         "✅",
@@ -1608,6 +1698,15 @@
       "label": "Ingress — async",
       "family": "ingress",
       "feature": "Ingress family — async flavor (`AsyncIngressCell`): admission is not async-coloured (`#designimplementtransport`)",
+      "fixtures": [
+        "ingress/ingress_ordered_delivery.json",
+        "ingress/ingress_reorder_and_duplication.json",
+        "ingress/ingress_reorder_window_overflow.json",
+        "ingress/ingress_backpressure.json",
+        "ingress/ingress_freshness_and_retry.json",
+        "ingress/ingress_disconnect_replay.json",
+        "ingress/ingress_generation_handoff.json"
+      ],
       "marks": [
         "✅",
         "✅",
