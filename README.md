@@ -58,7 +58,7 @@ matrix with per-cell notes and platform carve-outs lives in
 | Reactive queue | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Broadcast topic | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Work queue | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| CRDT data types | ✅ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | — |
+| CRDT data types | ✅ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ✅ | — |
 | Lossless tree | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Egress | ✅ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | — |
 | Ingress | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
