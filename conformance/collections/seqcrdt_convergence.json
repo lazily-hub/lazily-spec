@@ -110,6 +110,43 @@
         "orders_equal": [["ab", "ba"]],
         "not_contains_on": { "ab": ["b"] }
       }
+    },
+    {
+      "id": "fork_carries_the_clock_so_a_backwards_skewed_write_survives",
+      "name": "a fork inherits the source's causal position, so a backwards-skewed local write is not silently rejected",
+      "seed": {
+        "peer": 1,
+        "inserts": [{ "id": "x", "value": 1, "now": 100 }]
+      },
+      "steps": [
+        { "fork": "b", "peer": 2, "now": 100 },
+        { "on": "b", "op": "set_value", "id": "x", "value": 99, "now": 50 },
+        { "merge": { "into": "a", "from": "b" }, "now": 200 },
+        { "merge": { "into": "b", "from": "a" }, "now": 200 }
+      ],
+      "expect": {
+        "get_on": { "a": { "x": 99 }, "b": { "x": 99 } },
+        "len": 1
+      }
+    },
+    {
+      "id": "fork_stamps_with_its_own_peer_so_equal_wall_edits_converge",
+      "name": "a fork stamps under its OWN peer, so equal-wall concurrent edits break the tie instead of diverging",
+      "seed": {
+        "peer": 1,
+        "inserts": [{ "id": "x", "value": 1, "now": 10 }]
+      },
+      "steps": [
+        { "fork": "b", "peer": 2, "now": 10 },
+        { "on": "b", "op": "set_value", "id": "x", "value": 99, "now": 10 },
+        { "on": "a", "op": "set_value", "id": "x", "value": 55, "now": 10 },
+        { "merge": { "into": "a", "from": "b" }, "now": 20 },
+        { "merge": { "into": "b", "from": "a" }, "now": 20 }
+      ],
+      "expect": {
+        "get_on": { "a": { "x": 99 }, "b": { "x": 99 } },
+        "len": 1
+      }
     }
   ]
 }

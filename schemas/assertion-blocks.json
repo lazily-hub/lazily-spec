@@ -3611,6 +3611,30 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
+            "a": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "x": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "x"
+              ]
+            },
+            "b": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "x": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "x"
+              ]
+            },
             "merged": {
               "type": "object",
               "additionalProperties": false,
@@ -3623,10 +3647,7 @@
                 "a"
               ]
             }
-          },
-          "required": [
-            "merged"
-          ]
+          }
         },
         "len": {
           "type": "integer"

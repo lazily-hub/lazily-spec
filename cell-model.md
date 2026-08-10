@@ -678,6 +678,21 @@ independent registers). Removal is an LWW tombstone. This is the order layer ben
 reconciliation; it lives only at the multi-writer boundary, leaving the single-producer
 Snapshot/Delta mirror unchanged.
 
+**Forking a replica (`#lzzigforkhlcpeer`).** A fork copies the element set under a *new* peer
+identity, and the two halves of its clock are governed separately. The forked replica **MUST**
+inherit the source's causal position — the HLC's last observed wall time and logical counter —
+because it has already observed everything the source holds; a fork that restarts its clock at
+zero mints stamps *behind* state it already carries the moment its next local op supplies a
+backwards-skewed `now`, and since every register adopts only on a **strictly greater** stamp,
+that replica's own write is silently rejected rather than applied. The forked replica **MUST
+NOT** inherit the source's peer id: the peer is the stamp's final tiebreaker, so two replicas
+stamping under one id can mint an identical `(wall, logical, peer)` triple, neither adopts the
+other, and they diverge permanently. Both halves are pinned by
+[`conformance/collections/seqcrdt_convergence.json`](conformance/collections/seqcrdt_convergence.json)
+(`fork_carries_the_clock_so_a_backwards_skewed_write_survives`,
+`fork_stamps_with_its_own_peer_so_equal_wall_edits_converge`). A same-peer copy — `clone` —
+inherits both, because it is the same replica continuing rather than a new one.
+
 ### Tombstone garbage collection
 
 Tombstones (both the sequence-CRDT LWW flag and the character-CRDT sticky delete, which
