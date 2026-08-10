@@ -154,7 +154,9 @@
         "reactive-graph/transitive_invalidation_reaches_depth.json",
         "reactive-graph/signal_materializes_without_a_read.json",
         "reactive-graph/signal_materializes_once_per_batch.json",
-        "reactive-graph/dispose_signal_reverts_to_lazy.json"
+        "reactive-graph/dispose_signal_reverts_to_lazy.json",
+        "reactive-graph/churn_returns_to_baseline.json",
+        "reactive-graph/recycled_id_inherits_nothing.json"
       ],
       "marks": [
         "✅",
@@ -389,7 +391,10 @@
         "✅",
         "✅",
         "—"
-      ]
+      ],
+      "partial_reasons": {
+        "Zig": "The map is not graph-backed: single-threaded entries are cached values, not reactive nodes, so there are no per-entry readers to invalidate and `invalidates` is asserted against three version counters rather than live graph edges. That catches every mutation the fixtures describe — a reorder leaking into membership, a value write leaking into order — which is exactly why no fixture can distinguish it from the graph-edge assertion lazily-rs makes. Green means making the map graph-backed; see the header of src/lazily/collections_family_conformance.zig."
+      }
     },
     {
       "id": "reactivemap-core-thread-safe",
@@ -1237,7 +1242,18 @@
         "~",
         "~",
         "—"
-      ]
+      ],
+      "partial_reasons": {
+        "Rust": "Row-level, not binding-level: every binding is `~` here. The two cited fixtures pin the coalescing/outbox and lease-eviction behaviour that IS implemented; the rest of the row's feature — the full resync coordinator plus OR-set/LWW liveness — has no canonical fixture, so no ledger can separate a binding that finished it from one that did not. Promote only alongside fixtures that pin the uncovered half.",
+        "Python": "Row-level, not binding-level: every binding is `~` here. The two cited fixtures pin the coalescing/outbox and lease-eviction behaviour that IS implemented; the rest of the row's feature — the full resync coordinator plus OR-set/LWW liveness — has no canonical fixture, so no ledger can separate a binding that finished it from one that did not. Promote only alongside fixtures that pin the uncovered half.",
+        "Kotlin": "Row-level, not binding-level: every binding is `~` here. The two cited fixtures pin the coalescing/outbox and lease-eviction behaviour that IS implemented; the rest of the row's feature — the full resync coordinator plus OR-set/LWW liveness — has no canonical fixture, so no ledger can separate a binding that finished it from one that did not. Promote only alongside fixtures that pin the uncovered half.",
+        "JS": "Row-level, not binding-level: every binding is `~` here. The two cited fixtures pin the coalescing/outbox and lease-eviction behaviour that IS implemented; the rest of the row's feature — the full resync coordinator plus OR-set/LWW liveness — has no canonical fixture, so no ledger can separate a binding that finished it from one that did not. Promote only alongside fixtures that pin the uncovered half.",
+        "Dart": "Row-level, not binding-level: every binding is `~` here. The two cited fixtures pin the coalescing/outbox and lease-eviction behaviour that IS implemented; the rest of the row's feature — the full resync coordinator plus OR-set/LWW liveness — has no canonical fixture, so no ledger can separate a binding that finished it from one that did not. Promote only alongside fixtures that pin the uncovered half.",
+        "Zig": "Row-level, not binding-level: every binding is `~` here. The two cited fixtures pin the coalescing/outbox and lease-eviction behaviour that IS implemented; the rest of the row's feature — the full resync coordinator plus OR-set/LWW liveness — has no canonical fixture, so no ledger can separate a binding that finished it from one that did not. Promote only alongside fixtures that pin the uncovered half.",
+        "Go": "Row-level, not binding-level: every binding is `~` here. The two cited fixtures pin the coalescing/outbox and lease-eviction behaviour that IS implemented; the rest of the row's feature — the full resync coordinator plus OR-set/LWW liveness — has no canonical fixture, so no ledger can separate a binding that finished it from one that did not. Promote only alongside fixtures that pin the uncovered half.",
+        "C++": "Row-level, not binding-level: every binding is `~` here. The two cited fixtures pin the coalescing/outbox and lease-eviction behaviour that IS implemented; the rest of the row's feature — the full resync coordinator plus OR-set/LWW liveness — has no canonical fixture, so no ledger can separate a binding that finished it from one that did not. Promote only alongside fixtures that pin the uncovered half.",
+        "C#": "Row-level, not binding-level: every binding is `~` here. The two cited fixtures pin the coalescing/outbox and lease-eviction behaviour that IS implemented; the rest of the row's feature — the full resync coordinator plus OR-set/LWW liveness — has no canonical fixture, so no ledger can separate a binding that finished it from one that did not. Promote only alongside fixtures that pin the uncovered half."
+      }
     },
     {
       "id": "storage-independent-durable-outbox",

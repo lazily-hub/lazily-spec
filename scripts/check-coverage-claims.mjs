@@ -302,6 +302,7 @@ for (const [language, binding] of bindings) {
 
 let claims = 0;
 let qualified = 0;
+let declaredPartials = 0;
 let rowsWithFixtures = 0;
 
 for (const row of data.rows) {
@@ -319,22 +320,52 @@ for (const row of data.rows) {
     const binding = bindings.get(language);
     if (binding === undefined) return; // not checked out, or not a binding column
     const mark = row.marks[column];
+    const declaredReason = row.partial_reasons?.[language];
     if (mark === PARTIAL) {
       qualified += 1;
       // Indistinguishable from shipped on ledger evidence: every cited fixture
-      // is replayed and nothing finer is excused inside any of them. Not a
-      // violation — see the header — but the only partial marks worth a look.
+      // is replayed and nothing finer is excused inside any of them.
+      //
+      // There are three honest resolutions, and only the third used to have
+      // nowhere to live (#lzpartialmarkadjudicate). Either the binding has
+      // outgrown the mark (promote it), or the gap IS pinned by a fixture the
+      // row simply does not cite (cite it — that is what closed GDScript's
+      // reactive-graph row), or the shortfall is real and NO fixture can pin it,
+      // because the observable the binding exposes satisfies every assertion the
+      // corpus can express. lazily-zig's map is the worked example: its
+      // `invalidates` is asserted against version counters rather than graph
+      // edges, which no fixture can tell apart.
+      //
+      // That third case is now DECLARED in `partial_reasons`, not left as a
+      // recurring nag. A declared reason is a claim about why the tilde stands,
+      // and like every other excuse in this family it is checked in BOTH
+      // directions: an indistinguishable tilde with no reason FAILS, and a
+      // reason attached to a mark that is not `~` fails as stale below.
       if (
         fixtures.every((fixture) => replays(binding, fixture)) &&
         !fixtures.some((fixture) => binding.finerGaps.has(fixture))
       ) {
-        reviewCandidates.push(
-          `${language} is ${PARTIAL} on "${row.feature.slice(0, 60)}…" (row ${row.id}) but ${binding.dir} ` +
-            `replays every fixture it cites (${fixtures.join(", ")}) with no scenario- or block-level ` +
-            `excuse — either it has outgrown the mark, or the shortfall is real and not pinned by ` +
-            `these fixtures`,
-        );
+        if (typeof declaredReason === "string" && declaredReason.trim() !== "") {
+          declaredPartials += 1;
+        } else {
+          violations.push(
+            `${language} is ${PARTIAL} on "${row.feature.slice(0, 60)}…" (row ${row.id}) and ` +
+              `${binding.dir} replays every fixture it cites (${fixtures.join(", ")}) with no ` +
+              `scenario- or block-level excuse, so nothing distinguishes this mark from ${SHIPPED}. ` +
+              `Resolve it: promote the mark, cite a fixture that pins the gap, or record why no ` +
+              `fixture can — add \`partial_reasons.${language}\` to row "${row.id}" in ` +
+              `coverage.json (#lzpartialmarkadjudicate)`,
+          );
+        }
       }
+    } else if (typeof declaredReason === "string") {
+      // Stale in the other direction: a reason explaining a `~` that is no
+      // longer `~`. Left alone it would keep vouching for a mark nobody holds.
+      violations.push(
+        `row "${row.id}" declares partial_reasons.${language}, but ${language} is marked ` +
+          `${mark} there, not ${PARTIAL}. The reason is stale and now explains nothing — drop it ` +
+          `(#lzpartialmarkadjudicate)`,
+      );
     }
     if (mark !== SHIPPED) return;
     claims += 1;
@@ -351,7 +382,8 @@ for (const row of data.rows) {
 const check = process.argv.includes("--check");
 console.log(
   `coverage claims: ${claims} shipped mark(s) checked (${qualified} partial mark(s) left unverified by ` +
-    `design, ${reviewCandidates.length} of them indistinguishable from shipped) across ` +
+    `design, ${declaredPartials} of them indistinguishable from shipped on ledger evidence and ` +
+    `DECLARED in partial_reasons) across ` +
     `${rowsWithFixtures} fixture-bearing row(s); ` +
     `${bindings.size}/${Object.keys(BINDING_DIRS).length} binding ledgers read` +
     (skipped.length > 0 ? `, ${skipped.length} skipped (not checked out): ${skipped.join(", ")}` : ""),
@@ -368,6 +400,20 @@ if (reviewCandidates.length > 0) {
       `by design and is the honest record for a shortfall these fixtures do not pin. Resolve each by ` +
       `checking the binding, then either promote the mark (and re-run sync-coverage.mjs — a row flip ` +
       `can carry its family roll-up cell with it) or cite a fixture that does pin the gap.`,
+  );
+}
+
+// Declared partials are reported on every run too, for the same reason the
+// review list is: the failure this guard addresses is a mark nobody revisits,
+// and a reason recorded once and never re-read decays into folklore. Printing it
+// keeps the claim in front of whoever next touches the row.
+if (declaredPartials > 0) {
+  console.log("");
+  console.log(
+    `${declaredPartials} partial mark(s) are indistinguishable from shipped on ledger evidence and ` +
+      `carry a declared reason in coverage.json \`partial_reasons\`. Those reasons are enforced in ` +
+      `both directions: an indistinguishable \`~\` without one fails, and one attached to a mark that ` +
+      `is no longer \`~\` fails as stale (#lzpartialmarkadjudicate).`,
   );
 }
 
