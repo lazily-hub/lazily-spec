@@ -14,6 +14,20 @@ message in the repo's existing style; push to the current branch on `origin`.
 This standing rule overrides the harness default of "commit only when
 explicitly asked" for this repo.
 
+## Publishing a corpus change
+
+**Push the `conformance/` change here FIRST, then verify and push the bindings.**
+
+Bindings verify against this repo's **working tree**; their CI **clones published
+`main`**. A corpus change can be green in nine local checkouts and invisible to
+all nine CI runs, and any binding pinning a scenario or fixture count fails on
+the mismatch. A count or floor in a binding must describe what CI's clone
+guarantees, never what your working tree happens to hold.
+
+`make check` warns when `conformance/` is ahead of `origin/main`. Full rule and
+worked example: [docs/conformance.md](docs/conformance.md) § Publishing a corpus
+change (`#lzspecpushbeforebindings`).
+
 ## Scenario identity
 
 Every scenario in `conformance/` carries a unique snake_case **`id`**. That is
