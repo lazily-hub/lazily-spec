@@ -93,6 +93,42 @@ returns a failing verdict cannot leave the assertion ledger green.
 | `delta_shared_blob.json` | Delta | CellSet/SlotValue with SharedBlob |
 | `receipts/causal_receipts.json` | Receipt | Causal receipt projection with non-terminal and terminal outcomes |
 
+## Publishing a corpus change (`#lzspecpushbeforebindings`)
+
+**Push the corpus change to `lazily-spec` FIRST, then verify and push the bindings.**
+Never the other way round, however green the bindings look locally.
+
+The asymmetry is the whole reason. Local verification resolves the corpus through the
+**sibling working tree** (`../lazily-spec/conformance/...`), so it sees your change the
+moment you save it. Every binding's CI instead **clones published `main`** — for example
+`lazily-cs/.github/workflows/ci.yml` runs
+`git clone --depth 1 https://github.com/lazily-hub/lazily-spec.git ../lazily-spec`.
+So a corpus change that is green in nine local checkouts is invisible to all nine CI runs
+until it is pushed, and any binding that pins a scenario or fixture count fails on the
+mismatch.
+
+That is not hypothetical. Landing the SeqCrdt fork-clock scenarios
+(`#lzspecforkclockfixture`) in the wrong order turned `lazily-cs` red with
+`Expected: 8 / Actual: 6` — its runner census correctly counted the eight scenarios in the
+working tree while CI replayed the published six — and forced `lazily-cpp` to pin
+`MIN_SCENARIOS` to the published `144` rather than the local `146`, then raise it again in
+a second commit once the push landed.
+
+The order that works:
+
+1. Fix the bindings' **behaviour** first if the new fixture would otherwise redden them,
+   but do not push a binding whose *census* (scenario counts, coverage floors) encodes the
+   new corpus.
+2. Commit and push the `lazily-spec` change, including any vendored mirrors re-synced by
+   `scripts/sync-conformance-fixtures.mjs --sync`.
+3. Only then push binding changes that assume the new corpus, and re-run any CI that
+   failed against the old one.
+
+A floor or count in a binding must always describe **what CI's clone guarantees**, never
+what your working tree happens to hold. `make check` here warns when the local corpus is
+ahead of `origin/main`, which is the moment this rule applies — see
+`scripts/check-corpus-published.mjs`.
+
 ## Adding a new binding
 
 Copy the fixture-loading pattern from `lazily-rs/tests/conformance.rs`. Each test should:

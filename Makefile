@@ -18,9 +18,10 @@ scenario-identity-check \
 prose-keys-check \
 assertion-block-schema-check \
 assertion-ordering-check \
-fixture-discriminability-check
+fixture-discriminability-check \
+corpus-published-check
 
-check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check
+check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check corpus-published-check
 
 # Fixture-discriminability guard (#lzfixturediscrim). Exact-value assertions and
 # boolean routes with both outcomes carry their own controls. Every remaining
@@ -103,3 +104,13 @@ test-schemas:
 
 test-lean-formal:
 >cd "$(LEAN_DIR)" && $(LAKE) build
+
+# Corpus-publication advisory (#lzspecpushbeforebindings). Bindings verify against
+# this working tree; their CI clones published main. This fires at the moment the
+# ordering rule applies — when `conformance/` is ahead of origin/main — names the
+# fixtures, and says what CI will see. It ADVISES rather than gates: a corpus
+# ahead of main is the normal state while a fixture change is being authored, so
+# failing here would gate the ordinary workflow to catch a mistake made in a
+# different repo. See docs/conformance.md § Publishing a corpus change.
+corpus-published-check:
+>node scripts/check-corpus-published.mjs
