@@ -77,6 +77,17 @@
       "expect": { "text": "ab", "tombstone_count": 0 }
     },
     {
+      "id": "gc_keeps_a_tombstone_that_is_still_a_left_origin",
+      "name": "gc keeps a stable tombstone that a survivor still names as its left origin",
+      "replica": { "peer": 1 },
+      "seed": "abc",
+      "steps": [
+        { "op": "delete", "index": 1 },
+        { "op": "gc", "stable": true, "expect_collected": 0 }
+      ],
+      "expect": { "text": "ac", "len": 2, "tombstone_count": 1 }
+    },
+    {
       "id": "concurrent_deletes_same_char_converge",
       "name": "concurrent deletes of same char converge",
       "seed": { "peer": 1, "text": "abc" },

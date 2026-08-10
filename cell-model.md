@@ -712,6 +712,24 @@ batch it under memory pressure, or reclaim incrementally per anti-entropy round,
 collectable tombstone is re-examined after reclaim and unbounded accrual is surfaced via
 instrumentation. Deferral changes only memory footprint, never observable values.
 
+**Cascade depth is scheduling, not safety (`#lzspecgcreferencedtombstone`).** "Bottom-up"
+describes the ORDER reclamation is safe in, not how much of it one call must perform.
+Collecting a leaf can unreference its origin, making that origin collectable in turn; a
+binding **MAY** run a single pass and leave the newly-unreferenced tombstone for the next
+call, or iterate to a fixpoint within one call. The family is split roughly evenly between
+the two and both conform — the difference is memory footprint at a point in time, which the
+clause above already places outside the contract. Conformance fixtures therefore assert
+*which* tombstones survive a collection, never how many passes it took, and a runner that
+pinned a cascade count would be encoding one binding's schedule as a requirement.
+
+What is **not** optional is the conservative rule itself: a stable tombstone that any
+surviving element still names as its left origin **MUST** be kept, or removal orphans a
+survivor. That half is pinned by
+[`conformance/collections/textcrdt_convergence.json`](conformance/collections/textcrdt_convergence.json)
+(`gc_keeps_a_tombstone_that_is_still_a_left_origin`) — deleting an INTERIOR character, since
+a scenario that deletes the last one has no referenced tombstone to keep and so cannot tell
+a conforming collector from one that ignores origins entirely.
+
 ## Reactive queues
 
 A *reactive queue* (`QueueCell`) is a FIFO collection composed of cells — **not a new cell
