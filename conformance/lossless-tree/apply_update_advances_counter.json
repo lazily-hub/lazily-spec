@@ -1,0 +1,42 @@
+{
+  "description": "`apply_update` advances the Lamport counter past every observed op — unconditionally, and BEFORE the idempotence skip — so a write minted AFTER a sync outranks everything the sync delivered. Replica `b` reorders a leaf six times, driving its top dot to (9, 2) and leaving `y`'s sort stamp at (9, 2); `b` syncs into `a`, and only THEN does `a` reorder. A binding that advances its counter on ingest mints (10, 1), which beats (9, 2) under the (counter, peer) order, so the post-sync reorder wins on `a` and again on `b` after the return sync — both render `xy`. A binding that leaves its counter untouched mints (4, 1) instead: that loses the LWW comparison against the stamp (9, 2) it just ingested, so its own local reorder is rejected on `a` and on `b`, and both render `yx`. Note the failure is symmetric — both replicas still CONVERGE on the wrong text — so `converged` alone cannot see it and `render_on` is the load-bearing assertion. No pre-existing lossless-tree fixture could discriminate this, because every one of them is fork -> concurrent edits -> sync, and never mutates a replica AFTER a sync into it. Motivated by lazily-cpp `fb9fc80` (#lzcppapplyupdatelamport), whose `apply_update` never advanced the counter.",
+  "kind": "LosslessTree",
+  "model": "LosslessTreeCrdt",
+  "scenarios": [
+    {
+      "id": "post_sync_write_outranks_ingested_stamp",
+      "name": "post_sync_write_outranks_ingested_stamp",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            {
+              "label": "para",
+              "element": "para",
+              "children": [
+                { "label": "x", "leaf": { "kind": "raw", "text": "x" } },
+                { "label": "y", "leaf": { "kind": "raw", "text": "y" } }
+              ]
+            }
+          ]
+        }
+      },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "b", "op": "reorder", "node": "y", "after": "x" },
+        { "on": "b", "op": "reorder", "node": "y", "after": null },
+        { "on": "b", "op": "reorder", "node": "y", "after": "x" },
+        { "on": "b", "op": "reorder", "node": "y", "after": null },
+        { "on": "b", "op": "reorder", "node": "y", "after": "x" },
+        { "on": "b", "op": "reorder", "node": "y", "after": null },
+        { "sync": { "from": "b", "to": "a" } },
+        { "on": "a", "op": "reorder", "node": "y", "after": "x" },
+        { "sync": { "from": "a", "to": "b" } }
+      ],
+      "expect": {
+        "render_on": { "a": "xy", "b": "xy" },
+        "converged": ["a", "b"]
+      }
+    }
+  ]
+}

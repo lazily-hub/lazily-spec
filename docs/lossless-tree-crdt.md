@@ -134,7 +134,15 @@ live-node counts, and convergence across delivery orders:
   round-trips exactly, and editing an adjacent Raw leaf keeps the Error spans;
 - `concurrent_conflict_preserves_text` — incompatible concurrent shapes (element
   wrap vs bare leaf) both survive with no bytes dropped (text preservation wins
-  over semantic shape; adapter-level raw/error degradation layers above the core).
+  over semantic shape; adapter-level raw/error degradation layers above the core);
+- `apply_update_advances_counter` — the counter advance above, observed: a
+  replica reorders AFTER syncing in six remote reorders, and its new op must
+  outrank the stamp it just ingested. The failure is symmetric (both replicas
+  converge on the *wrong* text), so `render_on` is what sees it, not `converged`;
+- `out_of_order_delivery_buffers` — a three-op batch delivered in reversed order
+  (`deliver.order`) must drain through the dependency buffer; a binding that
+  drops what it cannot yet apply still records the dot, so the following full
+  sync returns nothing and the loss is permanent.
 
 See [Conformance Fixtures](conformance.md) for the fixture format and the binding
 replay contract.

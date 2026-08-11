@@ -878,6 +878,20 @@
       }
     },
     {
+      "title": "lossless-tree/apply_update_advances_counter.json#/scenarios/*/expect",
+      "properties": {
+        "fixture": {
+          "const": "lossless-tree/apply_update_advances_counter.json"
+        },
+        "pointer": {
+          "const": "/scenarios/*/expect"
+        },
+        "value": {
+          "$ref": "#/$defs/route_0062"
+        }
+      }
+    },
+    {
       "title": "lossless-tree/concurrent_conflict_preserves_text.json#/scenarios/*/expect",
       "properties": {
         "fixture": {
@@ -887,7 +901,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0062"
+          "$ref": "#/$defs/route_0063"
         }
       }
     },
@@ -901,7 +915,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0063"
+          "$ref": "#/$defs/route_0064"
         }
       }
     },
@@ -915,7 +929,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0064"
+          "$ref": "#/$defs/route_0065"
         }
       }
     },
@@ -929,7 +943,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0065"
+          "$ref": "#/$defs/route_0066"
         }
       }
     },
@@ -943,7 +957,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0066"
+          "$ref": "#/$defs/route_0067"
         }
       }
     },
@@ -957,7 +971,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0067"
+          "$ref": "#/$defs/route_0068"
         }
       }
     },
@@ -971,7 +985,21 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0068"
+          "$ref": "#/$defs/route_0069"
+        }
+      }
+    },
+    {
+      "title": "lossless-tree/out_of_order_delivery_buffers.json#/scenarios/*/expect",
+      "properties": {
+        "fixture": {
+          "const": "lossless-tree/out_of_order_delivery_buffers.json"
+        },
+        "pointer": {
+          "const": "/scenarios/*/expect"
+        },
+        "value": {
+          "$ref": "#/$defs/route_0070"
         }
       }
     },
@@ -985,7 +1013,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0069"
+          "$ref": "#/$defs/route_0071"
         }
       }
     },
@@ -999,7 +1027,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0070"
+          "$ref": "#/$defs/route_0072"
         }
       }
     },
@@ -1013,7 +1041,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0071"
+          "$ref": "#/$defs/route_0073"
         }
       }
     },
@@ -1027,7 +1055,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0072"
+          "$ref": "#/$defs/route_0074"
         }
       }
     },
@@ -1041,7 +1069,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0073"
+          "$ref": "#/$defs/route_0075"
         }
       }
     },
@@ -1055,7 +1083,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0074"
+          "$ref": "#/$defs/route_0076"
         }
       }
     },
@@ -1069,7 +1097,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0075"
+          "$ref": "#/$defs/route_0077"
         }
       }
     },
@@ -1083,7 +1111,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0076"
+          "$ref": "#/$defs/route_0078"
         }
       }
     },
@@ -1097,7 +1125,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0077"
+          "$ref": "#/$defs/route_0079"
         }
       }
     },
@@ -1111,7 +1139,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0078"
+          "$ref": "#/$defs/route_0080"
         }
       }
     },
@@ -1125,7 +1153,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0079"
+          "$ref": "#/$defs/route_0081"
         }
       }
     },
@@ -1139,7 +1167,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0080"
+          "$ref": "#/$defs/route_0082"
         }
       }
     },
@@ -1153,7 +1181,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0081"
+          "$ref": "#/$defs/route_0083"
         }
       }
     },
@@ -1167,7 +1195,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0082"
+          "$ref": "#/$defs/route_0084"
         }
       }
     },
@@ -1181,7 +1209,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0083"
+          "$ref": "#/$defs/route_0085"
         }
       }
     },
@@ -1195,7 +1223,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0084"
+          "$ref": "#/$defs/route_0086"
         }
       }
     },
@@ -1209,7 +1237,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0085"
+          "$ref": "#/$defs/route_0087"
         }
       }
     },
@@ -1223,7 +1251,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0086"
+          "$ref": "#/$defs/route_0088"
         }
       }
     },
@@ -1237,7 +1265,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0087"
+          "$ref": "#/$defs/route_0089"
         }
       }
     },
@@ -1251,7 +1279,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0088"
+          "$ref": "#/$defs/route_0090"
         }
       }
     },
@@ -1265,7 +1293,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0089"
+          "$ref": "#/$defs/route_0091"
         }
       }
     },
@@ -1279,7 +1307,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0090"
+          "$ref": "#/$defs/route_0092"
         }
       }
     },
@@ -1293,7 +1321,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0091"
+          "$ref": "#/$defs/route_0093"
         }
       }
     },
@@ -1307,7 +1335,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0092"
+          "$ref": "#/$defs/route_0094"
         }
       }
     },
@@ -1321,7 +1349,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0093"
+          "$ref": "#/$defs/route_0095"
         }
       }
     },
@@ -1335,7 +1363,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0094"
+          "$ref": "#/$defs/route_0096"
         }
       }
     },
@@ -1349,7 +1377,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0095"
+          "$ref": "#/$defs/route_0097"
         }
       }
     },
@@ -1363,7 +1391,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0096"
+          "$ref": "#/$defs/route_0098"
         }
       }
     },
@@ -1377,7 +1405,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0097"
+          "$ref": "#/$defs/route_0099"
         }
       }
     },
@@ -1391,7 +1419,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0098"
+          "$ref": "#/$defs/route_0100"
         }
       }
     },
@@ -1405,7 +1433,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0099"
+          "$ref": "#/$defs/route_0101"
         }
       }
     },
@@ -1419,7 +1447,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0100"
+          "$ref": "#/$defs/route_0102"
         }
       }
     },
@@ -1433,7 +1461,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0101"
+          "$ref": "#/$defs/route_0103"
         }
       }
     },
@@ -1447,7 +1475,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0102"
+          "$ref": "#/$defs/route_0104"
         }
       }
     },
@@ -1461,7 +1489,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0103"
+          "$ref": "#/$defs/route_0105"
         }
       }
     },
@@ -1475,7 +1503,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0104"
+          "$ref": "#/$defs/route_0106"
         }
       }
     },
@@ -1489,7 +1517,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0105"
+          "$ref": "#/$defs/route_0107"
         }
       }
     },
@@ -1503,7 +1531,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0106"
+          "$ref": "#/$defs/route_0108"
         }
       }
     },
@@ -1517,7 +1545,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0107"
+          "$ref": "#/$defs/route_0109"
         }
       }
     },
@@ -1531,7 +1559,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0108"
+          "$ref": "#/$defs/route_0110"
         }
       }
     },
@@ -1545,7 +1573,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0109"
+          "$ref": "#/$defs/route_0111"
         }
       }
     },
@@ -1559,7 +1587,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0110"
+          "$ref": "#/$defs/route_0112"
         }
       }
     },
@@ -1573,7 +1601,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0111"
+          "$ref": "#/$defs/route_0113"
         }
       }
     },
@@ -1587,7 +1615,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0112"
+          "$ref": "#/$defs/route_0114"
         }
       }
     },
@@ -1601,7 +1629,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0113"
+          "$ref": "#/$defs/route_0115"
         }
       }
     },
@@ -1615,7 +1643,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0114"
+          "$ref": "#/$defs/route_0116"
         }
       }
     },
@@ -1629,7 +1657,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0115"
+          "$ref": "#/$defs/route_0117"
         }
       }
     },
@@ -1643,7 +1671,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0116"
+          "$ref": "#/$defs/route_0118"
         }
       }
     },
@@ -1657,7 +1685,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0117"
+          "$ref": "#/$defs/route_0119"
         }
       }
     },
@@ -1671,7 +1699,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0118"
+          "$ref": "#/$defs/route_0120"
         }
       }
     },
@@ -1685,7 +1713,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0119"
+          "$ref": "#/$defs/route_0121"
         }
       }
     },
@@ -1699,7 +1727,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0120"
+          "$ref": "#/$defs/route_0122"
         }
       }
     },
@@ -1713,7 +1741,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0121"
+          "$ref": "#/$defs/route_0123"
         }
       }
     },
@@ -1727,7 +1755,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0122"
+          "$ref": "#/$defs/route_0124"
         }
       }
     },
@@ -1741,7 +1769,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0123"
+          "$ref": "#/$defs/route_0125"
         }
       }
     },
@@ -1755,7 +1783,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0124"
+          "$ref": "#/$defs/route_0126"
         }
       }
     },
@@ -1769,7 +1797,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0125"
+          "$ref": "#/$defs/route_0127"
         }
       }
     },
@@ -1783,7 +1811,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0126"
+          "$ref": "#/$defs/route_0128"
         }
       }
     },
@@ -1797,7 +1825,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0127"
+          "$ref": "#/$defs/route_0129"
         }
       }
     },
@@ -1811,7 +1839,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0128"
+          "$ref": "#/$defs/route_0130"
         }
       }
     },
@@ -1825,7 +1853,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0129"
+          "$ref": "#/$defs/route_0131"
         }
       }
     },
@@ -1839,7 +1867,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0130"
+          "$ref": "#/$defs/route_0132"
         }
       }
     },
@@ -1853,7 +1881,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0131"
+          "$ref": "#/$defs/route_0133"
         }
       }
     },
@@ -1867,7 +1895,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0132"
+          "$ref": "#/$defs/route_0134"
         }
       }
     },
@@ -1881,7 +1909,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0133"
+          "$ref": "#/$defs/route_0135"
         }
       }
     },
@@ -1895,7 +1923,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0134"
+          "$ref": "#/$defs/route_0136"
         }
       }
     },
@@ -1909,7 +1937,7 @@
           "const": "/frames/*/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0135"
+          "$ref": "#/$defs/route_0137"
         }
       }
     },
@@ -1923,7 +1951,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0136"
+          "$ref": "#/$defs/route_0138"
         }
       }
     },
@@ -1937,7 +1965,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0137"
+          "$ref": "#/$defs/route_0139"
         }
       }
     },
@@ -1951,7 +1979,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0138"
+          "$ref": "#/$defs/route_0140"
         }
       }
     },
@@ -1965,7 +1993,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0139"
+          "$ref": "#/$defs/route_0141"
         }
       }
     },
@@ -1979,7 +2007,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0140"
+          "$ref": "#/$defs/route_0142"
         }
       }
     },
@@ -1993,7 +2021,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0141"
+          "$ref": "#/$defs/route_0143"
         }
       }
     },
@@ -2007,7 +2035,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0142"
+          "$ref": "#/$defs/route_0144"
         }
       }
     },
@@ -2021,7 +2049,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0143"
+          "$ref": "#/$defs/route_0145"
         }
       }
     },
@@ -2035,7 +2063,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0144"
+          "$ref": "#/$defs/route_0146"
         }
       }
     },
@@ -2049,7 +2077,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0145"
+          "$ref": "#/$defs/route_0147"
         }
       }
     },
@@ -2063,7 +2091,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0146"
+          "$ref": "#/$defs/route_0148"
         }
       }
     },
@@ -2077,7 +2105,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0147"
+          "$ref": "#/$defs/route_0149"
         }
       }
     },
@@ -2091,7 +2119,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0148"
+          "$ref": "#/$defs/route_0150"
         }
       }
     },
@@ -2105,7 +2133,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0149"
+          "$ref": "#/$defs/route_0151"
         }
       }
     }
@@ -6841,9 +6869,6 @@
             "type": "string"
           }
         },
-        "live_nodes": {
-          "type": "integer"
-        },
         "render_on": {
           "type": "object",
           "additionalProperties": false,
@@ -6863,7 +6888,6 @@
       },
       "required": [
         "converged",
-        "live_nodes",
         "render_on"
       ]
     },
@@ -6913,6 +6937,9 @@
             "type": "string"
           }
         },
+        "live_nodes": {
+          "type": "integer"
+        },
         "render_on": {
           "type": "object",
           "additionalProperties": false,
@@ -6932,42 +6959,11 @@
       },
       "required": [
         "converged",
+        "live_nodes",
         "render_on"
       ]
     },
     "route_0065": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "live_nodes": {
-          "type": "integer"
-        },
-        "render": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "live_nodes",
-        "render"
-      ]
-    },
-    "route_0066": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "live_nodes": {
-          "type": "integer"
-        },
-        "render": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "live_nodes",
-        "render"
-      ]
-    },
-    "route_0067": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6995,7 +6991,40 @@
         }
       },
       "required": [
+        "converged",
         "render_on"
+      ]
+    },
+    "route_0066": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "live_nodes": {
+          "type": "integer"
+        },
+        "render": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "live_nodes",
+        "render"
+      ]
+    },
+    "route_0067": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "live_nodes": {
+          "type": "integer"
+        },
+        "render": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "live_nodes",
+        "render"
       ]
     },
     "route_0068": {
@@ -7026,11 +7055,78 @@
         }
       },
       "required": [
-        "converged",
         "render_on"
       ]
     },
     "route_0069": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "converged": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "render_on": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "string"
+            },
+            "b": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "required": [
+        "converged",
+        "render_on"
+      ]
+    },
+    "route_0070": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "converged": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "live_nodes": {
+          "type": "integer"
+        },
+        "render_on": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "string"
+            },
+            "b": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "required": [
+        "converged",
+        "live_nodes",
+        "render_on"
+      ]
+    },
+    "route_0071": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7046,7 +7142,7 @@
         "render"
       ]
     },
-    "route_0070": {
+    "route_0072": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7083,7 +7179,7 @@
         "live_nodes"
       ]
     },
-    "route_0071": {
+    "route_0073": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7145,7 +7241,7 @@
         "present_after_each_read"
       ]
     },
-    "route_0072": {
+    "route_0074": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7203,7 +7299,7 @@
         "observe"
       ]
     },
-    "route_0073": {
+    "route_0075": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7258,7 +7354,7 @@
         "observe"
       ]
     },
-    "route_0074": {
+    "route_0076": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7293,7 +7389,7 @@
         "states"
       ]
     },
-    "route_0075": {
+    "route_0077": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7358,7 +7454,7 @@
         "terminal_after_frame_index"
       ]
     },
-    "route_0076": {
+    "route_0078": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7439,7 +7535,7 @@
         "projection"
       ]
     },
-    "route_0077": {
+    "route_0079": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7500,7 +7596,7 @@
         "projection"
       ]
     },
-    "route_0078": {
+    "route_0080": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7568,7 +7664,7 @@
         "projection"
       ]
     },
-    "route_0079": {
+    "route_0081": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7657,7 +7753,7 @@
         "rpc"
       ]
     },
-    "route_0080": {
+    "route_0082": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7725,7 +7821,7 @@
         "projection"
       ]
     },
-    "route_0081": {
+    "route_0083": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7786,7 +7882,7 @@
         "projection"
       ]
     },
-    "route_0082": {
+    "route_0084": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7859,72 +7955,6 @@
         "projection_before_conflict"
       ]
     },
-    "route_0083": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "present": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "present"
-          ]
-        },
-        "present": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "1": {
-              "type": "string"
-            },
-            "2": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "required": [
-        "invalidates",
-        "present"
-      ]
-    },
-    "route_0084": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "value": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "value"
-          ]
-        },
-        "value": {
-          "anyOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "value"
-      ]
-    },
     "route_0085": {
       "type": "object",
       "additionalProperties": false,
@@ -7963,6 +7993,72 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "value"
+          ]
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "required": [
+        "invalidates",
+        "value"
+      ]
+    },
+    "route_0087": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "present": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "present"
+          ]
+        },
+        "present": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "1": {
+              "type": "string"
+            },
+            "2": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "invalidates",
+        "present"
+      ]
+    },
+    "route_0088": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
         "cells": {
           "type": "object",
           "additionalProperties": false,
@@ -7996,63 +8092,6 @@
         "decisions",
         "logical_projection",
         "ordinary_snapshot_count"
-      ]
-    },
-    "route_0087": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "output": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "output"
-          ]
-        },
-        "output": {
-          "anyOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "output"
-      ]
-    },
-    "route_0088": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "output": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "output"
-          ]
-        },
-        "output": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "invalidates",
-        "output"
       ]
     },
     "route_0089": {
@@ -8104,14 +8143,7 @@
           ]
         },
         "output": {
-          "anyOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "string"
-            }
-          ]
+          "type": "string"
         }
       },
       "required": [
@@ -8136,7 +8168,14 @@
           ]
         },
         "output": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
         }
       },
       "required": [
@@ -8180,6 +8219,63 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "output": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "output"
+          ]
+        },
+        "output": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "invalidates",
+        "output"
+      ]
+    },
+    "route_0094": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "output": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "output"
+          ]
+        },
+        "output": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "required": [
+        "invalidates",
+        "output"
+      ]
+    },
+    "route_0095": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
         "dependents_of": {
           "type": "object",
           "additionalProperties": false,
@@ -8215,7 +8311,7 @@
         "note"
       ]
     },
-    "route_0094": {
+    "route_0096": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8270,7 +8366,7 @@
         }
       }
     },
-    "route_0095": {
+    "route_0097": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8359,7 +8455,7 @@
         }
       }
     },
-    "route_0096": {
+    "route_0098": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8396,7 +8492,7 @@
         "note"
       ]
     },
-    "route_0097": {
+    "route_0099": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8468,7 +8564,7 @@
         }
       }
     },
-    "route_0098": {
+    "route_0100": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8508,7 +8604,7 @@
         "note"
       ]
     },
-    "route_0099": {
+    "route_0101": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8536,7 +8632,7 @@
         "note"
       ]
     },
-    "route_0100": {
+    "route_0102": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8567,7 +8663,7 @@
         "note"
       ]
     },
-    "route_0101": {
+    "route_0103": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8582,7 +8678,7 @@
         "note"
       ]
     },
-    "route_0102": {
+    "route_0104": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8624,7 +8720,7 @@
         "note"
       ]
     },
-    "route_0103": {
+    "route_0105": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8675,7 +8771,7 @@
         "note"
       ]
     },
-    "route_0104": {
+    "route_0106": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8714,7 +8810,7 @@
         "note"
       ]
     },
-    "route_0105": {
+    "route_0107": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8741,7 +8837,7 @@
         "note"
       ]
     },
-    "route_0106": {
+    "route_0108": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8778,7 +8874,7 @@
         }
       }
     },
-    "route_0107": {
+    "route_0109": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8844,7 +8940,7 @@
         }
       }
     },
-    "route_0108": {
+    "route_0110": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8983,7 +9079,7 @@
         "observationally_equal"
       ]
     },
-    "route_0109": {
+    "route_0111": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9018,7 +9114,7 @@
         }
       }
     },
-    "route_0110": {
+    "route_0112": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9107,63 +9203,63 @@
         }
       }
     },
-    "route_0111": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "computes_of": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "sig": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "sig"
-          ]
-        },
-        "note": {
-          "type": "string"
-        },
-        "value": {
-          "type": "integer"
-        }
-      },
-      "required": [
-        "computes_of",
-        "note"
-      ]
-    },
-    "route_0112": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "computes_of": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "sig": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "sig"
-          ]
-        },
-        "note": {
-          "type": "string"
-        },
-        "value": {
-          "type": "integer"
-        }
-      },
-      "required": [
-        "computes_of",
-        "note"
-      ]
-    },
     "route_0113": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "computes_of": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "sig": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "sig"
+          ]
+        },
+        "note": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "computes_of",
+        "note"
+      ]
+    },
+    "route_0114": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "computes_of": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "sig": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "sig"
+          ]
+        },
+        "note": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "computes_of",
+        "note"
+      ]
+    },
+    "route_0115": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9199,7 +9295,7 @@
         "note"
       ]
     },
-    "route_0114": {
+    "route_0116": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9232,7 +9328,7 @@
         "note"
       ]
     },
-    "route_0115": {
+    "route_0117": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9270,7 +9366,7 @@
         "terminal_outcome"
       ]
     },
-    "route_0116": {
+    "route_0118": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9315,7 +9411,7 @@
         }
       }
     },
-    "route_0117": {
+    "route_0119": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9347,7 +9443,7 @@
         "state_after"
       ]
     },
-    "route_0118": {
+    "route_0120": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9407,7 +9503,7 @@
         }
       }
     },
-    "route_0119": {
+    "route_0121": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9458,7 +9554,7 @@
         }
       }
     },
-    "route_0120": {
+    "route_0122": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9486,7 +9582,7 @@
         "span"
       ]
     },
-    "route_0121": {
+    "route_0123": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9515,7 +9611,7 @@
         "receiver_last_epoch_after"
       ]
     },
-    "route_0122": {
+    "route_0124": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9542,7 +9638,7 @@
         "outcome"
       ]
     },
-    "route_0123": {
+    "route_0125": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9602,7 +9698,7 @@
         }
       }
     },
-    "route_0124": {
+    "route_0126": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9638,7 +9734,7 @@
         }
       }
     },
-    "route_0125": {
+    "route_0127": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9686,7 +9782,7 @@
         "resync_requests_emitted"
       ]
     },
-    "route_0126": {
+    "route_0128": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9711,7 +9807,7 @@
         "invalidates"
       ]
     },
-    "route_0127": {
+    "route_0129": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9736,7 +9832,7 @@
         "state"
       ]
     },
-    "route_0128": {
+    "route_0130": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9761,7 +9857,7 @@
         "invalidates"
       ]
     },
-    "route_0129": {
+    "route_0131": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9786,7 +9882,7 @@
         "is_timed_out"
       ]
     },
-    "route_0130": {
+    "route_0132": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9820,7 +9916,7 @@
         "invalidates"
       ]
     },
-    "route_0131": {
+    "route_0133": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9845,7 +9941,7 @@
         "invalidates"
       ]
     },
-    "route_0132": {
+    "route_0134": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9870,7 +9966,7 @@
         "ready"
       ]
     },
-    "route_0133": {
+    "route_0135": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9907,7 +10003,7 @@
         "projection"
       ]
     },
-    "route_0134": {
+    "route_0136": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9927,7 +10023,7 @@
         "roster_sorted_ascending"
       ]
     },
-    "route_0135": {
+    "route_0137": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9966,7 +10062,7 @@
         }
       }
     },
-    "route_0136": {
+    "route_0138": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9994,7 +10090,7 @@
         "root_count"
       ]
     },
-    "route_0137": {
+    "route_0139": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10026,7 +10122,7 @@
         "root_count"
       ]
     },
-    "route_0138": {
+    "route_0140": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10066,7 +10162,7 @@
         "root_count"
       ]
     },
-    "route_0139": {
+    "route_0141": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10092,7 +10188,7 @@
         "revision"
       ]
     },
-    "route_0140": {
+    "route_0142": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10119,7 +10215,7 @@
         "outcome"
       ]
     },
-    "route_0141": {
+    "route_0143": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10138,64 +10234,6 @@
       },
       "required": [
         "outcome"
-      ]
-    },
-    "route_0142": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "count": {
-          "type": "integer"
-        },
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "count": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "count"
-          ]
-        },
-        "next_fire": {
-          "type": "integer"
-        }
-      },
-      "required": [
-        "count",
-        "invalidates",
-        "next_fire"
-      ]
-    },
-    "route_0143": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "state": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "state"
-          ]
-        },
-        "state": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "invalidates",
-        "state",
-        "value"
       ]
     },
     "route_0144": {
@@ -10228,6 +10266,64 @@
       ]
     },
     "route_0145": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "state"
+          ]
+        },
+        "state": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "invalidates",
+        "state",
+        "value"
+      ]
+    },
+    "route_0146": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "type": "integer"
+        },
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "count": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "count"
+          ]
+        },
+        "next_fire": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "count",
+        "invalidates",
+        "next_fire"
+      ]
+    },
+    "route_0147": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10274,63 +10370,6 @@
         "value"
       ]
     },
-    "route_0146": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "output": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "output"
-          ]
-        },
-        "output": {
-          "anyOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "integer"
-            }
-          ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "output"
-      ]
-    },
-    "route_0147": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "output": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "output"
-          ]
-        },
-        "output": {
-          "type": "integer"
-        }
-      },
-      "required": [
-        "invalidates",
-        "output"
-      ]
-    },
     "route_0148": {
       "type": "object",
       "additionalProperties": false,
@@ -10364,6 +10403,63 @@
       ]
     },
     "route_0149": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "output": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "output"
+          ]
+        },
+        "output": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "invalidates",
+        "output"
+      ]
+    },
+    "route_0150": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "output": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "output"
+          ]
+        },
+        "output": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        }
+      },
+      "required": [
+        "invalidates",
+        "output"
+      ]
+    },
+    "route_0151": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10708,444 +10804,454 @@
       "schema": "route_0061"
     },
     {
-      "fixture": "lossless-tree/concurrent_conflict_preserves_text.json",
+      "fixture": "lossless-tree/apply_update_advances_counter.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0062"
     },
     {
-      "fixture": "lossless-tree/concurrent_insert_same_parent.json",
+      "fixture": "lossless-tree/concurrent_conflict_preserves_text.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0063"
     },
     {
-      "fixture": "lossless-tree/concurrent_reorder_and_leaf_edit.json",
+      "fixture": "lossless-tree/concurrent_insert_same_parent.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0064"
     },
     {
-      "fixture": "lossless-tree/exact_roundtrip.json",
+      "fixture": "lossless-tree/concurrent_reorder_and_leaf_edit.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0065"
     },
     {
-      "fixture": "lossless-tree/invalid_source_roundtrip.json",
+      "fixture": "lossless-tree/exact_roundtrip.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0066"
     },
     {
-      "fixture": "lossless-tree/non_contiguous_anti_entropy.json",
+      "fixture": "lossless-tree/invalid_source_roundtrip.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0067"
     },
     {
-      "fixture": "lossless-tree/one_leaf_edit_delta.json",
+      "fixture": "lossless-tree/non_contiguous_anti_entropy.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0068"
     },
     {
-      "fixture": "lossless-tree/split_merge.json",
+      "fixture": "lossless-tree/one_leaf_edit_delta.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0069"
     },
     {
-      "fixture": "lossless-tree/token_trivia_preservation.json",
+      "fixture": "lossless-tree/out_of_order_delivery_buffers.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0070"
     },
     {
-      "fixture": "materialization/deferral_not_deallocation.json",
-      "pointer": "/expected",
+      "fixture": "lossless-tree/split_merge.json",
+      "pointer": "/scenarios/*/expect",
       "schema": "route_0071"
     },
     {
-      "fixture": "materialization/entry_kind_orthogonal_to_mode.json",
-      "pointer": "/expected",
+      "fixture": "lossless-tree/token_trivia_preservation.json",
+      "pointer": "/scenarios/*/expect",
       "schema": "route_0072"
     },
     {
-      "fixture": "materialization/observational_transparency.json",
+      "fixture": "materialization/deferral_not_deallocation.json",
       "pointer": "/expected",
       "schema": "route_0073"
     },
     {
+      "fixture": "materialization/entry_kind_orthogonal_to_mode.json",
+      "pointer": "/expected",
+      "schema": "route_0074"
+    },
+    {
+      "fixture": "materialization/observational_transparency.json",
+      "pointer": "/expected",
+      "schema": "route_0075"
+    },
+    {
       "fixture": "membership/membership_lifecycle.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0074"
+      "schema": "route_0076"
     },
     {
       "fixture": "message-passing/accepted_then_applied_receipt.json",
       "pointer": "/expect",
-      "schema": "route_0075"
+      "schema": "route_0077"
     },
     {
       "fixture": "message-passing/cancel_preempts_nonterminal.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0076"
+      "schema": "route_0078"
     },
     {
       "fixture": "message-passing/editor_route_submit.json",
       "pointer": "/expect",
-      "schema": "route_0077"
+      "schema": "route_0079"
     },
     {
       "fixture": "message-passing/reconnect_command_projection.json",
       "pointer": "/expect",
-      "schema": "route_0078"
+      "schema": "route_0080"
     },
     {
       "fixture": "message-passing/rpc_call_waits_for_terminal.json",
       "pointer": "/expect",
-      "schema": "route_0079"
+      "schema": "route_0081"
     },
     {
       "fixture": "message-passing/stale_generation_ignored.json",
       "pointer": "/expect",
-      "schema": "route_0080"
+      "schema": "route_0082"
     },
     {
       "fixture": "message-passing/sync_tmux_layout_submit.json",
       "pointer": "/expect",
-      "schema": "route_0081"
+      "schema": "route_0083"
     },
     {
       "fixture": "message-passing/terminal_conflict_fail_closed.json",
       "pointer": "/expect",
-      "schema": "route_0082"
+      "schema": "route_0084"
     },
     {
       "fixture": "presence/awareness.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0083"
+      "schema": "route_0085"
     },
     {
       "fixture": "presence/ephemeral.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0084"
+      "schema": "route_0086"
     },
     {
       "fixture": "presence/presence.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0085"
+      "schema": "route_0087"
     },
     {
       "fixture": "protobuf/graph_boundary_traces.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0086"
+      "schema": "route_0088"
     },
     {
       "fixture": "rateshape/debounce.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0087"
+      "schema": "route_0089"
     },
     {
       "fixture": "rateshape/probabilistic_sample.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0088"
+      "schema": "route_0090"
     },
     {
       "fixture": "rateshape/sample_count.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0089"
+      "schema": "route_0091"
     },
     {
       "fixture": "rateshape/sample_time.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0090"
+      "schema": "route_0092"
     },
     {
       "fixture": "rateshape/throttle_leading.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0091"
+      "schema": "route_0093"
     },
     {
       "fixture": "rateshape/throttle_trailing.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0092"
+      "schema": "route_0094"
     },
     {
       "fixture": "reactive-graph/churn_returns_to_baseline.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0093"
+      "schema": "route_0095"
     },
     {
       "fixture": "reactive-graph/cross_scope_teardown_hazard.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0094"
+      "schema": "route_0096"
     },
     {
       "fixture": "reactive-graph/disarm_disposes_nothing.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0095"
+      "schema": "route_0097"
     },
     {
       "fixture": "reactive-graph/disposal_does_not_run_surviving_effects.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0096"
+      "schema": "route_0098"
     },
     {
       "fixture": "reactive-graph/dispose_detaches_edges_both_directions.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0097"
+      "schema": "route_0099"
     },
     {
       "fixture": "reactive-graph/dispose_signal_reverts_to_lazy.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0098"
+      "schema": "route_0100"
     },
     {
       "fixture": "reactive-graph/exact_fold_paths_stay_exact.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0099"
+      "schema": "route_0101"
     },
     {
       "fixture": "reactive-graph/failed_compute_is_never_cached.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0100"
+      "schema": "route_0102"
     },
     {
       "fixture": "reactive-graph/feedback_drain_bound_reports_exhaustion.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0101"
+      "schema": "route_0103"
     },
     {
       "fixture": "reactive-graph/merge_cell_acquires_no_dependency_edge.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0102"
+      "schema": "route_0104"
     },
     {
       "fixture": "reactive-graph/merge_feed_through_a_formula_coalesces.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0103"
+      "schema": "route_0105"
     },
     {
       "fixture": "reactive-graph/merge_folds_synchronously_in_batch.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0104"
+      "schema": "route_0106"
     },
     {
       "fixture": "reactive-graph/merge_per_settled_cone_not_per_write.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0105"
+      "schema": "route_0107"
     },
     {
       "fixture": "reactive-graph/read_after_dispose_is_an_error.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0106"
+      "schema": "route_0108"
     },
     {
       "fixture": "reactive-graph/recycled_id_inherits_nothing.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0107"
+      "schema": "route_0109"
     },
     {
       "fixture": "reactive-graph/scope_teardown_equals_fold_of_disposals.json",
       "pointer": "/expected",
-      "schema": "route_0108"
+      "schema": "route_0110"
     },
     {
       "fixture": "reactive-graph/scope_teardown_equals_fold_of_disposals.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0109"
+      "schema": "route_0111"
     },
     {
       "fixture": "reactive-graph/scoping_bounds_teardown_not_visibility.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0110"
+      "schema": "route_0112"
     },
     {
       "fixture": "reactive-graph/signal_materializes_once_per_batch.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0111"
+      "schema": "route_0113"
     },
     {
       "fixture": "reactive-graph/signal_materializes_without_a_read.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0112"
+      "schema": "route_0114"
     },
     {
       "fixture": "reactive-graph/teardown_runs_members_in_reverse_creation_order.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0113"
+      "schema": "route_0115"
     },
     {
       "fixture": "reactive-graph/transitive_invalidation_reaches_depth.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0114"
+      "schema": "route_0116"
     },
     {
       "fixture": "receipts/causal_receipts.json",
       "pointer": "/assertions",
-      "schema": "route_0115"
+      "schema": "route_0117"
     },
     {
       "fixture": "reliable-sync/coalesce_bounds_outbox.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0116"
+      "schema": "route_0118"
     },
     {
       "fixture": "reliable-sync/idempotent_redelivery.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0117"
+      "schema": "route_0119"
     },
     {
       "fixture": "reliable-sync/liveness_lease_eviction.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0118"
+      "schema": "route_0120"
     },
     {
       "fixture": "reliable-sync/liveness_orset_lww.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0119"
+      "schema": "route_0121"
     },
     {
       "fixture": "reliable-sync/multi_epoch_delta.json",
       "pointer": "/assertions",
-      "schema": "route_0120"
-    },
-    {
-      "fixture": "reliable-sync/multi_epoch_delta.json",
-      "pointer": "/scenarios/*/expect",
-      "schema": "route_0121"
-    },
-    {
-      "fixture": "reliable-sync/outbox_journal_decode.json",
-      "pointer": "/scenarios/*/expect",
       "schema": "route_0122"
     },
     {
-      "fixture": "reliable-sync/outbox_replay_after_crash.json",
+      "fixture": "reliable-sync/multi_epoch_delta.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0123"
     },
     {
-      "fixture": "reliable-sync/outbox_store_protocol.json",
+      "fixture": "reliable-sync/outbox_journal_decode.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0124"
     },
     {
-      "fixture": "reliable-sync/resync_gap_converge.json",
+      "fixture": "reliable-sync/outbox_replay_after_crash.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0125"
     },
     {
-      "fixture": "resilience/bulkhead.json",
-      "pointer": "/steps/*/expected",
+      "fixture": "reliable-sync/outbox_store_protocol.json",
+      "pointer": "/scenarios/*/expect",
       "schema": "route_0126"
     },
     {
-      "fixture": "resilience/circuit_breaker.json",
-      "pointer": "/steps/*/expected",
+      "fixture": "reliable-sync/resync_gap_converge.json",
+      "pointer": "/scenarios/*/expect",
       "schema": "route_0127"
     },
     {
-      "fixture": "resilience/retry.json",
+      "fixture": "resilience/bulkhead.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0128"
     },
     {
-      "fixture": "resilience/timeout.json",
+      "fixture": "resilience/circuit_breaker.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0129"
     },
     {
-      "fixture": "service/discovery.json",
+      "fixture": "resilience/retry.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0130"
     },
     {
-      "fixture": "service/health.json",
+      "fixture": "resilience/timeout.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0131"
     },
     {
-      "fixture": "service/readiness.json",
+      "fixture": "service/discovery.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0132"
     },
     {
-      "fixture": "service/service_registry.json",
+      "fixture": "service/health.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0133"
     },
     {
-      "fixture": "signaling/anti_spoof_session.json",
-      "pointer": "/assertions",
+      "fixture": "service/readiness.json",
+      "pointer": "/steps/*/expected",
       "schema": "route_0134"
     },
     {
-      "fixture": "signaling/frames.json",
-      "pointer": "/frames/*/assertions",
+      "fixture": "service/service_registry.json",
+      "pointer": "/steps/*/expected",
       "schema": "route_0135"
     },
     {
-      "fixture": "snapshot_minimal.json",
+      "fixture": "signaling/anti_spoof_session.json",
       "pointer": "/assertions",
       "schema": "route_0136"
     },
     {
-      "fixture": "snapshot_multi_node.json",
-      "pointer": "/assertions",
+      "fixture": "signaling/frames.json",
+      "pointer": "/frames/*/assertions",
       "schema": "route_0137"
     },
     {
-      "fixture": "snapshot_shared_blob.json",
+      "fixture": "snapshot_minimal.json",
       "pointer": "/assertions",
       "schema": "route_0138"
     },
     {
-      "fixture": "stdlib/revision_barrier.json",
-      "pointer": "/scenarios/*/steps/*/expect",
+      "fixture": "snapshot_multi_node.json",
+      "pointer": "/assertions",
       "schema": "route_0139"
     },
     {
-      "fixture": "stdlib/timeout.json",
-      "pointer": "/scenarios/*/steps/*/expect",
+      "fixture": "snapshot_shared_blob.json",
+      "pointer": "/assertions",
       "schema": "route_0140"
     },
     {
-      "fixture": "stdlib/timer.json",
+      "fixture": "stdlib/revision_barrier.json",
       "pointer": "/scenarios/*/steps/*/expect",
       "schema": "route_0141"
     },
     {
-      "fixture": "temporal/cron_pattern.json",
-      "pointer": "/steps/*/expected",
+      "fixture": "stdlib/timeout.json",
+      "pointer": "/scenarios/*/steps/*/expect",
       "schema": "route_0142"
     },
     {
-      "fixture": "temporal/deadline_expiry.json",
-      "pointer": "/steps/*/expected",
+      "fixture": "stdlib/timer.json",
+      "pointer": "/scenarios/*/steps/*/expect",
       "schema": "route_0143"
     },
     {
-      "fixture": "temporal/interval_periodic.json",
+      "fixture": "temporal/cron_pattern.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0144"
     },
     {
-      "fixture": "temporal/timer_single_shot.json",
+      "fixture": "temporal/deadline_expiry.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0145"
     },
     {
-      "fixture": "windowing/session.json",
+      "fixture": "temporal/interval_periodic.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0146"
     },
     {
-      "fixture": "windowing/sliding_count.json",
+      "fixture": "temporal/timer_single_shot.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0147"
     },
     {
-      "fixture": "windowing/tumbling_count.json",
+      "fixture": "windowing/session.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0148"
     },
     {
-      "fixture": "windowing/tumbling_time.json",
+      "fixture": "windowing/sliding_count.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0149"
+    },
+    {
+      "fixture": "windowing/tumbling_count.json",
+      "pointer": "/steps/*/expected",
+      "schema": "route_0150"
+    },
+    {
+      "fixture": "windowing/tumbling_time.json",
+      "pointer": "/steps/*/expected",
+      "schema": "route_0151"
     }
   ]
 }

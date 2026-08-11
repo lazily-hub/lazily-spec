@@ -36,6 +36,7 @@ _SCHEMA_NAMES = [
     "receipts",
     "lossless-tree",
     "lossless-tree-delta",
+    "lossless-tree-fixture",
     "message-passing",
     "reliable-sync",
     "stdlib-fixture.schema",
@@ -1489,6 +1490,92 @@ def test_lossless_tree_fixture_is_well_formed(name: str) -> None:
             f"{name}: scenario {sc.get('name')!r} needs seed.peer + seed.tree"
         )
         assert "expect" in sc, f"{name}: scenario {sc['name']!r} missing 'expect'"
+
+
+@pytest.mark.parametrize("name", _lossless_tree_fixtures())
+def test_lossless_tree_fixture_validates_dsl_schema(name: str) -> None:
+    """The step schedule itself is schema'd, not just the top-level shape. Ten
+    bindings each hand-write a runner for this DSL, so a step form the corpus can
+    express but the schema never described is a step ten runners get to interpret
+    ten ways — which is exactly how `deliver` acquired a second selector."""
+    obj = json.loads((_LOSSLESS_TREE_DIR / name).read_text())
+    errors = sorted(
+        _validator("lossless-tree-fixture").iter_errors(obj), key=lambda e: list(e.path)
+    )
+    assert not errors, (
+        f"{name} does not validate against lossless-tree-fixture.json:\n"
+        + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+    )
+
+
+def _deliver_fixture(deliver: dict) -> dict:
+    """A minimal valid fixture whose single step is the given `deliver` body."""
+    return {
+        "description": "probe",
+        "kind": "LosslessTree",
+        "model": "LosslessTreeCrdt",
+        "scenarios": [
+            {
+                "id": "probe",
+                "name": "probe",
+                "seed": {
+                    "peer": 1,
+                    "tree": {
+                        "children": [
+                            {"label": "para", "element": "para", "children": []}
+                        ]
+                    },
+                },
+                "steps": [{"fork": "b", "peer": 2}, {"deliver": deliver}],
+                "expect": {"converged": ["a", "b"]},
+            }
+        ],
+    }
+
+
+def test_deliver_accepts_either_selector_alone() -> None:
+    validator = _validator("lossless-tree-fixture")
+    for deliver in (
+        {"from": "a", "to": "b", "only": [0, 2]},
+        {"from": "a", "to": "b", "order": [2, 1, 0]},
+    ):
+        errors = list(validator.iter_errors(_deliver_fixture(deliver)))
+        assert not errors, f"{deliver} must validate: {[e.message for e in errors]}"
+
+
+def test_deliver_rejects_both_selectors_at_once() -> None:
+    # `only` and `order` are mutually exclusive by decision, not by accident:
+    # composed, nothing says whether `order`'s indexes address the canonical diff
+    # or the `only` subset, and ten runners would answer that ten ways.
+    assert list(
+        _validator("lossless-tree-fixture").iter_errors(
+            _deliver_fixture({"from": "a", "to": "b", "only": [0, 1], "order": [1, 0]})
+        )
+    ), "`deliver` carrying both `only` and `order` must be rejected"
+
+
+def test_deliver_rejects_no_selector_and_repeated_index() -> None:
+    validator = _validator("lossless-tree-fixture")
+    assert list(validator.iter_errors(_deliver_fixture({"from": "a", "to": "b"}))), (
+        "`deliver` with neither selector must be rejected — a full delivery is `sync`"
+    )
+    assert list(
+        validator.iter_errors(
+            _deliver_fixture({"from": "a", "to": "b", "order": [1, 1, 0]})
+        )
+    ), "a repeated diff index must be rejected"
+
+
+def test_lossless_tree_fixture_schema_rejects_wire_leaf_kind() -> None:
+    # The DSL spells leaf kinds lowercase and the wire spells them PascalCase;
+    # each schema must reject the other's spelling or the asymmetry is decorative.
+    bad = _deliver_fixture({"from": "a", "to": "b", "only": [0]})
+    bad["scenarios"][0]["seed"]["tree"]["children"] = [
+        {"label": "l", "leaf": {"kind": "Raw", "text": "x"}}
+    ]
+    assert list(_validator("lossless-tree-fixture").iter_errors(bad)), (
+        "the fixture schema must reject the PascalCase wire spelling of a leaf kind"
+    )
 
 
 def _canonical_tree_delta() -> dict:

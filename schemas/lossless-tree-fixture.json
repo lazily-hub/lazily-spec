@@ -1,0 +1,306 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/lossless-tree-fixture.json",
+  "title": "LosslessTree conformance fixture (compute)",
+  "description": "The fixture DSL every binding replays out of `conformance/lossless-tree/`. This is COMPUTE, not a wire message: nothing here is ever serialized. `schemas/lossless-tree.json` fixes the wire vocabulary; this schema fixes the SCENARIO vocabulary — the seed tree, the step schedule, and the `expect` block — so a step form one binding invents cannot silently mean something else in another. Node ids never appear; nodes are addressed by stable string `label`s minted in the seed tree or by a `create` step, and every replica in a scenario shares one label namespace. Leaf kinds are LOWERCASE here (`raw`) and PascalCase on the wire (`Raw`); that asymmetry is deliberate, and `lossless-tree-delta.json` rejects the fixture-DSL spelling.",
+  "type": "object",
+  "required": ["description", "kind", "model", "scenarios"],
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the fixture discriminates, and — when it pins a defect a simpler scenario cannot see — why each step is load-bearing, so a later reader does not 'simplify' the discriminating structure out of it."
+    },
+    "kind": { "const": "LosslessTree" },
+    "model": { "const": "LosslessTreeCrdt" },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/Scenario" }
+    }
+  },
+  "$defs": {
+    "Scenario": {
+      "type": "object",
+      "description": "One replay: build `seed.tree` on replica `a`, run `steps` in order, then assert `expect`. A scenario carries a stable `id`/`name` because bindings otherwise resolve it positionally, and every ledger entry rebinds when one is inserted ahead of it (the scenario-identity rule).",
+      "required": ["name", "seed", "expect"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "seed": {
+          "type": "object",
+          "description": "Replica `a` is constructed with peer id `seed.peer`, then `seed.tree`'s children are created under the document root, depth-first, each one after its previous sibling. Those creates are ORDINARY ops on `a`: they consume `a`'s Lamport counter, so the first step-minted op id follows the seed's last.",
+          "required": ["peer", "tree"],
+          "additionalProperties": false,
+          "properties": {
+            "peer": { "type": "integer", "minimum": 0 },
+            "tree": { "$ref": "#/$defs/RootSpec" }
+          }
+        },
+        "steps": {
+          "type": "array",
+          "description": "Applied in listed order. There is no phase structure: a mutation step may come BEFORE or AFTER a `sync`/`deliver` into the same replica, and a post-sync mutation is the only way to observe that ingest advanced the ingesting replica's Lamport counter (a replica that mutates only before its first ingest can never mint an id that has to outrank an ingested stamp).",
+          "items": { "$ref": "#/$defs/Step" }
+        },
+        "expect": { "$ref": "#/$defs/Expect" }
+      }
+    },
+    "RootSpec": {
+      "type": "object",
+      "description": "The document root's children. The root itself is the sentinel element `{counter: 0, peer: 0}` and is never labelled.",
+      "required": ["children"],
+      "additionalProperties": false,
+      "properties": {
+        "children": { "type": "array", "items": { "$ref": "#/$defs/NodeSpec" } }
+      }
+    },
+    "NodeSpec": {
+      "description": "A seed node: an element shell (owns structure only) or a text leaf (owns one exact source span). `label` is the scenario-wide handle later steps address it by.",
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "ElementNode",
+          "required": ["label", "element"],
+          "additionalProperties": false,
+          "properties": {
+            "label": { "type": "string", "minLength": 1 },
+            "element": { "type": "string", "minLength": 1 },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/NodeSpec" } }
+          }
+        },
+        {
+          "type": "object",
+          "title": "LeafNode",
+          "required": ["label", "leaf"],
+          "additionalProperties": false,
+          "properties": {
+            "label": { "type": "string", "minLength": 1 },
+            "leaf": { "$ref": "#/$defs/LeafSpec" }
+          }
+        }
+      ]
+    },
+    "LeafSpec": {
+      "type": "object",
+      "required": ["kind", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "$ref": "#/$defs/LeafKindDsl" },
+        "text": { "type": "string" }
+      }
+    },
+    "LeafKindDsl": {
+      "description": "Fixture-DSL spelling of `LeafKind`. Lowercase here; the wire form in `lossless-tree.json` is PascalCase.",
+      "type": "string",
+      "enum": ["token", "trivia", "raw", "error"]
+    },
+    "Anchor": {
+      "description": "Sibling-position anchor: place immediately after this label's node, or at the FRONT of the parent's live children when `null`. A label that is not a live child of the target parent appends at the end.",
+      "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+    },
+    "Step": {
+      "description": "One scheduled action. Externally tagged by its distinguishing key (`fork` / `clone` / `sync` / `deliver` / `on`), the same idiom the op vocabulary uses on the wire.",
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "Fork",
+          "description": "Fork replica `a`'s current state into a new replica named by `fork`, running under peer id `peer`. The fork inherits `a`'s log, frontier and Lamport counter, so its first minted op id continues from there.",
+          "required": ["fork", "peer"],
+          "additionalProperties": false,
+          "properties": {
+            "fork": { "type": "string", "minLength": 1 },
+            "peer": { "type": "integer", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "title": "Clone",
+          "description": "Duplicate an existing replica under a new name, peer id INCLUDED — a second view of the same peer, not a new participant.",
+          "required": ["clone", "from"],
+          "additionalProperties": false,
+          "properties": {
+            "clone": { "type": "string", "minLength": 1 },
+            "from": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "title": "Sync",
+          "description": "One anti-entropy round in ONE direction: `diff(to.frontier())` on `from`, applied to `to` as a single `apply_update`. Delivers every op `to` lacks, in canonical dotted order.",
+          "required": ["sync"],
+          "additionalProperties": false,
+          "properties": {
+            "sync": {
+              "type": "object",
+              "required": ["from", "to"],
+              "additionalProperties": false,
+              "properties": {
+                "from": { "type": "string", "minLength": 1 },
+                "to": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "title": "Deliver",
+          "description": "A DELIBERATELY IMPERFECT anti-entropy round. The runner computes the same `diff(to.frontier())` a `sync` would, then delivers a chosen subset/sequence of it as ONE `apply_update` call on `to`. Both selectors index the CANONICAL diff — the ops sorted by dotted `(counter, peer)` id — and both are 0-based. Exactly one selector is present: `only` and `order` are MUTUALLY EXCLUSIVE, never composed, because composing them would leave 'do the indexes in `order` address the diff or the `only` subset?' to be answered ten different ways.",
+          "required": ["deliver"],
+          "additionalProperties": false,
+          "properties": {
+            "deliver": {
+              "type": "object",
+              "required": ["from", "to"],
+              "additionalProperties": false,
+              "oneOf": [
+                { "title": "subset in canonical order", "required": ["only"] },
+                { "title": "explicit delivery sequence", "required": ["order"] }
+              ],
+              "properties": {
+                "from": { "type": "string", "minLength": 1 },
+                "to": { "type": "string", "minLength": 1 },
+                "only": {
+                  "$ref": "#/$defs/DiffIndexList",
+                  "description": "Deliver exactly these diff entries, in CANONICAL order regardless of how they are listed here. Models a delivery hole: the omitted dots stay missing and re-requestable."
+                },
+                "order": {
+                  "$ref": "#/$defs/DiffIndexList",
+                  "description": "Deliver exactly these diff entries, in THE LISTED SEQUENCE, as one `apply_update` batch — the runner must NOT re-sort them and must NOT split them across calls. Models a transport that reorders within a batch, which is the only way to exercise the dependency buffer: an op whose parent/target or `prev` has not arrived must be held and retried as later ops in the same batch land, not dropped. Need not be a permutation of the whole diff; the listed subset is what gets delivered, in the listed sequence."
+                }
+              }
+            }
+          }
+        },
+        { "$ref": "#/$defs/OpStep" }
+      ]
+    },
+    "DiffIndexList": {
+      "type": "array",
+      "description": "0-based indexes into the canonically ordered diff. Distinct (a repeat would assert idempotence, which `sync` already covers) and in range — a runner fails the fixture rather than clamping an out-of-range index.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "integer", "minimum": 0 }
+    },
+    "OpStep": {
+      "description": "A local mutation on the replica named by `on`, minting one op under that replica's peer id and Lamport counter. Legal at any point in the schedule, including after an ingest into that same replica.",
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "create",
+          "description": "Create an element shell or a text leaf under `parent`, positioned after `after`. `label` names the new node for later steps.",
+          "required": ["on", "op", "parent", "label"],
+          "additionalProperties": false,
+          "properties": {
+            "on": { "type": "string", "minLength": 1 },
+            "op": { "const": "create" },
+            "parent": { "type": "string", "minLength": 1 },
+            "after": { "$ref": "#/$defs/Anchor" },
+            "label": { "type": "string", "minLength": 1 },
+            "element": { "type": "string", "minLength": 1 },
+            "leaf": { "$ref": "#/$defs/LeafSpec" }
+          },
+          "oneOf": [{ "required": ["element"] }, { "required": ["leaf"] }]
+        },
+        {
+          "type": "object",
+          "title": "edit_leaf",
+          "description": "Delete `delete_bytes` and insert `insert` at leaf-local UTF-8 byte offset `at_byte`. Offsets are UTF-8 bytes, must land on a char boundary, and are NEVER UTF-16 code units.",
+          "required": ["on", "op", "node", "at_byte"],
+          "additionalProperties": false,
+          "properties": {
+            "on": { "type": "string", "minLength": 1 },
+            "op": { "const": "edit_leaf" },
+            "node": { "type": "string", "minLength": 1 },
+            "at_byte": { "type": "integer", "minimum": 0 },
+            "delete_bytes": { "type": "integer", "minimum": 0, "default": 0 },
+            "insert": { "type": "string", "default": "" }
+          }
+        },
+        {
+          "type": "object",
+          "title": "split",
+          "description": "Split a leaf at UTF-8 byte offset `at_byte` into two adjacent leaves of the same kind; the tail becomes a new node labelled `new_label`.",
+          "required": ["on", "op", "node", "at_byte", "new_label"],
+          "additionalProperties": false,
+          "properties": {
+            "on": { "type": "string", "minLength": 1 },
+            "op": { "const": "split" },
+            "node": { "type": "string", "minLength": 1 },
+            "at_byte": { "type": "integer", "minimum": 0 },
+            "new_label": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "title": "merge_leaves",
+          "description": "Merge `right` into `left` when they are adjacent live leaf siblings; total rendered text is unchanged.",
+          "required": ["on", "op", "left", "right"],
+          "additionalProperties": false,
+          "properties": {
+            "on": { "type": "string", "minLength": 1 },
+            "op": { "const": "merge_leaves" },
+            "left": { "type": "string", "minLength": 1 },
+            "right": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "title": "reorder",
+          "description": "LWW position reassignment within the current parent: move `node` to just after `after` (front when `null`). Identity and payload are preserved, and the op's own dotted id is the stamp the LWW comparison uses.",
+          "required": ["on", "op", "node"],
+          "additionalProperties": false,
+          "properties": {
+            "on": { "type": "string", "minLength": 1 },
+            "op": { "const": "reorder" },
+            "node": { "type": "string", "minLength": 1 },
+            "after": { "$ref": "#/$defs/Anchor" }
+          }
+        },
+        {
+          "type": "object",
+          "title": "tombstone",
+          "description": "Tombstone `node` (sticky; its subtree renders away with it).",
+          "required": ["on", "op", "node"],
+          "additionalProperties": false,
+          "properties": {
+            "on": { "type": "string", "minLength": 1 },
+            "op": { "const": "tombstone" },
+            "node": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "Expect": {
+      "type": "object",
+      "description": "Every key is optional, and a binding must bind each one by PRESENCE — a missing key is a key the corpus did not claim, never a silently skipped assertion — while an unknown key is a hard error.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "render": {
+          "type": "string",
+          "description": "Exact rendered text of replica `a`. The lossless invariant `render(tree) == source_text` is what this ultimately checks."
+        },
+        "render_on": {
+          "type": "object",
+          "description": "Exact rendered text per named replica. Load-bearing wherever a defect is SYMMETRIC — two replicas can converge on the wrong text, which `converged` alone cannot see.",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string" }
+        },
+        "live_nodes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Live element+leaf count on replica `a`, excluding the root."
+        },
+        "converged": {
+          "type": "array",
+          "description": "These replicas must render identically. A convergence claim, not a correctness claim — pair it with `render`/`render_on` to pin WHICH text they converged on.",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

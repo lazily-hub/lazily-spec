@@ -696,6 +696,31 @@ the collections fixtures: a binding builds the `seed.tree` on replica `a`
 of replicas that must render identically). Byte offsets in ops (`at_byte`) are
 **UTF-8** and must land on a char boundary.
 
+The step vocabulary itself is schema'd by `schemas/lossless-tree-fixture.json`
+(compute, not wire), so a step form the corpus can express is a step every runner
+has been told how to read. Two properties of the schedule are load-bearing and
+easy to miss:
+
+- **A mutation step may follow a `sync`/`deliver` into the same replica.** There
+  is no fork → edit → sync phase structure; `steps` are simply applied in order.
+  A post-sync mutation is the only way to observe that ingest advanced the
+  ingesting replica's Lamport counter, because a replica that only mutates before
+  its first ingest never has to mint an id that outranks an ingested stamp.
+- **`deliver` carries exactly one selector, `only` or `order`** — they are
+  mutually exclusive and are never composed. Both are 0-based indexes into the
+  *canonically ordered* diff (`diff(to.frontier())` on `from`, sorted by dotted
+  `(counter, peer)` id), must be distinct, and must be in range; a runner fails
+  the fixture rather than clamping. `only` delivers that subset **in canonical
+  order** however it is listed — a delivery hole, where the omitted dots stay
+  missing and re-requestable. `order` delivers the listed entries **in the listed
+  sequence, as one `apply_update` batch**: a runner must not re-sort them and must
+  not split them across calls, because the point is to hand a replica an op whose
+  parent/target or `prev` has not arrived yet and require it to buffer and retry
+  rather than drop. `order` need not be a permutation of the whole diff. Composing
+  the two is disallowed on purpose: nothing would say whether `order`'s indexes
+  address the diff or the `only` subset, and ten runners would answer that ten
+  ways.
+
 | Fixture | Covers |
 |---------|--------|
 | `lossless-tree/exact_roundtrip.json` | Token/Trivia/Raw/Error leaves incl. an invalid span + multi-byte text; `render == source` |
@@ -707,6 +732,8 @@ of replicas that must render identically). Byte offsets in ops (`at_byte`) are
 | `lossless-tree/token_trivia_preservation.json` | a leaf edit leaves adjacent Token/Trivia leaves byte-for-byte unchanged |
 | `lossless-tree/invalid_source_roundtrip.json` | unclosed fence/comment kept as Error leaves round-trips exactly; editing an adjacent Raw leaf keeps the Error spans |
 | `lossless-tree/concurrent_conflict_preserves_text.json` | incompatible concurrent shapes both survive with no bytes dropped (text preservation wins over semantic shape) |
+| `lossless-tree/apply_update_advances_counter.json` | ingest advances the Lamport counter, so a write minted AFTER a sync outranks the stamps that sync delivered (post-sync mutation step) |
+| `lossless-tree/out_of_order_delivery_buffers.json` | a reversed delivery batch (`deliver.order`) drains through the dependency buffer; a dropped op is never repaired by a later sync |
 
 The op-delta **wire** form additionally validates against `schemas/lossless-tree.json`
 (vocabulary) + `schemas/lossless-tree-delta.json` (the `TreeUpdate` message); the

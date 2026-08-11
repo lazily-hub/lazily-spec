@@ -1,0 +1,32 @@
+{
+  "description": "`apply_update` BUFFERS an op whose dependency has not arrived and retries it as later ops in the same batch land, rather than dropping it while recording its dot. Replica `b` holds only the empty `para` shell; `a` then creates an element `outer` under it, creates a leaf `inner` under `outer`, and edits `inner`. The batch is delivered in strictly REVERSED order (`deliver.order: [2, 1, 0]`) as ONE `apply_update` call, so every op arrives before the op it depends on. A binding with a dependency buffer drains it in a retry loop — the create of `outer` applies, which unblocks the create of `inner`, which unblocks the `LeafEdit` — and `b` renders `deepX`. A binding without one drops what it cannot apply while still recording the dot, so `b` renders `deep` and the following full `sync` returns NOTHING to repair it: both frontiers already hold every op. That is why the fixture carries a second `sync` and still asserts `converged` — the loss is PERMANENT, not eventually repaired, and only the second sync proves the difference. All THREE ops are required and this scenario must not be 'simplified' to two: established empirically, a create-before-its-parent alone does not discriminate in at least one binding, because `apply_op` pushes the child into the parent's child list whether or not the parent exists yet, so the create is accidentally recovered when the parent lands. The `LeafEdit` is the op that is genuinely destroyed, and it needs both creates ahead of it to be out of order. Motivated by lazily-cpp `fb9fc80` (#lzcppapplyupdatelamport), whose `apply_update` never used its dependency buffer.",
+  "kind": "LosslessTree",
+  "model": "LosslessTreeCrdt",
+  "scenarios": [
+    {
+      "id": "reversed_batch_drains_through_buffer",
+      "name": "reversed_batch_drains_through_buffer",
+      "seed": {
+        "peer": 1,
+        "tree": {
+          "children": [
+            { "label": "para", "element": "para", "children": [] }
+          ]
+        }
+      },
+      "steps": [
+        { "fork": "b", "peer": 2 },
+        { "on": "a", "op": "create", "parent": "para", "after": null, "label": "outer", "element": "wrap" },
+        { "on": "a", "op": "create", "parent": "outer", "after": null, "label": "inner", "leaf": { "kind": "raw", "text": "deep" } },
+        { "on": "a", "op": "edit_leaf", "node": "inner", "at_byte": 4, "delete_bytes": 0, "insert": "X" },
+        { "deliver": { "from": "a", "to": "b", "order": [2, 1, 0] } },
+        { "sync": { "from": "a", "to": "b" } }
+      ],
+      "expect": {
+        "render_on": { "a": "deepX", "b": "deepX" },
+        "converged": ["a", "b"],
+        "live_nodes": 3
+      }
+    }
+  ]
+}
