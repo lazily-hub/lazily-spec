@@ -127,7 +127,17 @@ const PARTIAL = "~";
 // Every one of these must be read, or the fixtures it excludes silently count as
 // replayed (see the header). Adding a binding that declares a new one is a
 // change to this file, not just to that binding.
-const SCOPING_ARRAYS = new Set(["REQUIRED_AREAS", "IMPLEMENTED_FAMILY_PREFIXES"]);
+// `EXCUSED_AREAS` (cpp) is the exact COMPLEMENT of `REQUIRED_AREAS` — that guard
+// enforces the partition itself — so it is read here through the array it
+// complements: `replays()` already excludes every fixture whose area is absent
+// from `REQUIRED_AREAS`, which is precisely the set `EXCUSED_AREAS` names. It is
+// classified scoping rather than non-scoping because it IS a narrowing ledger;
+// the read is satisfied by the complement, not waived.
+const SCOPING_ARRAYS = new Set([
+  "REQUIRED_AREAS",
+  "IMPLEMENTED_FAMILY_PREFIXES",
+  "EXCUSED_AREAS",
+]);
 
 // Arrays that exist in these guards for reasons unrelated to WHICH canonical
 // fixture files the binding replays: gap ledgers at a finer grain than the
@@ -141,6 +151,10 @@ const NON_SCOPING_ARRAYS = new Set([
   "KNOWN_UNBOUND_BLOCKS", // assertion-block-level gaps
   "TEST_DIRS", // where the guard looks for test sources
   "EXTS", // which extensions count as test sources
+  // A baseline of hard-coded `../lazily-spec/...` path literals (rs), which is
+  // about how a runner RESOLVES the corpus root, not about which fixtures its
+  // ledger speaks for. Declared empty there and still non-scoping when it is not.
+  "CORPUS_ROOT_BASELINE",
 ]);
 
 /// Extract a bash array literal's entries, skipping comment lines.
