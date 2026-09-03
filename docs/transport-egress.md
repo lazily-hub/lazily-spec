@@ -103,6 +103,9 @@ async-coloured.
 Egress does not duplicate existing storage or flow-control primitives:
 
 - use `RelayCell` / `Outbox` ahead of enqueue for conflation and backpressure;
+- use [`LatestDurableProjectionCore`](durable-sinks.md#latest-durable-projection-core-lzlatestdurableprojection)
+  when only the latest keyed projection must reach a durable sink with
+  single-flight claims, monotone epochs, and stale-actor fencing;
 - use `SpillStore` for overflow-to-storage;
 - use `DurableOutbox` for durable recovery; and
 - use transport framing outside the core.
@@ -125,4 +128,3 @@ The Lean model proves:
 - reconnect strictly advances generation while preserving the ACK watermark;
   and
 - permitted retry attempts are bounded by the configured budget.
-

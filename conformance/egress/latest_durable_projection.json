@@ -1,0 +1,436 @@
+{
+  "description": "Latest durable projection keeps one claimed effect per key, conflates only pending values, advances a monotone durable frontier, retries the latest value, and fences stale sink generations.",
+  "kind": "LatestDurableProjection",
+  "model": "LatestDurableProjectionCore",
+  "scenarios": [
+    {
+      "id": "latest_projection_supersedes_pending_without_false_ack",
+      "generation": 1,
+      "steps": [
+        {
+          "op": { "type": "upsert_desired", "key": "doc", "epoch": 1, "value": "A" },
+          "returns": { "upsert": "accepted" },
+          "expected": {
+            "generation": 1,
+            "entries": [
+              {
+                "key": "doc",
+                "desired": { "epoch": 1, "value": "A" },
+                "inflight": null,
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "upsert_desired", "key": "doc", "epoch": 2, "value": "B" },
+          "returns": { "upsert": "accepted" },
+          "expected": {
+            "generation": 1,
+            "entries": [
+              {
+                "key": "doc",
+                "desired": { "epoch": 2, "value": "B" },
+                "inflight": null,
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "claim", "key": "doc", "generation": 1 },
+          "returns": {
+            "claim": "claimed",
+            "envelope": { "generation": 1, "key": "doc", "epoch": 2, "value": "B" }
+          },
+          "expected": {
+            "generation": 1,
+            "entries": [
+              {
+                "key": "doc",
+                "desired": null,
+                "inflight": { "generation": 1, "key": "doc", "epoch": 2, "value": "B" },
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "upsert_desired", "key": "doc", "epoch": 3, "value": "C" },
+          "returns": { "upsert": "accepted" },
+          "expected": {
+            "generation": 1,
+            "entries": [
+              {
+                "key": "doc",
+                "desired": { "epoch": 3, "value": "C" },
+                "inflight": { "generation": 1, "key": "doc", "epoch": 2, "value": "B" },
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "claim", "key": "doc", "generation": 1 },
+          "returns": { "claim": "busy" },
+          "expected": {
+            "generation": 1,
+            "entries": [
+              {
+                "key": "doc",
+                "desired": { "epoch": 3, "value": "C" },
+                "inflight": { "generation": 1, "key": "doc", "epoch": 2, "value": "B" },
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "ack_applied", "key": "doc", "generation": 1, "epoch": 2 },
+          "returns": { "ack": "advanced", "durable_through": 2 },
+          "expected": {
+            "generation": 1,
+            "entries": [
+              {
+                "key": "doc",
+                "desired": { "epoch": 3, "value": "C" },
+                "inflight": null,
+                "durable_through": 2
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "claim", "key": "doc", "generation": 1 },
+          "returns": {
+            "claim": "claimed",
+            "envelope": { "generation": 1, "key": "doc", "epoch": 3, "value": "C" }
+          },
+          "expected": {
+            "generation": 1,
+            "entries": [
+              {
+                "key": "doc",
+                "desired": null,
+                "inflight": { "generation": 1, "key": "doc", "epoch": 3, "value": "C" },
+                "durable_through": 2
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "fail_retryable", "key": "doc", "generation": 1, "epoch": 3 },
+          "returns": { "failure": "pending" },
+          "expected": {
+            "generation": 1,
+            "entries": [
+              {
+                "key": "doc",
+                "desired": { "epoch": 3, "value": "C" },
+                "inflight": null,
+                "durable_through": 2
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "claim", "key": "doc", "generation": 1 },
+          "returns": {
+            "claim": "claimed",
+            "envelope": { "generation": 1, "key": "doc", "epoch": 3, "value": "C" }
+          },
+          "expected": {
+            "generation": 1,
+            "entries": [
+              {
+                "key": "doc",
+                "desired": null,
+                "inflight": { "generation": 1, "key": "doc", "epoch": 3, "value": "C" },
+                "durable_through": 2
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "ack_applied", "key": "doc", "generation": 1, "epoch": 3 },
+          "returns": { "ack": "advanced", "durable_through": 3 },
+          "expected": {
+            "generation": 1,
+            "entries": [
+              {
+                "key": "doc",
+                "desired": null,
+                "inflight": null,
+                "durable_through": 3
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "keyed_single_flight_reconnect_fences_stale_actor",
+      "generation": 7,
+      "steps": [
+        {
+          "op": { "type": "upsert_desired", "key": "a", "epoch": 1, "value": "a1" },
+          "returns": { "upsert": "accepted" },
+          "expected": {
+            "generation": 7,
+            "entries": [
+              {
+                "key": "a",
+                "desired": { "epoch": 1, "value": "a1" },
+                "inflight": null,
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "upsert_desired", "key": "b", "epoch": 1, "value": "b1" },
+          "returns": { "upsert": "accepted" },
+          "expected": {
+            "generation": 7,
+            "entries": [
+              {
+                "key": "a",
+                "desired": { "epoch": 1, "value": "a1" },
+                "inflight": null,
+                "durable_through": null
+              },
+              {
+                "key": "b",
+                "desired": { "epoch": 1, "value": "b1" },
+                "inflight": null,
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "claim", "key": "a", "generation": 7 },
+          "returns": {
+            "claim": "claimed",
+            "envelope": { "generation": 7, "key": "a", "epoch": 1, "value": "a1" }
+          },
+          "expected": {
+            "generation": 7,
+            "entries": [
+              {
+                "key": "a",
+                "desired": null,
+                "inflight": { "generation": 7, "key": "a", "epoch": 1, "value": "a1" },
+                "durable_through": null
+              },
+              {
+                "key": "b",
+                "desired": { "epoch": 1, "value": "b1" },
+                "inflight": null,
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "claim", "key": "a", "generation": 7 },
+          "returns": { "claim": "busy" },
+          "expected": {
+            "generation": 7,
+            "entries": [
+              {
+                "key": "a",
+                "desired": null,
+                "inflight": { "generation": 7, "key": "a", "epoch": 1, "value": "a1" },
+                "durable_through": null
+              },
+              {
+                "key": "b",
+                "desired": { "epoch": 1, "value": "b1" },
+                "inflight": null,
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "claim", "key": "b", "generation": 7 },
+          "returns": {
+            "claim": "claimed",
+            "envelope": { "generation": 7, "key": "b", "epoch": 1, "value": "b1" }
+          },
+          "expected": {
+            "generation": 7,
+            "entries": [
+              {
+                "key": "a",
+                "desired": null,
+                "inflight": { "generation": 7, "key": "a", "epoch": 1, "value": "a1" },
+                "durable_through": null
+              },
+              {
+                "key": "b",
+                "desired": null,
+                "inflight": { "generation": 7, "key": "b", "epoch": 1, "value": "b1" },
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "upsert_desired", "key": "b", "epoch": 2, "value": "b2" },
+          "returns": { "upsert": "accepted" },
+          "expected": {
+            "generation": 7,
+            "entries": [
+              {
+                "key": "a",
+                "desired": null,
+                "inflight": { "generation": 7, "key": "a", "epoch": 1, "value": "a1" },
+                "durable_through": null
+              },
+              {
+                "key": "b",
+                "desired": { "epoch": 2, "value": "b2" },
+                "inflight": { "generation": 7, "key": "b", "epoch": 1, "value": "b1" },
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "reconnect", "generation": 8 },
+          "returns": { "reconnect": "advanced", "generation": 8, "requeued": 1, "superseded": 1 },
+          "expected": {
+            "generation": 8,
+            "entries": [
+              {
+                "key": "a",
+                "desired": { "epoch": 1, "value": "a1" },
+                "inflight": null,
+                "durable_through": null
+              },
+              {
+                "key": "b",
+                "desired": { "epoch": 2, "value": "b2" },
+                "inflight": null,
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "ack_applied", "key": "a", "generation": 7, "epoch": 1 },
+          "returns": { "ack": "stale_generation", "current": 8 },
+          "expected": {
+            "generation": 8,
+            "entries": [
+              {
+                "key": "a",
+                "desired": { "epoch": 1, "value": "a1" },
+                "inflight": null,
+                "durable_through": null
+              },
+              {
+                "key": "b",
+                "desired": { "epoch": 2, "value": "b2" },
+                "inflight": null,
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "claim", "key": "a", "generation": 8 },
+          "returns": {
+            "claim": "claimed",
+            "envelope": { "generation": 8, "key": "a", "epoch": 1, "value": "a1" }
+          },
+          "expected": {
+            "generation": 8,
+            "entries": [
+              {
+                "key": "a",
+                "desired": null,
+                "inflight": { "generation": 8, "key": "a", "epoch": 1, "value": "a1" },
+                "durable_through": null
+              },
+              {
+                "key": "b",
+                "desired": { "epoch": 2, "value": "b2" },
+                "inflight": null,
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "ack_applied", "key": "a", "generation": 8, "epoch": 1 },
+          "returns": { "ack": "advanced", "durable_through": 1 },
+          "expected": {
+            "generation": 8,
+            "entries": [
+              {
+                "key": "a",
+                "desired": null,
+                "inflight": null,
+                "durable_through": 1
+              },
+              {
+                "key": "b",
+                "desired": { "epoch": 2, "value": "b2" },
+                "inflight": null,
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "claim", "key": "b", "generation": 8 },
+          "returns": {
+            "claim": "claimed",
+            "envelope": { "generation": 8, "key": "b", "epoch": 2, "value": "b2" }
+          },
+          "expected": {
+            "generation": 8,
+            "entries": [
+              {
+                "key": "a",
+                "desired": null,
+                "inflight": null,
+                "durable_through": 1
+              },
+              {
+                "key": "b",
+                "desired": null,
+                "inflight": { "generation": 8, "key": "b", "epoch": 2, "value": "b2" },
+                "durable_through": null
+              }
+            ]
+          }
+        },
+        {
+          "op": { "type": "ack_applied", "key": "b", "generation": 8, "epoch": 2 },
+          "returns": { "ack": "advanced", "durable_through": 2 },
+          "expected": {
+            "generation": 8,
+            "entries": [
+              {
+                "key": "a",
+                "desired": null,
+                "inflight": null,
+                "durable_through": 1
+              },
+              {
+                "key": "b",
+                "desired": null,
+                "inflight": null,
+                "durable_through": 2
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -77,6 +77,75 @@ Those two answers fix the shape:
 | Durable before visible | Ordered fact + application acknowledgement cell | Visibility waits for monotone `durable_through` |
 | Ephemeral state | `Presence` / `Ephemeral` primitives | Persistence rejected |
 
+## Latest durable projection core (`#lzlatestdurableprojection`)
+
+An ordinary `Effect` coalesces settled graph writes, but by itself it does not
+own an in-flight claim. If a newer projection appears while the sink is writing,
+an application-local boolean such as `saving` cannot tell whether a late success
+belongs to the current projection, whether it may clear pending work, or whether
+it came from an actor incarnation that has already disconnected.
+
+`LatestDurableProjectionCore<K, V>` is the canonical pure state machine for that
+boundary. It is keyed so unrelated documents, records, or resources may progress
+independently. The core owns one global sink `generation` and, for every key, at
+most one each of:
+
+- `desired: Desired<V> { epoch, value }` — the latest projection not currently
+  claimed;
+- `inflight: LatestDurableEnvelope<K, V> { generation, key, epoch, value }` —
+  the exact projection claimed by the sink Effect; and
+- `durable_through: Option<u64>` — the monotone frontier known to be represented
+  by durable state.
+
+Epochs are caller-issued and MUST increase monotonically per key. An epoch names
+one immutable value; reusing an epoch for another value is a conflict. The core
+does not retain intermediate pending values: accepting a newer desired epoch
+replaces an older `desired`, but MUST NOT advance `durable_through` merely because
+the older value was superseded.
+
+The normative operations and outcomes are:
+
+| Operation | Outcomes | State transition |
+| --- | --- | --- |
+| `upsert_desired(key, epoch, value)` | `Accepted`, `Unchanged`, `AlreadyDurable`, `StaleEpoch`, `EpochConflict` | A strictly newer epoch becomes `desired`, replacing only the older pending `desired`. Equal epoch/value is idempotent; equal epoch/different value fails closed. An epoch at or below `durable_through` is already durable, while an epoch older than retained desired/in-flight work is stale. |
+| `claim(key, generation)` | `Claimed(envelope)`, `Empty`, `Busy`, `StaleGeneration` | With the current generation, moves `desired` to `inflight`. A key with an in-flight envelope is busy even when it also has a newer desired value. |
+| `ack_applied(key, generation, epoch)` | `Advanced { durable_through }`, `Unchanged`, `UnknownEpoch`, `StaleGeneration` | Only an exact current-generation in-flight envelope may advance the frontier and clear itself. A duplicate acknowledgement at or below the existing frontier is unchanged. No acknowledgement clears a newer `desired`. |
+| `fail_retryable(key, generation, epoch)` | `Pending`, `Superseded`, `UnknownEpoch`, `StaleGeneration` | An exact failure clears `inflight`. It restores that value as `desired` when no newer value exists; otherwise the newer desired value remains and the failed older value is reported superseded. The latest value therefore remains retryable. |
+| `reconnect(new_generation)` | `Advanced`, `Unchanged`, `StaleGeneration` | A strictly newer generation fences the old sink actor. Each in-flight value is restored to `desired` unless a newer desired value already supersedes it; all in-flight slots are then cleared. The durable frontier never moves. |
+
+`ack_applied` and `fail_retryable` carry the key, generation, and epoch from the
+claimed envelope. A stale-generation or unknown-epoch result MUST leave every
+entry and every reader version unchanged. In particular, a success from a
+disconnected sink actor cannot acknowledge work claimed by its replacement.
+
+The graph shell is deliberately a reactive projection, not a second command
+actor:
+
+```text
+Source<K,V,epoch> ─▶ Computed latest projection ─▶ upsert_desired
+                                                    │
+                                      keyed single-flight Effect
+                                                    │ claim envelope
+                                                    ▼
+                                         application-owned sink
+                                                    │
+                                  ack_applied / fail_retryable Source
+                                                    └──────▶ core readers
+```
+
+There MUST be at most one claimed sink effect per key. Different keys may be in
+flight concurrently. Failure must not create an immediate reactive spin: a shell
+re-attempts retained desired work when its retry policy says the sink is ready,
+when a newer desired projection arrives, or after a reconnect. If a sink adapter
+also owns an ordered per-key mutation lane (for example an editor document
+worker), it MUST execute the claimed write on that same lane after previously
+accepted mutations; creating a separate command actor would reintroduce the race
+this primitive removes.
+
+This core is for latest recoverable state only. It MUST NOT be used when every
+accepted intermediate value is a fact that must survive; that remains the
+`TopicCell` / `DurableOutbox` contract.
+
 ## Application-owned sink trait
 
 The sink is a narrow, write-only trait owned by the application. The reactive
@@ -90,13 +159,14 @@ store API is deliberately minimal — `upsert_latest` for a projection,
 `append_fact` for history — and always carries the epoch so success can advance a
 monotone `durable_through`.
 
-## Example 1 — coalesced current-state projection
+## Example 1 — claimed current-state projection
 
 A `Computed` projects the actor's current state. An `Effect` reads it and
-upserts only the settled value; intermediate batch values are coalesced away by
-Lazily's existing effect-batch dedup, so the sink sees one write per batch.
-Acknowledgement advances `durable_through`; a sink failure flips the live actor
-to `retrying` without reloading storage.
+upserts only the settled value into `LatestDurableProjectionCore`; intermediate
+batch values are coalesced away by Lazily's existing effect-batch dedup, and
+pending values are further conflated by the core. A keyed sink Effect claims the
+exact envelope it writes. Acknowledgement advances `durable_through`; a sink
+failure returns the latest desired value to pending without reloading storage.
 
 ```rust
 // Application-owned, write-only. No read/CAS surface reaches the runtime effect.
@@ -105,19 +175,29 @@ trait ProjectionSink {
 }
 
 // Live state. Pure reducer; no I/O.
-let live_state: Source<ActorState> = ctx.source(initial);
-let epoch:     Source<u64>         = ctx.source(0);
+let live_state: Source<ActorState>  = ctx.source(initial);
+let epoch:      Source<u64>          = ctx.source(0);
 let projected: Computed<ActorState> = ctx.computed(|c| c.get(live_state).clone());
+let durable = LatestDurableProjectionCore::new(/* generation = */ 1);
 
-// Durable I/O runs from an Effect — never reads storage to decide a transition.
+// Settled projection Effect. The core, not the callback, owns retained intent.
 ctx.effect(|c| {
     let s = c.get(projected);
     let e = c.get(epoch);
-    match sink.upsert_latest(e, s) {
-        Ok(())  => c.set(durable_through, e),            // monotone ack
-        Err(_)  => c.set(status, Status::Retrying),      // failure stays live
-    }
+    durable.upsert_desired(ActorKey, e, s.clone());
 });
+
+// Keyed single-flight sink Effect. Real shells schedule retries without spinning.
+if let Claimed(envelope) = durable.claim(ActorKey, sink_generation) {
+    match sink.upsert_latest(envelope.epoch, &envelope.value) {
+        Ok(()) => durable.ack_applied(
+            envelope.key, envelope.generation, envelope.epoch,
+        ),
+        Err(_) => durable.fail_retryable(
+            envelope.key, envelope.generation, envelope.epoch,
+        ),
+    }
+}
 ```
 
 ## Example 2 — lossless ordered fact sink
@@ -167,9 +247,12 @@ rolls authority backward by rehydrating storage at the decision seam.
 
 ## Formal backstop
 
-`lazily-formal/LazilyFormal/DurableSink.lean` pins the load-bearing invariants:
-`durable_through` is monotone; a batched projection persists only the settled
-epoch (coalescing); an ordered history replays every epoch past the durable
-cursor; and a sink failure leaves live authority unchanged (no rehydrate-at-
-decision-seam). The `Ephemeral`-never-`Durable` separation is already proven in
+`lazily-formal/LazilyFormal/DurableSink.lean` and
+`lazily-formal/LazilyFormal/LatestDurableProjection.lean` pin the load-bearing
+invariants: `durable_through` is monotone; a batched projection persists only the
+settled epoch (coalescing); an older success cannot erase a newer desired value;
+failure leaves the latest desired value pending; reconnect fences stale actor
+acknowledgements; an ordered history replays every epoch past the durable cursor;
+and a sink failure leaves live authority unchanged (no rehydrate-at-decision-
+seam). The `Ephemeral`-never-`Durable` separation is already proven in
 `Presence.ephemeral_never_durable`.

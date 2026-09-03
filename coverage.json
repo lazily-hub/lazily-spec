@@ -789,6 +789,27 @@
       ]
     },
     {
+      "id": "latest-durable-projection",
+      "label": "Latest durable projection",
+      "family": "egress",
+      "feature": "Keyed latest durable projection (`LatestDurableProjectionCore`) — monotone caller epochs, one in-flight effect per key, pending-value supersession without false acknowledgement, monotone `durable_through`, retryable failure, and sink-generation fencing (`#lzlatestdurableprojection`)",
+      "fixtures": [
+        "egress/latest_durable_projection.json"
+      ],
+      "marks": [
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
       "id": "egress-thread-safe",
       "label": "Egress — thread-safe",
       "family": "egress",

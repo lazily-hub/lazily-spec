@@ -28,7 +28,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Work queue | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | CRDT data types | ✅ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ✅ | — |
 | Lossless tree | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| Egress | ✅ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | — |
+| Egress | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | — |
 | Ingress | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Wire codec | ✅ | ✅ | ✅ | ✅ | ~ | ✅ | ✅ | ✅ | ✅ | — |
 | Transport & FFI | ✅ | ✅ | ✅ | ~ | ~ | ✅ | ✅ | ~ | ✅ | — |
@@ -140,6 +140,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Feature | Rust | Python | Kotlin | JS | Dart | Zig | Go | C++ | C# | GDScript |
 | --------- | :----: | :------: | :------: | :--: | :----: | :---: | :--: | :---: | :--: | :--------: |
 | Reactive egress [^reactive-egress] | ✅ | — | — | — | — | — | — | — | — | — |
+| Latest durable projection [^latest-durable-projection] | — | — | — | — | — | — | — | — | — | — |
 | Egress — thread-safe [^egress-thread-safe] | ✅ | — | — | — | — | — | — | — | — | — |
 | Egress — async [^egress-async] | ✅ | — | — | — | — | — | — | — | — | — |
 | RelayCell [^relaycell] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -297,6 +298,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 [^work-queue-core-async]: Competing-consumer work queue (`WorkQueueCell`) **Core surface** — async flavor (reader kinds + eventual transparency)
 [^merge-algebra]: Merge algebra + `Source<T, M>` — associative `MergePolicy` (`KeepLatest`/`Sum`/`Max`/`SetUnion`/`RawFifo`), `Cell ≡ Source<KeepLatest>`, read-any-cell/write-`Source` split (`#relaycell`)
 [^reactive-egress]: Transport-agnostic reactive egress (`EgressCore`) — monotone sequence assignment, bounded unacknowledged window, cumulative ACK watermark, bounded retry/backoff/exhaustion, producer-generation fence (`#lzegress`)
+[^latest-durable-projection]: Keyed latest durable projection (`LatestDurableProjectionCore`) — monotone caller epochs, one in-flight effect per key, pending-value supersession without false acknowledgement, monotone `durable_through`, retryable failure, and sink-generation fencing (`#lzlatestdurableprojection`)
 [^egress-thread-safe]: Egress family — `Send + Sync` flavor (`ThreadSafeEgressCell`): delivery authority stays in the shared core, one attached transport Effect per incarnation (`#lzegress`)
 [^egress-async]: Egress family — async flavor (`AsyncEgressCell`): the delivery-state readers stay synchronous Computeds; only the transport attachment is async-coloured (`#lzegress`)
 [^relaycell]: RelayCell — conflating relay + `BackpressurePolicy` + `SpillStore` + `Transport` + Inbox/Outbox + Rate/Window/Expiry/Priority/keyed policies (`#relaycell`)
