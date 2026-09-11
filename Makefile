@@ -19,9 +19,11 @@ prose-keys-check \
 assertion-block-schema-check \
 assertion-ordering-check \
 fixture-discriminability-check \
-corpus-published-check
+corpus-published-check \
+corpus-floors-check \
+corpus-counts-sync
 
-check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check corpus-published-check
+check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check corpus-floors-check corpus-published-check
 
 # Fixture-discriminability guard (#lzfixturediscrim). Exact-value assertions and
 # boolean routes with both outcomes carry their own controls. Every remaining
@@ -114,3 +116,23 @@ test-lean-formal:
 # different repo. See docs/conformance.md § Publishing a corpus change.
 corpus-published-check:
 >node scripts/check-corpus-published.mjs
+
+# Corpus-floor guard (#lzcorpusfloorguard). A new FIXTURE reddens ten repos in
+# minutes; a new STEP inside an existing fixture reddened nothing, and eight of
+# nine bindings' per-fixture step floors were slack enough to swallow three new
+# rows without executing them. Two directions, one idea — a count something else
+# depends on must move deliberately: `corpus-counts.json` pins the corpus's own
+# per-fixture step counts so a SHRINK is visible (a runner that asserts it ran
+# every step it loaded stays green over a shorter fixture), and each binding's
+# declared MIN_FIXTURES / MIN_SCENARIOS is re-derived from the corpus plus that
+# binding's own KNOWN_UNCOVERED / KNOWN_UNREPLAYED_SCENARIOS ledger and must
+# match EXACTLY. Slack has stopped guarding; a floor above reality is
+# unsatisfiable and names the red binding in one line.
+corpus-floors-check:
+>node scripts/check-corpus-floors.mjs
+
+# Re-pin `corpus-counts.json` after a deliberate corpus change. Commit the
+# result in the same change as the fixture edit — that pairing is the review.
+corpus-counts-sync:
+>node scripts/check-corpus-floors.mjs --write
+
