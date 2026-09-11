@@ -22,7 +22,20 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE_DIR = ROOT / "conformance"
 OUTPUT = ROOT / "schemas" / "assertion-blocks.json"
-BLOCK_NAMES = frozenset({"assertions", "expect", "expected"})
+#: Every spelling the corpus uses for an executable output claim.
+#:
+#: This was three names, and the two it was missing were not hypothetical:
+#: ``collections/semtree_incremental.json`` carries six ``expect_initial`` /
+#: ``expect_after`` blocks that lazily-py and lazily-js both inventory, and every
+#: one of them was outside the generated schema entirely — the routed, fail-closed
+#: artifact this generator exists to produce routed nothing at them, so a key
+#: added to one taught every runner a new key in silence (#lzblockfloorpin).
+#:
+#: Keep in step with ``BLOCK_NAMES`` in ``scripts/check-corpus-floors.mjs``,
+#: which pins the same population's site counts.
+BLOCK_NAMES = frozenset(
+    {"assertions", "expect", "expect_after", "expect_initial", "expected"}
+)
 
 Json = Any
 Route = tuple[str, str]
@@ -50,6 +63,16 @@ def iter_assertion_blocks(
             child_path = (*path, key)
             if key in BLOCK_NAMES and isinstance(child, dict):
                 yield _pointer(child_path), child
+            # An ARRAY-valued block is one block per element. `steps[].expect` in
+            # `signaling/anti_spoof_session.json` is a LIST of eight expected
+            # emissions; the object-only test above walked straight past all
+            # eight, so the routed schema constrained none of them. lazily-js
+            # instruments each element as a block in its own right for the same
+            # reason. Indexes normalize to `*`, so the eight share one route.
+            elif key in BLOCK_NAMES and isinstance(child, list):
+                for index, item in enumerate(child):
+                    if isinstance(item, dict):
+                        yield _pointer((*child_path, index)), item
             yield from iter_assertion_blocks(child, child_path)
     elif isinstance(value, list):
         for index, child in enumerate(value):

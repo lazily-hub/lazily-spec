@@ -388,6 +388,34 @@
       }
     },
     {
+      "title": "collections/semtree_incremental.json#/scenarios/*/expect_after",
+      "properties": {
+        "fixture": {
+          "const": "collections/semtree_incremental.json"
+        },
+        "pointer": {
+          "const": "/scenarios/*/expect_after"
+        },
+        "value": {
+          "$ref": "#/$defs/route_0027"
+        }
+      }
+    },
+    {
+      "title": "collections/semtree_incremental.json#/scenarios/*/expect_initial",
+      "properties": {
+        "fixture": {
+          "const": "collections/semtree_incremental.json"
+        },
+        "pointer": {
+          "const": "/scenarios/*/expect_initial"
+        },
+        "value": {
+          "$ref": "#/$defs/route_0028"
+        }
+      }
+    },
+    {
       "title": "collections/seqcrdt_convergence.json#/scenarios/*/expect",
       "properties": {
         "fixture": {
@@ -397,7 +425,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0027"
+          "$ref": "#/$defs/route_0029"
         }
       }
     },
@@ -411,7 +439,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0028"
+          "$ref": "#/$defs/route_0030"
         }
       }
     },
@@ -425,7 +453,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0029"
+          "$ref": "#/$defs/route_0031"
         }
       }
     },
@@ -439,7 +467,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0030"
+          "$ref": "#/$defs/route_0032"
         }
       }
     },
@@ -453,7 +481,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0031"
+          "$ref": "#/$defs/route_0033"
         }
       }
     },
@@ -467,7 +495,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0032"
+          "$ref": "#/$defs/route_0034"
         }
       }
     },
@@ -481,7 +509,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0033"
+          "$ref": "#/$defs/route_0035"
         }
       }
     },
@@ -495,7 +523,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0034"
+          "$ref": "#/$defs/route_0036"
         }
       }
     },
@@ -509,7 +537,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0035"
+          "$ref": "#/$defs/route_0037"
         }
       }
     },
@@ -523,7 +551,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0036"
+          "$ref": "#/$defs/route_0038"
         }
       }
     },
@@ -537,7 +565,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0037"
+          "$ref": "#/$defs/route_0039"
         }
       }
     },
@@ -551,7 +579,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0038"
+          "$ref": "#/$defs/route_0040"
         }
       }
     },
@@ -565,7 +593,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0039"
+          "$ref": "#/$defs/route_0041"
         }
       }
     },
@@ -579,7 +607,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0040"
+          "$ref": "#/$defs/route_0042"
         }
       }
     },
@@ -593,7 +621,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0041"
+          "$ref": "#/$defs/route_0043"
         }
       }
     },
@@ -607,7 +635,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0042"
+          "$ref": "#/$defs/route_0044"
         }
       }
     },
@@ -621,7 +649,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0043"
+          "$ref": "#/$defs/route_0045"
         }
       }
     },
@@ -635,7 +663,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0044"
+          "$ref": "#/$defs/route_0046"
         }
       }
     },
@@ -649,7 +677,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0045"
+          "$ref": "#/$defs/route_0047"
         }
       }
     },
@@ -663,7 +691,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0046"
+          "$ref": "#/$defs/route_0048"
         }
       }
     },
@@ -677,7 +705,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0047"
+          "$ref": "#/$defs/route_0049"
         }
       }
     },
@@ -691,7 +719,7 @@
           "const": "/frames/*/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0048"
+          "$ref": "#/$defs/route_0050"
         }
       }
     },
@@ -705,7 +733,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0049"
+          "$ref": "#/$defs/route_0051"
         }
       }
     },
@@ -719,7 +747,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0050"
+          "$ref": "#/$defs/route_0052"
         }
       }
     },
@@ -733,7 +761,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0051"
+          "$ref": "#/$defs/route_0053"
         }
       }
     },
@@ -747,7 +775,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0052"
+          "$ref": "#/$defs/route_0054"
         }
       }
     },
@@ -761,7 +789,7 @@
           "const": "/scenarios/*/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0053"
+          "$ref": "#/$defs/route_0055"
         }
       }
     },
@@ -775,7 +803,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0054"
+          "$ref": "#/$defs/route_0056"
         }
       }
     },
@@ -789,7 +817,7 @@
           "const": "/scenarios/*/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0055"
+          "$ref": "#/$defs/route_0057"
         }
       }
     },
@@ -803,7 +831,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0056"
+          "$ref": "#/$defs/route_0058"
         }
       }
     },
@@ -817,7 +845,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0057"
+          "$ref": "#/$defs/route_0059"
         }
       }
     },
@@ -831,7 +859,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0058"
+          "$ref": "#/$defs/route_0060"
         }
       }
     },
@@ -845,7 +873,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0059"
+          "$ref": "#/$defs/route_0061"
         }
       }
     },
@@ -859,7 +887,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0060"
+          "$ref": "#/$defs/route_0062"
         }
       }
     },
@@ -873,7 +901,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0061"
+          "$ref": "#/$defs/route_0063"
         }
       }
     },
@@ -887,7 +915,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0062"
+          "$ref": "#/$defs/route_0064"
         }
       }
     },
@@ -901,7 +929,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0063"
+          "$ref": "#/$defs/route_0065"
         }
       }
     },
@@ -915,7 +943,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0064"
+          "$ref": "#/$defs/route_0066"
         }
       }
     },
@@ -929,7 +957,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0065"
+          "$ref": "#/$defs/route_0067"
         }
       }
     },
@@ -943,7 +971,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0066"
+          "$ref": "#/$defs/route_0068"
         }
       }
     },
@@ -957,7 +985,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0067"
+          "$ref": "#/$defs/route_0069"
         }
       }
     },
@@ -971,7 +999,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0068"
+          "$ref": "#/$defs/route_0070"
         }
       }
     },
@@ -985,7 +1013,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0069"
+          "$ref": "#/$defs/route_0071"
         }
       }
     },
@@ -999,7 +1027,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0070"
+          "$ref": "#/$defs/route_0072"
         }
       }
     },
@@ -1013,7 +1041,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0071"
+          "$ref": "#/$defs/route_0073"
         }
       }
     },
@@ -1027,7 +1055,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0072"
+          "$ref": "#/$defs/route_0074"
         }
       }
     },
@@ -1041,7 +1069,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0073"
+          "$ref": "#/$defs/route_0075"
         }
       }
     },
@@ -1055,7 +1083,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0074"
+          "$ref": "#/$defs/route_0076"
         }
       }
     },
@@ -1069,7 +1097,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0075"
+          "$ref": "#/$defs/route_0077"
         }
       }
     },
@@ -1083,7 +1111,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0076"
+          "$ref": "#/$defs/route_0078"
         }
       }
     },
@@ -1097,7 +1125,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0077"
+          "$ref": "#/$defs/route_0079"
         }
       }
     },
@@ -1111,7 +1139,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0078"
+          "$ref": "#/$defs/route_0080"
         }
       }
     },
@@ -1125,7 +1153,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0079"
+          "$ref": "#/$defs/route_0081"
         }
       }
     },
@@ -1139,7 +1167,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0080"
+          "$ref": "#/$defs/route_0082"
         }
       }
     },
@@ -1153,7 +1181,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0081"
+          "$ref": "#/$defs/route_0083"
         }
       }
     },
@@ -1167,7 +1195,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0082"
+          "$ref": "#/$defs/route_0084"
         }
       }
     },
@@ -1181,7 +1209,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0083"
+          "$ref": "#/$defs/route_0085"
         }
       }
     },
@@ -1195,7 +1223,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0084"
+          "$ref": "#/$defs/route_0086"
         }
       }
     },
@@ -1209,7 +1237,7 @@
           "const": "/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0085"
+          "$ref": "#/$defs/route_0087"
         }
       }
     },
@@ -1223,7 +1251,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0086"
+          "$ref": "#/$defs/route_0088"
         }
       }
     },
@@ -1237,7 +1265,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0087"
+          "$ref": "#/$defs/route_0089"
         }
       }
     },
@@ -1251,7 +1279,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0088"
+          "$ref": "#/$defs/route_0090"
         }
       }
     },
@@ -1265,7 +1293,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0089"
+          "$ref": "#/$defs/route_0091"
         }
       }
     },
@@ -1279,7 +1307,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0090"
+          "$ref": "#/$defs/route_0092"
         }
       }
     },
@@ -1293,7 +1321,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0091"
+          "$ref": "#/$defs/route_0093"
         }
       }
     },
@@ -1307,7 +1335,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0092"
+          "$ref": "#/$defs/route_0094"
         }
       }
     },
@@ -1321,7 +1349,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0093"
+          "$ref": "#/$defs/route_0095"
         }
       }
     },
@@ -1335,7 +1363,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0094"
+          "$ref": "#/$defs/route_0096"
         }
       }
     },
@@ -1349,7 +1377,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0095"
+          "$ref": "#/$defs/route_0097"
         }
       }
     },
@@ -1363,7 +1391,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0096"
+          "$ref": "#/$defs/route_0098"
         }
       }
     },
@@ -1377,7 +1405,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0097"
+          "$ref": "#/$defs/route_0099"
         }
       }
     },
@@ -1391,7 +1419,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0098"
+          "$ref": "#/$defs/route_0100"
         }
       }
     },
@@ -1405,7 +1433,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0099"
+          "$ref": "#/$defs/route_0101"
         }
       }
     },
@@ -1419,7 +1447,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0100"
+          "$ref": "#/$defs/route_0102"
         }
       }
     },
@@ -1433,7 +1461,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0101"
+          "$ref": "#/$defs/route_0103"
         }
       }
     },
@@ -1447,7 +1475,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0102"
+          "$ref": "#/$defs/route_0104"
         }
       }
     },
@@ -1461,7 +1489,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0103"
+          "$ref": "#/$defs/route_0105"
         }
       }
     },
@@ -1475,7 +1503,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0104"
+          "$ref": "#/$defs/route_0106"
         }
       }
     },
@@ -1489,7 +1517,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0105"
+          "$ref": "#/$defs/route_0107"
         }
       }
     },
@@ -1503,7 +1531,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0106"
+          "$ref": "#/$defs/route_0108"
         }
       }
     },
@@ -1517,7 +1545,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0107"
+          "$ref": "#/$defs/route_0109"
         }
       }
     },
@@ -1531,7 +1559,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0108"
+          "$ref": "#/$defs/route_0110"
         }
       }
     },
@@ -1545,7 +1573,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0109"
+          "$ref": "#/$defs/route_0111"
         }
       }
     },
@@ -1559,7 +1587,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0110"
+          "$ref": "#/$defs/route_0112"
         }
       }
     },
@@ -1573,7 +1601,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0111"
+          "$ref": "#/$defs/route_0113"
         }
       }
     },
@@ -1587,7 +1615,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0112"
+          "$ref": "#/$defs/route_0114"
         }
       }
     },
@@ -1601,7 +1629,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0113"
+          "$ref": "#/$defs/route_0115"
         }
       }
     },
@@ -1615,7 +1643,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0114"
+          "$ref": "#/$defs/route_0116"
         }
       }
     },
@@ -1629,7 +1657,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0115"
+          "$ref": "#/$defs/route_0117"
         }
       }
     },
@@ -1643,7 +1671,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0116"
+          "$ref": "#/$defs/route_0118"
         }
       }
     },
@@ -1657,7 +1685,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0117"
+          "$ref": "#/$defs/route_0119"
         }
       }
     },
@@ -1671,7 +1699,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0118"
+          "$ref": "#/$defs/route_0120"
         }
       }
     },
@@ -1685,7 +1713,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0119"
+          "$ref": "#/$defs/route_0121"
         }
       }
     },
@@ -1699,7 +1727,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0120"
+          "$ref": "#/$defs/route_0122"
         }
       }
     },
@@ -1713,7 +1741,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0121"
+          "$ref": "#/$defs/route_0123"
         }
       }
     },
@@ -1727,7 +1755,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0122"
+          "$ref": "#/$defs/route_0124"
         }
       }
     },
@@ -1741,7 +1769,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0123"
+          "$ref": "#/$defs/route_0125"
         }
       }
     },
@@ -1755,7 +1783,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0124"
+          "$ref": "#/$defs/route_0126"
         }
       }
     },
@@ -1769,7 +1797,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0125"
+          "$ref": "#/$defs/route_0127"
         }
       }
     },
@@ -1783,7 +1811,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0126"
+          "$ref": "#/$defs/route_0128"
         }
       }
     },
@@ -1797,7 +1825,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0127"
+          "$ref": "#/$defs/route_0129"
         }
       }
     },
@@ -1811,7 +1839,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0128"
+          "$ref": "#/$defs/route_0130"
         }
       }
     },
@@ -1825,7 +1853,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0129"
+          "$ref": "#/$defs/route_0131"
         }
       }
     },
@@ -1839,7 +1867,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0130"
+          "$ref": "#/$defs/route_0132"
         }
       }
     },
@@ -1853,7 +1881,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0131"
+          "$ref": "#/$defs/route_0133"
         }
       }
     },
@@ -1867,7 +1895,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0132"
+          "$ref": "#/$defs/route_0134"
         }
       }
     },
@@ -1881,7 +1909,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0133"
+          "$ref": "#/$defs/route_0135"
         }
       }
     },
@@ -1895,7 +1923,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0134"
+          "$ref": "#/$defs/route_0136"
         }
       }
     },
@@ -1909,7 +1937,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0135"
+          "$ref": "#/$defs/route_0137"
         }
       }
     },
@@ -1923,7 +1951,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0136"
+          "$ref": "#/$defs/route_0138"
         }
       }
     },
@@ -1937,7 +1965,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0137"
+          "$ref": "#/$defs/route_0139"
         }
       }
     },
@@ -1951,7 +1979,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0138"
+          "$ref": "#/$defs/route_0140"
         }
       }
     },
@@ -1965,7 +1993,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0139"
+          "$ref": "#/$defs/route_0141"
         }
       }
     },
@@ -1979,7 +2007,21 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0140"
+          "$ref": "#/$defs/route_0142"
+        }
+      }
+    },
+    {
+      "title": "signaling/anti_spoof_session.json#/steps/*/expect/*",
+      "properties": {
+        "fixture": {
+          "const": "signaling/anti_spoof_session.json"
+        },
+        "pointer": {
+          "const": "/steps/*/expect/*"
+        },
+        "value": {
+          "$ref": "#/$defs/route_0143"
         }
       }
     },
@@ -1993,7 +2035,7 @@
           "const": "/frames/*/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0141"
+          "$ref": "#/$defs/route_0144"
         }
       }
     },
@@ -2007,7 +2049,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0142"
+          "$ref": "#/$defs/route_0145"
         }
       }
     },
@@ -2021,7 +2063,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0143"
+          "$ref": "#/$defs/route_0146"
         }
       }
     },
@@ -2035,7 +2077,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0144"
+          "$ref": "#/$defs/route_0147"
         }
       }
     },
@@ -2049,7 +2091,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0145"
+          "$ref": "#/$defs/route_0148"
         }
       }
     },
@@ -2063,7 +2105,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0146"
+          "$ref": "#/$defs/route_0149"
         }
       }
     },
@@ -2077,7 +2119,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0147"
+          "$ref": "#/$defs/route_0150"
         }
       }
     },
@@ -2091,7 +2133,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0148"
+          "$ref": "#/$defs/route_0151"
         }
       }
     },
@@ -2105,7 +2147,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0149"
+          "$ref": "#/$defs/route_0152"
         }
       }
     },
@@ -2119,7 +2161,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0150"
+          "$ref": "#/$defs/route_0153"
         }
       }
     },
@@ -2133,7 +2175,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0151"
+          "$ref": "#/$defs/route_0154"
         }
       }
     },
@@ -2147,7 +2189,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0152"
+          "$ref": "#/$defs/route_0155"
         }
       }
     },
@@ -2161,7 +2203,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0153"
+          "$ref": "#/$defs/route_0156"
         }
       }
     },
@@ -2175,7 +2217,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0154"
+          "$ref": "#/$defs/route_0157"
         }
       }
     },
@@ -2189,7 +2231,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0155"
+          "$ref": "#/$defs/route_0158"
         }
       }
     }
@@ -3673,6 +3715,48 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "a": {
+          "type": "integer"
+        },
+        "b": {
+          "type": "integer"
+        },
+        "downstream_consumer_reran": {
+          "type": "boolean"
+        },
+        "root": {
+          "type": "integer"
+        },
+        "sibling_a_cached": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "root"
+      ]
+    },
+    "route_0028": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "a": {
+          "type": "integer"
+        },
+        "b": {
+          "type": "integer"
+        },
+        "root": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "root"
+      ]
+    },
+    "route_0029": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
         "contains_all": {
           "type": "array",
           "items": {
@@ -3783,7 +3867,7 @@
         }
       }
     },
-    "route_0028": {
+    "route_0030": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3831,7 +3915,7 @@
         }
       }
     },
-    "route_0029": {
+    "route_0031": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3861,7 +3945,7 @@
         }
       }
     },
-    "route_0030": {
+    "route_0032": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3951,7 +4035,7 @@
         }
       }
     },
-    "route_0031": {
+    "route_0033": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4061,7 +4145,7 @@
         "subscriptions"
       ]
     },
-    "route_0032": {
+    "route_0034": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4170,151 +4254,151 @@
         "subscriptions"
       ]
     },
-    "route_0033": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "base_offset": {
-          "type": "integer"
-        },
-        "elements": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "ephemeral": {
-              "type": "boolean"
-            }
-          }
-        },
-        "reads": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "ephemeral": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "subscriptions": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "ephemeral": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "connected": {
-                  "type": "boolean"
-                },
-                "cursor": {
-                  "type": "integer"
-                },
-                "durability": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "connected",
-                "cursor",
-                "durability"
-              ]
-            }
-          }
-        }
-      },
-      "required": [
-        "base_offset",
-        "elements",
-        "invalidates",
-        "reads",
-        "subscriptions"
-      ]
-    },
-    "route_0034": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "base_offset": {
-          "type": "integer"
-        },
-        "elements": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "worker": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "worker"
-          ]
-        },
-        "reads": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "worker": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "subscriptions": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "worker": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "connected": {
-                  "type": "boolean"
-                },
-                "cursor": {
-                  "type": "integer"
-                },
-                "durability": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "connected",
-                "cursor",
-                "durability"
-              ]
-            }
-          },
-          "required": [
-            "worker"
-          ]
-        }
-      },
-      "required": [
-        "base_offset",
-        "elements",
-        "invalidates",
-        "reads",
-        "subscriptions"
-      ]
-    },
     "route_0035": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "base_offset": {
+          "type": "integer"
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ephemeral": {
+              "type": "boolean"
+            }
+          }
+        },
+        "reads": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ephemeral": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "subscriptions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ephemeral": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "connected": {
+                  "type": "boolean"
+                },
+                "cursor": {
+                  "type": "integer"
+                },
+                "durability": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "connected",
+                "cursor",
+                "durability"
+              ]
+            }
+          }
+        }
+      },
+      "required": [
+        "base_offset",
+        "elements",
+        "invalidates",
+        "reads",
+        "subscriptions"
+      ]
+    },
+    "route_0036": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "base_offset": {
+          "type": "integer"
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "worker"
+          ]
+        },
+        "reads": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "subscriptions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "worker": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "connected": {
+                  "type": "boolean"
+                },
+                "cursor": {
+                  "type": "integer"
+                },
+                "durability": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "connected",
+                "cursor",
+                "durability"
+              ]
+            }
+          },
+          "required": [
+            "worker"
+          ]
+        }
+      },
+      "required": [
+        "base_offset",
+        "elements",
+        "invalidates",
+        "reads",
+        "subscriptions"
+      ]
+    },
+    "route_0037": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4436,7 +4520,7 @@
         "reads"
       ]
     },
-    "route_0036": {
+    "route_0038": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4582,7 +4666,7 @@
         "reads"
       ]
     },
-    "route_0037": {
+    "route_0039": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4618,7 +4702,7 @@
         "role"
       ]
     },
-    "route_0038": {
+    "route_0040": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4658,7 +4742,7 @@
         "invalidates"
       ]
     },
-    "route_0039": {
+    "route_0041": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4687,7 +4771,7 @@
         "is_locked"
       ]
     },
-    "route_0040": {
+    "route_0042": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4716,7 +4800,7 @@
         "votes"
       ]
     },
-    "route_0041": {
+    "route_0043": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4741,7 +4825,7 @@
         "permits_available"
       ]
     },
-    "route_0042": {
+    "route_0044": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4768,7 +4852,7 @@
         }
       }
     },
-    "route_0043": {
+    "route_0045": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4792,7 +4876,7 @@
         "resync_after_epoch_10"
       ]
     },
-    "route_0044": {
+    "route_0046": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4820,7 +4904,7 @@
         "op_count"
       ]
     },
-    "route_0045": {
+    "route_0047": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4848,7 +4932,7 @@
         "op_count"
       ]
     },
-    "route_0046": {
+    "route_0048": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4880,7 +4964,7 @@
         "op_count"
       ]
     },
-    "route_0047": {
+    "route_0049": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4938,7 +5022,7 @@
         "resolution"
       ]
     },
-    "route_0048": {
+    "route_0050": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -4962,236 +5046,12 @@
         "op_count"
       ]
     },
-    "route_0049": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "acked_through": {
-          "type": "null"
-        },
-        "generation": {
-          "type": "integer"
-        },
-        "inflight": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "attempt": {
-                "type": "integer"
-              },
-              "generation": {
-                "type": "integer"
-              },
-              "payload": {
-                "type": "integer"
-              },
-              "sequence": {
-                "type": "integer"
-              }
-            },
-            "required": [
-              "attempt",
-              "generation",
-              "payload",
-              "sequence"
-            ]
-          }
-        },
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "acked_through": {
-              "type": "boolean"
-            },
-            "inflight": {
-              "type": "boolean"
-            },
-            "pending": {
-              "type": "boolean"
-            },
-            "retry": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "acked_through",
-            "inflight",
-            "pending",
-            "retry"
-          ]
-        },
-        "next_sequence": {
-          "type": "integer"
-        },
-        "pending": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "attempt": {
-                "type": "integer"
-              },
-              "generation": {
-                "type": "integer"
-              },
-              "payload": {
-                "type": "integer"
-              },
-              "sequence": {
-                "type": "integer"
-              }
-            },
-            "required": [
-              "attempt",
-              "generation",
-              "payload",
-              "sequence"
-            ]
-          }
-        },
-        "retry": {
-          "type": "null"
-        }
-      },
-      "required": [
-        "acked_through",
-        "generation",
-        "inflight",
-        "invalidates",
-        "next_sequence",
-        "pending",
-        "retry"
-      ]
-    },
-    "route_0050": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "acked_through": {
-          "anyOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "integer"
-            }
-          ]
-        },
-        "generation": {
-          "type": "integer"
-        },
-        "inflight": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "attempt": {
-                "type": "integer"
-              },
-              "generation": {
-                "type": "integer"
-              },
-              "payload": {
-                "type": "integer"
-              },
-              "sequence": {
-                "type": "integer"
-              }
-            },
-            "required": [
-              "attempt",
-              "generation",
-              "payload",
-              "sequence"
-            ]
-          }
-        },
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "acked_through": {
-              "type": "boolean"
-            },
-            "inflight": {
-              "type": "boolean"
-            },
-            "pending": {
-              "type": "boolean"
-            },
-            "retry": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "acked_through",
-            "inflight",
-            "pending",
-            "retry"
-          ]
-        },
-        "next_sequence": {
-          "type": "integer"
-        },
-        "pending": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "attempt": {
-                "type": "integer"
-              },
-              "generation": {
-                "type": "integer"
-              },
-              "payload": {
-                "type": "integer"
-              },
-              "sequence": {
-                "type": "integer"
-              }
-            },
-            "required": [
-              "attempt",
-              "generation",
-              "payload",
-              "sequence"
-            ]
-          }
-        },
-        "retry": {
-          "type": "null"
-        }
-      },
-      "required": [
-        "acked_through",
-        "generation",
-        "inflight",
-        "invalidates",
-        "next_sequence",
-        "pending",
-        "retry"
-      ]
-    },
     "route_0051": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "acked_through": {
-          "anyOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "integer"
-            }
-          ]
+          "type": "null"
         },
         "generation": {
           "type": "integer"
@@ -5292,6 +5152,230 @@
       ]
     },
     "route_0052": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "acked_through": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "generation": {
+          "type": "integer"
+        },
+        "inflight": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "attempt": {
+                "type": "integer"
+              },
+              "generation": {
+                "type": "integer"
+              },
+              "payload": {
+                "type": "integer"
+              },
+              "sequence": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "attempt",
+              "generation",
+              "payload",
+              "sequence"
+            ]
+          }
+        },
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "acked_through": {
+              "type": "boolean"
+            },
+            "inflight": {
+              "type": "boolean"
+            },
+            "pending": {
+              "type": "boolean"
+            },
+            "retry": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "acked_through",
+            "inflight",
+            "pending",
+            "retry"
+          ]
+        },
+        "next_sequence": {
+          "type": "integer"
+        },
+        "pending": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "attempt": {
+                "type": "integer"
+              },
+              "generation": {
+                "type": "integer"
+              },
+              "payload": {
+                "type": "integer"
+              },
+              "sequence": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "attempt",
+              "generation",
+              "payload",
+              "sequence"
+            ]
+          }
+        },
+        "retry": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "acked_through",
+        "generation",
+        "inflight",
+        "invalidates",
+        "next_sequence",
+        "pending",
+        "retry"
+      ]
+    },
+    "route_0053": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "acked_through": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "generation": {
+          "type": "integer"
+        },
+        "inflight": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "attempt": {
+                "type": "integer"
+              },
+              "generation": {
+                "type": "integer"
+              },
+              "payload": {
+                "type": "integer"
+              },
+              "sequence": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "attempt",
+              "generation",
+              "payload",
+              "sequence"
+            ]
+          }
+        },
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "acked_through": {
+              "type": "boolean"
+            },
+            "inflight": {
+              "type": "boolean"
+            },
+            "pending": {
+              "type": "boolean"
+            },
+            "retry": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "acked_through",
+            "inflight",
+            "pending",
+            "retry"
+          ]
+        },
+        "next_sequence": {
+          "type": "integer"
+        },
+        "pending": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "attempt": {
+                "type": "integer"
+              },
+              "generation": {
+                "type": "integer"
+              },
+              "payload": {
+                "type": "integer"
+              },
+              "sequence": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "attempt",
+              "generation",
+              "payload",
+              "sequence"
+            ]
+          }
+        },
+        "retry": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "acked_through",
+        "generation",
+        "inflight",
+        "invalidates",
+        "next_sequence",
+        "pending",
+        "retry"
+      ]
+    },
+    "route_0054": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -5424,7 +5508,7 @@
         "retry"
       ]
     },
-    "route_0053": {
+    "route_0055": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -5519,7 +5603,7 @@
         "generation"
       ]
     },
-    "route_0054": {
+    "route_0056": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -5565,7 +5649,7 @@
         "target_values"
       ]
     },
-    "route_0055": {
+    "route_0057": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -5666,7 +5750,7 @@
         "revision"
       ]
     },
-    "route_0056": {
+    "route_0058": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -5837,383 +5921,383 @@
         "scopes"
       ]
     },
-    "route_0057": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "receipts": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "accepted": {
-                  "type": "boolean"
-                },
-                "dropped": {
-                  "type": "boolean"
-                },
-                "error": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "accepted",
-                "dropped",
-                "error"
-              ]
-            },
-            "scopes": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "alpha": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "authority": {
-                      "type": "boolean"
-                    },
-                    "readiness": {
-                      "type": "boolean"
-                    },
-                    "retry": {
-                      "type": "boolean"
-                    },
-                    "value": {
-                      "type": "boolean"
-                    }
-                  },
-                  "required": [
-                    "authority",
-                    "readiness",
-                    "retry",
-                    "value"
-                  ]
-                }
-              },
-              "required": [
-                "alpha"
-              ]
-            }
-          },
-          "required": [
-            "receipts",
-            "scopes"
-          ]
-        },
-        "receipts": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "accepted": {
-              "type": "integer"
-            },
-            "dropped": {
-              "type": "integer"
-            },
-            "error": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "accepted",
-            "dropped",
-            "error"
-          ]
-        },
-        "scopes": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "alpha": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "authority": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "delivered_through": {
-                      "type": "integer"
-                    },
-                    "generation": {
-                      "type": "integer"
-                    },
-                    "stamped_at": {
-                      "type": "integer"
-                    }
-                  },
-                  "required": [
-                    "delivered_through",
-                    "generation",
-                    "stamped_at"
-                  ]
-                },
-                "buffered": {
-                  "type": "integer"
-                },
-                "consecutive_errors": {
-                  "type": "integer"
-                },
-                "delivered_through": {
-                  "type": "integer"
-                },
-                "generation": {
-                  "type": "integer"
-                },
-                "lifecycle": {
-                  "type": "string"
-                },
-                "readiness": {
-                  "type": "string"
-                },
-                "retry": {
-                  "anyOf": [
-                    {
-                      "type": "null"
-                    },
-                    {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "attempt": {
-                          "type": "integer"
-                        },
-                        "backoff": {
-                          "type": "integer"
-                        },
-                        "resume_from": {
-                          "type": "integer"
-                        }
-                      },
-                      "required": [
-                        "attempt",
-                        "backoff",
-                        "resume_from"
-                      ]
-                    }
-                  ]
-                },
-                "window": {
-                  "type": "integer"
-                }
-              },
-              "required": [
-                "authority",
-                "buffered",
-                "consecutive_errors",
-                "delivered_through",
-                "generation",
-                "lifecycle",
-                "readiness",
-                "retry",
-                "window"
-              ]
-            }
-          },
-          "required": [
-            "alpha"
-          ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "receipts",
-        "scopes"
-      ]
-    },
-    "route_0058": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "receipts": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "accepted": {
-                  "type": "boolean"
-                },
-                "dropped": {
-                  "type": "boolean"
-                },
-                "error": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "accepted",
-                "dropped",
-                "error"
-              ]
-            },
-            "scopes": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "alpha": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "authority": {
-                      "type": "boolean"
-                    },
-                    "readiness": {
-                      "type": "boolean"
-                    },
-                    "retry": {
-                      "type": "boolean"
-                    },
-                    "value": {
-                      "type": "boolean"
-                    }
-                  },
-                  "required": [
-                    "authority",
-                    "readiness",
-                    "retry",
-                    "value"
-                  ]
-                }
-              },
-              "required": [
-                "alpha"
-              ]
-            }
-          },
-          "required": [
-            "receipts",
-            "scopes"
-          ]
-        },
-        "receipts": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "accepted": {
-              "type": "integer"
-            },
-            "dropped": {
-              "type": "integer"
-            },
-            "error": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "accepted",
-            "dropped",
-            "error"
-          ]
-        },
-        "scopes": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "alpha": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "authority": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "delivered_through": {
-                      "type": "integer"
-                    },
-                    "generation": {
-                      "type": "integer"
-                    },
-                    "stamped_at": {
-                      "type": "integer"
-                    }
-                  },
-                  "required": [
-                    "delivered_through",
-                    "generation",
-                    "stamped_at"
-                  ]
-                },
-                "buffered": {
-                  "type": "integer"
-                },
-                "consecutive_errors": {
-                  "type": "integer"
-                },
-                "delivered_through": {
-                  "type": "integer"
-                },
-                "generation": {
-                  "type": "integer"
-                },
-                "lifecycle": {
-                  "type": "string"
-                },
-                "readiness": {
-                  "type": "string"
-                },
-                "retry": {
-                  "anyOf": [
-                    {
-                      "type": "null"
-                    },
-                    {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "attempt": {
-                          "type": "integer"
-                        },
-                        "backoff": {
-                          "type": "integer"
-                        },
-                        "resume_from": {
-                          "type": "integer"
-                        }
-                      },
-                      "required": [
-                        "attempt",
-                        "backoff",
-                        "resume_from"
-                      ]
-                    }
-                  ]
-                },
-                "window": {
-                  "type": "integer"
-                }
-              },
-              "required": [
-                "authority",
-                "buffered",
-                "consecutive_errors",
-                "delivered_through",
-                "generation",
-                "lifecycle",
-                "readiness",
-                "retry",
-                "window"
-              ]
-            }
-          },
-          "required": [
-            "alpha"
-          ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "receipts",
-        "scopes"
-      ]
-    },
     "route_0059": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "receipts": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "accepted": {
+                  "type": "boolean"
+                },
+                "dropped": {
+                  "type": "boolean"
+                },
+                "error": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "accepted",
+                "dropped",
+                "error"
+              ]
+            },
+            "scopes": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "alpha": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "authority": {
+                      "type": "boolean"
+                    },
+                    "readiness": {
+                      "type": "boolean"
+                    },
+                    "retry": {
+                      "type": "boolean"
+                    },
+                    "value": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "authority",
+                    "readiness",
+                    "retry",
+                    "value"
+                  ]
+                }
+              },
+              "required": [
+                "alpha"
+              ]
+            }
+          },
+          "required": [
+            "receipts",
+            "scopes"
+          ]
+        },
+        "receipts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "accepted": {
+              "type": "integer"
+            },
+            "dropped": {
+              "type": "integer"
+            },
+            "error": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "accepted",
+            "dropped",
+            "error"
+          ]
+        },
+        "scopes": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "alpha": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "authority": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "delivered_through": {
+                      "type": "integer"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "stamped_at": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "delivered_through",
+                    "generation",
+                    "stamped_at"
+                  ]
+                },
+                "buffered": {
+                  "type": "integer"
+                },
+                "consecutive_errors": {
+                  "type": "integer"
+                },
+                "delivered_through": {
+                  "type": "integer"
+                },
+                "generation": {
+                  "type": "integer"
+                },
+                "lifecycle": {
+                  "type": "string"
+                },
+                "readiness": {
+                  "type": "string"
+                },
+                "retry": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "attempt": {
+                          "type": "integer"
+                        },
+                        "backoff": {
+                          "type": "integer"
+                        },
+                        "resume_from": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "attempt",
+                        "backoff",
+                        "resume_from"
+                      ]
+                    }
+                  ]
+                },
+                "window": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "authority",
+                "buffered",
+                "consecutive_errors",
+                "delivered_through",
+                "generation",
+                "lifecycle",
+                "readiness",
+                "retry",
+                "window"
+              ]
+            }
+          },
+          "required": [
+            "alpha"
+          ]
+        }
+      },
+      "required": [
+        "invalidates",
+        "receipts",
+        "scopes"
+      ]
+    },
+    "route_0060": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "receipts": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "accepted": {
+                  "type": "boolean"
+                },
+                "dropped": {
+                  "type": "boolean"
+                },
+                "error": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "accepted",
+                "dropped",
+                "error"
+              ]
+            },
+            "scopes": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "alpha": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "authority": {
+                      "type": "boolean"
+                    },
+                    "readiness": {
+                      "type": "boolean"
+                    },
+                    "retry": {
+                      "type": "boolean"
+                    },
+                    "value": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "authority",
+                    "readiness",
+                    "retry",
+                    "value"
+                  ]
+                }
+              },
+              "required": [
+                "alpha"
+              ]
+            }
+          },
+          "required": [
+            "receipts",
+            "scopes"
+          ]
+        },
+        "receipts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "accepted": {
+              "type": "integer"
+            },
+            "dropped": {
+              "type": "integer"
+            },
+            "error": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "accepted",
+            "dropped",
+            "error"
+          ]
+        },
+        "scopes": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "alpha": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "authority": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "delivered_through": {
+                      "type": "integer"
+                    },
+                    "generation": {
+                      "type": "integer"
+                    },
+                    "stamped_at": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "delivered_through",
+                    "generation",
+                    "stamped_at"
+                  ]
+                },
+                "buffered": {
+                  "type": "integer"
+                },
+                "consecutive_errors": {
+                  "type": "integer"
+                },
+                "delivered_through": {
+                  "type": "integer"
+                },
+                "generation": {
+                  "type": "integer"
+                },
+                "lifecycle": {
+                  "type": "string"
+                },
+                "readiness": {
+                  "type": "string"
+                },
+                "retry": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "attempt": {
+                          "type": "integer"
+                        },
+                        "backoff": {
+                          "type": "integer"
+                        },
+                        "resume_from": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "attempt",
+                        "backoff",
+                        "resume_from"
+                      ]
+                    }
+                  ]
+                },
+                "window": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "authority",
+                "buffered",
+                "consecutive_errors",
+                "delivered_through",
+                "generation",
+                "lifecycle",
+                "readiness",
+                "retry",
+                "window"
+              ]
+            }
+          },
+          "required": [
+            "alpha"
+          ]
+        }
+      },
+      "required": [
+        "invalidates",
+        "receipts",
+        "scopes"
+      ]
+    },
+    "route_0061": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6405,7 +6489,7 @@
         "scopes"
       ]
     },
-    "route_0060": {
+    "route_0062": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6661,7 +6745,7 @@
         "scopes"
       ]
     },
-    "route_0061": {
+    "route_0063": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -6846,7 +6930,7 @@
         "scopes"
       ]
     },
-    "route_0062": {
+    "route_0064": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7010,74 +7094,6 @@
         "scopes"
       ]
     },
-    "route_0063": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "converged": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "render_on": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "a": {
-              "type": "string"
-            },
-            "b": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "a",
-            "b"
-          ]
-        }
-      },
-      "required": [
-        "converged",
-        "render_on"
-      ]
-    },
-    "route_0064": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "converged": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "live_nodes": {
-          "type": "integer"
-        },
-        "render_on": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "a": {
-              "type": "string"
-            },
-            "b": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "a",
-            "b"
-          ]
-        }
-      },
-      "required": [
-        "converged",
-        "live_nodes",
-        "render_on"
-      ]
-    },
     "route_0065": {
       "type": "object",
       "additionalProperties": false,
@@ -7088,9 +7104,6 @@
             "type": "string"
           }
         },
-        "live_nodes": {
-          "type": "integer"
-        },
         "render_on": {
           "type": "object",
           "additionalProperties": false,
@@ -7110,7 +7123,6 @@
       },
       "required": [
         "converged",
-        "live_nodes",
         "render_on"
       ]
     },
@@ -7124,6 +7136,9 @@
             "type": "string"
           }
         },
+        "live_nodes": {
+          "type": "integer"
+        },
         "render_on": {
           "type": "object",
           "additionalProperties": false,
@@ -7143,6 +7158,7 @@
       },
       "required": [
         "converged",
+        "live_nodes",
         "render_on"
       ]
     },
@@ -7150,43 +7166,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "live_nodes": {
-          "type": "integer"
-        },
-        "render": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "live_nodes",
-        "render"
-      ]
-    },
-    "route_0068": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "live_nodes": {
-          "type": "integer"
-        },
-        "render": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "live_nodes",
-        "render"
-      ]
-    },
-    "route_0069": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
         "converged": {
           "type": "array",
           "items": {
             "type": "string"
           }
+        },
+        "live_nodes": {
+          "type": "integer"
         },
         "render_on": {
           "type": "object",
@@ -7206,10 +7193,12 @@
         }
       },
       "required": [
+        "converged",
+        "live_nodes",
         "render_on"
       ]
     },
-    "route_0070": {
+    "route_0068": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7239,6 +7228,38 @@
       "required": [
         "converged",
         "render_on"
+      ]
+    },
+    "route_0069": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "live_nodes": {
+          "type": "integer"
+        },
+        "render": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "live_nodes",
+        "render"
+      ]
+    },
+    "route_0070": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "live_nodes": {
+          "type": "integer"
+        },
+        "render": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "live_nodes",
+        "render"
       ]
     },
     "route_0071": {
@@ -7251,6 +7272,69 @@
             "type": "string"
           }
         },
+        "render_on": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "string"
+            },
+            "b": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "required": [
+        "render_on"
+      ]
+    },
+    "route_0072": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "converged": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "render_on": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "string"
+            },
+            "b": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "required": [
+        "converged",
+        "render_on"
+      ]
+    },
+    "route_0073": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "converged": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "live_nodes": {
           "type": "integer"
         },
@@ -7277,7 +7361,7 @@
         "render_on"
       ]
     },
-    "route_0072": {
+    "route_0074": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7293,7 +7377,7 @@
         "render"
       ]
     },
-    "route_0073": {
+    "route_0075": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7330,7 +7414,7 @@
         "live_nodes"
       ]
     },
-    "route_0074": {
+    "route_0076": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7392,7 +7476,7 @@
         "present_after_each_read"
       ]
     },
-    "route_0075": {
+    "route_0077": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7450,7 +7534,7 @@
         "observe"
       ]
     },
-    "route_0076": {
+    "route_0078": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7505,7 +7589,7 @@
         "observe"
       ]
     },
-    "route_0077": {
+    "route_0079": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7540,7 +7624,7 @@
         "states"
       ]
     },
-    "route_0078": {
+    "route_0080": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7605,7 +7689,7 @@
         "terminal_after_frame_index"
       ]
     },
-    "route_0079": {
+    "route_0081": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7686,7 +7770,7 @@
         "projection"
       ]
     },
-    "route_0080": {
+    "route_0082": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7747,7 +7831,7 @@
         "projection"
       ]
     },
-    "route_0081": {
+    "route_0083": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7815,7 +7899,7 @@
         "projection"
       ]
     },
-    "route_0082": {
+    "route_0084": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7904,7 +7988,7 @@
         "rpc"
       ]
     },
-    "route_0083": {
+    "route_0085": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -7972,7 +8056,7 @@
         "projection"
       ]
     },
-    "route_0084": {
+    "route_0086": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8033,7 +8117,7 @@
         "projection"
       ]
     },
-    "route_0085": {
+    "route_0087": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8106,72 +8190,6 @@
         "projection_before_conflict"
       ]
     },
-    "route_0086": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "present": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "present"
-          ]
-        },
-        "present": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "1": {
-              "type": "string"
-            },
-            "2": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "required": [
-        "invalidates",
-        "present"
-      ]
-    },
-    "route_0087": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "value": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "value"
-          ]
-        },
-        "value": {
-          "anyOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "value"
-      ]
-    },
     "route_0088": {
       "type": "object",
       "additionalProperties": false,
@@ -8210,6 +8228,72 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "value"
+          ]
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "required": [
+        "invalidates",
+        "value"
+      ]
+    },
+    "route_0090": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "present": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "present"
+          ]
+        },
+        "present": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "1": {
+              "type": "string"
+            },
+            "2": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "invalidates",
+        "present"
+      ]
+    },
+    "route_0091": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
         "cells": {
           "type": "object",
           "additionalProperties": false,
@@ -8243,63 +8327,6 @@
         "decisions",
         "logical_projection",
         "ordinary_snapshot_count"
-      ]
-    },
-    "route_0090": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "output": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "output"
-          ]
-        },
-        "output": {
-          "anyOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "output"
-      ]
-    },
-    "route_0091": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "output": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "output"
-          ]
-        },
-        "output": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "invalidates",
-        "output"
       ]
     },
     "route_0092": {
@@ -8351,14 +8378,7 @@
           ]
         },
         "output": {
-          "anyOf": [
-            {
-              "type": "null"
-            },
-            {
-              "type": "string"
-            }
-          ]
+          "type": "string"
         }
       },
       "required": [
@@ -8383,7 +8403,14 @@
           ]
         },
         "output": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
         }
       },
       "required": [
@@ -8427,6 +8454,63 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "output": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "output"
+          ]
+        },
+        "output": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "invalidates",
+        "output"
+      ]
+    },
+    "route_0097": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "output": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "output"
+          ]
+        },
+        "output": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "required": [
+        "invalidates",
+        "output"
+      ]
+    },
+    "route_0098": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
         "dependents_of": {
           "type": "object",
           "additionalProperties": false,
@@ -8462,7 +8546,7 @@
         "note"
       ]
     },
-    "route_0097": {
+    "route_0099": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8517,7 +8601,7 @@
         }
       }
     },
-    "route_0098": {
+    "route_0100": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8606,7 +8690,7 @@
         }
       }
     },
-    "route_0099": {
+    "route_0101": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8643,7 +8727,7 @@
         "note"
       ]
     },
-    "route_0100": {
+    "route_0102": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8715,7 +8799,7 @@
         }
       }
     },
-    "route_0101": {
+    "route_0103": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8755,7 +8839,7 @@
         "note"
       ]
     },
-    "route_0102": {
+    "route_0104": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8783,7 +8867,7 @@
         "note"
       ]
     },
-    "route_0103": {
+    "route_0105": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8814,7 +8898,7 @@
         "note"
       ]
     },
-    "route_0104": {
+    "route_0106": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8829,7 +8913,7 @@
         "note"
       ]
     },
-    "route_0105": {
+    "route_0107": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8871,7 +8955,7 @@
         "note"
       ]
     },
-    "route_0106": {
+    "route_0108": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8922,7 +9006,7 @@
         "note"
       ]
     },
-    "route_0107": {
+    "route_0109": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8961,7 +9045,7 @@
         "note"
       ]
     },
-    "route_0108": {
+    "route_0110": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -8988,7 +9072,7 @@
         "note"
       ]
     },
-    "route_0109": {
+    "route_0111": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9025,7 +9109,7 @@
         }
       }
     },
-    "route_0110": {
+    "route_0112": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9091,7 +9175,7 @@
         }
       }
     },
-    "route_0111": {
+    "route_0113": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9230,7 +9314,7 @@
         "observationally_equal"
       ]
     },
-    "route_0112": {
+    "route_0114": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9265,7 +9349,7 @@
         }
       }
     },
-    "route_0113": {
+    "route_0115": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9354,63 +9438,63 @@
         }
       }
     },
-    "route_0114": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "computes_of": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "sig": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "sig"
-          ]
-        },
-        "note": {
-          "type": "string"
-        },
-        "value": {
-          "type": "integer"
-        }
-      },
-      "required": [
-        "computes_of",
-        "note"
-      ]
-    },
-    "route_0115": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "computes_of": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "sig": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "sig"
-          ]
-        },
-        "note": {
-          "type": "string"
-        },
-        "value": {
-          "type": "integer"
-        }
-      },
-      "required": [
-        "computes_of",
-        "note"
-      ]
-    },
     "route_0116": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "computes_of": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "sig": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "sig"
+          ]
+        },
+        "note": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "computes_of",
+        "note"
+      ]
+    },
+    "route_0117": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "computes_of": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "sig": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "sig"
+          ]
+        },
+        "note": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "computes_of",
+        "note"
+      ]
+    },
+    "route_0118": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9446,7 +9530,7 @@
         "note"
       ]
     },
-    "route_0117": {
+    "route_0119": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9479,7 +9563,7 @@
         "note"
       ]
     },
-    "route_0118": {
+    "route_0120": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9517,7 +9601,7 @@
         "terminal_outcome"
       ]
     },
-    "route_0119": {
+    "route_0121": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9562,7 +9646,7 @@
         }
       }
     },
-    "route_0120": {
+    "route_0122": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9594,7 +9678,7 @@
         "state_after"
       ]
     },
-    "route_0121": {
+    "route_0123": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9654,7 +9738,7 @@
         }
       }
     },
-    "route_0122": {
+    "route_0124": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9705,7 +9789,7 @@
         }
       }
     },
-    "route_0123": {
+    "route_0125": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9733,7 +9817,7 @@
         "span"
       ]
     },
-    "route_0124": {
+    "route_0126": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9762,7 +9846,7 @@
         "receiver_last_epoch_after"
       ]
     },
-    "route_0125": {
+    "route_0127": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9789,7 +9873,7 @@
         "outcome"
       ]
     },
-    "route_0126": {
+    "route_0128": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9849,7 +9933,7 @@
         }
       }
     },
-    "route_0127": {
+    "route_0129": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9885,7 +9969,7 @@
         }
       }
     },
-    "route_0128": {
+    "route_0130": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9933,7 +10017,7 @@
         "resync_requests_emitted"
       ]
     },
-    "route_0129": {
+    "route_0131": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9948,7 +10032,7 @@
         "note"
       ]
     },
-    "route_0130": {
+    "route_0132": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9987,7 +10071,7 @@
         "outcome"
       ]
     },
-    "route_0131": {
+    "route_0133": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10014,7 +10098,7 @@
         }
       }
     },
-    "route_0132": {
+    "route_0134": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10039,7 +10123,7 @@
         "invalidates"
       ]
     },
-    "route_0133": {
+    "route_0135": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10064,7 +10148,7 @@
         "state"
       ]
     },
-    "route_0134": {
+    "route_0136": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10089,7 +10173,7 @@
         "invalidates"
       ]
     },
-    "route_0135": {
+    "route_0137": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10114,7 +10198,7 @@
         "is_timed_out"
       ]
     },
-    "route_0136": {
+    "route_0138": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10148,7 +10232,7 @@
         "invalidates"
       ]
     },
-    "route_0137": {
+    "route_0139": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10173,7 +10257,7 @@
         "invalidates"
       ]
     },
-    "route_0138": {
+    "route_0140": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10198,7 +10282,7 @@
         "ready"
       ]
     },
-    "route_0139": {
+    "route_0141": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10235,7 +10319,7 @@
         "projection"
       ]
     },
-    "route_0140": {
+    "route_0142": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10255,7 +10339,56 @@
         "roster_sorted_ascending"
       ]
     },
-    "route_0141": {
+    "route_0143": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "frame": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "candidate": {
+              "type": "string"
+            },
+            "code": {
+              "type": "string"
+            },
+            "from": {
+              "type": "integer"
+            },
+            "message": {
+              "type": "string"
+            },
+            "peer": {
+              "type": "integer"
+            },
+            "peers": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "sdp": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        "to": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "frame",
+        "to"
+      ]
+    },
+    "route_0144": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10294,7 +10427,7 @@
         }
       }
     },
-    "route_0142": {
+    "route_0145": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10322,7 +10455,7 @@
         "root_count"
       ]
     },
-    "route_0143": {
+    "route_0146": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10354,7 +10487,7 @@
         "root_count"
       ]
     },
-    "route_0144": {
+    "route_0147": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10394,7 +10527,7 @@
         "root_count"
       ]
     },
-    "route_0145": {
+    "route_0148": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10420,7 +10553,7 @@
         "revision"
       ]
     },
-    "route_0146": {
+    "route_0149": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10447,7 +10580,7 @@
         "outcome"
       ]
     },
-    "route_0147": {
+    "route_0150": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10468,7 +10601,7 @@
         "outcome"
       ]
     },
-    "route_0148": {
+    "route_0151": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10497,7 +10630,7 @@
         "next_fire"
       ]
     },
-    "route_0149": {
+    "route_0152": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10526,7 +10659,7 @@
         "value"
       ]
     },
-    "route_0150": {
+    "route_0153": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10555,7 +10688,7 @@
         "next_fire"
       ]
     },
-    "route_0151": {
+    "route_0154": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10602,7 +10735,7 @@
         "value"
       ]
     },
-    "route_0152": {
+    "route_0155": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10634,7 +10767,7 @@
         "output"
       ]
     },
-    "route_0153": {
+    "route_0156": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10659,7 +10792,7 @@
         "output"
       ]
     },
-    "route_0154": {
+    "route_0157": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10691,7 +10824,7 @@
         "output"
       ]
     },
-    "route_0155": {
+    "route_0158": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10727,6 +10860,8 @@
   "x-block-names": [
     "assertions",
     "expect",
+    "expect_after",
+    "expect_initial",
     "expected"
   ],
   "x-fixture-routes": [
@@ -10861,649 +10996,664 @@
       "schema": "route_0026"
     },
     {
-      "fixture": "collections/seqcrdt_convergence.json",
-      "pointer": "/scenarios/*/expect",
+      "fixture": "collections/semtree_incremental.json",
+      "pointer": "/scenarios/*/expect_after",
       "schema": "route_0027"
     },
     {
-      "fixture": "collections/stableid_alignment.json",
-      "pointer": "/scenarios/*/expect",
+      "fixture": "collections/semtree_incremental.json",
+      "pointer": "/scenarios/*/expect_initial",
       "schema": "route_0028"
     },
     {
-      "fixture": "collections/textcrdt_convergence.json",
+      "fixture": "collections/seqcrdt_convergence.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0029"
     },
     {
-      "fixture": "collections/textcrdt_delta_sync.json",
+      "fixture": "collections/stableid_alignment.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0030"
     },
     {
-      "fixture": "collections/topiccell_broadcast_cursor_isolation.json",
-      "pointer": "/steps/*/expected",
+      "fixture": "collections/textcrdt_convergence.json",
+      "pointer": "/scenarios/*/expect",
       "schema": "route_0031"
     },
     {
-      "fixture": "collections/topiccell_durable_replay_gc.json",
-      "pointer": "/steps/*/expected",
+      "fixture": "collections/textcrdt_delta_sync.json",
+      "pointer": "/scenarios/*/expect",
       "schema": "route_0032"
     },
     {
-      "fixture": "collections/topiccell_ephemeral_lifecycle.json",
+      "fixture": "collections/topiccell_broadcast_cursor_isolation.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0033"
     },
     {
-      "fixture": "collections/topiccell_offline_tail_bounds.json",
+      "fixture": "collections/topiccell_durable_replay_gc.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0034"
     },
     {
-      "fixture": "collections/workqueue_competing_delivery.json",
+      "fixture": "collections/topiccell_ephemeral_lifecycle.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0035"
     },
     {
-      "fixture": "collections/workqueue_lease_deadletter.json",
+      "fixture": "collections/topiccell_offline_tail_bounds.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0036"
     },
     {
-      "fixture": "coordination/leader.json",
+      "fixture": "collections/workqueue_competing_delivery.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0037"
     },
     {
-      "fixture": "coordination/lease.json",
+      "fixture": "collections/workqueue_lease_deadletter.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0038"
     },
     {
-      "fixture": "coordination/lock.json",
+      "fixture": "coordination/leader.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0039"
     },
     {
-      "fixture": "coordination/quorum.json",
+      "fixture": "coordination/lease.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0040"
     },
     {
-      "fixture": "coordination/semaphore.json",
+      "fixture": "coordination/lock.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0041"
     },
     {
+      "fixture": "coordination/quorum.json",
+      "pointer": "/steps/*/expected",
+      "schema": "route_0042"
+    },
+    {
+      "fixture": "coordination/semaphore.json",
+      "pointer": "/steps/*/expected",
+      "schema": "route_0043"
+    },
+    {
       "fixture": "crdt-tree/algebra.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0042"
+      "schema": "route_0044"
     },
     {
       "fixture": "delta_non_sequential.json",
       "pointer": "/assertions",
-      "schema": "route_0043"
+      "schema": "route_0045"
     },
     {
       "fixture": "delta_sequential.json",
       "pointer": "/assertions",
-      "schema": "route_0044"
+      "schema": "route_0046"
     },
     {
       "fixture": "delta_shared_blob.json",
       "pointer": "/assertions",
-      "schema": "route_0045"
+      "schema": "route_0047"
     },
     {
       "fixture": "delta_zero_copy_arrow.json",
       "pointer": "/assertions",
-      "schema": "route_0046"
+      "schema": "route_0048"
     },
     {
       "fixture": "distributed/anti_entropy_converge.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0047"
+      "schema": "route_0049"
     },
     {
       "fixture": "distributed/crdt_sync_frames.json",
       "pointer": "/frames/*/assertions",
-      "schema": "route_0048"
+      "schema": "route_0050"
     },
     {
       "fixture": "egress/egress_generation_fence.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0049"
+      "schema": "route_0051"
     },
     {
       "fixture": "egress/egress_inflight_window.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0050"
+      "schema": "route_0052"
     },
     {
       "fixture": "egress/egress_ordered_ack.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0051"
+      "schema": "route_0053"
     },
     {
       "fixture": "egress/egress_retry_budget.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0052"
+      "schema": "route_0054"
     },
     {
       "fixture": "egress/latest_durable_projection.json",
       "pointer": "/scenarios/*/steps/*/expected",
-      "schema": "route_0053"
+      "schema": "route_0055"
     },
     {
       "fixture": "familysync/materialize_on_ingest.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0054"
+      "schema": "route_0056"
     },
     {
       "fixture": "ingress/boundary_ingress_adapter.json",
       "pointer": "/scenarios/*/steps/*/expected",
-      "schema": "route_0055"
+      "schema": "route_0057"
     },
     {
       "fixture": "ingress/ingress_backpressure.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0056"
+      "schema": "route_0058"
     },
     {
       "fixture": "ingress/ingress_disconnect_replay.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0057"
+      "schema": "route_0059"
     },
     {
       "fixture": "ingress/ingress_freshness_and_retry.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0058"
+      "schema": "route_0060"
     },
     {
       "fixture": "ingress/ingress_generation_handoff.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0059"
+      "schema": "route_0061"
     },
     {
       "fixture": "ingress/ingress_ordered_delivery.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0060"
+      "schema": "route_0062"
     },
     {
       "fixture": "ingress/ingress_reorder_and_duplication.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0061"
+      "schema": "route_0063"
     },
     {
       "fixture": "ingress/ingress_reorder_window_overflow.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0062"
+      "schema": "route_0064"
     },
     {
       "fixture": "lossless-tree/apply_update_advances_counter.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0063"
+      "schema": "route_0065"
     },
     {
       "fixture": "lossless-tree/concurrent_conflict_preserves_text.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0064"
+      "schema": "route_0066"
     },
     {
       "fixture": "lossless-tree/concurrent_insert_same_parent.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0065"
+      "schema": "route_0067"
     },
     {
       "fixture": "lossless-tree/concurrent_reorder_and_leaf_edit.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0066"
+      "schema": "route_0068"
     },
     {
       "fixture": "lossless-tree/exact_roundtrip.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0067"
+      "schema": "route_0069"
     },
     {
       "fixture": "lossless-tree/invalid_source_roundtrip.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0068"
+      "schema": "route_0070"
     },
     {
       "fixture": "lossless-tree/non_contiguous_anti_entropy.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0069"
+      "schema": "route_0071"
     },
     {
       "fixture": "lossless-tree/one_leaf_edit_delta.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0070"
+      "schema": "route_0072"
     },
     {
       "fixture": "lossless-tree/out_of_order_delivery_buffers.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0071"
+      "schema": "route_0073"
     },
     {
       "fixture": "lossless-tree/split_merge.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0072"
+      "schema": "route_0074"
     },
     {
       "fixture": "lossless-tree/token_trivia_preservation.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0073"
+      "schema": "route_0075"
     },
     {
       "fixture": "materialization/deferral_not_deallocation.json",
       "pointer": "/expected",
-      "schema": "route_0074"
+      "schema": "route_0076"
     },
     {
       "fixture": "materialization/entry_kind_orthogonal_to_mode.json",
       "pointer": "/expected",
-      "schema": "route_0075"
+      "schema": "route_0077"
     },
     {
       "fixture": "materialization/observational_transparency.json",
       "pointer": "/expected",
-      "schema": "route_0076"
+      "schema": "route_0078"
     },
     {
       "fixture": "membership/membership_lifecycle.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0077"
+      "schema": "route_0079"
     },
     {
       "fixture": "message-passing/accepted_then_applied_receipt.json",
       "pointer": "/expect",
-      "schema": "route_0078"
+      "schema": "route_0080"
     },
     {
       "fixture": "message-passing/cancel_preempts_nonterminal.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0079"
+      "schema": "route_0081"
     },
     {
       "fixture": "message-passing/editor_route_submit.json",
       "pointer": "/expect",
-      "schema": "route_0080"
+      "schema": "route_0082"
     },
     {
       "fixture": "message-passing/reconnect_command_projection.json",
       "pointer": "/expect",
-      "schema": "route_0081"
+      "schema": "route_0083"
     },
     {
       "fixture": "message-passing/rpc_call_waits_for_terminal.json",
       "pointer": "/expect",
-      "schema": "route_0082"
+      "schema": "route_0084"
     },
     {
       "fixture": "message-passing/stale_generation_ignored.json",
       "pointer": "/expect",
-      "schema": "route_0083"
+      "schema": "route_0085"
     },
     {
       "fixture": "message-passing/sync_tmux_layout_submit.json",
       "pointer": "/expect",
-      "schema": "route_0084"
+      "schema": "route_0086"
     },
     {
       "fixture": "message-passing/terminal_conflict_fail_closed.json",
       "pointer": "/expect",
-      "schema": "route_0085"
+      "schema": "route_0087"
     },
     {
       "fixture": "presence/awareness.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0086"
+      "schema": "route_0088"
     },
     {
       "fixture": "presence/ephemeral.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0087"
+      "schema": "route_0089"
     },
     {
       "fixture": "presence/presence.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0088"
+      "schema": "route_0090"
     },
     {
       "fixture": "protobuf/graph_boundary_traces.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0089"
+      "schema": "route_0091"
     },
     {
       "fixture": "rateshape/debounce.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0090"
+      "schema": "route_0092"
     },
     {
       "fixture": "rateshape/probabilistic_sample.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0091"
+      "schema": "route_0093"
     },
     {
       "fixture": "rateshape/sample_count.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0092"
+      "schema": "route_0094"
     },
     {
       "fixture": "rateshape/sample_time.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0093"
+      "schema": "route_0095"
     },
     {
       "fixture": "rateshape/throttle_leading.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0094"
+      "schema": "route_0096"
     },
     {
       "fixture": "rateshape/throttle_trailing.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0095"
+      "schema": "route_0097"
     },
     {
       "fixture": "reactive-graph/churn_returns_to_baseline.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0096"
+      "schema": "route_0098"
     },
     {
       "fixture": "reactive-graph/cross_scope_teardown_hazard.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0097"
+      "schema": "route_0099"
     },
     {
       "fixture": "reactive-graph/disarm_disposes_nothing.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0098"
+      "schema": "route_0100"
     },
     {
       "fixture": "reactive-graph/disposal_does_not_run_surviving_effects.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0099"
+      "schema": "route_0101"
     },
     {
       "fixture": "reactive-graph/dispose_detaches_edges_both_directions.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0100"
+      "schema": "route_0102"
     },
     {
       "fixture": "reactive-graph/dispose_signal_reverts_to_lazy.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0101"
+      "schema": "route_0103"
     },
     {
       "fixture": "reactive-graph/exact_fold_paths_stay_exact.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0102"
+      "schema": "route_0104"
     },
     {
       "fixture": "reactive-graph/failed_compute_is_never_cached.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0103"
+      "schema": "route_0105"
     },
     {
       "fixture": "reactive-graph/feedback_drain_bound_reports_exhaustion.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0104"
+      "schema": "route_0106"
     },
     {
       "fixture": "reactive-graph/merge_cell_acquires_no_dependency_edge.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0105"
+      "schema": "route_0107"
     },
     {
       "fixture": "reactive-graph/merge_feed_through_a_formula_coalesces.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0106"
+      "schema": "route_0108"
     },
     {
       "fixture": "reactive-graph/merge_folds_synchronously_in_batch.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0107"
+      "schema": "route_0109"
     },
     {
       "fixture": "reactive-graph/merge_per_settled_cone_not_per_write.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0108"
+      "schema": "route_0110"
     },
     {
       "fixture": "reactive-graph/read_after_dispose_is_an_error.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0109"
+      "schema": "route_0111"
     },
     {
       "fixture": "reactive-graph/recycled_id_inherits_nothing.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0110"
+      "schema": "route_0112"
     },
     {
       "fixture": "reactive-graph/scope_teardown_equals_fold_of_disposals.json",
       "pointer": "/expected",
-      "schema": "route_0111"
+      "schema": "route_0113"
     },
     {
       "fixture": "reactive-graph/scope_teardown_equals_fold_of_disposals.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0112"
+      "schema": "route_0114"
     },
     {
       "fixture": "reactive-graph/scoping_bounds_teardown_not_visibility.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0113"
+      "schema": "route_0115"
     },
     {
       "fixture": "reactive-graph/signal_materializes_once_per_batch.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0114"
+      "schema": "route_0116"
     },
     {
       "fixture": "reactive-graph/signal_materializes_without_a_read.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0115"
+      "schema": "route_0117"
     },
     {
       "fixture": "reactive-graph/teardown_runs_members_in_reverse_creation_order.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0116"
+      "schema": "route_0118"
     },
     {
       "fixture": "reactive-graph/transitive_invalidation_reaches_depth.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0117"
+      "schema": "route_0119"
     },
     {
       "fixture": "receipts/causal_receipts.json",
       "pointer": "/assertions",
-      "schema": "route_0118"
+      "schema": "route_0120"
     },
     {
       "fixture": "reliable-sync/coalesce_bounds_outbox.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0119"
+      "schema": "route_0121"
     },
     {
       "fixture": "reliable-sync/idempotent_redelivery.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0120"
+      "schema": "route_0122"
     },
     {
       "fixture": "reliable-sync/liveness_lease_eviction.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0121"
+      "schema": "route_0123"
     },
     {
       "fixture": "reliable-sync/liveness_orset_lww.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0122"
+      "schema": "route_0124"
     },
     {
       "fixture": "reliable-sync/multi_epoch_delta.json",
       "pointer": "/assertions",
-      "schema": "route_0123"
-    },
-    {
-      "fixture": "reliable-sync/multi_epoch_delta.json",
-      "pointer": "/scenarios/*/expect",
-      "schema": "route_0124"
-    },
-    {
-      "fixture": "reliable-sync/outbox_journal_decode.json",
-      "pointer": "/scenarios/*/expect",
       "schema": "route_0125"
     },
     {
-      "fixture": "reliable-sync/outbox_replay_after_crash.json",
+      "fixture": "reliable-sync/multi_epoch_delta.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0126"
     },
     {
-      "fixture": "reliable-sync/outbox_store_protocol.json",
+      "fixture": "reliable-sync/outbox_journal_decode.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0127"
     },
     {
-      "fixture": "reliable-sync/resync_gap_converge.json",
+      "fixture": "reliable-sync/outbox_replay_after_crash.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0128"
     },
     {
-      "fixture": "replay/canonical_encoding_equality.json",
-      "pointer": "/steps/*/expected",
+      "fixture": "reliable-sync/outbox_store_protocol.json",
+      "pointer": "/scenarios/*/expect",
       "schema": "route_0129"
     },
     {
-      "fixture": "replay/divergence_localization.json",
-      "pointer": "/steps/*/expected",
+      "fixture": "reliable-sync/resync_gap_converge.json",
+      "pointer": "/scenarios/*/expect",
       "schema": "route_0130"
     },
     {
-      "fixture": "replay/fingerprint_log_binding.json",
+      "fixture": "replay/canonical_encoding_equality.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0131"
     },
     {
-      "fixture": "resilience/bulkhead.json",
+      "fixture": "replay/divergence_localization.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0132"
     },
     {
-      "fixture": "resilience/circuit_breaker.json",
+      "fixture": "replay/fingerprint_log_binding.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0133"
     },
     {
-      "fixture": "resilience/retry.json",
+      "fixture": "resilience/bulkhead.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0134"
     },
     {
-      "fixture": "resilience/timeout.json",
+      "fixture": "resilience/circuit_breaker.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0135"
     },
     {
-      "fixture": "service/discovery.json",
+      "fixture": "resilience/retry.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0136"
     },
     {
-      "fixture": "service/health.json",
+      "fixture": "resilience/timeout.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0137"
     },
     {
-      "fixture": "service/readiness.json",
+      "fixture": "service/discovery.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0138"
     },
     {
-      "fixture": "service/service_registry.json",
+      "fixture": "service/health.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0139"
     },
     {
-      "fixture": "signaling/anti_spoof_session.json",
-      "pointer": "/assertions",
+      "fixture": "service/readiness.json",
+      "pointer": "/steps/*/expected",
       "schema": "route_0140"
     },
     {
-      "fixture": "signaling/frames.json",
-      "pointer": "/frames/*/assertions",
+      "fixture": "service/service_registry.json",
+      "pointer": "/steps/*/expected",
       "schema": "route_0141"
     },
     {
-      "fixture": "snapshot_minimal.json",
+      "fixture": "signaling/anti_spoof_session.json",
       "pointer": "/assertions",
       "schema": "route_0142"
     },
     {
+      "fixture": "signaling/anti_spoof_session.json",
+      "pointer": "/steps/*/expect/*",
+      "schema": "route_0143"
+    },
+    {
+      "fixture": "signaling/frames.json",
+      "pointer": "/frames/*/assertions",
+      "schema": "route_0144"
+    },
+    {
+      "fixture": "snapshot_minimal.json",
+      "pointer": "/assertions",
+      "schema": "route_0145"
+    },
+    {
       "fixture": "snapshot_multi_node.json",
       "pointer": "/assertions",
-      "schema": "route_0143"
+      "schema": "route_0146"
     },
     {
       "fixture": "snapshot_shared_blob.json",
       "pointer": "/assertions",
-      "schema": "route_0144"
+      "schema": "route_0147"
     },
     {
       "fixture": "stdlib/revision_barrier.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0145"
+      "schema": "route_0148"
     },
     {
       "fixture": "stdlib/timeout.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0146"
+      "schema": "route_0149"
     },
     {
       "fixture": "stdlib/timer.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0147"
+      "schema": "route_0150"
     },
     {
       "fixture": "temporal/cron_pattern.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0148"
+      "schema": "route_0151"
     },
     {
       "fixture": "temporal/deadline_expiry.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0149"
+      "schema": "route_0152"
     },
     {
       "fixture": "temporal/interval_periodic.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0150"
+      "schema": "route_0153"
     },
     {
       "fixture": "temporal/timer_single_shot.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0151"
+      "schema": "route_0154"
     },
     {
       "fixture": "windowing/session.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0152"
+      "schema": "route_0155"
     },
     {
       "fixture": "windowing/sliding_count.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0153"
+      "schema": "route_0156"
     },
     {
       "fixture": "windowing/tumbling_count.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0154"
+      "schema": "route_0157"
     },
     {
       "fixture": "windowing/tumbling_time.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0155"
+      "schema": "route_0158"
     }
   ]
 }
