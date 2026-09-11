@@ -58,7 +58,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Thread-safe context [^thread-safe-context] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Async reactive context [^async-reactive-context] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Merge algebra [^merge-algebra] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ~ |
-| Replay-equivalence proof *(opt)* [^replay-equivalence-proof] | — | ✅ | — | — | — | — | — | — | — | — |
+| Replay-equivalence proof *(opt)* [^replay-equivalence-proof] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 
 #### Materialization
 
