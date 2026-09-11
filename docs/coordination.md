@@ -1,8 +1,14 @@
 # Distributed coordination (`#lzcoord`)
 
-Phase 3 of the realtime + distributed primitives plan. Reads `MembershipCell`
-(`#lzmemb`) and the temporal sources (`#lztime`). These are the leader / lease /
-lock / semaphore / barrier primitives every distributed control plane wants.
+Phase 3 of the realtime + distributed primitives plan. Layers on top of
+membership (`#lzmemb`) and the temporal sources (`#lztime`) *conceptually* — it
+is driven by the same monotone `tick(now: u64)` logical clock as `#lztime` and
+its peer ids are the ones membership tracks — but the cores here compose
+neither: each is self-contained over plain integers and peer ids, and its
+`expiry` is re-armable in a way `DeadlineCore` deliberately is not (see
+[temporal-sources.md](temporal-sources.md#relationship-to-the-downstream-deadline-driven-primitives)).
+These are the leader / lease / lock / semaphore / barrier primitives every
+distributed control plane wants.
 Each is a pure compute **core** (a state machine over plain integers / peer ids —
 `BytesPayload`, C++-eligible) split from a reactive **cell** projecting the
 salient reader (holder, role, is_locked, permits, is_open) onto a `Cell`.

@@ -78,8 +78,35 @@ Composite over a `TimerCore` and a `Cell<T>`. State is `Deadlined<T>`, either
 
 - **Expiry is monotone** and preserves the payload (`Expired(v)` carries the
   same `v` that was `Live(v)`); the reader invalidates only on the expiry edge.
-- Used to build every deadline-driven primitive downstream: lease expiry
-  (`#lzcoord`), ephemeral expiry (`#lzpresence`), RPC timeouts (`#lzresilience`).
+- **One-shot, and deliberately not re-armable.** `DeadlineCore` wraps a
+  `TimerCore`, so once expired it stays expired; there is no `rearm`/`reset`.
+
+### Relationship to the downstream deadline-driven primitives
+
+The deadline-driven primitives in other families — lease expiry (`#lzcoord`
+`LeaseCore`), ephemeral expiry (`#lzpresence` `EphemeralCore`), RPC timeouts
+(`#lzresilience` `TimeoutCore`), window closes (`#lzwindowing`) — **share this
+family's logical-clock discipline but do not compose `DeadlineCore`**, and that
+is intentional, not an oversight:
+
+- They are **re-armable**. `acquire`/`renew`, `set(value, now, ttl)`, and
+  `arm(now, timeout)` each reset the deadline and clear the fired state, so a
+  lease goes held → expired → held and a timeout can be re-armed for the next
+  call. `DeadlineCell`'s `deadline_expired_monotone` invariant forbids exactly
+  that.
+- `EphemeralCore` **drops** its value at expiry (`value = None`), the opposite
+  of `DeadlineCell`'s `deadline_preserves_value` invariant.
+
+What they do share is the contract in [Logical-clock
+discipline](#logical-clock-discipline): a monotone `tick(now: u64)` driven by
+the host runtime, an `expiry`/`deadline` expressed as a tick value, and edge
+returns that fire once per crossing. Reach for `DeadlineCell<T>` when you want a
+one-shot, value-preserving expiry; reach for the family-specific core when the
+deadline is re-armable.
+
+The only in-tree composition of a temporal core outside this family is
+lazily-rs `stdlib::Timer` (`#lzstdlib`), the wall-clock adapter that maps
+`Instant`s around a deadline onto logical ticks `0`/`1` over a real `TimerCore`.
 
 ## Conformance
 
