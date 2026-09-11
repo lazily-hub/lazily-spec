@@ -1,0 +1,85 @@
+{
+  "description": "ReplayHarness — the observation encoding's equality CLASSES, which is the part every binding must agree on. A binding MAY choose its own hash and byte layout (fingerprints are pinned next to a test in one language, never exchanged between bindings), so this fixture never names a hex digest: each step asks only whether two declared values digest the same. Values are type-tagged in the fixture because JSON cannot distinguish int 1 from float 1.0, and integers carry decimal STRINGS so a value beyond 2^53 stays exact.",
+  "kind": "Replay",
+  "model": "CanonicalEncoding",
+  "config": {
+    "values": {
+      "map_ab": { "t": "map", "v": [["a", { "t": "int", "v": "1" }], ["b", { "t": "int", "v": "2" }]] },
+      "map_ba": { "t": "map", "v": [["b", { "t": "int", "v": "2" }], ["a", { "t": "int", "v": "1" }]] },
+      "set_123": { "t": "set", "v": [{ "t": "int", "v": "1" }, { "t": "int", "v": "2" }, { "t": "int", "v": "3" }] },
+      "set_312": { "t": "set", "v": [{ "t": "int", "v": "3" }, { "t": "int", "v": "1" }, { "t": "int", "v": "2" }] },
+      "seq_12": { "t": "seq", "v": [{ "t": "int", "v": "1" }, { "t": "int", "v": "2" }] },
+      "seq_21": { "t": "seq", "v": [{ "t": "int", "v": "2" }, { "t": "int", "v": "1" }] },
+      "int_1": { "t": "int", "v": "1" },
+      "str_1": { "t": "str", "v": "1" },
+      "float_1": { "t": "float", "v": "1.0" },
+      "bool_true": { "t": "bool", "v": true },
+      "bytes_1": { "t": "bytes", "v": "31" },
+      "seq_a_bc": { "t": "seq", "v": [{ "t": "str", "v": "a" }, { "t": "str", "v": "bc" }] },
+      "seq_ab_c": { "t": "seq", "v": [{ "t": "str", "v": "ab" }, { "t": "str", "v": "c" }] },
+      "big_int": { "t": "int", "v": "9007199254740993" },
+      "big_int_plus_one": { "t": "int", "v": "9007199254740994" },
+      "opaque": { "t": "opaque" }
+    }
+  },
+  "steps": [
+    {
+      "op": { "type": "digest_equal", "left": "map_ab", "right": "map_ba" },
+      "returns": true,
+      "expected": { "property": "mapping_order_is_not_part_of_the_value" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "set_123", "right": "set_312" },
+      "returns": true,
+      "expected": { "property": "set_order_is_not_part_of_the_value" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "seq_12", "right": "seq_21" },
+      "returns": false,
+      "expected": { "property": "sequence_order_is_part_of_the_value" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "int_1", "right": "str_1" },
+      "returns": false,
+      "expected": { "property": "an_integer_is_not_its_decimal_text" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "int_1", "right": "float_1" },
+      "returns": false,
+      "expected": { "property": "an_integer_is_not_the_equal_float" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "int_1", "right": "bool_true" },
+      "returns": false,
+      "expected": { "property": "a_boolean_is_not_the_integer_one" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "str_1", "right": "bytes_1" },
+      "returns": false,
+      "expected": { "property": "text_is_not_the_equal_byte_string" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "seq_a_bc", "right": "seq_ab_c" },
+      "returns": false,
+      "expected": { "property": "members_are_framed_so_a_concatenation_is_not_ambiguous" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "big_int", "right": "big_int" },
+      "returns": true,
+      "expected": { "property": "an_integer_beyond_two_to_the_fifty_three_is_exact" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "big_int", "right": "big_int_plus_one" },
+      "returns": false,
+      "expected": { "property": "adjacent_integers_beyond_two_to_the_fifty_three_stay_distinct" }
+    },
+    {
+      "op": { "type": "digest_defined", "value": "opaque" },
+      "returns": false,
+      "expected": {
+        "outcome": "encoding_error",
+        "property": "an_undefined_value_fails_loudly_instead_of_using_the_host_default_rendering"
+      }
+    }
+  ]
+}

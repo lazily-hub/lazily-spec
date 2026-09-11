@@ -1816,6 +1816,48 @@
       }
     },
     {
+      "title": "replay/canonical_encoding_equality.json#/steps/*/expected",
+      "properties": {
+        "fixture": {
+          "const": "replay/canonical_encoding_equality.json"
+        },
+        "pointer": {
+          "const": "/steps/*/expected"
+        },
+        "value": {
+          "$ref": "#/$defs/route_0129"
+        }
+      }
+    },
+    {
+      "title": "replay/divergence_localization.json#/steps/*/expected",
+      "properties": {
+        "fixture": {
+          "const": "replay/divergence_localization.json"
+        },
+        "pointer": {
+          "const": "/steps/*/expected"
+        },
+        "value": {
+          "$ref": "#/$defs/route_0130"
+        }
+      }
+    },
+    {
+      "title": "replay/fingerprint_log_binding.json#/steps/*/expected",
+      "properties": {
+        "fixture": {
+          "const": "replay/fingerprint_log_binding.json"
+        },
+        "pointer": {
+          "const": "/steps/*/expected"
+        },
+        "value": {
+          "$ref": "#/$defs/route_0131"
+        }
+      }
+    },
+    {
       "title": "resilience/bulkhead.json#/steps/*/expected",
       "properties": {
         "fixture": {
@@ -1825,7 +1867,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0129"
+          "$ref": "#/$defs/route_0132"
         }
       }
     },
@@ -1839,7 +1881,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0130"
+          "$ref": "#/$defs/route_0133"
         }
       }
     },
@@ -1853,7 +1895,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0131"
+          "$ref": "#/$defs/route_0134"
         }
       }
     },
@@ -1867,7 +1909,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0132"
+          "$ref": "#/$defs/route_0135"
         }
       }
     },
@@ -1881,7 +1923,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0133"
+          "$ref": "#/$defs/route_0136"
         }
       }
     },
@@ -1895,7 +1937,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0134"
+          "$ref": "#/$defs/route_0137"
         }
       }
     },
@@ -1909,7 +1951,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0135"
+          "$ref": "#/$defs/route_0138"
         }
       }
     },
@@ -1923,7 +1965,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0136"
+          "$ref": "#/$defs/route_0139"
         }
       }
     },
@@ -1937,7 +1979,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0137"
+          "$ref": "#/$defs/route_0140"
         }
       }
     },
@@ -1951,7 +1993,7 @@
           "const": "/frames/*/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0138"
+          "$ref": "#/$defs/route_0141"
         }
       }
     },
@@ -1965,7 +2007,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0139"
+          "$ref": "#/$defs/route_0142"
         }
       }
     },
@@ -1979,7 +2021,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0140"
+          "$ref": "#/$defs/route_0143"
         }
       }
     },
@@ -1993,7 +2035,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0141"
+          "$ref": "#/$defs/route_0144"
         }
       }
     },
@@ -2007,7 +2049,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0142"
+          "$ref": "#/$defs/route_0145"
         }
       }
     },
@@ -2021,7 +2063,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0143"
+          "$ref": "#/$defs/route_0146"
         }
       }
     },
@@ -2035,7 +2077,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0144"
+          "$ref": "#/$defs/route_0147"
         }
       }
     },
@@ -2049,7 +2091,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0145"
+          "$ref": "#/$defs/route_0148"
         }
       }
     },
@@ -2063,7 +2105,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0146"
+          "$ref": "#/$defs/route_0149"
         }
       }
     },
@@ -2077,7 +2119,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0147"
+          "$ref": "#/$defs/route_0150"
         }
       }
     },
@@ -2091,7 +2133,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0148"
+          "$ref": "#/$defs/route_0151"
         }
       }
     },
@@ -2105,7 +2147,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0149"
+          "$ref": "#/$defs/route_0152"
         }
       }
     },
@@ -2119,7 +2161,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0150"
+          "$ref": "#/$defs/route_0153"
         }
       }
     },
@@ -2133,7 +2175,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0151"
+          "$ref": "#/$defs/route_0154"
         }
       }
     },
@@ -2147,7 +2189,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0152"
+          "$ref": "#/$defs/route_0155"
         }
       }
     }
@@ -9895,6 +9937,87 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "outcome": {
+          "type": "string"
+        },
+        "property": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "property"
+      ]
+    },
+    "route_0130": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint_seqs": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "divergences": {
+          "type": "integer"
+        },
+        "final_sum": {
+          "type": "integer"
+        },
+        "first_divergent_kind": {
+          "type": "string"
+        },
+        "first_divergent_label": {
+          "type": "string"
+        },
+        "first_divergent_seq": {
+          "type": "integer"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "property": {
+          "type": "string"
+        },
+        "stride": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "outcome"
+      ]
+    },
+    "route_0131": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint_seqs": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "divergences": {
+          "type": "integer"
+        },
+        "final_sum": {
+          "type": "integer"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "property": {
+          "type": "string"
+        },
+        "stride": {
+          "type": "integer"
+        }
+      }
+    },
+    "route_0132": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
         "in_use": {
           "type": "integer"
         },
@@ -9916,7 +10039,7 @@
         "invalidates"
       ]
     },
-    "route_0130": {
+    "route_0133": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9941,7 +10064,7 @@
         "state"
       ]
     },
-    "route_0131": {
+    "route_0134": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9966,7 +10089,7 @@
         "invalidates"
       ]
     },
-    "route_0132": {
+    "route_0135": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9991,7 +10114,7 @@
         "is_timed_out"
       ]
     },
-    "route_0133": {
+    "route_0136": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10025,7 +10148,7 @@
         "invalidates"
       ]
     },
-    "route_0134": {
+    "route_0137": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10050,7 +10173,7 @@
         "invalidates"
       ]
     },
-    "route_0135": {
+    "route_0138": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10075,7 +10198,7 @@
         "ready"
       ]
     },
-    "route_0136": {
+    "route_0139": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10112,7 +10235,7 @@
         "projection"
       ]
     },
-    "route_0137": {
+    "route_0140": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10132,7 +10255,7 @@
         "roster_sorted_ascending"
       ]
     },
-    "route_0138": {
+    "route_0141": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10171,7 +10294,7 @@
         }
       }
     },
-    "route_0139": {
+    "route_0142": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10199,7 +10322,7 @@
         "root_count"
       ]
     },
-    "route_0140": {
+    "route_0143": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10231,7 +10354,7 @@
         "root_count"
       ]
     },
-    "route_0141": {
+    "route_0144": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10271,7 +10394,7 @@
         "root_count"
       ]
     },
-    "route_0142": {
+    "route_0145": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10297,7 +10420,7 @@
         "revision"
       ]
     },
-    "route_0143": {
+    "route_0146": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10324,7 +10447,7 @@
         "outcome"
       ]
     },
-    "route_0144": {
+    "route_0147": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10345,7 +10468,7 @@
         "outcome"
       ]
     },
-    "route_0145": {
+    "route_0148": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10374,7 +10497,7 @@
         "next_fire"
       ]
     },
-    "route_0146": {
+    "route_0149": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10403,7 +10526,7 @@
         "value"
       ]
     },
-    "route_0147": {
+    "route_0150": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10432,7 +10555,7 @@
         "next_fire"
       ]
     },
-    "route_0148": {
+    "route_0151": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10479,7 +10602,7 @@
         "value"
       ]
     },
-    "route_0149": {
+    "route_0152": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10511,7 +10634,7 @@
         "output"
       ]
     },
-    "route_0150": {
+    "route_0153": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10536,7 +10659,7 @@
         "output"
       ]
     },
-    "route_0151": {
+    "route_0154": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10568,7 +10691,7 @@
         "output"
       ]
     },
-    "route_0152": {
+    "route_0155": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11248,124 +11371,139 @@
       "schema": "route_0128"
     },
     {
-      "fixture": "resilience/bulkhead.json",
+      "fixture": "replay/canonical_encoding_equality.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0129"
     },
     {
-      "fixture": "resilience/circuit_breaker.json",
+      "fixture": "replay/divergence_localization.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0130"
     },
     {
-      "fixture": "resilience/retry.json",
+      "fixture": "replay/fingerprint_log_binding.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0131"
     },
     {
-      "fixture": "resilience/timeout.json",
+      "fixture": "resilience/bulkhead.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0132"
     },
     {
-      "fixture": "service/discovery.json",
+      "fixture": "resilience/circuit_breaker.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0133"
     },
     {
-      "fixture": "service/health.json",
+      "fixture": "resilience/retry.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0134"
     },
     {
-      "fixture": "service/readiness.json",
+      "fixture": "resilience/timeout.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0135"
     },
     {
-      "fixture": "service/service_registry.json",
+      "fixture": "service/discovery.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0136"
     },
     {
-      "fixture": "signaling/anti_spoof_session.json",
-      "pointer": "/assertions",
+      "fixture": "service/health.json",
+      "pointer": "/steps/*/expected",
       "schema": "route_0137"
     },
     {
-      "fixture": "signaling/frames.json",
-      "pointer": "/frames/*/assertions",
+      "fixture": "service/readiness.json",
+      "pointer": "/steps/*/expected",
       "schema": "route_0138"
     },
     {
-      "fixture": "snapshot_minimal.json",
-      "pointer": "/assertions",
+      "fixture": "service/service_registry.json",
+      "pointer": "/steps/*/expected",
       "schema": "route_0139"
     },
     {
-      "fixture": "snapshot_multi_node.json",
+      "fixture": "signaling/anti_spoof_session.json",
       "pointer": "/assertions",
       "schema": "route_0140"
     },
     {
+      "fixture": "signaling/frames.json",
+      "pointer": "/frames/*/assertions",
+      "schema": "route_0141"
+    },
+    {
+      "fixture": "snapshot_minimal.json",
+      "pointer": "/assertions",
+      "schema": "route_0142"
+    },
+    {
+      "fixture": "snapshot_multi_node.json",
+      "pointer": "/assertions",
+      "schema": "route_0143"
+    },
+    {
       "fixture": "snapshot_shared_blob.json",
       "pointer": "/assertions",
-      "schema": "route_0141"
+      "schema": "route_0144"
     },
     {
       "fixture": "stdlib/revision_barrier.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0142"
+      "schema": "route_0145"
     },
     {
       "fixture": "stdlib/timeout.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0143"
+      "schema": "route_0146"
     },
     {
       "fixture": "stdlib/timer.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0144"
+      "schema": "route_0147"
     },
     {
       "fixture": "temporal/cron_pattern.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0145"
+      "schema": "route_0148"
     },
     {
       "fixture": "temporal/deadline_expiry.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0146"
+      "schema": "route_0149"
     },
     {
       "fixture": "temporal/interval_periodic.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0147"
+      "schema": "route_0150"
     },
     {
       "fixture": "temporal/timer_single_shot.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0148"
+      "schema": "route_0151"
     },
     {
       "fixture": "windowing/session.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0149"
+      "schema": "route_0152"
     },
     {
       "fixture": "windowing/sliding_count.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0150"
+      "schema": "route_0153"
     },
     {
       "fixture": "windowing/tumbling_count.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0151"
+      "schema": "route_0154"
     },
     {
       "fixture": "windowing/tumbling_time.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0152"
+      "schema": "route_0155"
     }
   ]
 }

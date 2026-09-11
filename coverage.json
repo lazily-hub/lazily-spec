@@ -765,6 +765,30 @@
       ]
     },
     {
+      "id": "replay-equivalence-proof",
+      "label": "Replay-equivalence proof",
+      "family": "reactive-graph",
+      "optional": true,
+      "feature": "Replay-equivalence harness — a log-bound fingerprint revalidated before any value compare, first-checkpoint divergence localization, canonical observation encoding (**MAY**, `#lzreplayproof`)",
+      "fixtures": [
+        "replay/fingerprint_log_binding.json",
+        "replay/divergence_localization.json",
+        "replay/canonical_encoding_equality.json"
+      ],
+      "marks": [
+        "—",
+        "✅",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
       "id": "reactive-egress",
       "label": "Reactive egress",
       "family": "egress",

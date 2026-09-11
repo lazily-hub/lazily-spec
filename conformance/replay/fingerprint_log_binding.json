@@ -1,0 +1,74 @@
+{
+  "description": "ReplayHarness — a fingerprint is bound to the log that produced it, and the binding is revalidated BEFORE any observed value is compared. Logs `a` ([+1,+2,+3]) and `b` ([+3,+2,+1]) settle to the SAME final sum 6 and have DIFFERENT log digests, so verifying `a`'s fingerprint against log `b` must report log_mismatch rather than ok: a value-only comparison would pass here and certify nothing about the log in front of it. `check` collects value divergences instead of failing, but still refuses a stale fingerprint — an unanswerable question is not a report.",
+  "kind": "Replay",
+  "model": "ReplayHarness",
+  "config": {
+    "subject": "accumulator",
+    "stride": 1,
+    "logs": {
+      "a": [
+        { "seq": 0, "name": "add", "payload": 1 },
+        { "seq": 1, "name": "add", "payload": 2 },
+        { "seq": 2, "name": "add", "payload": 3 }
+      ],
+      "b": [
+        { "seq": 0, "name": "add", "payload": 3 },
+        { "seq": 1, "name": "add", "payload": 2 },
+        { "seq": 2, "name": "add", "payload": 1 }
+      ]
+    }
+  },
+  "steps": [
+    {
+      "op": { "type": "record", "log": "a", "into": "fp_a" },
+      "expected": {
+        "outcome": "recorded",
+        "checkpoint_seqs": [-1, 0, 1, 2],
+        "final_sum": 6,
+        "stride": 1
+      }
+    },
+    {
+      "op": { "type": "record", "log": "b", "into": "fp_b" },
+      "expected": {
+        "outcome": "recorded",
+        "checkpoint_seqs": [-1, 0, 1, 2],
+        "final_sum": 6,
+        "stride": 1
+      }
+    },
+    {
+      "op": { "type": "log_digest_equal", "left": "a", "right": "b" },
+      "returns": false,
+      "expected": { "property": "event_order_is_part_of_the_log_digest" }
+    },
+    {
+      "op": { "type": "verify", "log": "a", "fingerprint": "fp_a" },
+      "expected": { "outcome": "ok", "divergences": 0 }
+    },
+    {
+      "op": { "type": "verify", "log": "b", "fingerprint": "fp_a" },
+      "expected": {
+        "outcome": "log_mismatch",
+        "divergences": 0,
+        "property": "the_log_binding_is_checked_before_any_value"
+      }
+    },
+    {
+      "op": { "type": "check", "log": "b", "fingerprint": "fp_a" },
+      "expected": {
+        "outcome": "log_mismatch",
+        "divergences": 0,
+        "property": "a_stale_fingerprint_is_refused_by_the_reporting_form_too"
+      }
+    },
+    {
+      "op": { "type": "verify", "log": "b", "fingerprint": "fp_b" },
+      "expected": { "outcome": "ok", "divergences": 0 }
+    },
+    {
+      "op": { "type": "prove", "log": "a", "replays": 2 },
+      "expected": { "outcome": "ok", "divergences": 0 }
+    }
+  ]
+}
