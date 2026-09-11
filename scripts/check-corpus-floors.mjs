@@ -123,19 +123,55 @@ function declaredArrays(source) {
   return out;
 }
 
-/// A floor constant, in any of the three spellings this family uses: a bash
-/// default (`MIN_X="${MIN_X:-150}"`), the same unbraced, or the python
-/// heredoc's `int(os.environ.get("MIN_X", "166"))`.
-function floorValue(source, name) {
+/// A floor constant, in any of the four spellings this family uses: a bash
+/// default (`MIN_X="${MIN_X:-150}"`), the same unbraced, the python heredoc's
+/// `int(os.environ.get("MIN_X", "166"))`, or the node form
+/// `const MIN_X = Number(process.env.MIN_X ?? "157")`.
+///
+/// Each spelling pins the env var name to the CONSTANT's name on purpose.
+/// lazily-dart declares `MIN_FIXTURES = int(os.environ.get("MIN_BLOCK_FIXTURES",
+/// "144"))` in a different guard — a different quantity that happens to share a
+/// variable name and, today, a value. Matching the env key is what keeps that
+/// out.
+function floorMatches(source, name) {
+  const out = [];
   for (const re of [
-    new RegExp(`${name}="\\$\\{${name}:-(\\d+)\\}"`),
-    new RegExp(`${name}=\\$\\{${name}:-(\\d+)\\}`),
-    new RegExp(`${name}\\s*=\\s*int\\(os\\.environ\\.get\\("${name}",\\s*"(\\d+)"\\)\\)`),
+    new RegExp(`${name}="\\$\\{${name}:-(\\d+)\\}"`, "g"),
+    new RegExp(`${name}=\\$\\{${name}:-(\\d+)\\}`, "g"),
+    new RegExp(`${name}\\s*=\\s*int\\(os\\.environ\\.get\\("${name}",\\s*"(\\d+)"\\)\\)`, "g"),
+    new RegExp(`${name}\\s*=\\s*Number\\(process\\.env\\.${name}\\s*\\?\\?\\s*"(\\d+)"\\)`, "g"),
   ]) {
-    const match = re.exec(source);
-    if (match) return Number(match[1]);
+    for (const match of source.matchAll(re)) out.push(Number(match[1]));
   }
-  return null;
+  return out;
+}
+
+/// Where a binding keeps a floor is its own business, so the whole `scripts/`
+/// directory is the ledger, not one file in it. lazily-js keeps MIN_FIXTURES in
+/// `check-conformance-coverage.sh` and MIN_SCENARIOS in
+/// `check-scenario-coverage.mjs`; reading only the first file reported it as
+/// declaring no scenario floor, which is a false gap in this guard rather than a
+/// gap in that binding. Two different values for one floor is a hard failure —
+/// an ambiguous ledger cannot be audited, and picking one silently is how the
+/// unread half stops mattering.
+function floorValue(files, name) {
+  const found = new Map();
+  for (const [file, source] of files) {
+    for (const value of floorMatches(source, name)) {
+      if (!found.has(value)) found.set(value, []);
+      found.get(value).push(file);
+    }
+  }
+  if (found.size === 0) return { value: null };
+  if (found.size > 1) {
+    return {
+      value: null,
+      conflict: [...found.entries()]
+        .map(([value, where]) => `${value} (${where.join(", ")})`)
+        .join(" vs "),
+    };
+  }
+  return { value: [...found.keys()][0] };
 }
 
 function fixtureArea(fixture) {
@@ -145,9 +181,19 @@ function fixtureArea(fixture) {
 }
 
 function loadBinding(dir) {
-  const guard = join(ROOT, "..", dir, "scripts", "check-conformance-coverage.sh");
+  const scripts = join(ROOT, "..", dir, "scripts");
+  const guard = join(scripts, "check-conformance-coverage.sh");
   if (!existsSync(guard)) return null;
   const source = readFileSync(guard, "utf8");
+  // Ledger ARRAYS are read from the coverage guard, which is where every
+  // binding keeps them. Floor CONSTANTS are read from the whole directory.
+  const files = [];
+  for (const entry of readdirSync(scripts).sort()) {
+    const full = join(scripts, entry);
+    if (!statSync(full).isFile()) continue;
+    if (!/\.(sh|mjs|js|py)$/.test(entry)) continue;
+    files.push([entry, readFileSync(full, "utf8")]);
+  }
   const requiredLines = bashArray(source, "REQUIRED_AREAS");
   const familyLines = bashArray(source, "IMPLEMENTED_FAMILY_PREFIXES");
   const excusedScenarios = new Set();
@@ -163,8 +209,8 @@ function loadBinding(dir) {
     excusedScenarios,
     requiredAreas: requiredLines === null ? null : bareEntries(requiredLines),
     implementedFamilies: familyLines === null ? null : [...quotedEntries(familyLines)],
-    minFixtures: floorValue(source, "MIN_FIXTURES"),
-    minScenarios: floorValue(source, "MIN_SCENARIOS"),
+    minFixtures: floorValue(files, "MIN_FIXTURES"),
+    minScenarios: floorValue(files, "MIN_SCENARIOS"),
     unknownArrays: [...declaredArrays(source)].filter(
       (name) => !SCOPING_ARRAYS.has(name) && !NON_SCOPING_ARRAYS.has(name),
     ),
@@ -314,10 +360,20 @@ for (const dir of BINDINGS) {
     if (opened.includes(fixture)) expectedScenarios -= 1;
   }
 
-  for (const [name, declared, expected] of [
+  for (const [name, found, expected] of [
     ["MIN_FIXTURES", binding.minFixtures, expectedFixtures],
     ["MIN_SCENARIOS", binding.minScenarios, expectedScenarios],
   ]) {
+    if (found.conflict !== undefined) {
+      console.error(
+        `ERROR: ${dir} declares ${name} more than once with different values: ${found.conflict}.`,
+        "\n       An ambiguous ledger cannot be audited, and choosing one silently is how the",
+        "\n       unread half stops mattering. Make them one declaration.",
+      );
+      problems += 1;
+      continue;
+    }
+    const declared = found.value;
     if (declared === null) {
       undeclared.push(`${dir}:${name}`);
       continue;
