@@ -85,7 +85,7 @@ Composite over a `TimerCore` and a `Cell<T>`. State is `Deadlined<T>`, either
 
 The deadline-driven primitives in other families — lease expiry (`#lzcoord`
 `LeaseCore`), ephemeral expiry (`#lzpresence` `EphemeralCore`), RPC timeouts
-(`#lzresilience` `TimeoutCore`), window closes (`#lzwindowing`) — **share this
+(`#lzresilience` `TimeoutCore`), window closes (`#lzwindow`) — **share this
 family's logical-clock discipline but do not compose `DeadlineCore`**, and that
 is intentional, not an oversight:
 
@@ -105,7 +105,7 @@ one-shot, value-preserving expiry; reach for the family-specific core when the
 deadline is re-armable.
 
 The only in-tree composition of a temporal core outside this family is
-lazily-rs `stdlib::Timer` (`#lzstdlib`), the wall-clock adapter that maps
+lazily-rs `stdlib::Timer` ([stdlib.md](stdlib.md)), the wall-clock adapter that maps
 `Instant`s around a deadline onto logical ticks `0`/`1` over a real `TimerCore`.
 
 ## Conformance

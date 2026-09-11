@@ -60,7 +60,7 @@ and no dependence on iteration order. They are driven by an explicit monotone
 - `#lzcoord` — `LeaseCore` and the lock / semaphore / barrier cores
 - `#lzpresence` — `EphemeralCore`
 - `#lzresilience` — `TimeoutCore`, `CircuitBreakerCore`, `RetryPolicyCore`, `BulkheadCore`
-- `#lzwindowing`, `#lzrateshape` — the window and rate-shaping cores
+- `#lzwindow`, `#lzrateshape` — the window and rate-shaping cores
 - `#lazilystatetable`, state machines and statecharts
 
 Not safe for command ordering: `Context`, `Cell`/`Source`, `Computed`, `Slot`,
