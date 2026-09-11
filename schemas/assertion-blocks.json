@@ -9937,15 +9937,15 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "outcome": {
+        "note": {
           "type": "string"
         },
-        "property": {
+        "outcome": {
           "type": "string"
         }
       },
       "required": [
-        "property"
+        "note"
       ]
     },
     "route_0130": {
@@ -9973,10 +9973,10 @@
         "first_divergent_seq": {
           "type": "integer"
         },
-        "outcome": {
+        "note": {
           "type": "string"
         },
-        "property": {
+        "outcome": {
           "type": "string"
         },
         "stride": {
@@ -10003,10 +10003,10 @@
         "final_sum": {
           "type": "integer"
         },
-        "outcome": {
+        "note": {
           "type": "string"
         },
-        "property": {
+        "outcome": {
           "type": "string"
         },
         "stride": {

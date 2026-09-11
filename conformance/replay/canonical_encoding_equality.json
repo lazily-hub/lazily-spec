@@ -26,59 +26,59 @@
     {
       "op": { "type": "digest_equal", "left": "map_ab", "right": "map_ba" },
       "returns": true,
-      "expected": { "property": "mapping_order_is_not_part_of_the_value" }
+      "expected": { "note": "mapping_order_is_not_part_of_the_value" }
     },
     {
       "op": { "type": "digest_equal", "left": "set_123", "right": "set_312" },
       "returns": true,
-      "expected": { "property": "set_order_is_not_part_of_the_value" }
+      "expected": { "note": "set_order_is_not_part_of_the_value" }
     },
     {
       "op": { "type": "digest_equal", "left": "seq_12", "right": "seq_21" },
       "returns": false,
-      "expected": { "property": "sequence_order_is_part_of_the_value" }
+      "expected": { "note": "sequence_order_is_part_of_the_value" }
     },
     {
       "op": { "type": "digest_equal", "left": "int_1", "right": "str_1" },
       "returns": false,
-      "expected": { "property": "an_integer_is_not_its_decimal_text" }
+      "expected": { "note": "an_integer_is_not_its_decimal_text" }
     },
     {
       "op": { "type": "digest_equal", "left": "int_1", "right": "float_1" },
       "returns": false,
-      "expected": { "property": "an_integer_is_not_the_equal_float" }
+      "expected": { "note": "an_integer_is_not_the_equal_float" }
     },
     {
       "op": { "type": "digest_equal", "left": "int_1", "right": "bool_true" },
       "returns": false,
-      "expected": { "property": "a_boolean_is_not_the_integer_one" }
+      "expected": { "note": "a_boolean_is_not_the_integer_one" }
     },
     {
       "op": { "type": "digest_equal", "left": "str_1", "right": "bytes_1" },
       "returns": false,
-      "expected": { "property": "text_is_not_the_equal_byte_string" }
+      "expected": { "note": "text_is_not_the_equal_byte_string" }
     },
     {
       "op": { "type": "digest_equal", "left": "seq_a_bc", "right": "seq_ab_c" },
       "returns": false,
-      "expected": { "property": "members_are_framed_so_a_concatenation_is_not_ambiguous" }
+      "expected": { "note": "members_are_framed_so_a_concatenation_is_not_ambiguous" }
     },
     {
       "op": { "type": "digest_equal", "left": "big_int", "right": "big_int" },
       "returns": true,
-      "expected": { "property": "an_integer_beyond_two_to_the_fifty_three_is_exact" }
+      "expected": { "note": "an_integer_beyond_two_to_the_fifty_three_is_exact" }
     },
     {
       "op": { "type": "digest_equal", "left": "big_int", "right": "big_int_plus_one" },
       "returns": false,
-      "expected": { "property": "adjacent_integers_beyond_two_to_the_fifty_three_stay_distinct" }
+      "expected": { "note": "adjacent_integers_beyond_two_to_the_fifty_three_stay_distinct" }
     },
     {
       "op": { "type": "digest_defined", "value": "opaque" },
       "returns": false,
       "expected": {
         "outcome": "encoding_error",
-        "property": "an_undefined_value_fails_loudly_instead_of_using_the_host_default_rendering"
+        "note": "an_undefined_value_fails_loudly_instead_of_using_the_host_default_rendering"
       }
     }
   ]

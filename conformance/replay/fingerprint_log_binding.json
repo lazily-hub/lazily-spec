@@ -40,7 +40,7 @@
     {
       "op": { "type": "log_digest_equal", "left": "a", "right": "b" },
       "returns": false,
-      "expected": { "property": "event_order_is_part_of_the_log_digest" }
+      "expected": { "note": "event_order_is_part_of_the_log_digest" }
     },
     {
       "op": { "type": "verify", "log": "a", "fingerprint": "fp_a" },
@@ -51,7 +51,7 @@
       "expected": {
         "outcome": "log_mismatch",
         "divergences": 0,
-        "property": "the_log_binding_is_checked_before_any_value"
+        "note": "the_log_binding_is_checked_before_any_value"
       }
     },
     {
@@ -59,7 +59,7 @@
       "expected": {
         "outcome": "log_mismatch",
         "divergences": 0,
-        "property": "a_stale_fingerprint_is_refused_by_the_reporting_form_too"
+        "note": "a_stale_fingerprint_is_refused_by_the_reporting_form_too"
       }
     },
     {

@@ -35,7 +35,7 @@
         "first_divergent_seq": 1,
         "first_divergent_label": "sum",
         "first_divergent_kind": "value",
-        "property": "divergence_is_reported_at_its_first_checkpoint"
+        "note": "divergence_is_reported_at_its_first_checkpoint"
       }
     },
     {
@@ -56,7 +56,7 @@
       "expected": {
         "outcome": "stride_mismatch",
         "divergences": 0,
-        "property": "a_fingerprint_is_bound_to_the_stride_it_was_sampled_at"
+        "note": "a_fingerprint_is_bound_to_the_stride_it_was_sampled_at"
       }
     },
     {
