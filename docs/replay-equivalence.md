@@ -99,12 +99,37 @@ corpus now carries all three:
 The nested row is the layout-independent one: a nested container's boundary has
 no tag to hide behind, so dropping its length or count makes both sides
 concatenate to the same bytes whatever the tags are. The second row is not
-layout-independent and cannot be — the colliding content has to spell the tag,
-and a binding **MAY** choose its tags. So a binding whose layout differs from the
-reference **MUST** construct the pair that collides in *its own* bytes and assert
-it next to its encoder, and **MUST** prove it by removing the length and watching
-that assertion go red. Only the binding knows its own layout; the corpus cannot
-ask this question for it.
+layout-independent and cannot be — the colliding content has to spell whatever
+of the next member's frame survives the mutation, and a binding **MAY** choose
+its frame.
+
+**What the nine bindings actually do, and why it still is not enough.** All nine
+independently chose the same netstring frame — `<tag><decimal length>:<body>` —
+so the reference layout is not merely reference, it is unanimous, and the corpus
+pairs do fire everywhere. But a length prefix made of *two* parts fails in more
+than one way, and the three shapes are not equally reachable:
+
+| Mutation | What survives in front of a member | Reached by |
+|---|---|---|
+| the whole `<length>:` goes | `s` | corpus rows 1 and 2 |
+| the digits go, the `:` stays | `s:` | corpus row 3 only — rows 1 and 2 stay **green** |
+| the count goes on the **leaf** frame only, containers still framed | `s:` | **no corpus row at all** |
+
+The third line is the one that settles the argument. `lazily-cpp` ran it: all
+fourteen corpus steps pass, and the only thing that reddens is the pair that
+binding carries itself. A corpus row cannot reach it, because the corpus must
+choose its colliding content in advance and the content has to spell `s:` — a
+string the corpus has no standing to know.
+
+So the obligation on the binding is concrete, and it is **MUST** for any binding
+claiming this row. Construct, in your own bytes, the pair that collides for each
+*level* of frame you emit — leaf and container — spelling the whole surviving
+prefix, not just the tag. Assert those pairs next to your encoder. Then prove
+each one by running the mutation it is aimed at and watching that specific
+assertion go red on a cold build. A pair that merely differs is not a pair that
+pins the length, and this is the exact mistake two bindings made and shipped: the
+mutation survived, they read `["a","bc"] != ["ab","c"]` still passing, and called
+it benign.
 
 A value the encoding does not define **MUST** fail loudly rather than fall back
 on the host's default string conversion. Most languages' default rendering of an
