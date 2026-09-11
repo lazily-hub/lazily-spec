@@ -208,6 +208,15 @@ function loadBinding(dir) {
     uncovered: quotedEntries(bashArray(source, "KNOWN_UNCOVERED")),
     excusedScenarios,
     requiredAreas: requiredLines === null ? null : bareEntries(requiredLines),
+    // `REQUIRED_AREAS` alone names the areas the AUDIT covers, which is not the
+    // same set as the fixtures the SUITE opens: lazily-kt requires 27 areas and
+    // opens 148 fixtures / 157 scenarios, where deriving from the area list
+    // alone gives 147 / 151. lazily-cpp pairs it with `EXCUSED_AREAS`, whose own
+    // guard enforces that the two are an exact complement — and there the
+    // derivation lands on the nose. So the complement is what makes an area
+    // scope derivable, and without it this guard must decline to state a number
+    // rather than state a wrong one.
+    areaScopeIsPartition: requiredLines === null || bashArray(source, "EXCUSED_AREAS") !== null,
     implementedFamilies: familyLines === null ? null : [...quotedEntries(familyLines)],
     minFixtures: floorValue(files, "MIN_FIXTURES"),
     minScenarios: floorValue(files, "MIN_SCENARIOS"),
@@ -328,6 +337,7 @@ for (const rel of Object.keys(pinned.steps ?? {})) {
 let audited = 0;
 const skipped = [];
 const undeclared = [];
+const nonDerivable = [];
 
 for (const dir of BINDINGS) {
   const binding = loadBinding(dir);
@@ -358,6 +368,14 @@ for (const dir of BINDINGS) {
   for (const entry of binding.excusedScenarios) {
     const fixture = entry.slice(0, entry.indexOf("|"));
     if (opened.includes(fixture)) expectedScenarios -= 1;
+  }
+
+  // See `areaScopeIsPartition`: an area list with no enforced complement makes
+  // the opened set a lower bound, not a number, so comparing against it would
+  // manufacture a false failure the moment that binding declared a floor.
+  if (!binding.areaScopeIsPartition) {
+    nonDerivable.push(dir);
+    continue;
   }
 
   for (const [name, found, expected] of [
@@ -418,6 +436,15 @@ if (skipped.length > 0) {
   }
 }
 
+if (nonDerivable.length > 0) {
+  console.error(
+    `NOTE: no floor derived for ${nonDerivable.join(", ")} — REQUIRED_AREAS with no enforced`,
+    "\n      EXCUSED_AREAS complement scopes the AUDIT, not the set the suite OPENS, so the",
+    "\n      opened count is a lower bound rather than a number. Pairing the two arrays (as",
+    "\n      lazily-cpp does) is what makes those floors auditable from here.",
+  );
+}
+
 if (undeclared.length > 0) {
   console.error(
     `NOTE: no floor declared for ${undeclared.join(", ")} — reported, not failed.`,
@@ -433,7 +460,8 @@ if (problems > 0) {
 
 console.error(
   `corpus floors OK: ${observed.fixtures} fixtures pinned, ${Object.keys(steps).length} step-bearing` +
-    ` fixtures pinned exactly, ${audited} binding ledger(s) audited` +
+    ` fixtures pinned exactly, ${audited - nonDerivable.length} binding ledger(s) audited` +
+    `${nonDerivable.length > 0 ? `, ${nonDerivable.length} not derivable` : ""}` +
     `${skipped.length > 0 ? `, ${skipped.length} skipped` : ""}` +
     `${undeclared.length > 0 ? `, ${undeclared.length} dimension(s) undeclared` : ""}`,
 );
