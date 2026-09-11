@@ -188,6 +188,26 @@ function bashArray(source, name) {
   const open = source.indexOf(`\n${name}=(`);
   if (open === -1) return null;
   const rest = source.slice(open + name.length + 3);
+  // `NAME=()` on ONE line is an empty array, not the opening of a multi-line
+  // one. Scanning straight on for the next `\n)` hands back the close of
+  // whichever array comes next and reads every entry in between as this array's
+  // — which is exactly how 25 `KNOWN_UNBOUND_BLOCKS` entries in lazily-zig read
+  // as 25 `SCENARIO_EXCUSES` and silently subtracted 25 from its derived
+  // scenario count, turning an honest `MIN_SCENARIOS=151` into an
+  // "UNSATISFIABLE" floor. lazily-cpp and lazily-dart carry the same shape.
+  const firstNewline = rest.indexOf("\n");
+  const head = firstNewline === -1 ? rest : rest.slice(0, firstNewline);
+  const closesOnOpeningLine = head.indexOf(")");
+  if (closesOnOpeningLine !== -1) {
+    if (head.slice(0, closesOnOpeningLine).trim().length > 0) {
+      throw new Error(
+        `${name} opens and closes on one line with entries on it; this parser reads ` +
+          "multi-line arrays and an empty `NAME=()`. Split it across lines rather " +
+          "than letting it be mis-parsed.",
+      );
+    }
+    return [];
+  }
   const close = rest.search(/\n\)/);
   if (close === -1) return null;
   return rest
