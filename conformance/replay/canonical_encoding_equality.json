@@ -1,5 +1,5 @@
 {
-  "description": "ReplayHarness — the observation encoding's equality CLASSES, which is the part every binding must agree on. A binding MAY choose its own hash and byte layout (fingerprints are pinned next to a test in one language, never exchanged between bindings), so this fixture never names a hex digest: each step asks only whether two declared values digest the same. Values are type-tagged in the fixture because JSON cannot distinguish int 1 from float 1.0, and integers carry decimal STRINGS so a value beyond 2^53 stays exact.",
+  "description": "ReplayHarness — the observation encoding's equality CLASSES, which is the part every binding must agree on. A binding MAY choose its own hash and byte layout (fingerprints are pinned next to a test in one language, never exchanged between bindings), so this fixture never names a hex digest: each step asks only whether two declared values digest the same. Values are type-tagged in the fixture because JSON cannot distinguish int 1 from float 1.0, and integers carry decimal STRINGS so a value beyond 2^53 stays exact. The member-framing rows come in two kinds, because a pair that merely differs is not a pair that PINS the length. `[\"a\",\"bc\"]` vs `[\"ab\",\"c\"]` asserts the equality class but survives an encoder with no length prefix at all, since the type tag in front of every member already separates them. `[\"a\",\"sbc\"]` vs `[\"as\",\"bc\"]` (and the mapping analogue) collide the moment the length goes away IN A LAYOUT WHOSE STRING TAG IS THE BYTE `s`, which is the reference layout; the nested pair `[[\"a\"],\"b\"]` vs `[[\"a\",\"b\"]]` collides under an unframed concatenation in EVERY layout, because a container boundary has no tag to hide behind. A binding whose tags differ from the reference MUST carry its own colliding pair next to its encoder test, and say so, because only the binding knows its own bytes.",
   "kind": "Replay",
   "model": "CanonicalEncoding",
   "config": {
@@ -17,6 +17,12 @@
       "bytes_1": { "t": "bytes", "v": "31" },
       "seq_a_bc": { "t": "seq", "v": [{ "t": "str", "v": "a" }, { "t": "str", "v": "bc" }] },
       "seq_ab_c": { "t": "seq", "v": [{ "t": "str", "v": "ab" }, { "t": "str", "v": "c" }] },
+      "seq_a_sbc": { "t": "seq", "v": [{ "t": "str", "v": "a" }, { "t": "str", "v": "sbc" }] },
+      "seq_as_bc": { "t": "seq", "v": [{ "t": "str", "v": "as" }, { "t": "str", "v": "bc" }] },
+      "map_a_sb": { "t": "map", "v": [["a", { "t": "str", "v": "sb" }]] },
+      "map_as_b": { "t": "map", "v": [["as", { "t": "str", "v": "b" }]] },
+      "seq_nested_a_then_b": { "t": "seq", "v": [{ "t": "seq", "v": [{ "t": "str", "v": "a" }] }, { "t": "str", "v": "b" }] },
+      "seq_nested_ab": { "t": "seq", "v": [{ "t": "seq", "v": [{ "t": "str", "v": "a" }, { "t": "str", "v": "b" }] }] },
       "big_int": { "t": "int", "v": "9007199254740993" },
       "big_int_plus_one": { "t": "int", "v": "9007199254740994" },
       "opaque": { "t": "opaque" }
@@ -62,6 +68,21 @@
       "op": { "type": "digest_equal", "left": "seq_a_bc", "right": "seq_ab_c" },
       "returns": false,
       "expected": { "note": "members_are_framed_so_a_concatenation_is_not_ambiguous" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "seq_a_sbc", "right": "seq_as_bc" },
+      "returns": false,
+      "expected": { "note": "a_member_whose_content_spells_the_next_members_tag_still_needs_the_length" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "map_a_sb", "right": "map_as_b" },
+      "returns": false,
+      "expected": { "note": "a_mapping_key_is_framed_apart_from_its_value" }
+    },
+    {
+      "op": { "type": "digest_equal", "left": "seq_nested_a_then_b", "right": "seq_nested_ab" },
+      "returns": false,
+      "expected": { "note": "a_nested_containers_boundary_survives_concatenation" }
     },
     {
       "op": { "type": "digest_equal", "left": "big_int", "right": "big_int" },

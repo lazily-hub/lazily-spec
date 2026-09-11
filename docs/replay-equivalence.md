@@ -81,6 +81,31 @@ encodings without a length or delimiter makes those two sequences identical, and
 a harness that cannot tell them apart certifies a graph that reshaped its own
 output.
 
+It is also the row whose obvious fixture does not prove it (`#lzreplayframing`).
+`["a","bc"]` and `["ab","c"]` state a real equality class, but with a type tag in
+front of every member they already differ as byte strings, so an encoder that
+drops the length prefix **entirely** still passes that pair. Four bindings met
+this independently while landing their harnesses and two of them ran the
+length-dropping mutation, watched it survive, and ruled it benign. A pair that
+merely differs is not a pair that pins the length. Three rows are needed, and the
+corpus now carries all three:
+
+| Row | What it pins | Layout |
+|---|---|---|
+| `["a","bc"]` vs `["ab","c"]` | the equality class | any |
+| `["a","sbc"]` vs `["as","bc"]`, and `{"a":"sb"}` vs `{"as":"b"}` | the member length, by letting one member's content spell the next member's tag | one whose string tag is the byte `s` |
+| `[["a"],"b"]` vs `[["a","b"]]` | the container length, by moving a member across a nested boundary | **any** |
+
+The nested row is the layout-independent one: a nested container's boundary has
+no tag to hide behind, so dropping its length or count makes both sides
+concatenate to the same bytes whatever the tags are. The second row is not
+layout-independent and cannot be — the colliding content has to spell the tag,
+and a binding **MAY** choose its tags. So a binding whose layout differs from the
+reference **MUST** construct the pair that collides in *its own* bytes and assert
+it next to its encoder, and **MUST** prove it by removing the length and watching
+that assertion go red. Only the binding knows its own layout; the corpus cannot
+ask this question for it.
+
 A value the encoding does not define **MUST** fail loudly rather than fall back
 on the host's default string conversion. Most languages' default rendering of an
 object embeds an address or identity hash, so such a fallback reports a *false*
@@ -138,4 +163,6 @@ log.
   the stride binding.
 - `conformance/replay/canonical_encoding_equality.json` — obligation 3, as
   same/different digest pairs. It asserts equality *classes*, never a hex
-  digest, so a binding's choice of hash stays free.
+  digest, so a binding's choice of hash stays free. Its three member-framing
+  rows are described above; the binding-local colliding pair the second row
+  cannot carry is the binding's own obligation, not the corpus's.
