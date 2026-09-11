@@ -47,6 +47,31 @@
 // failed: lazily-kt deliberately retired `MIN_FIXTURES` in favour of an
 // area-partition assertion, and that is a stronger invariant, not a gap.
 //
+// Direction 3 — assertion-block SITES (`#lzblockfloorpin`)
+// -------------------------------------------------------
+// The array pin catches a deleted `steps` row. It does not catch a deleted
+// `expect` block inside a row that stays, and four bindings were guarding that
+// dimension with the same kind of hand-typed constant `#lzcorpusfloorguard` just
+// retired for steps: lazily-cs `MIN_BLOCKS=743`, lazily-js `638`, lazily-py
+// `MIN_DECLARED_BLOCKS=620`, lazily-zig `31`. cs's own comment is the proof they
+// drift — "Re-pinned from 740 for lazily-spec 4010d99 (#lzreplayframing), which
+// grew canonical_encoding_equality.json from 11 steps to 14".
+//
+// So block sites are pinned here too, per fixture and per block-name bucket, and
+// the number each binding needs is DERIVED: `--report-blocks` prints, for every
+// binding, the sites and distinct digests the corpus plus that binding's own
+// ledger produce. Three of the four typed constants come back to the unit
+// (cs 743 sites, py 620 digests, js 638 digests) — which is what makes them
+// removable. lazily-zig's 31 does not, and that is the finding rather than a
+// derivation failure: 31 is the count its NARROW pre-`#lzunboundblockguard`
+// walk produced, the same 31 lazily-py sat at before widening to 578, so zig is
+// inventorying 31 of the 716 blocks its opened fixtures carry.
+//
+// The rule varies on exactly two axes, which is why the report has three rows
+// rather than one number: the block-name set (three spellings, or five including
+// `expect_initial`/`expect_after`), and whether an ARRAY-valued block counts each
+// element as a site of its own.
+//
 // Skips are reported, never silent — the siblings are separate checkouts, so a
 // repo without them verifies nothing. `--require-all` (what CI uses, after
 // sparse-cloning `scripts/`) refuses to pass on a partial audit, because a
@@ -60,6 +85,12 @@ const CORPUS = process.env.LAZILY_SPEC_CONFORMANCE_DIR ?? join(ROOT, "conformanc
 const COUNTS = join(ROOT, "corpus-counts.json");
 const WRITE = process.argv.includes("--write");
 const REQUIRE_ALL = process.argv.includes("--require-all");
+/// Prints, per binding, the assertion-block population the corpus plus that
+/// binding's own ledger produces — the number its guard should DERIVE rather
+/// than type (#lzblockfloorpin). Four rows because a binding's walk differs in
+/// exactly two ways, the block-name set and whether an array-valued block counts
+/// its elements, and a binding needs the row that matches its own walk.
+const REPORT_BLOCKS = process.argv.includes("--report-blocks");
 
 const BINDINGS = ["rs", "py", "kt", "js", "dart", "zig", "go", "cpp", "cs", "gd"].map(
   (s) => `lazily-${s}`,
@@ -69,6 +100,15 @@ const BINDINGS = ["rs", "py", "kt", "js", "dart", "zig", "go", "cpp", "cs", "gd"
 // narrowing ledger this guard failed to read, and an unread narrowing ledger
 // does not weaken the audit visibly — it inverts it for one binding.
 const SCOPING_ARRAYS = new Set(["REQUIRED_AREAS", "IMPLEMENTED_FAMILY_PREFIXES", "EXCUSED_AREAS"]);
+
+/// Every spelling the corpus uses for an executable output claim, as the UNION
+/// of what the bindings track — not the narrower set `gen_assertion_block_schema.py`
+/// routes. The pin has to be maximal or the difference is exactly the dimension
+/// that goes unguarded: `collections/semtree_incremental.json` carries six
+/// `expect_initial` / `expect_after` blocks that lazily-py and lazily-js
+/// inventory and the generated schema does not route at all, so a three-name pin
+/// would leave those six deletable in silence.
+const BLOCK_NAMES = new Set(["assertions", "expect", "expect_after", "expect_initial", "expected"]);
 const NON_SCOPING_ARRAYS = new Set([
   "KNOWN_UNCOVERED",
   "KNOWN_UNREPLAYED_SCENARIOS",
@@ -86,6 +126,61 @@ function fixtureFiles(dir, base = dir) {
     if (statSync(full).isDirectory()) out.push(...fixtureFiles(full, base));
     else if (entry.endsWith(".json")) out.push(full.slice(base.length + 1));
   }
+  return out;
+}
+
+const isPlainObject = (value) =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+
+/// Canonical (key-sorted, separator-free) JSON, so a block is keyed by what it
+/// SAYS. lazily-py digests `json.dumps(sort_keys=True, separators=(",", ":"))`
+/// and lazily-js `JSON.stringify`; the two agree on every block in the corpus
+/// today, and sorting here means a fixture that reorders a block's keys does not
+/// read as a new one on one side and the same one on the other.
+function canonical(value) {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (isPlainObject(value)) {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value) ?? "null";
+}
+
+/// Every assertion-block SITE a fixture carries, as `[bucket, canonical bytes]`.
+///
+/// A block spelled as an OBJECT is one site, bucketed under its own name. A
+/// block spelled as an ARRAY of objects is one site PER ELEMENT, bucketed under
+/// `name[]` — `steps[].expect` in `signaling/anti_spoof_session.json` is a list
+/// of eight expected emissions, and lazily-js instruments each element as a
+/// block in its own right while lazily-cs's object-only walk sees none of them.
+/// Keeping the two buckets apart is what lets a binding derive its own number
+/// from this pin instead of one that happens to be eight too high.
+///
+/// The walk descends INTO a block as well as past it. No block in the corpus
+/// nests another today, so this changes no count — it is here so that the first
+/// one to do so is pinned by the change that adds it rather than by the change
+/// that later notices.
+function blockSites(doc) {
+  const out = [];
+  const walk = (node) => {
+    if (Array.isArray(node)) {
+      for (const child of node) walk(child);
+      return;
+    }
+    if (!isPlainObject(node)) return;
+    for (const [key, value] of Object.entries(node)) {
+      if (BLOCK_NAMES.has(key)) {
+        if (isPlainObject(value)) out.push([key, canonical(value)]);
+        else if (Array.isArray(value)) {
+          for (const item of value) if (isPlainObject(item)) out.push([`${key}[]`, canonical(item)]);
+        }
+      }
+      walk(value);
+    }
+  };
+  walk(doc);
   return out;
 }
 
@@ -247,6 +342,9 @@ const fixtures = fixtureFiles(CORPUS);
 const steps = {};
 const scenarios = {};
 const arrays = {};
+const blocks = {};
+/// fixture -> [canonical block bytes], for the per-binding derivation below.
+const blockBytes = {};
 let problems = 0;
 
 for (const rel of fixtures) {
@@ -272,6 +370,24 @@ for (const rel of fixtures) {
   if (Object.keys(keys).length > 0) arrays[rel] = keys;
   if (Array.isArray(doc.steps)) steps[rel] = doc.steps.length;
   if (Array.isArray(doc.scenarios)) scenarios[rel] = doc.scenarios.length;
+
+  // Assertion-block SITES (#lzblockfloorpin). The array pin above catches a
+  // deleted `steps` row; it does not catch a deleted `expect` block inside a row
+  // that stays, and four bindings were guarding that dimension with a
+  // hand-maintained constant instead — lazily-cs `MIN_BLOCKS=743`, lazily-js
+  // `638`, lazily-py `MIN_DECLARED_BLOCKS=620`, lazily-zig `31`. cs's own
+  // comment was the proof the constant drifts: "Re-pinned from 740 for
+  // lazily-spec 4010d99 (#lzreplayframing), which grew
+  // canonical_encoding_equality.json from 11 steps to 14". Each of those
+  // numbers is reproduced EXACTLY by this walk over that binding's opened set,
+  // so the number belongs here, derived, and not typed there.
+  const sites = blockSites(doc);
+  if (sites.length > 0) {
+    const buckets = {};
+    for (const [bucket] of sites) buckets[bucket] = (buckets[bucket] ?? 0) + 1;
+    blocks[rel] = buckets;
+    blockBytes[rel] = sites;
+  }
 }
 
 // A walk that found nothing reports OK having examined nothing (#lzvacuousrun).
@@ -283,7 +399,11 @@ if (fixtures.length === 0) {
   process.exit(1);
 }
 
-const observed = { fixtures: fixtures.length, arrays };
+const observed = { fixtures: fixtures.length, arrays, blocks };
+const blockSiteTotal = Object.values(blocks).reduce(
+  (n, buckets) => n + Object.values(buckets).reduce((m, count) => m + count, 0),
+  0,
+);
 
 if (WRITE) {
   const { writeFileSync } = await import("node:fs");
@@ -291,7 +411,8 @@ if (WRITE) {
   const cells = Object.values(arrays).reduce((n, keys) => n + Object.keys(keys).length, 0);
   console.error(
     `corpus counts written: ${fixtures.length} fixtures, ${cells} array length(s) across` +
-      ` ${Object.keys(arrays).length} fixture(s)`,
+      ` ${Object.keys(arrays).length} fixture(s), ${blockSiteTotal} assertion-block site(s)` +
+      ` across ${Object.keys(blocks).length} fixture(s)`,
   );
   process.exit(0);
 }
@@ -312,41 +433,77 @@ if (pinned.fixtures !== observed.fixtures) {
   problems += 1;
 }
 
-for (const [rel, keys] of Object.entries(observed.arrays)) {
-  for (const [key, count] of Object.entries(keys)) {
-    const was = pinned.arrays?.[rel]?.[key];
-    if (was === undefined) {
-      console.error(
-        `ERROR: ${rel} carries ${count} \`${key}\` and is not pinned in corpus-counts.json.`,
-        "\n       A new counted array must be pinned in the same change that adds it.",
-      );
-      problems += 1;
-    } else if (was !== count) {
-      const verb = count < was ? "SHRANK" : "grew";
-      console.error(
-        `ERROR: ${rel} \`${key}\` ${verb} from ${was} to ${count} without updating corpus-counts.json.`,
-        count < was
-          ? "\n       A deleted entry is invisible to every binding: a runner asserts it executed" +
-              "\n       every entry it LOADED, which stays true over a shorter fixture. This manifest" +
-              "\n       is the only place a shrink is observable — so it has to be deliberate."
-          : "\n       Adding one is fine; pinning it is the part that makes it reviewable." +
-              "\n       Run `make corpus-counts-sync` and commit the result with the fixture.",
-      );
-      problems += 1;
+/// The array pin and the assertion-block pin are the same contract over two
+/// quantities, so they are compared by one routine: a new cell must be pinned by
+/// the change that adds it, a changed cell must be re-pinned deliberately, and a
+/// pin the corpus no longer backs is stale. Only the sentence explaining WHY a
+/// shrink matters differs, because the two dimensions go invisible for different
+/// reasons.
+function comparePins(section, noun, shrinkAdvice) {
+  for (const [rel, cells] of Object.entries(observed[section])) {
+    for (const [key, count] of Object.entries(cells)) {
+      const was = pinned[section]?.[rel]?.[key];
+      if (was === undefined) {
+        console.error(
+          `ERROR: ${rel} carries ${count} \`${key}\` and is not pinned in corpus-counts.json.`,
+          `\n       A new counted ${noun} must be pinned in the same change that adds it.`,
+        );
+        problems += 1;
+      } else if (was !== count) {
+        const verb = count < was ? "SHRANK" : "grew";
+        console.error(
+          `ERROR: ${rel} \`${key}\` ${verb} from ${was} to ${count} without updating corpus-counts.json.`,
+          count < was
+            ? shrinkAdvice
+            : "\n       Adding one is fine; pinning it is the part that makes it reviewable." +
+                "\n       Run `make corpus-counts-sync` and commit the result with the fixture.",
+        );
+        problems += 1;
+      }
+    }
+  }
+
+  for (const [rel, cells] of Object.entries(pinned[section] ?? {})) {
+    for (const key of Object.keys(cells)) {
+      if (observed[section][rel]?.[key] === undefined) {
+        console.error(
+          `ERROR: corpus-counts.json pins ${rel} \`${key}\` (${noun}), which the corpus no longer carries.`,
+          "\n       The pin is stale — delete it in the change that removed it.",
+        );
+        problems += 1;
+      }
     }
   }
 }
 
-for (const [rel, keys] of Object.entries(pinned.arrays ?? {})) {
-  for (const key of Object.keys(keys)) {
-    if (observed.arrays[rel]?.[key] === undefined) {
-      console.error(
-        `ERROR: corpus-counts.json pins ${rel} \`${key}\`, which the corpus no longer carries.`,
-        "\n       The pin is stale — delete it in the change that removed it.",
-      );
-      problems += 1;
-    }
-  }
+comparePins(
+  "arrays",
+  "array",
+  "\n       A deleted entry is invisible to every binding: a runner asserts it executed" +
+    "\n       every entry it LOADED, which stays true over a shorter fixture. This manifest" +
+    "\n       is the only place a shrink is observable — so it has to be deliberate.",
+);
+
+comparePins(
+  "blocks",
+  "assertion-block site",
+  "\n       A deleted assertion block is invisible in BOTH directions: the unbound-block" +
+    "\n       rung compares what a run declared against what it bound, and a block that is" +
+    "\n       gone is neither. The four bindings that floored this dimension now derive the" +
+    "\n       number from the corpus, so a shrink lands as a derived expectation dropping in" +
+    "\n       lockstep and reports nothing at all. This manifest is where it becomes visible.",
+);
+
+// A pin section the manifest predates is not "no problems found" — it is the
+// whole dimension unguarded, reported as OK. The `blocks` section arrived after
+// `arrays`, so an un-regenerated manifest has to say so rather than pass.
+if (pinned.blocks === undefined && Object.keys(blocks).length > 0) {
+  console.error(
+    "ERROR: corpus-counts.json pins no `blocks` section, but the corpus carries",
+    `\n       ${blockSiteTotal} assertion-block site(s). The manifest predates the block pin`,
+    "\n       (#lzblockfloorpin). Run `make corpus-counts-sync` and commit the result.",
+  );
+  problems += 1;
 }
 
 // ---- each binding's declared floors ------------------------------------------
@@ -355,6 +512,20 @@ let audited = 0;
 const skipped = [];
 const undeclared = [];
 const nonDerivable = [];
+const blockReport = [];
+
+/// The two axes a binding's assertion-block walk varies on. `lazily-cs` reads
+/// three names and object-valued blocks only (743 sites); `lazily-py` reads five
+/// names, object-valued only, and floors on distinct digests (620); `lazily-js`
+/// reads five names AND each plain-object element of an array-valued block, also
+/// by digest (638). All three land on the nose from this derivation, which is
+/// what makes the typed constants removable.
+const NARROW_BLOCK_NAMES = new Set(["assertions", "expect", "expected"]);
+const BLOCK_RULES = [
+  ["assertions|expect|expected, objects only", (bucket) => NARROW_BLOCK_NAMES.has(bucket)],
+  ["all five names, objects only", (bucket) => !bucket.endsWith("[]")],
+  ["all five names, + array elements", () => true],
+];
 
 for (const dir of BINDINGS) {
   const binding = loadBinding(dir);
@@ -376,6 +547,7 @@ for (const dir of BINDINGS) {
   }
 
   const opened = fixtures.filter((rel) => opens(binding, rel));
+  if (REPORT_BLOCKS) blockReport.push([dir, opened]);
   const expectedFixtures = opened.length;
   let expectedScenarios = 0;
   for (const rel of opened) {
@@ -434,6 +606,25 @@ for (const dir of BINDINGS) {
   }
 }
 
+if (REPORT_BLOCKS) {
+  console.error("assertion-block population, derived from the corpus plus each binding's ledger:");
+  for (const [dir, opened] of blockReport) {
+    console.error(`  ${dir} (${opened.length} fixtures opened)`);
+    for (const [label, keep] of BLOCK_RULES) {
+      let sites = 0;
+      const digests = new Set();
+      for (const rel of opened) {
+        for (const [bucket, bytes] of blockBytes[rel] ?? []) {
+          if (!keep(bucket)) continue;
+          sites += 1;
+          digests.add(bytes);
+        }
+      }
+      console.error(`    ${label.padEnd(42)} sites=${sites} distinct-digests=${digests.size}`);
+    }
+  }
+}
+
 if (audited === 0) {
   console.error(
     "ERROR: no sibling binding ledgers found. This guard verified nothing about the",
@@ -479,6 +670,8 @@ console.error(
   `corpus floors OK: ${observed.fixtures} fixtures pinned, ` +
     `${Object.values(arrays).reduce((n, k) => n + Object.keys(k).length, 0)} array length(s) across ` +
     `${Object.keys(arrays).length} fixture(s) pinned exactly, ` +
+    `${blockSiteTotal} assertion-block site(s) across ${Object.keys(blocks).length} fixture(s) ` +
+    "pinned exactly, " +
     `${audited - nonDerivable.length} binding ledger(s) audited` +
     `${nonDerivable.length > 0 ? `, ${nonDerivable.length} not derivable` : ""}` +
     `${skipped.length > 0 ? `, ${skipped.length} skipped` : ""}` +

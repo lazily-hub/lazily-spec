@@ -440,5 +440,461 @@
     "windowing/tumbling_time.json": {
       "steps": 6
     }
+  },
+  "blocks": {
+    "agent-doc/delta_agent_doc_state.json": {
+      "assertions": 1
+    },
+    "agent-doc/snapshot_agent_doc_state.json": {
+      "assertions": 1
+    },
+    "arena_blob.json": {
+      "assertions": 1,
+      "expected": 1
+    },
+    "codec/blob_backend_discriminator.json": {
+      "assertions": 1,
+      "expect": 14
+    },
+    "codec/capability_handshake.json": {
+      "expected": 5
+    },
+    "codec/frame_roundtrip_json.json": {
+      "assertions": 1,
+      "expect": 3
+    },
+    "codec/frame_roundtrip_msgpack.json": {
+      "assertions": 1,
+      "expect": 3
+    },
+    "codec/nodeid_exact_range.json": {
+      "assertions": 1,
+      "expect": 6
+    },
+    "codec/nodekey_null_leniency.json": {
+      "assertions": 1,
+      "expect": 12
+    },
+    "collections/cellmap_atomic_move.json": {
+      "expected": 3
+    },
+    "collections/cellmap_independence.json": {
+      "expected": 4
+    },
+    "collections/dependency_reactive_availability.json": {
+      "expected": 7
+    },
+    "collections/keyed_reconciliation_lis.json": {
+      "expected": 1
+    },
+    "collections/mergecell_algebra.json": {
+      "expected": 15
+    },
+    "collections/queuecell_bounded_backpressure.json": {
+      "expected": 5
+    },
+    "collections/queuecell_closure_lifecycle.json": {
+      "expected": 8
+    },
+    "collections/queuecell_mpsc_multi_writer.json": {
+      "expected": 6
+    },
+    "collections/queuecell_popped_head_observation.json": {
+      "expected": 7
+    },
+    "collections/queuecell_spsc_push_pop.json": {
+      "expected": 5
+    },
+    "collections/registers_convergence.json": {
+      "expect": 9
+    },
+    "collections/semtree_incremental.json": {
+      "expect_initial": 3,
+      "expect_after": 3
+    },
+    "collections/seqcrdt_convergence.json": {
+      "expect": 8
+    },
+    "collections/stableid_alignment.json": {
+      "expect": 6
+    },
+    "collections/textcrdt_convergence.json": {
+      "expect": 7
+    },
+    "collections/textcrdt_delta_sync.json": {
+      "expect": 4
+    },
+    "collections/topiccell_broadcast_cursor_isolation.json": {
+      "expected": 5
+    },
+    "collections/topiccell_durable_replay_gc.json": {
+      "expected": 8
+    },
+    "collections/topiccell_ephemeral_lifecycle.json": {
+      "expected": 7
+    },
+    "collections/topiccell_offline_tail_bounds.json": {
+      "expected": 9
+    },
+    "collections/workqueue_competing_delivery.json": {
+      "expected": 10
+    },
+    "collections/workqueue_lease_deadletter.json": {
+      "expected": 8
+    },
+    "coordination/leader.json": {
+      "expected": 5
+    },
+    "coordination/lease.json": {
+      "expected": 6
+    },
+    "coordination/lock.json": {
+      "expected": 7
+    },
+    "coordination/quorum.json": {
+      "expected": 5
+    },
+    "coordination/semaphore.json": {
+      "expected": 6
+    },
+    "crdt-tree/algebra.json": {
+      "expect": 3
+    },
+    "delta_non_sequential.json": {
+      "assertions": 1
+    },
+    "delta_sequential.json": {
+      "assertions": 1
+    },
+    "delta_shared_blob.json": {
+      "assertions": 1
+    },
+    "delta_zero_copy_arrow.json": {
+      "assertions": 1
+    },
+    "distributed/anti_entropy_converge.json": {
+      "expect": 3
+    },
+    "distributed/crdt_sync_frames.json": {
+      "assertions": 4
+    },
+    "egress/egress_generation_fence.json": {
+      "expected": 8
+    },
+    "egress/egress_inflight_window.json": {
+      "expected": 6
+    },
+    "egress/egress_ordered_ack.json": {
+      "expected": 7
+    },
+    "egress/egress_retry_budget.json": {
+      "expected": 7
+    },
+    "egress/latest_durable_projection.json": {
+      "expected": 22
+    },
+    "familysync/materialize_on_ingest.json": {
+      "expect": 3
+    },
+    "ingress/boundary_ingress_adapter.json": {
+      "expected": 28
+    },
+    "ingress/ingress_backpressure.json": {
+      "expected": 4
+    },
+    "ingress/ingress_disconnect_replay.json": {
+      "expected": 7
+    },
+    "ingress/ingress_freshness_and_retry.json": {
+      "expected": 11
+    },
+    "ingress/ingress_generation_handoff.json": {
+      "expected": 7
+    },
+    "ingress/ingress_ordered_delivery.json": {
+      "expected": 5
+    },
+    "ingress/ingress_reorder_and_duplication.json": {
+      "expected": 5
+    },
+    "ingress/ingress_reorder_window_overflow.json": {
+      "expected": 3
+    },
+    "lossless-tree/apply_update_advances_counter.json": {
+      "expect": 1
+    },
+    "lossless-tree/concurrent_conflict_preserves_text.json": {
+      "expect": 1
+    },
+    "lossless-tree/concurrent_insert_same_parent.json": {
+      "expect": 1
+    },
+    "lossless-tree/concurrent_reorder_and_leaf_edit.json": {
+      "expect": 1
+    },
+    "lossless-tree/exact_roundtrip.json": {
+      "expect": 1
+    },
+    "lossless-tree/invalid_source_roundtrip.json": {
+      "expect": 2
+    },
+    "lossless-tree/non_contiguous_anti_entropy.json": {
+      "expect": 2
+    },
+    "lossless-tree/one_leaf_edit_delta.json": {
+      "expect": 2
+    },
+    "lossless-tree/out_of_order_delivery_buffers.json": {
+      "expect": 1
+    },
+    "lossless-tree/split_merge.json": {
+      "expect": 2
+    },
+    "lossless-tree/token_trivia_preservation.json": {
+      "expect": 2
+    },
+    "materialization/deferral_not_deallocation.json": {
+      "expected": 1
+    },
+    "materialization/entry_kind_orthogonal_to_mode.json": {
+      "expected": 1
+    },
+    "materialization/observational_transparency.json": {
+      "expected": 1
+    },
+    "membership/membership_lifecycle.json": {
+      "expected": 9
+    },
+    "message-passing/accepted_then_applied_receipt.json": {
+      "expect": 1
+    },
+    "message-passing/cancel_preempts_nonterminal.json": {
+      "expect": 2
+    },
+    "message-passing/editor_route_submit.json": {
+      "expect": 1
+    },
+    "message-passing/reconnect_command_projection.json": {
+      "expect": 1
+    },
+    "message-passing/rpc_call_waits_for_terminal.json": {
+      "expect": 1
+    },
+    "message-passing/stale_generation_ignored.json": {
+      "expect": 1
+    },
+    "message-passing/sync_tmux_layout_submit.json": {
+      "expect": 1
+    },
+    "message-passing/terminal_conflict_fail_closed.json": {
+      "expect": 1
+    },
+    "presence/awareness.json": {
+      "expected": 5
+    },
+    "presence/ephemeral.json": {
+      "expected": 6
+    },
+    "presence/presence.json": {
+      "expected": 5
+    },
+    "protobuf/graph_boundary_traces.json": {
+      "expect": 6
+    },
+    "rateshape/debounce.json": {
+      "expected": 7
+    },
+    "rateshape/probabilistic_sample.json": {
+      "expected": 4
+    },
+    "rateshape/sample_count.json": {
+      "expected": 6
+    },
+    "rateshape/sample_time.json": {
+      "expected": 6
+    },
+    "rateshape/throttle_leading.json": {
+      "expected": 4
+    },
+    "rateshape/throttle_trailing.json": {
+      "expected": 6
+    },
+    "reactive-graph/churn_returns_to_baseline.json": {
+      "expect": 5
+    },
+    "reactive-graph/cross_scope_teardown_hazard.json": {
+      "expect": 7
+    },
+    "reactive-graph/disarm_disposes_nothing.json": {
+      "expect": 6
+    },
+    "reactive-graph/disposal_does_not_run_surviving_effects.json": {
+      "expect": 3
+    },
+    "reactive-graph/dispose_detaches_edges_both_directions.json": {
+      "expect": 5
+    },
+    "reactive-graph/dispose_signal_reverts_to_lazy.json": {
+      "expect": 5
+    },
+    "reactive-graph/exact_fold_paths_stay_exact.json": {
+      "expect": 3
+    },
+    "reactive-graph/failed_compute_is_never_cached.json": {
+      "expect": 10
+    },
+    "reactive-graph/feedback_drain_bound_reports_exhaustion.json": {
+      "expect": 3
+    },
+    "reactive-graph/merge_cell_acquires_no_dependency_edge.json": {
+      "expect": 4
+    },
+    "reactive-graph/merge_feed_through_a_formula_coalesces.json": {
+      "expect": 6
+    },
+    "reactive-graph/merge_folds_synchronously_in_batch.json": {
+      "expect": 3
+    },
+    "reactive-graph/merge_per_settled_cone_not_per_write.json": {
+      "expect": 6
+    },
+    "reactive-graph/read_after_dispose_is_an_error.json": {
+      "expect": 7
+    },
+    "reactive-graph/recycled_id_inherits_nothing.json": {
+      "expect": 8
+    },
+    "reactive-graph/scope_teardown_equals_fold_of_disposals.json": {
+      "expect": 6,
+      "expected": 1
+    },
+    "reactive-graph/scoping_bounds_teardown_not_visibility.json": {
+      "expect": 8
+    },
+    "reactive-graph/signal_materializes_once_per_batch.json": {
+      "expect": 5
+    },
+    "reactive-graph/signal_materializes_without_a_read.json": {
+      "expect": 5
+    },
+    "reactive-graph/teardown_runs_members_in_reverse_creation_order.json": {
+      "expect": 3
+    },
+    "reactive-graph/transitive_invalidation_reaches_depth.json": {
+      "expect": 5
+    },
+    "receipts/causal_receipts.json": {
+      "assertions": 1
+    },
+    "reliable-sync/coalesce_bounds_outbox.json": {
+      "expect": 3
+    },
+    "reliable-sync/idempotent_redelivery.json": {
+      "expect": 2
+    },
+    "reliable-sync/liveness_lease_eviction.json": {
+      "expect": 4
+    },
+    "reliable-sync/liveness_orset_lww.json": {
+      "expect": 4
+    },
+    "reliable-sync/multi_epoch_delta.json": {
+      "assertions": 1,
+      "expect": 2
+    },
+    "reliable-sync/outbox_journal_decode.json": {
+      "expect": 2
+    },
+    "reliable-sync/outbox_replay_after_crash.json": {
+      "expect": 2
+    },
+    "reliable-sync/outbox_store_protocol.json": {
+      "expect": 4
+    },
+    "reliable-sync/resync_gap_converge.json": {
+      "expect": 2
+    },
+    "replay/canonical_encoding_equality.json": {
+      "expected": 14
+    },
+    "replay/divergence_localization.json": {
+      "expected": 7
+    },
+    "replay/fingerprint_log_binding.json": {
+      "expected": 8
+    },
+    "resilience/bulkhead.json": {
+      "expected": 5
+    },
+    "resilience/circuit_breaker.json": {
+      "expected": 5
+    },
+    "resilience/retry.json": {
+      "expected": 7
+    },
+    "resilience/timeout.json": {
+      "expected": 4
+    },
+    "service/discovery.json": {
+      "expected": 5
+    },
+    "service/health.json": {
+      "expected": 5
+    },
+    "service/readiness.json": {
+      "expected": 5
+    },
+    "service/service_registry.json": {
+      "expected": 5
+    },
+    "signaling/anti_spoof_session.json": {
+      "assertions": 1,
+      "expect[]": 12
+    },
+    "signaling/frames.json": {
+      "assertions": 17
+    },
+    "snapshot_minimal.json": {
+      "assertions": 1
+    },
+    "snapshot_multi_node.json": {
+      "assertions": 1
+    },
+    "snapshot_shared_blob.json": {
+      "assertions": 1
+    },
+    "stdlib/revision_barrier.json": {
+      "expect": 22
+    },
+    "stdlib/timeout.json": {
+      "expect": 18
+    },
+    "stdlib/timer.json": {
+      "expect": 14
+    },
+    "temporal/cron_pattern.json": {
+      "expected": 5
+    },
+    "temporal/deadline_expiry.json": {
+      "expected": 3
+    },
+    "temporal/interval_periodic.json": {
+      "expected": 5
+    },
+    "temporal/timer_single_shot.json": {
+      "expected": 3
+    },
+    "windowing/session.json": {
+      "expected": 6
+    },
+    "windowing/sliding_count.json": {
+      "expected": 5
+    },
+    "windowing/tumbling_count.json": {
+      "expected": 6
+    },
+    "windowing/tumbling_time.json": {
+      "expected": 6
+    }
   }
 }

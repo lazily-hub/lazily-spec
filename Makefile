@@ -21,7 +21,8 @@ assertion-ordering-check \
 fixture-discriminability-check \
 corpus-published-check \
 corpus-floors-check \
-corpus-counts-sync
+corpus-counts-sync \
+corpus-blocks-report
 
 check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check corpus-floors-check corpus-published-check
 
@@ -135,4 +136,14 @@ corpus-floors-check:
 # result in the same change as the fixture edit — that pairing is the review.
 corpus-counts-sync:
 >node scripts/check-corpus-floors.mjs --write
+
+# The assertion-block population each binding should DERIVE rather than type
+# (#lzblockfloorpin). Four bindings floored this dimension on a hand-maintained
+# constant — lazily-cs MIN_BLOCKS=743, lazily-js 638, lazily-py
+# MIN_DECLARED_BLOCKS=620, lazily-zig 31 — and the first three are reproduced to
+# the unit by the corpus plus that binding's own ledger. Read the row matching
+# your walk (block-name set, and whether an array-valued block counts its
+# elements) and assert EQUALITY against it instead of a floor.
+corpus-blocks-report:
+>node scripts/check-corpus-floors.mjs --report-blocks
 
