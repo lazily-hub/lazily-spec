@@ -246,6 +246,7 @@ function opens(binding, fixture) {
 const fixtures = fixtureFiles(CORPUS);
 const steps = {};
 const scenarios = {};
+const arrays = {};
 let problems = 0;
 
 for (const rel of fixtures) {
@@ -258,6 +259,17 @@ for (const rel of fixtures) {
     continue;
   }
   if (doc === null || typeof doc !== "object") continue;
+  // EVERY top-level array, not an enumerated subset. `steps` and `scenarios`
+  // are the two a runner floor usually counted, but lazily-dart's stdlib runner
+  // counts `mutations`, and the corpus also carries `frames`, `reads`,
+  // `rejects`, `cases`, `initial_actions` and `initial_active`. Enumerating the
+  // keys would leave each new one unpinned for exactly as long as nobody
+  // noticed — which is the failure this guard exists to end.
+  const keys = {};
+  for (const [key, value] of Object.entries(doc)) {
+    if (Array.isArray(value)) keys[key] = value.length;
+  }
+  if (Object.keys(keys).length > 0) arrays[rel] = keys;
   if (Array.isArray(doc.steps)) steps[rel] = doc.steps.length;
   if (Array.isArray(doc.scenarios)) scenarios[rel] = doc.scenarios.length;
 }
@@ -271,14 +283,15 @@ if (fixtures.length === 0) {
   process.exit(1);
 }
 
-const observed = { fixtures: fixtures.length, steps, scenarios };
+const observed = { fixtures: fixtures.length, arrays };
 
 if (WRITE) {
   const { writeFileSync } = await import("node:fs");
   writeFileSync(COUNTS, `${JSON.stringify(observed, null, 2)}\n`);
+  const cells = Object.values(arrays).reduce((n, keys) => n + Object.keys(keys).length, 0);
   console.error(
-    `corpus counts written: ${fixtures.length} fixtures, ${Object.keys(steps).length} step-bearing,` +
-      ` ${Object.keys(scenarios).length} scenario-bearing`,
+    `corpus counts written: ${fixtures.length} fixtures, ${cells} array length(s) across` +
+      ` ${Object.keys(arrays).length} fixture(s)`,
   );
   process.exit(0);
 }
@@ -299,36 +312,40 @@ if (pinned.fixtures !== observed.fixtures) {
   problems += 1;
 }
 
-for (const [rel, count] of Object.entries(observed.steps)) {
-  const was = pinned.steps?.[rel];
-  if (was === undefined) {
-    console.error(
-      `ERROR: ${rel} carries ${count} steps and is not pinned in corpus-counts.json.`,
-      "\n       A new step-bearing fixture must be pinned in the same change that adds it.",
-    );
-    problems += 1;
-  } else if (was !== count) {
-    const verb = count < was ? "SHRANK" : "grew";
-    console.error(
-      `ERROR: ${rel} ${verb} from ${was} to ${count} steps without updating corpus-counts.json.`,
-      count < was
-        ? "\n       A deleted step is invisible to every binding: a runner asserts it executed" +
-            "\n       every step it LOADED, which stays true over a shorter fixture. This manifest" +
-            "\n       is the only place a shrink is observable — so it has to be deliberate."
-        : "\n       Adding a step is fine; pinning it is the part that makes it reviewable." +
-            "\n       Run `make corpus-counts-sync` and commit the result with the fixture.",
-    );
-    problems += 1;
+for (const [rel, keys] of Object.entries(observed.arrays)) {
+  for (const [key, count] of Object.entries(keys)) {
+    const was = pinned.arrays?.[rel]?.[key];
+    if (was === undefined) {
+      console.error(
+        `ERROR: ${rel} carries ${count} \`${key}\` and is not pinned in corpus-counts.json.`,
+        "\n       A new counted array must be pinned in the same change that adds it.",
+      );
+      problems += 1;
+    } else if (was !== count) {
+      const verb = count < was ? "SHRANK" : "grew";
+      console.error(
+        `ERROR: ${rel} \`${key}\` ${verb} from ${was} to ${count} without updating corpus-counts.json.`,
+        count < was
+          ? "\n       A deleted entry is invisible to every binding: a runner asserts it executed" +
+              "\n       every entry it LOADED, which stays true over a shorter fixture. This manifest" +
+              "\n       is the only place a shrink is observable — so it has to be deliberate."
+          : "\n       Adding one is fine; pinning it is the part that makes it reviewable." +
+              "\n       Run `make corpus-counts-sync` and commit the result with the fixture.",
+      );
+      problems += 1;
+    }
   }
 }
 
-for (const rel of Object.keys(pinned.steps ?? {})) {
-  if (observed.steps[rel] === undefined) {
-    console.error(
-      `ERROR: corpus-counts.json pins ${rel}, which is no longer a step-bearing fixture.`,
-      "\n       The pin is stale — delete it in the change that removed the fixture.",
-    );
-    problems += 1;
+for (const [rel, keys] of Object.entries(pinned.arrays ?? {})) {
+  for (const key of Object.keys(keys)) {
+    if (observed.arrays[rel]?.[key] === undefined) {
+      console.error(
+        `ERROR: corpus-counts.json pins ${rel} \`${key}\`, which the corpus no longer carries.`,
+        "\n       The pin is stale — delete it in the change that removed it.",
+      );
+      problems += 1;
+    }
   }
 }
 
@@ -459,8 +476,10 @@ if (problems > 0) {
 }
 
 console.error(
-  `corpus floors OK: ${observed.fixtures} fixtures pinned, ${Object.keys(steps).length} step-bearing` +
-    ` fixtures pinned exactly, ${audited - nonDerivable.length} binding ledger(s) audited` +
+  `corpus floors OK: ${observed.fixtures} fixtures pinned, ` +
+    `${Object.values(arrays).reduce((n, k) => n + Object.keys(k).length, 0)} array length(s) across ` +
+    `${Object.keys(arrays).length} fixture(s) pinned exactly, ` +
+    `${audited - nonDerivable.length} binding ledger(s) audited` +
     `${nonDerivable.length > 0 ? `, ${nonDerivable.length} not derivable` : ""}` +
     `${skipped.length > 0 ? `, ${skipped.length} skipped` : ""}` +
     `${undeclared.length > 0 ? `, ${undeclared.length} dimension(s) undeclared` : ""}`,

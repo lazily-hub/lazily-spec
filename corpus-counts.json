@@ -1,138 +1,444 @@
 {
   "fixtures": 156,
-  "steps": {
-    "collections/cellmap_atomic_move.json": 3,
-    "collections/cellmap_independence.json": 4,
-    "collections/dependency_reactive_availability.json": 7,
-    "collections/queuecell_bounded_backpressure.json": 5,
-    "collections/queuecell_closure_lifecycle.json": 8,
-    "collections/queuecell_mpsc_multi_writer.json": 6,
-    "collections/queuecell_popped_head_observation.json": 7,
-    "collections/queuecell_spsc_push_pop.json": 5,
-    "collections/topiccell_broadcast_cursor_isolation.json": 5,
-    "collections/topiccell_durable_replay_gc.json": 8,
-    "collections/topiccell_ephemeral_lifecycle.json": 7,
-    "collections/topiccell_offline_tail_bounds.json": 9,
-    "collections/workqueue_competing_delivery.json": 10,
-    "collections/workqueue_lease_deadletter.json": 8,
-    "coordination/leader.json": 5,
-    "coordination/lease.json": 6,
-    "coordination/lock.json": 7,
-    "coordination/quorum.json": 5,
-    "coordination/semaphore.json": 6,
-    "egress/egress_generation_fence.json": 8,
-    "egress/egress_inflight_window.json": 6,
-    "egress/egress_ordered_ack.json": 7,
-    "egress/egress_retry_budget.json": 7,
-    "ingress/ingress_backpressure.json": 4,
-    "ingress/ingress_disconnect_replay.json": 7,
-    "ingress/ingress_freshness_and_retry.json": 11,
-    "ingress/ingress_generation_handoff.json": 7,
-    "ingress/ingress_ordered_delivery.json": 5,
-    "ingress/ingress_reorder_and_duplication.json": 5,
-    "ingress/ingress_reorder_window_overflow.json": 3,
-    "membership/membership_lifecycle.json": 9,
-    "presence/awareness.json": 5,
-    "presence/ephemeral.json": 6,
-    "presence/presence.json": 5,
-    "rateshape/debounce.json": 7,
-    "rateshape/probabilistic_sample.json": 4,
-    "rateshape/sample_count.json": 6,
-    "rateshape/sample_time.json": 6,
-    "rateshape/throttle_leading.json": 4,
-    "rateshape/throttle_trailing.json": 6,
-    "reactive-graph/churn_returns_to_baseline.json": 6,
-    "reactive-graph/cross_scope_teardown_hazard.json": 15,
-    "reactive-graph/disarm_disposes_nothing.json": 13,
-    "reactive-graph/disposal_does_not_run_surviving_effects.json": 8,
-    "reactive-graph/dispose_detaches_edges_both_directions.json": 11,
-    "reactive-graph/dispose_signal_reverts_to_lazy.json": 6,
-    "reactive-graph/exact_fold_paths_stay_exact.json": 5,
-    "reactive-graph/failed_compute_is_never_cached.json": 16,
-    "reactive-graph/feedback_drain_bound_reports_exhaustion.json": 4,
-    "reactive-graph/merge_cell_acquires_no_dependency_edge.json": 5,
-    "reactive-graph/merge_feed_through_a_formula_coalesces.json": 8,
-    "reactive-graph/merge_folds_synchronously_in_batch.json": 4,
-    "reactive-graph/merge_per_settled_cone_not_per_write.json": 7,
-    "reactive-graph/read_after_dispose_is_an_error.json": 10,
-    "reactive-graph/recycled_id_inherits_nothing.json": 13,
-    "reactive-graph/scoping_bounds_teardown_not_visibility.json": 14,
-    "reactive-graph/signal_materializes_once_per_batch.json": 7,
-    "reactive-graph/signal_materializes_without_a_read.json": 6,
-    "reactive-graph/teardown_runs_members_in_reverse_creation_order.json": 8,
-    "reactive-graph/transitive_invalidation_reaches_depth.json": 9,
-    "replay/canonical_encoding_equality.json": 14,
-    "replay/divergence_localization.json": 7,
-    "replay/fingerprint_log_binding.json": 8,
-    "resilience/bulkhead.json": 5,
-    "resilience/circuit_breaker.json": 5,
-    "resilience/retry.json": 7,
-    "resilience/timeout.json": 4,
-    "service/discovery.json": 5,
-    "service/health.json": 5,
-    "service/readiness.json": 5,
-    "service/service_registry.json": 5,
-    "signaling/anti_spoof_session.json": 8,
-    "statechart/entry_exit_actions.json": 4,
-    "statechart/flat_cycle.json": 4,
-    "statechart/guarded_door.json": 5,
-    "statechart/hierarchical_player.json": 7,
-    "statechart/history_deep.json": 5,
-    "statechart/history_shallow.json": 3,
-    "statechart/parallel_regions.json": 5,
-    "temporal/cron_pattern.json": 5,
-    "temporal/deadline_expiry.json": 3,
-    "temporal/interval_periodic.json": 5,
-    "temporal/timer_single_shot.json": 3,
-    "windowing/session.json": 6,
-    "windowing/sliding_count.json": 5,
-    "windowing/tumbling_count.json": 6,
-    "windowing/tumbling_time.json": 6
-  },
-  "scenarios": {
-    "codec/blob_backend_discriminator.json": 14,
-    "codec/capability_handshake.json": 5,
-    "codec/frame_roundtrip_json.json": 3,
-    "codec/frame_roundtrip_msgpack.json": 3,
-    "codec/nodeid_exact_range.json": 6,
-    "codec/nodekey_null_leniency.json": 12,
-    "collections/mergecell_algebra.json": 3,
-    "collections/registers_convergence.json": 9,
-    "collections/semtree_incremental.json": 3,
-    "collections/seqcrdt_convergence.json": 8,
-    "collections/stableid_alignment.json": 6,
-    "collections/textcrdt_convergence.json": 7,
-    "collections/textcrdt_delta_sync.json": 4,
-    "crdt-tree/algebra.json": 3,
-    "distributed/anti_entropy_converge.json": 3,
-    "egress/latest_durable_projection.json": 2,
-    "familysync/materialize_on_ingest.json": 3,
-    "ingress/boundary_ingress_adapter.json": 7,
-    "lossless-tree/apply_update_advances_counter.json": 1,
-    "lossless-tree/concurrent_conflict_preserves_text.json": 1,
-    "lossless-tree/concurrent_insert_same_parent.json": 1,
-    "lossless-tree/concurrent_reorder_and_leaf_edit.json": 1,
-    "lossless-tree/exact_roundtrip.json": 1,
-    "lossless-tree/invalid_source_roundtrip.json": 2,
-    "lossless-tree/non_contiguous_anti_entropy.json": 2,
-    "lossless-tree/one_leaf_edit_delta.json": 2,
-    "lossless-tree/out_of_order_delivery_buffers.json": 1,
-    "lossless-tree/split_merge.json": 2,
-    "lossless-tree/token_trivia_preservation.json": 2,
-    "message-passing/cancel_preempts_nonterminal.json": 2,
-    "protobuf/graph_boundary_traces.json": 6,
-    "reactive-graph/scope_teardown_equals_fold_of_disposals.json": 2,
-    "reliable-sync/coalesce_bounds_outbox.json": 3,
-    "reliable-sync/idempotent_redelivery.json": 2,
-    "reliable-sync/liveness_lease_eviction.json": 4,
-    "reliable-sync/liveness_orset_lww.json": 4,
-    "reliable-sync/multi_epoch_delta.json": 2,
-    "reliable-sync/outbox_journal_decode.json": 2,
-    "reliable-sync/outbox_replay_after_crash.json": 2,
-    "reliable-sync/outbox_store_protocol.json": 4,
-    "reliable-sync/resync_gap_converge.json": 2,
-    "stdlib/revision_barrier.json": 9,
-    "stdlib/timeout.json": 8,
-    "stdlib/timer.json": 6
+  "arrays": {
+    "codec/blob_backend_discriminator.json": {
+      "scenarios": 14
+    },
+    "codec/capability_handshake.json": {
+      "scenarios": 5
+    },
+    "codec/frame_roundtrip_json.json": {
+      "scenarios": 3
+    },
+    "codec/frame_roundtrip_msgpack.json": {
+      "scenarios": 3
+    },
+    "codec/nodeid_exact_range.json": {
+      "scenarios": 6
+    },
+    "codec/nodekey_null_leniency.json": {
+      "scenarios": 12
+    },
+    "collections/cellmap_atomic_move.json": {
+      "steps": 3
+    },
+    "collections/cellmap_independence.json": {
+      "steps": 4
+    },
+    "collections/dependency_reactive_availability.json": {
+      "steps": 7
+    },
+    "collections/mergecell_algebra.json": {
+      "scenarios": 3
+    },
+    "collections/queuecell_bounded_backpressure.json": {
+      "steps": 5
+    },
+    "collections/queuecell_closure_lifecycle.json": {
+      "steps": 8
+    },
+    "collections/queuecell_mpsc_multi_writer.json": {
+      "steps": 6
+    },
+    "collections/queuecell_popped_head_observation.json": {
+      "steps": 7
+    },
+    "collections/queuecell_spsc_push_pop.json": {
+      "steps": 5
+    },
+    "collections/registers_convergence.json": {
+      "scenarios": 9
+    },
+    "collections/semtree_incremental.json": {
+      "scenarios": 3
+    },
+    "collections/seqcrdt_convergence.json": {
+      "scenarios": 8
+    },
+    "collections/stableid_alignment.json": {
+      "scenarios": 6
+    },
+    "collections/textcrdt_convergence.json": {
+      "scenarios": 7
+    },
+    "collections/textcrdt_delta_sync.json": {
+      "scenarios": 4
+    },
+    "collections/topiccell_broadcast_cursor_isolation.json": {
+      "steps": 5
+    },
+    "collections/topiccell_durable_replay_gc.json": {
+      "steps": 8
+    },
+    "collections/topiccell_ephemeral_lifecycle.json": {
+      "steps": 7
+    },
+    "collections/topiccell_offline_tail_bounds.json": {
+      "steps": 9
+    },
+    "collections/workqueue_competing_delivery.json": {
+      "steps": 10
+    },
+    "collections/workqueue_lease_deadletter.json": {
+      "steps": 8
+    },
+    "coordination/leader.json": {
+      "steps": 5
+    },
+    "coordination/lease.json": {
+      "steps": 6
+    },
+    "coordination/lock.json": {
+      "steps": 7
+    },
+    "coordination/quorum.json": {
+      "steps": 5
+    },
+    "coordination/semaphore.json": {
+      "steps": 6
+    },
+    "crdt-tree/algebra.json": {
+      "scenarios": 3
+    },
+    "distributed/anti_entropy_converge.json": {
+      "scenarios": 3
+    },
+    "distributed/crdt_sync_frames.json": {
+      "frames": 4
+    },
+    "egress/egress_generation_fence.json": {
+      "steps": 8
+    },
+    "egress/egress_inflight_window.json": {
+      "steps": 6
+    },
+    "egress/egress_ordered_ack.json": {
+      "steps": 7
+    },
+    "egress/egress_retry_budget.json": {
+      "steps": 7
+    },
+    "egress/latest_durable_projection.json": {
+      "scenarios": 2
+    },
+    "familysync/materialize_on_ingest.json": {
+      "scenarios": 3
+    },
+    "ingress/boundary_ingress_adapter.json": {
+      "scenarios": 7
+    },
+    "ingress/ingress_backpressure.json": {
+      "steps": 4
+    },
+    "ingress/ingress_disconnect_replay.json": {
+      "steps": 7
+    },
+    "ingress/ingress_freshness_and_retry.json": {
+      "steps": 11
+    },
+    "ingress/ingress_generation_handoff.json": {
+      "steps": 7
+    },
+    "ingress/ingress_ordered_delivery.json": {
+      "steps": 5
+    },
+    "ingress/ingress_reorder_and_duplication.json": {
+      "steps": 5
+    },
+    "ingress/ingress_reorder_window_overflow.json": {
+      "steps": 3
+    },
+    "lossless-tree/apply_update_advances_counter.json": {
+      "scenarios": 1
+    },
+    "lossless-tree/concurrent_conflict_preserves_text.json": {
+      "scenarios": 1
+    },
+    "lossless-tree/concurrent_insert_same_parent.json": {
+      "scenarios": 1
+    },
+    "lossless-tree/concurrent_reorder_and_leaf_edit.json": {
+      "scenarios": 1
+    },
+    "lossless-tree/exact_roundtrip.json": {
+      "scenarios": 1
+    },
+    "lossless-tree/invalid_source_roundtrip.json": {
+      "scenarios": 2
+    },
+    "lossless-tree/non_contiguous_anti_entropy.json": {
+      "scenarios": 2
+    },
+    "lossless-tree/one_leaf_edit_delta.json": {
+      "scenarios": 2
+    },
+    "lossless-tree/out_of_order_delivery_buffers.json": {
+      "scenarios": 1
+    },
+    "lossless-tree/split_merge.json": {
+      "scenarios": 2
+    },
+    "lossless-tree/token_trivia_preservation.json": {
+      "scenarios": 2
+    },
+    "materialization/deferral_not_deallocation.json": {
+      "reads": 4
+    },
+    "materialization/entry_kind_orthogonal_to_mode.json": {
+      "reads": 1
+    },
+    "materialization/observational_transparency.json": {
+      "reads": 2
+    },
+    "membership/membership_lifecycle.json": {
+      "steps": 9
+    },
+    "message-passing/accepted_then_applied_receipt.json": {
+      "frames": 3
+    },
+    "message-passing/cancel_preempts_nonterminal.json": {
+      "scenarios": 2
+    },
+    "message-passing/editor_route_submit.json": {
+      "frames": 1
+    },
+    "message-passing/reconnect_command_projection.json": {
+      "frames": 1
+    },
+    "message-passing/rpc_call_waits_for_terminal.json": {
+      "frames": 3
+    },
+    "message-passing/stale_generation_ignored.json": {
+      "frames": 3
+    },
+    "message-passing/sync_tmux_layout_submit.json": {
+      "frames": 1
+    },
+    "message-passing/terminal_conflict_fail_closed.json": {
+      "frames": 3
+    },
+    "presence/awareness.json": {
+      "steps": 5
+    },
+    "presence/ephemeral.json": {
+      "steps": 6
+    },
+    "presence/presence.json": {
+      "steps": 5
+    },
+    "protobuf/graph_boundary_traces.json": {
+      "scenarios": 6
+    },
+    "rateshape/debounce.json": {
+      "steps": 7
+    },
+    "rateshape/probabilistic_sample.json": {
+      "steps": 4
+    },
+    "rateshape/sample_count.json": {
+      "steps": 6
+    },
+    "rateshape/sample_time.json": {
+      "steps": 6
+    },
+    "rateshape/throttle_leading.json": {
+      "steps": 4
+    },
+    "rateshape/throttle_trailing.json": {
+      "steps": 6
+    },
+    "reactive-graph/churn_returns_to_baseline.json": {
+      "steps": 6
+    },
+    "reactive-graph/cross_scope_teardown_hazard.json": {
+      "steps": 15
+    },
+    "reactive-graph/disarm_disposes_nothing.json": {
+      "steps": 13
+    },
+    "reactive-graph/disposal_does_not_run_surviving_effects.json": {
+      "steps": 8
+    },
+    "reactive-graph/dispose_detaches_edges_both_directions.json": {
+      "steps": 11
+    },
+    "reactive-graph/dispose_signal_reverts_to_lazy.json": {
+      "steps": 6
+    },
+    "reactive-graph/exact_fold_paths_stay_exact.json": {
+      "steps": 5
+    },
+    "reactive-graph/failed_compute_is_never_cached.json": {
+      "steps": 16
+    },
+    "reactive-graph/feedback_drain_bound_reports_exhaustion.json": {
+      "steps": 4
+    },
+    "reactive-graph/merge_cell_acquires_no_dependency_edge.json": {
+      "steps": 5
+    },
+    "reactive-graph/merge_feed_through_a_formula_coalesces.json": {
+      "steps": 8
+    },
+    "reactive-graph/merge_folds_synchronously_in_batch.json": {
+      "steps": 4
+    },
+    "reactive-graph/merge_per_settled_cone_not_per_write.json": {
+      "steps": 7
+    },
+    "reactive-graph/read_after_dispose_is_an_error.json": {
+      "steps": 10
+    },
+    "reactive-graph/recycled_id_inherits_nothing.json": {
+      "steps": 13
+    },
+    "reactive-graph/scope_teardown_equals_fold_of_disposals.json": {
+      "scenarios": 2
+    },
+    "reactive-graph/scoping_bounds_teardown_not_visibility.json": {
+      "steps": 14
+    },
+    "reactive-graph/signal_materializes_once_per_batch.json": {
+      "steps": 7
+    },
+    "reactive-graph/signal_materializes_without_a_read.json": {
+      "steps": 6
+    },
+    "reactive-graph/teardown_runs_members_in_reverse_creation_order.json": {
+      "steps": 8
+    },
+    "reactive-graph/transitive_invalidation_reaches_depth.json": {
+      "steps": 9
+    },
+    "reliable-sync/coalesce_bounds_outbox.json": {
+      "scenarios": 3
+    },
+    "reliable-sync/idempotent_redelivery.json": {
+      "scenarios": 2
+    },
+    "reliable-sync/liveness_lease_eviction.json": {
+      "scenarios": 4
+    },
+    "reliable-sync/liveness_orset_lww.json": {
+      "scenarios": 4
+    },
+    "reliable-sync/multi_epoch_delta.json": {
+      "scenarios": 2
+    },
+    "reliable-sync/outbox_journal_decode.json": {
+      "scenarios": 2
+    },
+    "reliable-sync/outbox_replay_after_crash.json": {
+      "scenarios": 2
+    },
+    "reliable-sync/outbox_store_protocol.json": {
+      "scenarios": 4
+    },
+    "reliable-sync/resync_gap_converge.json": {
+      "scenarios": 2
+    },
+    "replay/canonical_encoding_equality.json": {
+      "steps": 14
+    },
+    "replay/divergence_localization.json": {
+      "steps": 7
+    },
+    "replay/fingerprint_log_binding.json": {
+      "steps": 8
+    },
+    "resilience/bulkhead.json": {
+      "steps": 5
+    },
+    "resilience/circuit_breaker.json": {
+      "steps": 5
+    },
+    "resilience/retry.json": {
+      "steps": 7
+    },
+    "resilience/timeout.json": {
+      "steps": 4
+    },
+    "service/discovery.json": {
+      "steps": 5
+    },
+    "service/health.json": {
+      "steps": 5
+    },
+    "service/readiness.json": {
+      "steps": 5
+    },
+    "service/service_registry.json": {
+      "steps": 5
+    },
+    "signaling/anti_spoof_session.json": {
+      "steps": 8,
+      "rejects": 1
+    },
+    "signaling/frames.json": {
+      "frames": 17,
+      "rejects": 3
+    },
+    "statechart/entry_exit_actions.json": {
+      "initial_actions": 2,
+      "steps": 4
+    },
+    "statechart/flat_cycle.json": {
+      "steps": 4
+    },
+    "statechart/guarded_door.json": {
+      "steps": 5
+    },
+    "statechart/hierarchical_player.json": {
+      "steps": 7
+    },
+    "statechart/history_deep.json": {
+      "steps": 5
+    },
+    "statechart/history_shallow.json": {
+      "steps": 3
+    },
+    "statechart/malformed_rejected.json": {
+      "cases": 12
+    },
+    "statechart/parallel_regions.json": {
+      "initial_active": 2,
+      "steps": 5
+    },
+    "stdlib/revision_barrier.json": {
+      "scenarios": 9,
+      "mutations": 6
+    },
+    "stdlib/timeout.json": {
+      "scenarios": 8,
+      "mutations": 4
+    },
+    "stdlib/timer.json": {
+      "scenarios": 6,
+      "mutations": 3
+    },
+    "temporal/cron_pattern.json": {
+      "steps": 5
+    },
+    "temporal/deadline_expiry.json": {
+      "steps": 3
+    },
+    "temporal/interval_periodic.json": {
+      "steps": 5
+    },
+    "temporal/timer_single_shot.json": {
+      "steps": 3
+    },
+    "windowing/session.json": {
+      "steps": 6
+    },
+    "windowing/sliding_count.json": {
+      "steps": 5
+    },
+    "windowing/tumbling_count.json": {
+      "steps": 6
+    },
+    "windowing/tumbling_time.json": {
+      "steps": 6
+    }
   }
 }
