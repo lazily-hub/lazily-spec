@@ -27,6 +27,12 @@ class OrderedCheck:
     paired: bool = False
 
 
+# The `#lzexpectedkeyorder` entry in each tuple below is anchored on two corpus
+# KEY NAMES rather than on a value or a runner literal, deliberately: it has to
+# survive a corpus that moves its numbers, and #lzorderinganchors is the debt
+# created by anchoring on literals that the bindings then removed. `final_state`
+# and `after_publish` are names the corpus owns, and a binding that stops reading
+# either fails as a missing anchor rather than passing silently.
 CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
     "rs": (
         OrderedCheck(
@@ -40,6 +46,12 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
             r"a\.finish\(\);",
             r"assert_eq!\(\s*replayed,\s*6",
             "fixture assertions precede the node-id runner floor",
+        ),
+        OrderedCheck(
+            "tests/reactive_graph/engine.rs",
+            r'tail\.sub\("final_state"\)',
+            r'tail\.sub\("after_publish"\)',
+            "the reactive-graph tail reads `final_state` before `after_publish` publishes (#lzexpectedkeyorder)",
         ),
     ),
     "py": (
@@ -74,6 +86,12 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
             "fixture assertions precede each codec runner floor",
             paired=True,
         ),
+        OrderedCheck(
+            "tests/test_reactive_graph_conformance.py",
+            r'tail\.sub\("final_state"\)',
+            r'tail\.sub\("after_publish"\)',
+            "the reactive-graph tail reads `final_state` before `after_publish` publishes (#lzexpectedkeyorder)",
+        ),
     ),
     "js": (
         OrderedCheck(
@@ -107,6 +125,12 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
             "fixture assertions precede each codec runner floor",
             paired=True,
         ),
+        OrderedCheck(
+            "test/reactive-graph/engine.js",
+            r'subBlock\(tail,\s*"final_state"\)',
+            r'subBlock\(tail,\s*"after_publish"\)',
+            "the reactive-graph tail reads `final_state` before `after_publish` publishes (#lzexpectedkeyorder)",
+        ),
     ),
     "go": (
         OrderedCheck(
@@ -120,6 +144,12 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
             r'assertKey\(t,\s*assertions,\s*"scenario_count"',
             r"if\s+accepted\s*!=\s*4",
             "fixture assertions precede the node-id runner floor",
+        ),
+        OrderedCheck(
+            "reactive_graph_conformance_test.go",
+            r'fx\.Expected\.FinalState',
+            r'fx\.Expected\.AfterPublish',
+            "the reactive-graph tail reads `final_state` before `after_publish` publishes (#lzexpectedkeyorder)",
         ),
     ),
     "cpp": (
@@ -135,6 +165,12 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
             r"REQUIRE\(accepted\s*==\s*4",
             "fixture assertions precede the node-id runner floor",
         ),
+        OrderedCheck(
+            "tests/test_reactive_graph_conformance.cpp",
+            r'with_sub_if_present\("final_state"',
+            r'with_sub\("after_publish"',
+            "the reactive-graph tail reads `final_state` before `after_publish` publishes (#lzexpectedkeyorder)",
+        ),
     ),
     "dart": (
         OrderedCheck(
@@ -148,6 +184,12 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
             r"assertKey\(block,\s*'scenario_count'",
             r"expect\(accepted,\s*intsAreDoubles",
             "fixture assertions precede the node-id runner floor",
+        ),
+        OrderedCheck(
+            "test/reactive_graph_conformance_test.dart",
+            r"subKeyIfPresent\(tail,\s*'final_state'\)",
+            r"subKeyIfPresent\(tail,\s*'after_publish'\)",
+            "the reactive-graph tail reads `final_state` before `after_publish` publishes (#lzexpectedkeyorder)",
         ),
     ),
     "kt": (
@@ -163,6 +205,12 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
             r"assertEquals\(4,\s*accepted",
             "fixture assertions precede the node-id runner floor",
         ),
+        OrderedCheck(
+            "src/test/kotlin/io/github/lazily/ReactiveGraphConformanceTest.kt",
+            r't\.sub\("final_state"\)',
+            r't\.sub\("after_publish"\)',
+            "the reactive-graph tail reads `final_state` before `after_publish` publishes (#lzexpectedkeyorder)",
+        ),
     ),
     "zig": (
         OrderedCheck(
@@ -176,6 +224,12 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
             r"meta\.finish\(\)",
             r"expectEqual\(@as\(usize,\s*6\),\s*accepted",
             "fixture assertions precede the node-id runner floor",
+        ),
+        OrderedCheck(
+            "src/lazily/reactive_graph_conformance.zig",
+            r'assertObjectWithOpt\("final_state"',
+            r'assertObjectWithOpt\("after_publish"',
+            "the reactive-graph tail reads `final_state` before `after_publish` publishes (#lzexpectedkeyorder)",
         ),
     ),
     "cs": (
@@ -209,6 +263,12 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
             r"Assert\.Equal\(3,\s*replayed",
             "fixture assertions precede each codec runner floor",
             paired=True,
+        ),
+        OrderedCheck(
+            "tests/Lazily.Tests/ReactiveGraphEngine.cs",
+            r'TryAssertObjectKey\(\s*"final_state"',
+            r'TryAssertObjectKey\(\s*"after_publish"',
+            "the reactive-graph tail reads `final_state` before `after_publish` publishes (#lzexpectedkeyorder)",
         ),
     ),
 }

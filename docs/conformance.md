@@ -516,6 +516,57 @@ the runtime state selected after ingest. Its conflict witness delivers the
 greatest-stamp operation before a lower-stamp tail, so arrival-order resolution
 and max-stamp resolution produce different observations.
 
+### Sibling keys of one block can be a PHASE SEQUENCE (`#lzexpectedkeyorder`)
+
+Rule 2 above is about ordering an assertion against the run it describes. There
+is a third case, and it is the one a runner is most likely to get wrong: the
+sibling keys of a single assertion block are not always independent assertions
+about one world. One of them may carry an `op`, in which case it MUTATES the
+world and everything the block says about the earlier world has to be evaluated
+first.
+
+The corpus carries exactly ONE such block today, and it is named here so no
+binding has to rediscover it:
+
+`reactive-graph/scope_teardown_equals_fold_of_disposals.json`, top-level
+`expected`, whose keys in file order are:
+
+```
+observationally_equal   — a relation between the two scenarios
+final_state             — the world AFTER the scenario, BEFORE the extra publish
+after_publish           — carries `op` (set_cell topic=5), so it PUBLISHES,
+                          then asserts the world that publish produced
+```
+
+`final_state.read.outside` is `101` and `after_publish.read.outside` is `105`.
+Those are the same node in two different worlds, so a runner that evaluates
+`after_publish` first reads `105` where the corpus says `101` and fails on a
+number, with nothing in the failure naming the cause.
+
+**The hazard is alphabetical iteration.** `after_publish` < `final_state` <
+`observationally_equal`, so sorting the block's keys reverses the only order that
+is correct. A runner that happens to iterate in document or declaration order is
+right by accident and never learns the rule; the day it sorts, it breaks. This
+cost lazily-gd a debugging pass while building its bind ledger, and lazily-rs
+and lazily-zig each carry the same discovery as a hand-written comment in their
+runners — three bindings paying independently for an unstated contract.
+
+**The rule.** Where a block's sibling key carries an `op`, evaluate the keys in
+DOCUMENT order, not sorted order, and treat the `op`-bearing key as a phase
+boundary. Do not sort the keys of an assertion block whose siblings describe
+different worlds. `scripts/check-assertion-ordering.py` pins this statically for
+every binding it is wired into: `final_state` must be read before
+`after_publish` in the reactive-graph tail, anchored on the two key names rather
+than on any value, so the anchors survive a corpus that moves its numbers.
+
+This is a documented contract rather than a machine-readable declaration in the
+block itself on purpose. Adding an `order` key would change that block's bytes,
+which moves its content digest and every binding's derived assertion-block
+magnitude (all ten now assert sites AND distinct digests as equalities), and the
+new key would be unconsumed by every existing runner. The cost of declaring it
+in the corpus is ten reddened repositories; the cost of documenting it here and
+pinning it in the static guard is neither.
+
 ## Keyed cell collections conformance
 
 The `conformance/collections/` directory contains canonical fixtures for the
