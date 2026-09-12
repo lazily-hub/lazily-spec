@@ -232,6 +232,14 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
             "the reactive-graph tail reads `final_state` before `after_publish` publishes (#lzexpectedkeyorder)",
         ),
     ),
+    "gd": (
+        OrderedCheck(
+            "tests/conformance/reactive_graph_runner.gd",
+            r'tail\.has\("final_state"\)',
+            r'tail\.has\("after_publish"\)',
+            "the reactive-graph tail reads `final_state` before `after_publish` publishes (#lzexpectedkeyorder)",
+        ),
+    ),
     "cs": (
         OrderedCheck(
             "tests/Lazily.Tests/CrdtPlaneConformanceTests.cs",
@@ -336,12 +344,68 @@ def self_test() -> list[str]:
     return failures
 
 
+# Bindings the companion callback-consumption guard does not configure. An entry
+# here is NOT a skip: `_consumption_exemption_errors` proves the binding really
+# carries none of the call names the guard looks for, so the day one appears the
+# exemption fails and the companion has to learn that language. A silent skip
+# would be the #lzvacuousrun shape this whole ladder exists to refuse — a guard
+# reporting OK over an empty population.
+CONSUMPTION_UNCONFIGURED: dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]] = {
+    "gd": (
+        "lazily-gd asserts through `_check` / `_observe` directly and declares no "
+        "callback-taking assertion API, so there is no callback whose fixture-value "
+        "parameter could go unread. Teach check-assert-with-consumption.py GDScript "
+        "(a `_gd_definitions` tokenizer beside `_zig_definitions`) if one lands.",
+        ("tests/**/*.gd", "scripts/**/*.gd"),
+        (
+            "assert_key_with",
+            "assertKeyWith",
+            "AssertKeyWith",
+            "assert_key_if_present",
+            "assertKeyIfPresent",
+            "assertKeyWithOpt",
+            "assert_key_with_if_present",
+            "TryAssertKeyWith",
+            "AssertKeyInto",
+        ),
+    ),
+}
+
+
+def _consumption_exemption_errors(binding: str, root: Path) -> list[str]:
+    """Prove an unconfigured binding still carries no callback-style assertion."""
+    reason, globs, call_names = CONSUMPTION_UNCONFIGURED[binding]
+    sources = sorted({path for glob in globs for path in root.glob(glob) if path.is_file()})
+    if not sources:
+        return [
+            f"{binding}: the consumption exemption globs {list(globs)} matched NO source "
+            "file, so the exemption is asserted over nothing. Fix the globs or remove "
+            "the exemption."
+        ]
+    found: list[str] = []
+    for path in sources:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for name in call_names:
+            if re.search(rf"\b{re.escape(name)}\s*\(", text):
+                found.append(f"{path.relative_to(root)}: {name}(")
+    if found:
+        return [
+            f"{binding}: the callback-consumption guard does not configure this binding, "
+            "and the exemption said it carries no callback-style assertion — but it now "
+            "does: " + ", ".join(sorted(set(found))) + f". {reason}"
+        ]
+    return []
+
+
 def consumption_errors(
     binding: str | None,
     *,
     self_test_mode: bool,
     root: Path | None = None,
 ) -> list[str]:
+    if not self_test_mode and binding in CONSUMPTION_UNCONFIGURED:
+        assert root is not None
+        return _consumption_exemption_errors(binding, root)
     script = Path(__file__).with_name("check-assert-with-consumption.py")
     command = [sys.executable, str(script)]
     if self_test_mode:
@@ -381,6 +445,9 @@ def main() -> int:
             )
         )
         label = f"{args.binding} ({len(CHECKS[args.binding])} checks)"
+        if args.binding in CONSUMPTION_UNCONFIGURED:
+            label += "; callback-consumption guard UNCONFIGURED for this binding, "
+            label += "exemption verified against its sources"
     else:
         parser.error("choose --self-test or --binding")
 
