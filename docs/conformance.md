@@ -407,6 +407,49 @@ The split is not arbitrary. Only the run knows which keys it asserted, so rule 6
 checked from this repo; and only the corpus can settle which keys are prose, so leaving that
 to nine trackers is what produced four answers.
 
+### A runner that re-parses a block can diverge from the loader (`#lzrunnerownjsonclone`)
+
+Rung 0 matches a declared block against a bound one by CONTENT DIGEST. That is
+the right key — runners spell `where` inconsistently — but it puts a load-bearing
+requirement on something easy to get wrong: the bytes the loader digested and the
+value the runner hands the tracker have to canonicalise identically.
+
+A runner that passes the loader's own parsed value satisfies this by
+construction. A runner that RE-PARSES or REBUILDS the block does not, and the
+failure is silent in the worst way: the digests differ, so the declared site has
+no matching bind, and the block reports as unbound rather than as wrong.
+
+lazily-cpp carried exactly this bug (`#lzcppblockwalk`). Its reactive-graph
+runner has its own JSON reader whose number parse kept only the `double`, so its
+structural clone dropped the raw token — a block carrying `"value": 5` digested
+as `#5.000000` on the clone side and `#5` on the loader side. The clone's own
+comment asserted content-identity and nothing checked the claim. **93
+number-bearing `expect` sites were unbound and nothing said so**, because cpp's
+walk was still the narrow top-level-`assertions` one and no reactive-graph
+fixture has a top-level `assertions` block.
+
+**A wide rung 0 is what makes this discoverable, and it is sufficient.** Once the
+walk reaches a block, a divergence makes that block declared-but-unbound, which
+the bind rung already fails on. So for a binding with a wide walk and a passing
+rung 0, the only place such a divergence can hide is behind an EXCUSE — which is
+why an excuse's reason matters and why "mysteriously unbound" is not one. Every
+excuse in the family today belongs to a single class: the six fixtures whose
+replay stops on a `merge_cell` op or the novel `drain_exhausted` key, so the
+later steps never run and their blocks are unreachable rather than unbound.
+
+The corollary is the part worth carrying: **a binding with a NARROW walk cannot
+rule this out**, because the blocks a divergence would affect are the ones its
+walk does not reach. That is precisely how cpp's survived. When widening a narrow
+walk, expect a clone divergence among the newly surfaced unbound blocks and look
+for it deliberately — in cpp, 71 of the 96 surfaced sites were this one bug
+rather than 71 separate gaps.
+
+Prefer routing the tracker at the loader's value over asserting equality between
+two parses. If a second parse is unavoidable, assert in the same run that the
+clone's digest equals the loader's for at least one number-bearing, one
+string-bearing and one nested block, and perturb a number's spelling (`5` vs
+`5.0` vs `5e0`) in a scratch corpus to confirm the two sides still agree.
+
 ## Object-valued assertion keys (`#lzsubblockkeyset`)
 
 An assertion key whose value is a JSON **object** carries two obligations, not one: the
