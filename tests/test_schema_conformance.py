@@ -1037,6 +1037,56 @@ _KNOWN_MODELS = (
     | _MERGE_MODELS
 )
 
+_SEMTREE_NON_NODE_EXPECTATIONS = {
+    "downstream_consumer_reran",
+    "sibling_a_cached",
+}
+
+
+def _semtree_node_ids(node: dict) -> set[str]:
+    ids = {node["id"]}
+    children = node.get("children", {}).get("values", {})
+    for child in children.values():
+        ids.update(_semtree_node_ids(child))
+    return ids
+
+
+def _semtree_removed_ids(node: dict, *, parent: str, child: str) -> set[str]:
+    if node["id"] == parent:
+        children = node.get("children", {}).get("values", {})
+        return _semtree_node_ids(children[child])
+    for nested in node.get("children", {}).get("values", {}).values():
+        removed = _semtree_removed_ids(nested, parent=parent, child=child)
+        if removed:
+            return removed
+    return set()
+
+
+def test_semtree_expectations_name_every_runtime_node_in_both_directions() -> None:
+    """A semantic-tree value map is exact, never an implicit subset."""
+
+    fixture = json.loads(
+        (_COLLECTIONS_DIR / "semtree_incremental.json").read_text()
+    )
+    for scenario in fixture["scenarios"]:
+        initial_ids = _semtree_node_ids(scenario["tree"])
+        initial_expected = set(scenario["expect_initial"]) - _SEMTREE_NON_NODE_EXPECTATIONS
+        assert initial_expected == initial_ids, (
+            f"{scenario['id']}: expect_initial must name the exact node set"
+        )
+
+        after_ids = set(initial_ids)
+        if removal := scenario.get("remove_child"):
+            after_ids -= _semtree_removed_ids(
+                scenario["tree"],
+                parent=removal["parent"],
+                child=removal["child"],
+            )
+        after_expected = set(scenario["expect_after"]) - _SEMTREE_NON_NODE_EXPECTATIONS
+        assert after_expected == after_ids, (
+            f"{scenario['id']}: expect_after must name the exact node set"
+        )
+
 
 @pytest.mark.parametrize("name", _collection_fixtures())
 def test_collection_fixture_is_well_formed(name: str) -> None:

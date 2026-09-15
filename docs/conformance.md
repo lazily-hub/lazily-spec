@@ -579,6 +579,24 @@ per-call-site field count is not conformance.** It relies on the next author rem
 which is the property this rung exists to remove; it is at best a stopgap and MUST be
 replaced by 1 or 2.
 
+### Exact maps do not imply a subset (`#lzsemtreesubset`)
+
+When an assertion object maps runtime identities to expected values, its key set is exact.
+“Both directions” means every named identity exists and is compared, and every identity the
+run produced is named and compared. An omitted identity is not an implicit partial assertion.
+
+`collections/semtree_incremental.json` previously violated this rule: its semantic tree had
+six nodes while `expect_initial` named only three. That made corrupt leaf values invisible.
+The expectation now names every node value before and after each operation. A cardinality pin
+was rejected because replacing one node with another preserves the count; an
+`nodes_not_asserted` list was rejected because it would make the omission explicit without
+making the omitted values falsifiable.
+
+If a future scenario genuinely needs subset semantics, it MUST use a separately named
+assertion shape whose scope is explicit; it must not overload an exact map by silently
+omitting keys. The new shape needs its own runtime and mutation proof before entering the
+corpus.
+
 A key the corpus declares in `assertions.prose` is out of scope here: a paragraph is a
 string, and prose nested inside a data key is not a prose key (see § Prose assertion keys).
 

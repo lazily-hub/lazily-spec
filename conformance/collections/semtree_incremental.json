@@ -14,9 +14,9 @@
           "b": { "id": "b", "value": 2, "children": { "order": ["b1"], "values": { "b1": { "id": "b1", "value": 100 } } } }
         }}
       },
-      "expect_initial": { "root": 133, "a": 31, "b": 102 },
+      "expect_initial": { "root": 133, "a": 31, "a1": 10, "a2": 20, "b": 102, "b1": 100 },
       "edit": { "id": "b1", "value": 200 },
-      "expect_after": { "root": 233, "b": 202, "a": 31, "sibling_a_cached": true }
+      "expect_after": { "root": 233, "a": 31, "a1": 10, "a2": 20, "b": 202, "b1": 200, "sibling_a_cached": true }
     },
     {
       "id": "memo_guard_equal_fold_stops_downstream",
@@ -29,9 +29,9 @@
           "b": { "id": "b", "value": 7 }
         }}
       },
-      "expect_initial": { "root": 1 },
+      "expect_initial": { "root": 1, "a": 0, "b": 1 },
       "edit": { "id": "b", "value": 9 },
-      "expect_after": { "root": 1, "downstream_consumer_reran": false }
+      "expect_after": { "root": 1, "a": 0, "b": 1, "downstream_consumer_reran": false }
     },
     {
       "id": "removal_updates_derivation",
@@ -44,9 +44,9 @@
           "b": { "id": "b", "value": 2, "children": { "order": ["b1"], "values": { "b1": { "id": "b1", "value": 100 } } } }
         }}
       },
-      "expect_initial": { "root": 133 },
+      "expect_initial": { "root": 133, "a": 31, "a1": 30, "b": 102, "b1": 100 },
       "remove_child": { "parent": "root", "child": "b" },
-      "expect_after": { "root": 31 }
+      "expect_after": { "root": 31, "a": 31, "a1": 30 }
     }
   ]
 }

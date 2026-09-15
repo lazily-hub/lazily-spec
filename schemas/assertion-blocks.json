@@ -3718,7 +3718,16 @@
         "a": {
           "type": "integer"
         },
+        "a1": {
+          "type": "integer"
+        },
+        "a2": {
+          "type": "integer"
+        },
         "b": {
+          "type": "integer"
+        },
+        "b1": {
           "type": "integer"
         },
         "downstream_consumer_reran": {
@@ -3732,6 +3741,7 @@
         }
       },
       "required": [
+        "a",
         "root"
       ]
     },
@@ -3742,7 +3752,16 @@
         "a": {
           "type": "integer"
         },
+        "a1": {
+          "type": "integer"
+        },
+        "a2": {
+          "type": "integer"
+        },
         "b": {
+          "type": "integer"
+        },
+        "b1": {
           "type": "integer"
         },
         "root": {
@@ -3750,6 +3769,8 @@
         }
       },
       "required": [
+        "a",
+        "b",
         "root"
       ]
     },
