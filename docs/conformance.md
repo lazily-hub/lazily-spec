@@ -129,6 +129,36 @@ what your working tree happens to hold. `make check` here warns when the local c
 ahead of `origin/main`, which is the moment this rule applies — see
 `scripts/check-corpus-published.mjs`.
 
+## Inspecting binding Makefiles safely (`#lzmakepfootgun`)
+
+Every binding's Makefile is part of the conformance evidence protocol: its default goal may
+truncate manifests, mint the run id, run tests, and then audit the resulting ledgers. Treat
+Makefile inspection as potentially state-changing.
+
+In GNU Make, **`make -p` still builds the default goal** before or while printing its data
+base. It is not an inspection-only command. This caused a measured failure in lazily-rs:
+
+```sh
+make -p | grep -m1 '...'
+```
+
+That command started `make check`, reached `conformance-manifest-reset`, and truncated every
+evidence file under `build/`. Then `grep -m1` found its match, closed the pipe, and Make died
+from `SIGPIPE`. The analysis command silently destroyed the evidence it was analysing. The
+next guards reported empty or missing manifests, which looked exactly like the recorder bug
+under investigation.
+
+Use a non-executing query instead:
+
+- `make -pn` prints the data base with dry-run semantics.
+- For one value, use `make --eval='print-name: ; @printf "%s\n" "$(NAME)"' print-name` (or
+  an equivalent explicit diagnostic target), so the requested target is not the default goal.
+- Prefer reading the Makefile directly when no expansion is required.
+
+Never pipe bare `make -p` into `head`, `grep -m1`, or any reader that exits after its first
+match. The early close adds a second hazard, but removing the pipe is not enough: bare
+`make -p` still runs the default goal and can mutate evidence.
+
 ## Adding a new binding
 
 Copy the fixture-loading pattern from `lazily-rs/tests/conformance.rs`. Each test should:
