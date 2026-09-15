@@ -618,6 +618,50 @@ place, where a probe reddens every other binding concurrently — and confirm th
 RED. A tracker that reports clean over a planted sub-field has not implemented this section,
 whatever its code says.
 
+## Running a valid plant probe (`#lzplantprobemethod`)
+
+A plant probe is a two-run falsification test against a byte-verified scratch corpus. It is
+valid only when the **same explicitly stated runner scope** is green before the mutation and
+red afterward with a failure that names the planted obligation. A changed exit code by itself
+is insufficient: preserve the status and parse the runner-native failure signal described
+above.
+
+Use this sequence:
+
+1. Copy the canonical corpus to a scratch directory; never mutate a shared `lazily-spec`
+   checkout in place. Record the target fixture's bytes or digest before editing.
+2. Select a scenario that actually carries both the gate being exercised and the observation
+   it gates. Run the stated scope against the unmodified scratch copy and require green.
+3. Apply exactly one mutation and verify the scratch fixture's bytes changed as intended.
+4. Run the **same scope** again. Require a preserved nonzero exit status, a nonzero
+   runner-native failure count, and a diagnostic naming the planted fixture/key/claim.
+5. Restore or discard the scratch tree. Do not present the probe as evidence if either run used
+   different runners, different fixture bytes beyond the plant, or stale runtime manifests.
+
+Three failed probe shapes recur:
+
+- **Vacuous plant.** Rust once added a `redeliver` gate to `scenarios[2]`, which carried neither
+  `redeliver` nor `redeliver_applied_count`. Green said nothing because the selected scenario
+  could not exercise the relationship. A valid target carries both sides of the claim before
+  it is mutated.
+- **Red before the plant.** Three of sixteen C++ candidates and Dart's `handle_stable` candidate
+  already failed in the baseline run; the latter had no step that re-minted a handle. A red
+  baseline cannot show that the mutation or proposed guard changed the outcome.
+- **Masked by a sibling runner.** The planted fixture can stay green in the runner under audit
+  while another runner over the same fixture fails in the full suite. State whether the proof
+  is isolated-runner or full-suite, and require the intended runner's named failure. A red from
+  an unstated sibling proves only that the sibling noticed.
+
+Two runner traps need explicit handling:
+
+- gdUnit4 does not emit Rust's `test result: FAILED` text. Preserve `$?` and parse its
+  `Statistics: ... N failures` field; a grep for the Rust phrase returns zero on both green and
+  red gdUnit4 runs.
+- Kotlin Gradle tests may report `:test UP-TO-DATE`, especially when output filtering hides the
+  task line. Use `cleanTest test` (or an equivalent forced rerun), then verify fresh JUnit XML
+  and sum its `failures` and `errors` attributes. A cached test task is not a baseline or a
+  post-plant execution.
+
 ## Assertion observation ordering (`#lzassertordering`)
 
 An executable assertion has to remain reachable when the behavior it names is
