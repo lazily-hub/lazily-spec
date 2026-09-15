@@ -159,6 +159,39 @@ Never pipe bare `make -p` into `head`, `grep -m1`, or any reader that exits afte
 match. The early close adds a second hazard, but removing the pipe is not enough: bare
 `make -p` still runs the default goal and can mutate evidence.
 
+## Verifying runner failure signals (`#lzfailedgrepvacuous`)
+
+A closeout needs two independent facts:
+
+1. Preserve and assert the test command's exit status, explicitly across wrappers and pipes.
+2. Parse the **runner's own** failure count and assert that it is zero.
+
+Neither replaces the other. A pipe or wrapper can mask a nonzero status, while a grep copied
+from another runner can match nothing on both green and red output. The once-standard
+`grep -c "result: FAILED"` is vacuous for dart, gd, kt, and js. Deliberately red runs proved
+that those runners never emit the string; earlier closeouts remained valid only because they
+had captured exit status separately.
+
+Use the signal emitted by the binding's actual runner:
+
+| Binding | Runner-native failure signal |
+|---|---|
+| cpp | CTest's final `P% tests passed, F tests failed out of T` tally; require `F = 0` (and the expected total). |
+| rs | libtest's `test result: FAILED. P passed; F failed; ...` summary; sum every emitted harness summary and require each `F = 0`. |
+| py | pytest's terminal `... F failed, P passed ...` summary; require `F = 0`. |
+| go | `go test`'s package-level `FAIL` summary lines; require zero failing package summaries. Go emits no suite-wide numeric test tally by default. |
+| cs | VSTest's `Failed! - Failed: F, Passed: P, Skipped: S, Total: T` tally; require `F = 0`. |
+| kt | Gradle's JUnit XML under `build/test-results/test/`; sum every `<testsuite failures="F" errors="E">` and require both totals zero. Do not infer success from RTK-filtered Gradle text or `UP-TO-DATE`. |
+| dart | `dart test`'s terminal `+P -F` tally; require `F = 0`. |
+| zig | Zig test's terminal `P passed; S skipped; F failed.` summary (and any failing build step); require `F = 0`. |
+| gd | gdUnit4's `Statistics: ... F failures` field; require `F = 0`. It does not emit Rust's `test result:` line. |
+| js | Node test runner's `ℹ fail F` diagnostic; require `F = 0`. |
+
+When delegating a binding task, put that binding's signal in the worker's expected proof; do
+not brief every worker with one cross-runner regex. A deliberately failing probe is the
+acceptance test for a new parser: it must produce a nonzero preserved status **and** a
+nonzero native failure count before the parser is trusted on green output.
+
 ## Adding a new binding
 
 Copy the fixture-loading pattern from `lazily-rs/tests/conformance.rs`. Each test should:
