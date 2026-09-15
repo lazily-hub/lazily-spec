@@ -192,6 +192,31 @@ not brief every worker with one cross-runner regex. A deliberately failing probe
 acceptance test for a new parser: it must produce a nonzero preserved status **and** a
 nonzero native failure count before the parser is trusted on green output.
 
+## Auditing source hygiene scanners (`#lzastscanundercount`)
+
+A source scanner's parser is not proof that it sees the language's whole executable surface.
+The Rust flag-hygiene rung originally walked a `syn` AST and saw 39 of 86 banned `as_bool`
+sites; 47 lived inside macro token streams, chiefly `assert_eq!`, which `syn` deliberately
+leaves opaque. After the repair and conversion to strict fixture readers, the same split showed
+up in the positive population measurement: an AST-only walk counted 39 while the explicit
+recursive token walk counted the real 101 sanctioned reads.
+
+Audit each hygiene scanner against the spellings its language permits:
+
+1. Code inside macros or other parser-opaque token containers must be walked explicitly.
+2. A callable used as a function path and the equivalent method call must receive the same
+   verdict; Rust's live `.and_then(Value::as_bool)` was invisible to a method-call-only visitor.
+3. Textual fallbacks must accept legal type arguments and whitespace variation. In Kotlin,
+   `?: emptyMap<String, Boolean>()` is the same empty default as `?: emptyMap()`.
+4. Comments and literals must not confuse the scanner. Prefer a real parser or lexer; a former
+   JavaScript regex treated an apostrophe in a comment as syntax and silently lost later sites.
+
+Every scanner needs a positive population measurement pinned to the **real population**, plus
+synthetic probes for parser-opaque and alternate spellings. A loose nonzero floor would have
+accepted Rust's count of 39; the measured floor of 101 makes removing the macro-token walk fail.
+When the population legitimately changes, explain and re-measure the pin rather than lowering it
+to recover green output.
+
 ## Adding a new binding
 
 Copy the fixture-loading pattern from `lazily-rs/tests/conformance.rs`. Each test should:
