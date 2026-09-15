@@ -33,6 +33,9 @@ class OrderedCheck:
 # created by anchoring on literals that the bindings then removed. `final_state`
 # and `after_publish` are names the corpus owns, and a binding that stops reading
 # either fails as a missing anchor rather than passing silently.
+# Runner-completeness anchors likewise name the counter and assertion shape, not
+# the numeric floor on the other side of the comparison. Corpus growth may move
+# or remove that literal without weakening the independent ordering contract.
 CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
     "rs": (
         OrderedCheck(
@@ -44,8 +47,8 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
         OrderedCheck(
             "tests/nodeid_exact_range_conformance.rs",
             r"a\.finish\(\);",
-            r"assert_eq!\(\s*replayed,\s*6",
-            "fixture assertions precede the node-id runner floor",
+            r"assert_eq!\(\s*replayed\s*,",
+            "fixture assertions precede the node-id runner completeness assertion",
         ),
         OrderedCheck(
             "tests/reactive_graph/engine.rs",
@@ -64,20 +67,20 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
         OrderedCheck(
             "tests/test_nodeid_exact_range_conformance.py",
             r"verify_prose\(fixture\)",
-            r"assert\s+accepted\s*==\s*6",
-            "fixture assertions precede the node-id runner floor",
+            r"assert\s+accepted\s*==\s*declared\s*,",
+            "fixture assertions precede the node-id runner completeness assertion",
         ),
         OrderedCheck(
             "tests/test_nodekey_null_leniency_conformance.py",
             r"verify_prose\(fixture\)",
-            r"assert\s+replayed\s*==\s*12",
-            "fixture assertions precede the node-key runner floor",
+            r"assert\s+replayed\s*==\s*declared\s*,",
+            "fixture assertions precede the node-key runner completeness assertion",
         ),
         OrderedCheck(
             "tests/test_blob_backend_discriminator_conformance.py",
             r"verify_prose\(fixture\)",
-            r"assert\s+accepted\s*==\s*10",
-            "fixture assertions precede the blob runner floor",
+            r"assert\s+accepted\s*\+\s*rejected\s*==\s*declared\s*,",
+            "fixture assertions precede the blob runner completeness assertion",
         ),
         OrderedCheck(
             "tests/test_codec_conformance.py",
@@ -103,26 +106,26 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
         OrderedCheck(
             "test/nodeid-exact-range.test.js",
             r"verifyProse\(fixture\);",
-            r"assert\.equal\(\s*accepted,\s*2",
-            "fixture assertions precede the node-id runner floor",
+            r"assert\.equal\(\s*accepted\s*,",
+            "fixture assertions precede the node-id runner completeness assertion",
         ),
         OrderedCheck(
             "test/nodekey-null-leniency.test.js",
             r"verifyProse\(fixture\);",
-            r"assert\.equal\(\s*replayed,\s*12",
-            "fixture assertions precede the node-key runner floor",
+            r"assert\.equal\(\s*replayed\s*,",
+            "fixture assertions precede the node-key runner completeness assertion",
         ),
         OrderedCheck(
             "test/blob-backend-discriminator.test.js",
             r"verifyProse\(fixture\);",
-            r"assert\.equal\(\s*accepted,\s*10",
-            "fixture assertions precede the blob runner floor",
+            r"assert\.equal\(\s*accepted\s*,",
+            "fixture assertions precede the blob runner completeness assertion",
         ),
         OrderedCheck(
             "test/codec.test.js",
             r"verifyProse\(fixture\);",
-            r"assert\.equal\(\s*replayed,\s*3",
-            "fixture assertions precede each codec runner floor",
+            r"assert\.equal\(\s*replayed\s*,",
+            "fixture assertions precede each codec runner completeness assertion",
             paired=True,
         ),
         OrderedCheck(
@@ -142,8 +145,8 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
         OrderedCheck(
             "nodeid_exact_range_conformance_test.go",
             r'assertKey\(t,\s*assertions,\s*"scenario_count"',
-            r"if\s+accepted\s*!=\s*4",
-            "fixture assertions precede the node-id runner floor",
+            r"if\s+accepted\s*!=",
+            "fixture assertions precede the node-id runner completeness assertion",
         ),
         OrderedCheck(
             "reactive_graph_conformance_test.go",
@@ -162,8 +165,8 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
         OrderedCheck(
             "tests/test_nodeid_exact_range_conformance.cpp",
             r"block\.finish\(\);",
-            r"REQUIRE\(accepted\s*==\s*4",
-            "fixture assertions precede the node-id runner floor",
+            r"REQUIRE\(\s*accepted\s*==",
+            "fixture assertions precede the node-id runner completeness assertion",
         ),
         OrderedCheck(
             "tests/test_reactive_graph_conformance.cpp",
@@ -182,8 +185,8 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
         OrderedCheck(
             "test/nodeid_exact_range_test.dart",
             r"assertKey\(block,\s*'scenario_count'",
-            r"expect\(accepted,\s*intsAreDoubles",
-            "fixture assertions precede the node-id runner floor",
+            r"expect\(\s*accepted\s*,",
+            "fixture assertions precede the node-id runner completeness assertion",
         ),
         OrderedCheck(
             "test/reactive_graph_conformance_test.dart",
@@ -202,8 +205,8 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
         OrderedCheck(
             "src/test/kotlin/io/github/lazily/NodeIdExactRangeConformanceTest.kt",
             r"meta\.requireAllSatisfied\(\)",
-            r"assertEquals\(4,\s*accepted",
-            "fixture assertions precede the node-id runner floor",
+            r"assertEquals\(\s*[^,\n]+,\s*accepted\b",
+            "fixture assertions precede the node-id runner completeness assertion",
         ),
         OrderedCheck(
             "src/test/kotlin/io/github/lazily/ReactiveGraphConformanceTest.kt",
@@ -222,8 +225,8 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
         OrderedCheck(
             "src/lazily/nodeid_exact_range_conformance.zig",
             r"meta\.finish\(\)",
-            r"expectEqual\(@as\(usize,\s*6\),\s*accepted",
-            "fixture assertions precede the node-id runner floor",
+            r",\s*accepted\s*\)\s*;",
+            "fixture assertions precede the node-id runner completeness assertion",
         ),
         OrderedCheck(
             "src/lazily/reactive_graph_conformance.zig",
@@ -250,26 +253,26 @@ CHECKS: dict[str, tuple[OrderedCheck, ...]] = {
         OrderedCheck(
             "tests/Lazily.Tests/NodeIdExactRangeConformanceTests.cs",
             r"prose\.VerifyProse\(Fixture\)",
-            r"Assert\.Equal\(6,\s*accepted",
-            "fixture assertions precede the node-id runner floor",
+            r"Assert\.Equal\(\s*[^,\n]+,\s*accepted\b",
+            "fixture assertions precede the node-id runner completeness assertion",
         ),
         OrderedCheck(
             "tests/Lazily.Tests/NodeKeyNullLeniencyConformanceTests.cs",
             r"prose\.VerifyProse\(Fixture\)",
-            r"Assert\.Equal\(12,\s*replayed",
-            "fixture assertions precede the node-key runner floor",
+            r"Assert\.Equal\(\s*[^,\n]+,\s*replayed\b",
+            "fixture assertions precede the node-key runner completeness assertion",
         ),
         OrderedCheck(
             "tests/Lazily.Tests/BlobBackendDiscriminatorConformanceTests.cs",
             r"prose\.VerifyProse\(Fixture\)",
-            r"Assert\.Equal\(14,\s*replayed",
-            "fixture assertions precede the blob runner floor",
+            r"Assert\.Equal\(\s*[^,\n]+,\s*replayed\b",
+            "fixture assertions precede the blob runner completeness assertion",
         ),
         OrderedCheck(
             "tests/Lazily.Tests/CodecConformanceTests.cs",
             r"prose\.VerifyProse\((?:JsonFixture|MsgPackFixture)\)",
-            r"Assert\.Equal\(3,\s*replayed",
-            "fixture assertions precede each codec runner floor",
+            r"Assert\.Equal\(\s*[^,\n]+,\s*replayed\b",
+            "fixture assertions precede each codec runner completeness assertion",
             paired=True,
         ),
         OrderedCheck(
@@ -333,6 +336,10 @@ def self_test() -> list[str]:
         failures.append("accepted ordering was rejected")
     if not _ordering_errors("runner_floor(); fixture.finish();", check):
         failures.append("reversed ordering was accepted")
+    if not _ordering_errors(
+        "fixture.finish(); runner_floor(); # runner_floor() quoted in prose", check
+    ):
+        failures.append("a duplicate anchor quoted in prose was accepted")
     if _ordering_errors(
         "fixture.finish(); runner_floor(); fixture.finish(); runner_floor();", paired
     ):
