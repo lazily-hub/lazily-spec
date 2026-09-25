@@ -1,0 +1,330 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/durable-owner.json",
+  "title": "Lazily durable-owner conformance fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol_version", "kind", "model", "description", "scenarios"],
+  "properties": {
+    "protocol_version": { "const": 1 },
+    "kind": { "const": "DurableOwner" },
+    "model": {
+      "enum": [
+        "AtomicCrashBoundary",
+        "OrderedReplay",
+        "IdentityDeduplication",
+        "ProjectionFingerprint"
+      ]
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/scenario" }
+    }
+  },
+  "$defs": {
+    "identity": { "type": "string", "minLength": 1 },
+    "position": { "type": "integer", "minimum": 0 },
+    "fence": { "type": "integer", "minimum": 0 },
+    "version": { "type": "integer", "minimum": 1 },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "codec_version", "bytes"],
+      "properties": {
+        "schema_version": { "$ref": "#/$defs/version" },
+        "codec_version": { "$ref": "#/$defs/version" },
+        "bytes": { "type": "string" }
+      }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["position", "payload"],
+      "properties": {
+        "position": { "$ref": "#/$defs/position" },
+        "payload": { "$ref": "#/$defs/payload" }
+      }
+    },
+    "effect_intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "payload"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identity" },
+        "payload": { "$ref": "#/$defs/payload" }
+      }
+    },
+    "receipt_intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "effect_id", "outcome", "payload"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identity" },
+        "effect_id": { "$ref": "#/$defs/identity" },
+        "outcome": { "enum": ["applied", "rejected"] },
+        "payload": { "$ref": "#/$defs/payload" }
+      }
+    },
+    "commit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_id",
+        "expected_position",
+        "fence",
+        "inbox_id",
+        "ingress_fingerprint",
+        "state",
+        "effects",
+        "receipts"
+      ],
+      "properties": {
+        "owner_id": { "$ref": "#/$defs/identity" },
+        "expected_position": { "$ref": "#/$defs/position" },
+        "fence": { "$ref": "#/$defs/fence" },
+        "inbox_id": { "$ref": "#/$defs/identity" },
+        "ingress_fingerprint": { "type": "string" },
+        "state": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["append_events"],
+              "properties": {
+                "append_events": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": { "$ref": "#/$defs/payload" }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["replace_snapshot"],
+              "properties": {
+                "replace_snapshot": { "$ref": "#/$defs/payload" }
+              }
+            }
+          ]
+        },
+        "effects": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/effect_intent" }
+        },
+        "receipts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/receipt_intent" }
+        }
+      }
+    },
+    "operation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "commit"],
+          "properties": {
+            "type": { "enum": ["commit", "crash_before_commit"] },
+            "commit": { "$ref": "#/$defs/commit" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": { "type": { "const": "crash_recover" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "fence"],
+          "properties": {
+            "type": { "const": "advance_fence" },
+            "fence": { "$ref": "#/$defs/fence" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "fence", "receipt"],
+          "properties": {
+            "type": { "const": "record_receipt" },
+            "fence": { "$ref": "#/$defs/fence" },
+            "receipt": { "$ref": "#/$defs/receipt_intent" }
+          }
+        }
+      ]
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome"],
+      "properties": {
+        "outcome": {
+          "enum": [
+            "aborted",
+            "committed",
+            "duplicate",
+            "recovered",
+            "fence_advanced",
+            "receipt_recorded",
+            "receipt_duplicate",
+            "position_conflict",
+            "stale_fence",
+            "inbox_identity_conflict",
+            "effect_identity_conflict",
+            "receipt_identity_conflict",
+            "effect_already_receipted"
+          ]
+        },
+        "through": { "$ref": "#/$defs/position" },
+        "ack": { "enum": ["withhold", "safe"] }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "position",
+        "fence",
+        "history",
+        "snapshot",
+        "inbox",
+        "outbox",
+        "receipts",
+        "pending_effect_ids"
+      ],
+      "properties": {
+        "position": { "$ref": "#/$defs/position" },
+        "fence": { "$ref": "#/$defs/fence" },
+        "history": { "type": "array", "items": { "$ref": "#/$defs/record" } },
+        "snapshot": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/record" }]
+        },
+        "inbox": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "ingress_fingerprint", "committed_through"],
+            "properties": {
+              "id": { "$ref": "#/$defs/identity" },
+              "ingress_fingerprint": { "type": "string" },
+              "committed_through": { "$ref": "#/$defs/position" }
+            }
+          }
+        },
+        "outbox": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "accepted_at", "payload"],
+            "properties": {
+              "id": { "$ref": "#/$defs/identity" },
+              "accepted_at": { "$ref": "#/$defs/position" },
+              "payload": { "$ref": "#/$defs/payload" }
+            }
+          }
+        },
+        "receipts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "effect_id", "outcome", "recorded_at", "fence", "payload"],
+            "properties": {
+              "id": { "$ref": "#/$defs/identity" },
+              "effect_id": { "$ref": "#/$defs/identity" },
+              "outcome": { "enum": ["applied", "rejected"] },
+              "recorded_at": { "$ref": "#/$defs/position" },
+              "fence": { "$ref": "#/$defs/fence" },
+              "payload": { "$ref": "#/$defs/payload" }
+            }
+          }
+        },
+        "pending_effect_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/identity" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "expect"],
+      "properties": {
+        "op": { "$ref": "#/$defs/operation" },
+        "expect": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["result", "image"],
+          "properties": {
+            "result": { "$ref": "#/$defs/result" },
+            "image": { "$ref": "#/$defs/image" }
+          }
+        }
+      }
+    },
+    "fingerprint_case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "left_history",
+        "right_history",
+        "left_projection",
+        "right_projection",
+        "left_latest",
+        "right_latest",
+        "expect"
+      ],
+      "properties": {
+        "left_history": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/record" } },
+        "right_history": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/record" } },
+        "left_projection": { "$ref": "#/$defs/payload" },
+        "right_projection": { "$ref": "#/$defs/payload" },
+        "left_latest": { "$ref": "#/$defs/payload" },
+        "right_latest": { "$ref": "#/$defs/payload" },
+        "expect": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "projection_fingerprint_relation",
+            "history_fingerprint_relation",
+            "latest_fingerprint_relation",
+            "history_capability",
+            "latest_capability"
+          ],
+          "properties": {
+            "projection_fingerprint_relation": { "enum": ["equal", "different"] },
+            "history_fingerprint_relation": { "enum": ["equal", "different"] },
+            "latest_fingerprint_relation": { "enum": ["equal", "different"] },
+            "history_capability": { "const": "complete_history" },
+            "latest_capability": { "const": "latest_state_only" }
+          }
+        }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "owner_id", "mode", "fence"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "owner_id": { "$ref": "#/$defs/identity" },
+        "mode": { "enum": ["event_history", "snapshot"] },
+        "fence": { "$ref": "#/$defs/fence" },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } },
+        "fingerprint_case": { "$ref": "#/$defs/fingerprint_case" }
+      },
+      "oneOf": [
+        { "required": ["steps"], "not": { "required": ["fingerprint_case"] } },
+        { "required": ["fingerprint_case"], "not": { "required": ["steps"] } }
+      ]
+    }
+  }
+}

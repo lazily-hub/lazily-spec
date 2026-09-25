@@ -1,0 +1,60 @@
+{
+  "protocol_version": 1,
+  "kind": "DurableOwner",
+  "model": "ProjectionFingerprint",
+  "description": "Projection content and ordered history are separate proof dimensions: equal final state does not certify complete history, and latest-value conflation advertises only latest-state capability.",
+  "scenarios": [
+    {
+      "id": "equal_projection_does_not_fold_distinct_complete_histories",
+      "owner_id": "counter-1",
+      "mode": "event_history",
+      "fence": 5,
+      "fingerprint_case": {
+        "left_history": [
+          { "position": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "+1" } },
+          { "position": 2, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "-1" } }
+        ],
+        "right_history": [
+          { "position": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "+0" } },
+          { "position": 2, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "+0" } }
+        ],
+        "left_projection": { "schema_version": 7, "codec_version": 11, "bytes": "0" },
+        "right_projection": { "schema_version": 7, "codec_version": 11, "bytes": "0" },
+        "left_latest": { "schema_version": 7, "codec_version": 11, "bytes": "0" },
+        "right_latest": { "schema_version": 7, "codec_version": 11, "bytes": "0" },
+        "expect": {
+          "projection_fingerprint_relation": "equal",
+          "history_fingerprint_relation": "different",
+          "latest_fingerprint_relation": "equal",
+          "history_capability": "complete_history",
+          "latest_capability": "latest_state_only"
+        }
+      }
+    },
+    {
+      "id": "schema_and_codec_versions_domain_separate_fingerprints",
+      "owner_id": "counter-versions",
+      "mode": "event_history",
+      "fence": 5,
+      "fingerprint_case": {
+        "left_history": [
+          { "position": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "0" } }
+        ],
+        "right_history": [
+          { "position": 1, "payload": { "schema_version": 11, "codec_version": 7, "bytes": "0" } }
+        ],
+        "left_projection": { "schema_version": 7, "codec_version": 11, "bytes": "0" },
+        "right_projection": { "schema_version": 11, "codec_version": 7, "bytes": "0" },
+        "left_latest": { "schema_version": 7, "codec_version": 11, "bytes": "0" },
+        "right_latest": { "schema_version": 11, "codec_version": 7, "bytes": "0" },
+        "expect": {
+          "projection_fingerprint_relation": "different",
+          "history_fingerprint_relation": "different",
+          "latest_fingerprint_relation": "different",
+          "history_capability": "complete_history",
+          "latest_capability": "latest_state_only"
+        }
+      }
+    }
+  ]
+}

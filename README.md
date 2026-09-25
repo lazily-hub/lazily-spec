@@ -66,6 +66,7 @@ matrix with per-cell notes and platform carve-outs lives in
 | Transport & FFI | ✅ | ✅ | ✅ | ~ | ~ | ✅ | ✅ | ~ | ✅ | — |
 | Message passing | ✅ | ✅ | ✅ | ✅ | ✅ | ~ | ✅ | ✅ | ✅ | — |
 | Reliable sync | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | — |
+| Durable owner | ✅ | — | — | — | — | — | — | — | — | — |
 | Distributed plane | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Causal receipts | ~ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Security boundary | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -82,7 +83,7 @@ matrix with per-cell notes and platform carve-outs lives in
 
 **Roll-up rule:** a family cell is `✅` only when *every required* row in that family is `✅`; `~` when the family is mixed (some shipped or partial); `—` when no required row is shipped or partial; `⊘` only when every required row in the family is not applicable. Rows the spec marks **MAY** (`optional`) are excluded from the roll-up — declining an optional feature is not a gap.
 
-A family cell summarises 76 feature rows. For row-level marks, per-cell notes, and platform carve-outs see [the canonical coverage matrix in `lazily-spec`](https://github.com/lazily-hub/lazily-spec/blob/main/docs/coverage.md).
+A family cell summarises 77 feature rows. For row-level marks, per-cell notes, and platform carve-outs see [the canonical coverage matrix in `lazily-spec`](https://github.com/lazily-hub/lazily-spec/blob/main/docs/coverage.md).
 <!-- coverage-table:end -->
 
 CRDT convergence and the wire protocol are pinned by the shared conformance fixtures
@@ -221,6 +222,15 @@ The `conformance/statechart/` directory contains canonical Harel/SCXML state-cha
 | `statechart/history_deep.json` | deep history: resume full nested leaf configuration |
 | `statechart/entry_exit_actions.json` | entry/exit/transition action ordering across LCA boundaries |
 | `statechart/malformed_rejected.json` | authoritative `kind`, strict field types, and declared-state reference closure |
+
+## Durable Owner Conformance
+
+The `conformance/durable-owner/` corpus defines the backend-neutral atomic owner
+boundary for event history or snapshot state: monotone positions, exact fencing,
+versioned bytes, stable inbox/outbox/receipt identities, crash recovery, and
+source-bound projection fingerprints. See the
+[Durable Owner Contract](docs/durable-owner.md) and
+[`schemas/durable-owner.json`](schemas/durable-owner.json).
 
 ## Reliable Sync Conformance
 

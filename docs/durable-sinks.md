@@ -77,6 +77,13 @@ Those two answers fix the shape:
 | Durable before visible | Ordered fact + application acknowledgement cell | Visibility waits for monotone `durable_through` |
 | Ephemeral state | `Presence` / `Ephemeral` primitives | Persistence rejected |
 
+The separate [durable-owner contract](durable-owner.md) applies when accepted
+transitions must commit before acknowledgement and a fresh runtime must rebuild
+from the durable image. Its `EventHistory` and `Snapshot` modes are authoritative
+storage contracts. `LatestDurableProjectionCore` below remains a conflating
+egress state machine and can advertise only `latest_state_only`; it cannot
+certify `complete_history`.
+
 ## Latest durable projection core (`#lzlatestdurableprojection`)
 
 An ordinary `Effect` coalesces settled graph writes, but by itself it does not

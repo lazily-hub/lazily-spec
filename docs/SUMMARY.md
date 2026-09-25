@@ -14,6 +14,7 @@
 - [Lossless Tree CRDT](lossless-tree-crdt.md)
 - [CrdtTree Contract](crdt-tree.md)
 - [Durable Outbox Stores](durable-outbox.md)
+- [Durable Owner Contract](durable-owner.md)
 - [Durable Effect Sinks](durable-sinks.md)
 - [Reactive Egress](transport-egress.md)
 - [Cross-Language Coverage](coverage.md)

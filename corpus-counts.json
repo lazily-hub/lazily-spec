@@ -1,5 +1,5 @@
 {
-  "fixtures": 156,
+  "fixtures": 160,
   "arrays": {
     "codec/blob_backend_discriminator.json": {
       "scenarios": 14
@@ -105,6 +105,18 @@
     },
     "distributed/crdt_sync_frames.json": {
       "frames": 4
+    },
+    "durable-owner/atomic_crash_boundary.json": {
+      "scenarios": 1
+    },
+    "durable-owner/inbox_outbox_deduplication.json": {
+      "scenarios": 1
+    },
+    "durable-owner/ordered_replay.json": {
+      "scenarios": 2
+    },
+    "durable-owner/projection_fingerprint.json": {
+      "scenarios": 2
     },
     "egress/egress_generation_fence.json": {
       "steps": 8
@@ -577,6 +589,18 @@
     },
     "distributed/crdt_sync_frames.json": {
       "assertions": 4
+    },
+    "durable-owner/atomic_crash_boundary.json": {
+      "expect": 5
+    },
+    "durable-owner/inbox_outbox_deduplication.json": {
+      "expect": 7
+    },
+    "durable-owner/ordered_replay.json": {
+      "expect": 6
+    },
+    "durable-owner/projection_fingerprint.json": {
+      "expect": 2
     },
     "egress/egress_generation_fence.json": {
       "expected": 8

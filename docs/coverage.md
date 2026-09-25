@@ -34,6 +34,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Transport & FFI | ✅ | ✅ | ✅ | ~ | ~ | ✅ | ✅ | ~ | ✅ | — |
 | Message passing | ✅ | ✅ | ✅ | ✅ | ✅ | ~ | ✅ | ✅ | ✅ | — |
 | Reliable sync | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | — |
+| Durable owner | ✅ | — | — | — | — | — | — | — | — | — |
 | Distributed plane | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Causal receipts | ~ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Security boundary | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -189,6 +190,12 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Storage-independent durable outbox [^storage-independent-durable-outbox] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Reliable-sync transport seam [^reliable-sync-transport-seam] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 
+#### Durable owner
+
+| Feature | Rust | Python | Kotlin | JS | Dart | Zig | Go | C++ | C# | GDScript |
+| --------- | :----: | :------: | :------: | :--: | :----: | :---: | :--: | :---: | :--: | :--------: |
+| Durable owner contracts [^durable-owner-contracts] | ✅ | — | — | — | — | — | — | — | — | — |
+
 #### Distributed plane
 
 | Feature | Rust | Python | Kotlin | JS | Dart | Zig | Go | C++ | C# | GDScript |
@@ -322,6 +329,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 [^cross-process-zero-copy-transport]: Cross-process zero-copy transport (`BlobBackend` / shm / arrow)
 [^distributed-crdt-plane]: Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy)
 [^reliable-sync]: Reliable sync — resync coordinator + at-least-once durable outbox + OR-set/LWW liveness (`#lzsync`)
+[^durable-owner-contracts]: Backend-neutral durable owner — ordered history or snapshot state, monotone positions, exact CAS/fencing, versioned payloads, atomic inbox/outbox/receipt boundary, crash recovery, and source-bound projection fingerprints (`#lzdurablespec`)
 [^storage-independent-durable-outbox]: Storage-independent durable outbox (`OutboxStore` + shared outbox protocol; SQLite/Room/IndexedDB/file adapters)
 [^reliable-sync-transport-seam]: Reliable-sync transport seam + full-duplex `SyncDriver` loop (`IpcSink`/`IpcSource`, `#sync-driver`)
 [^distributed-plane-webrtc]: Distributed plane — WebRTC transport + signaling

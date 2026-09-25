@@ -39,6 +39,7 @@ _SCHEMA_NAMES = [
     "lossless-tree-fixture",
     "message-passing",
     "reliable-sync",
+    "durable-owner",
     "stdlib-fixture.schema",
 ]
 

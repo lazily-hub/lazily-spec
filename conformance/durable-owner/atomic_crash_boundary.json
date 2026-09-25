@@ -1,0 +1,333 @@
+{
+  "protocol_version": 1,
+  "kind": "DurableOwner",
+  "model": "AtomicCrashBoundary",
+  "description": "An owner transition makes state, inbox, outbox, and transaction-local receipts visible atomically; transport acknowledgement follows the durable outcome.",
+  "scenarios": [
+    {
+      "id": "crash_boundary_is_all_or_none_and_redelivery_is_idempotent",
+      "owner_id": "account-7",
+      "mode": "event_history",
+      "fence": 7,
+      "steps": [
+        {
+          "op": {
+            "type": "crash_before_commit",
+            "commit": {
+              "owner_id": "account-7",
+              "expected_position": 0,
+              "fence": 7,
+              "inbox_id": "orders/message-41",
+              "ingress_fingerprint": "order:A",
+              "state": {
+                "append_events": [
+                  { "schema_version": 7, "codec_version": 11, "bytes": "accepted:A" }
+                ]
+              },
+              "effects": [
+                {
+                  "id": "orders/message-41/effect-0",
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit:A" }
+                },
+                {
+                  "id": "orders/message-41/effect-1",
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "publish:A" }
+                }
+              ],
+              "receipts": [
+                {
+                  "id": "orders/message-41/receipt-0",
+                  "effect_id": "orders/message-41/effect-0",
+                  "outcome": "applied",
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit-written" }
+                }
+              ]
+            }
+          },
+          "expect": {
+            "result": { "outcome": "aborted", "ack": "withhold" },
+            "image": {
+              "position": 0,
+              "fence": 7,
+              "history": [],
+              "snapshot": null,
+              "inbox": [],
+              "outbox": [],
+              "receipts": [],
+              "pending_effect_ids": []
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "account-7",
+              "expected_position": 0,
+              "fence": 7,
+              "inbox_id": "orders/message-41",
+              "ingress_fingerprint": "order:A",
+              "state": {
+                "append_events": [
+                  { "schema_version": 7, "codec_version": 11, "bytes": "accepted:A" }
+                ]
+              },
+              "effects": [
+                {
+                  "id": "orders/message-41/effect-0",
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit:A" }
+                },
+                {
+                  "id": "orders/message-41/effect-1",
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "publish:A" }
+                }
+              ],
+              "receipts": [
+                {
+                  "id": "orders/message-41/receipt-0",
+                  "effect_id": "orders/message-41/effect-0",
+                  "outcome": "applied",
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit-written" }
+                }
+              ]
+            }
+          },
+          "expect": {
+            "result": { "outcome": "committed", "through": 1, "ack": "safe" },
+            "image": {
+              "position": 1,
+              "fence": 7,
+              "history": [
+                {
+                  "position": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "accepted:A" }
+                }
+              ],
+              "snapshot": null,
+              "inbox": [
+                {
+                  "id": "orders/message-41",
+                  "ingress_fingerprint": "order:A",
+                  "committed_through": 1
+                }
+              ],
+              "outbox": [
+                {
+                  "id": "orders/message-41/effect-0",
+                  "accepted_at": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit:A" }
+                },
+                {
+                  "id": "orders/message-41/effect-1",
+                  "accepted_at": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "publish:A" }
+                }
+              ],
+              "receipts": [
+                {
+                  "id": "orders/message-41/receipt-0",
+                  "effect_id": "orders/message-41/effect-0",
+                  "outcome": "applied",
+                  "recorded_at": 1,
+                  "fence": 7,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit-written" }
+                }
+              ],
+              "pending_effect_ids": ["orders/message-41/effect-1"]
+            }
+          }
+        },
+        {
+          "op": { "type": "crash_recover" },
+          "expect": {
+            "result": { "outcome": "recovered" },
+            "image": {
+              "position": 1,
+              "fence": 7,
+              "history": [
+                {
+                  "position": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "accepted:A" }
+                }
+              ],
+              "snapshot": null,
+              "inbox": [
+                {
+                  "id": "orders/message-41",
+                  "ingress_fingerprint": "order:A",
+                  "committed_through": 1
+                }
+              ],
+              "outbox": [
+                {
+                  "id": "orders/message-41/effect-0",
+                  "accepted_at": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit:A" }
+                },
+                {
+                  "id": "orders/message-41/effect-1",
+                  "accepted_at": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "publish:A" }
+                }
+              ],
+              "receipts": [
+                {
+                  "id": "orders/message-41/receipt-0",
+                  "effect_id": "orders/message-41/effect-0",
+                  "outcome": "applied",
+                  "recorded_at": 1,
+                  "fence": 7,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit-written" }
+                }
+              ],
+              "pending_effect_ids": ["orders/message-41/effect-1"]
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "account-7",
+              "expected_position": 0,
+              "fence": 7,
+              "inbox_id": "orders/message-41",
+              "ingress_fingerprint": "order:A",
+              "state": {
+                "append_events": [
+                  { "schema_version": 7, "codec_version": 11, "bytes": "accepted:A" }
+                ]
+              },
+              "effects": [
+                {
+                  "id": "orders/message-41/effect-0",
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit:A" }
+                },
+                {
+                  "id": "orders/message-41/effect-1",
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "publish:A" }
+                }
+              ],
+              "receipts": [
+                {
+                  "id": "orders/message-41/receipt-0",
+                  "effect_id": "orders/message-41/effect-0",
+                  "outcome": "applied",
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit-written" }
+                }
+              ]
+            }
+          },
+          "expect": {
+            "result": { "outcome": "duplicate", "through": 1, "ack": "safe" },
+            "image": {
+              "position": 1,
+              "fence": 7,
+              "history": [
+                {
+                  "position": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "accepted:A" }
+                }
+              ],
+              "snapshot": null,
+              "inbox": [
+                {
+                  "id": "orders/message-41",
+                  "ingress_fingerprint": "order:A",
+                  "committed_through": 1
+                }
+              ],
+              "outbox": [
+                {
+                  "id": "orders/message-41/effect-0",
+                  "accepted_at": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit:A" }
+                },
+                {
+                  "id": "orders/message-41/effect-1",
+                  "accepted_at": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "publish:A" }
+                }
+              ],
+              "receipts": [
+                {
+                  "id": "orders/message-41/receipt-0",
+                  "effect_id": "orders/message-41/effect-0",
+                  "outcome": "applied",
+                  "recorded_at": 1,
+                  "fence": 7,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit-written" }
+                }
+              ],
+              "pending_effect_ids": ["orders/message-41/effect-1"]
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "record_receipt",
+            "fence": 7,
+            "receipt": {
+              "id": "orders/message-41/receipt-1",
+              "effect_id": "orders/message-41/effect-1",
+              "outcome": "applied",
+              "payload": { "schema_version": 7, "codec_version": 11, "bytes": "broker-ack:A" }
+            }
+          },
+          "expect": {
+            "result": { "outcome": "receipt_recorded" },
+            "image": {
+              "position": 1,
+              "fence": 7,
+              "history": [
+                {
+                  "position": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "accepted:A" }
+                }
+              ],
+              "snapshot": null,
+              "inbox": [
+                {
+                  "id": "orders/message-41",
+                  "ingress_fingerprint": "order:A",
+                  "committed_through": 1
+                }
+              ],
+              "outbox": [
+                {
+                  "id": "orders/message-41/effect-0",
+                  "accepted_at": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit:A" }
+                },
+                {
+                  "id": "orders/message-41/effect-1",
+                  "accepted_at": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "publish:A" }
+                }
+              ],
+              "receipts": [
+                {
+                  "id": "orders/message-41/receipt-0",
+                  "effect_id": "orders/message-41/effect-0",
+                  "outcome": "applied",
+                  "recorded_at": 1,
+                  "fence": 7,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "audit-written" }
+                },
+                {
+                  "id": "orders/message-41/receipt-1",
+                  "effect_id": "orders/message-41/effect-1",
+                  "outcome": "applied",
+                  "recorded_at": 1,
+                  "fence": 7,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "broker-ack:A" }
+                }
+              ],
+              "pending_effect_ids": []
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

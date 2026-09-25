@@ -1,0 +1,254 @@
+{
+  "protocol_version": 1,
+  "kind": "DurableOwner",
+  "model": "IdentityDeduplication",
+  "description": "Inbox, outbox effect, and receipt identities are stable: exact repeats are idempotent while reuse with different bytes fails without mutation.",
+  "scenarios": [
+    {
+      "id": "deduplication_uses_scoped_identity_and_immutable_fingerprint",
+      "owner_id": "cart-9",
+      "mode": "event_history",
+      "fence": 9,
+      "steps": [
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "cart-9",
+              "expected_position": 0,
+              "fence": 9,
+              "inbox_id": "checkout/message-1",
+              "ingress_fingerprint": "request:one",
+              "state": { "append_events": [{ "schema_version": 7, "codec_version": 11, "bytes": "same-value" }] },
+              "effects": [
+                { "id": "checkout/message-1/effect-0", "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge" } }
+              ],
+              "receipts": []
+            }
+          },
+          "expect": {
+            "result": { "outcome": "committed", "through": 1, "ack": "safe" },
+            "image": {
+              "position": 1,
+              "fence": 9,
+              "history": [{ "position": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "same-value" } }],
+              "snapshot": null,
+              "inbox": [{ "id": "checkout/message-1", "ingress_fingerprint": "request:one", "committed_through": 1 }],
+              "outbox": [{ "id": "checkout/message-1/effect-0", "accepted_at": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge" } }],
+              "receipts": [],
+              "pending_effect_ids": ["checkout/message-1/effect-0"]
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "cart-9",
+              "expected_position": 0,
+              "fence": 9,
+              "inbox_id": "checkout/message-1",
+              "ingress_fingerprint": "request:one",
+              "state": { "append_events": [{ "schema_version": 7, "codec_version": 11, "bytes": "same-value" }] },
+              "effects": [
+                { "id": "checkout/message-1/effect-0", "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge" } }
+              ],
+              "receipts": []
+            }
+          },
+          "expect": {
+            "result": { "outcome": "duplicate", "through": 1, "ack": "safe" },
+            "image": {
+              "position": 1,
+              "fence": 9,
+              "history": [{ "position": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "same-value" } }],
+              "snapshot": null,
+              "inbox": [{ "id": "checkout/message-1", "ingress_fingerprint": "request:one", "committed_through": 1 }],
+              "outbox": [{ "id": "checkout/message-1/effect-0", "accepted_at": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge" } }],
+              "receipts": [],
+              "pending_effect_ids": ["checkout/message-1/effect-0"]
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "cart-9",
+              "expected_position": 1,
+              "fence": 9,
+              "inbox_id": "checkout/message-1",
+              "ingress_fingerprint": "request:changed",
+              "state": { "append_events": [{ "schema_version": 7, "codec_version": 11, "bytes": "must-not-appear" }] },
+              "effects": [],
+              "receipts": []
+            }
+          },
+          "expect": {
+            "result": { "outcome": "inbox_identity_conflict", "ack": "withhold" },
+            "image": {
+              "position": 1,
+              "fence": 9,
+              "history": [{ "position": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "same-value" } }],
+              "snapshot": null,
+              "inbox": [{ "id": "checkout/message-1", "ingress_fingerprint": "request:one", "committed_through": 1 }],
+              "outbox": [{ "id": "checkout/message-1/effect-0", "accepted_at": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge" } }],
+              "receipts": [],
+              "pending_effect_ids": ["checkout/message-1/effect-0"]
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "cart-9",
+              "expected_position": 1,
+              "fence": 9,
+              "inbox_id": "checkout/message-2",
+              "ingress_fingerprint": "request:two",
+              "state": { "append_events": [{ "schema_version": 7, "codec_version": 11, "bytes": "same-value" }] },
+              "effects": [],
+              "receipts": []
+            }
+          },
+          "expect": {
+            "result": { "outcome": "committed", "through": 2, "ack": "safe" },
+            "image": {
+              "position": 2,
+              "fence": 9,
+              "history": [
+                { "position": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "same-value" } },
+                { "position": 2, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "same-value" } }
+              ],
+              "snapshot": null,
+              "inbox": [
+                { "id": "checkout/message-1", "ingress_fingerprint": "request:one", "committed_through": 1 },
+                { "id": "checkout/message-2", "ingress_fingerprint": "request:two", "committed_through": 2 }
+              ],
+              "outbox": [{ "id": "checkout/message-1/effect-0", "accepted_at": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge" } }],
+              "receipts": [],
+              "pending_effect_ids": ["checkout/message-1/effect-0"]
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "cart-9",
+              "expected_position": 2,
+              "fence": 9,
+              "inbox_id": "checkout/message-3",
+              "ingress_fingerprint": "request:three",
+              "state": { "append_events": [{ "schema_version": 7, "codec_version": 11, "bytes": "must-not-appear" }] },
+              "effects": [
+                { "id": "checkout/message-1/effect-0", "payload": { "schema_version": 7, "codec_version": 11, "bytes": "changed-charge" } }
+              ],
+              "receipts": []
+            }
+          },
+          "expect": {
+            "result": { "outcome": "effect_identity_conflict", "ack": "withhold" },
+            "image": {
+              "position": 2,
+              "fence": 9,
+              "history": [
+                { "position": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "same-value" } },
+                { "position": 2, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "same-value" } }
+              ],
+              "snapshot": null,
+              "inbox": [
+                { "id": "checkout/message-1", "ingress_fingerprint": "request:one", "committed_through": 1 },
+                { "id": "checkout/message-2", "ingress_fingerprint": "request:two", "committed_through": 2 }
+              ],
+              "outbox": [{ "id": "checkout/message-1/effect-0", "accepted_at": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge" } }],
+              "receipts": [],
+              "pending_effect_ids": ["checkout/message-1/effect-0"]
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "record_receipt",
+            "fence": 9,
+            "receipt": {
+              "id": "checkout/message-1/receipt-0",
+              "effect_id": "checkout/message-1/effect-0",
+              "outcome": "applied",
+              "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge-applied" }
+            }
+          },
+          "expect": {
+            "result": { "outcome": "receipt_recorded" },
+            "image": {
+              "position": 2,
+              "fence": 9,
+              "history": [
+                { "position": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "same-value" } },
+                { "position": 2, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "same-value" } }
+              ],
+              "snapshot": null,
+              "inbox": [
+                { "id": "checkout/message-1", "ingress_fingerprint": "request:one", "committed_through": 1 },
+                { "id": "checkout/message-2", "ingress_fingerprint": "request:two", "committed_through": 2 }
+              ],
+              "outbox": [{ "id": "checkout/message-1/effect-0", "accepted_at": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge" } }],
+              "receipts": [
+                {
+                  "id": "checkout/message-1/receipt-0",
+                  "effect_id": "checkout/message-1/effect-0",
+                  "outcome": "applied",
+                  "recorded_at": 2,
+                  "fence": 9,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge-applied" }
+                }
+              ],
+              "pending_effect_ids": []
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "record_receipt",
+            "fence": 9,
+            "receipt": {
+              "id": "checkout/message-1/receipt-0",
+              "effect_id": "checkout/message-1/effect-0",
+              "outcome": "rejected",
+              "payload": { "schema_version": 7, "codec_version": 11, "bytes": "changed" }
+            }
+          },
+          "expect": {
+            "result": { "outcome": "receipt_identity_conflict" },
+            "image": {
+              "position": 2,
+              "fence": 9,
+              "history": [
+                { "position": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "same-value" } },
+                { "position": 2, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "same-value" } }
+              ],
+              "snapshot": null,
+              "inbox": [
+                { "id": "checkout/message-1", "ingress_fingerprint": "request:one", "committed_through": 1 },
+                { "id": "checkout/message-2", "ingress_fingerprint": "request:two", "committed_through": 2 }
+              ],
+              "outbox": [{ "id": "checkout/message-1/effect-0", "accepted_at": 1, "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge" } }],
+              "receipts": [
+                {
+                  "id": "checkout/message-1/receipt-0",
+                  "effect_id": "checkout/message-1/effect-0",
+                  "outcome": "applied",
+                  "recorded_at": 2,
+                  "fence": 9,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "charge-applied" }
+                }
+              ],
+              "pending_effect_ids": []
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,252 @@
+{
+  "protocol_version": 1,
+  "kind": "DurableOwner",
+  "model": "OrderedReplay",
+  "description": "Complete history preserves every accepted record at a store-assigned monotone position, while snapshot state replaces bytes but still advances the owner position.",
+  "scenarios": [
+    {
+      "id": "history_positions_are_contiguous_and_cas_and_fence_fail_closed",
+      "owner_id": "workflow-history",
+      "mode": "event_history",
+      "fence": 3,
+      "steps": [
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "workflow-history",
+              "expected_position": 0,
+              "fence": 3,
+              "inbox_id": "source/a",
+              "ingress_fingerprint": "input:a",
+              "state": {
+                "append_events": [
+                  { "schema_version": 7, "codec_version": 11, "bytes": "A" },
+                  { "schema_version": 7, "codec_version": 11, "bytes": "B" }
+                ]
+              },
+              "effects": [],
+              "receipts": []
+            }
+          },
+          "expect": {
+            "result": { "outcome": "committed", "through": 2, "ack": "safe" },
+            "image": {
+              "position": 2,
+              "fence": 3,
+              "history": [
+                {
+                  "position": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "A" }
+                },
+                {
+                  "position": 2,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "B" }
+                }
+              ],
+              "snapshot": null,
+              "inbox": [
+                { "id": "source/a", "ingress_fingerprint": "input:a", "committed_through": 2 }
+              ],
+              "outbox": [],
+              "receipts": [],
+              "pending_effect_ids": []
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "workflow-history",
+              "expected_position": 0,
+              "fence": 3,
+              "inbox_id": "source/stale-position",
+              "ingress_fingerprint": "input:stale-position",
+              "state": {
+                "append_events": [
+                  { "schema_version": 7, "codec_version": 11, "bytes": "must-not-appear" }
+                ]
+              },
+              "effects": [],
+              "receipts": []
+            }
+          },
+          "expect": {
+            "result": { "outcome": "position_conflict", "ack": "withhold" },
+            "image": {
+              "position": 2,
+              "fence": 3,
+              "history": [
+                {
+                  "position": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "A" }
+                },
+                {
+                  "position": 2,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "B" }
+                }
+              ],
+              "snapshot": null,
+              "inbox": [
+                { "id": "source/a", "ingress_fingerprint": "input:a", "committed_through": 2 }
+              ],
+              "outbox": [],
+              "receipts": [],
+              "pending_effect_ids": []
+            }
+          }
+        },
+        {
+          "op": { "type": "advance_fence", "fence": 4 },
+          "expect": {
+            "result": { "outcome": "fence_advanced" },
+            "image": {
+              "position": 2,
+              "fence": 4,
+              "history": [
+                {
+                  "position": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "A" }
+                },
+                {
+                  "position": 2,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "B" }
+                }
+              ],
+              "snapshot": null,
+              "inbox": [
+                { "id": "source/a", "ingress_fingerprint": "input:a", "committed_through": 2 }
+              ],
+              "outbox": [],
+              "receipts": [],
+              "pending_effect_ids": []
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "workflow-history",
+              "expected_position": 2,
+              "fence": 5,
+              "inbox_id": "source/self-promote",
+              "ingress_fingerprint": "input:self-promote",
+              "state": {
+                "append_events": [
+                  { "schema_version": 7, "codec_version": 11, "bytes": "must-not-appear" }
+                ]
+              },
+              "effects": [],
+              "receipts": []
+            }
+          },
+          "expect": {
+            "result": { "outcome": "stale_fence", "ack": "withhold" },
+            "image": {
+              "position": 2,
+              "fence": 4,
+              "history": [
+                {
+                  "position": 1,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "A" }
+                },
+                {
+                  "position": 2,
+                  "payload": { "schema_version": 7, "codec_version": 11, "bytes": "B" }
+                }
+              ],
+              "snapshot": null,
+              "inbox": [
+                { "id": "source/a", "ingress_fingerprint": "input:a", "committed_through": 2 }
+              ],
+              "outbox": [],
+              "receipts": [],
+              "pending_effect_ids": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "snapshot_replacement_advances_position_without_claiming_history",
+      "owner_id": "workflow-snapshot",
+      "mode": "snapshot",
+      "fence": 8,
+      "steps": [
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "workflow-snapshot",
+              "expected_position": 0,
+              "fence": 8,
+              "inbox_id": "source/snapshot-a",
+              "ingress_fingerprint": "snapshot:a",
+              "state": {
+                "replace_snapshot": { "schema_version": 13, "codec_version": 17, "bytes": "state:A" }
+              },
+              "effects": [],
+              "receipts": []
+            }
+          },
+          "expect": {
+            "result": { "outcome": "committed", "through": 1, "ack": "safe" },
+            "image": {
+              "position": 1,
+              "fence": 8,
+              "history": [],
+              "snapshot": {
+                "position": 1,
+                "payload": { "schema_version": 13, "codec_version": 17, "bytes": "state:A" }
+              },
+              "inbox": [
+                { "id": "source/snapshot-a", "ingress_fingerprint": "snapshot:a", "committed_through": 1 }
+              ],
+              "outbox": [],
+              "receipts": [],
+              "pending_effect_ids": []
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "commit",
+            "commit": {
+              "owner_id": "workflow-snapshot",
+              "expected_position": 1,
+              "fence": 8,
+              "inbox_id": "source/snapshot-b",
+              "ingress_fingerprint": "snapshot:b",
+              "state": {
+                "replace_snapshot": { "schema_version": 13, "codec_version": 17, "bytes": "state:B" }
+              },
+              "effects": [],
+              "receipts": []
+            }
+          },
+          "expect": {
+            "result": { "outcome": "committed", "through": 2, "ack": "safe" },
+            "image": {
+              "position": 2,
+              "fence": 8,
+              "history": [],
+              "snapshot": {
+                "position": 2,
+                "payload": { "schema_version": 13, "codec_version": 17, "bytes": "state:B" }
+              },
+              "inbox": [
+                { "id": "source/snapshot-a", "ingress_fingerprint": "snapshot:a", "committed_through": 1 },
+                { "id": "source/snapshot-b", "ingress_fingerprint": "snapshot:b", "committed_through": 2 }
+              ],
+              "outbox": [],
+              "receipts": [],
+              "pending_effect_ids": []
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
