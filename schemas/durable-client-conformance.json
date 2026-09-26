@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/durable-client-conformance.json",
+  "title": "Lazily durable client conformance corpus",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol_version", "kind", "model", "description", "owner_authority", "envelope_vectors", "ordering_vectors", "projection_ordering_vectors", "dedup_vectors", "receipt_vectors", "projection_fingerprint_vectors"],
+  "properties": {
+    "protocol_version": {"const": 1},
+    "kind": {"const": "DurableClient"},
+    "model": {"const": "EnvelopeV1"},
+    "description": {"type": "string", "minLength": 1},
+    "owner_authority": {"const": false},
+    "envelope_vectors": {"type": "array", "minItems": 4, "items": {"$ref": "#/$defs/envelopeVector"}},
+    "ordering_vectors": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/orderingVector"}},
+    "projection_ordering_vectors": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/projectionOrderingVector"}},
+    "dedup_vectors": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/dedupVector"}},
+    "receipt_vectors": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/receiptVector"}},
+    "projection_fingerprint_vectors": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/fingerprintVector"}}
+  },
+  "$defs": {
+    "envelope": {"$ref": "durable-envelope.json"},
+    "wireEnvelope": {
+      "type": "object", "additionalProperties": false, "required": ["protocol_version", "message_id", "schema_version", "codec_version", "payload"],
+      "properties": {
+        "protocol_version": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "message_id": {"type": "string"},
+        "schema_version": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "codec_version": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "payload": {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 255}}
+      }
+    },
+    "id": {"type": "string", "minLength": 1},
+    "envelopeVector": {
+      "type": "object", "additionalProperties": false, "required": ["id", "envelope", "expected"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "envelope": {"$ref": "#/$defs/wireEnvelope"},
+        "expected": {
+          "type": "object", "additionalProperties": false, "required": ["accepted", "reason", "payload_decoded"],
+          "properties": {
+            "accepted": {"type": "boolean"},
+            "reason": {"enum": ["accepted", "unsupported_protocol_version", "invalid_message_id", "invalid_schema_version", "invalid_codec_version"]},
+            "payload_decoded": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "orderingVector": {
+      "type": "object", "additionalProperties": false, "required": ["id", "observed_message_ids", "expected_delivery_order", "owner_order_inferred"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "observed_message_ids": {"type": "array", "items": {"$ref": "#/$defs/id"}},
+        "expected_delivery_order": {"type": "array", "items": {"$ref": "#/$defs/id"}},
+        "owner_order_inferred": {"const": false}
+      }
+    },
+    "projectionOrderingVector": {
+      "type": "object", "additionalProperties": false, "required": ["id", "observed_source_positions", "expected_applied_positions", "expected_delivery_classification", "broker_order_authoritative", "may_authorize_transition"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "observed_source_positions": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+        "expected_applied_positions": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+        "expected_delivery_classification": {"type": "array", "items": {"enum": ["buffered", "applied", "duplicate"]}},
+        "broker_order_authoritative": {"const": false},
+        "may_authorize_transition": {"const": false}
+      }
+    },
+    "dedupVector": {
+      "type": "object", "additionalProperties": false, "required": ["id", "deliveries", "expected_classification"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "deliveries": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/envelope"}},
+        "expected_classification": {"type": "array", "items": {"enum": ["first", "duplicate", "conflict"]}}
+      }
+    },
+    "receipt": {
+      "type": "object", "additionalProperties": false, "required": ["protocol_version", "receipt_id", "message_id", "outcome", "owner_position"],
+      "properties": {
+        "protocol_version": {"const": 1},
+        "receipt_id": {"$ref": "#/$defs/id"},
+        "message_id": {"$ref": "#/$defs/id"},
+        "outcome": {"enum": ["committed", "duplicate", "conflict", "rejected"]},
+        "owner_position": {"type": "integer", "minimum": 0}
+      }
+    },
+    "receiptVector": {
+      "type": "object", "additionalProperties": false, "required": ["id", "receipt", "expected_round_trip", "transport_ack_equivalent"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "receipt": {"$ref": "#/$defs/receipt"},
+        "expected_round_trip": {"$ref": "#/$defs/receipt"},
+        "transport_ack_equivalent": {"const": false}
+      }
+    },
+    "projectionFingerprint": {
+      "type": "object", "additionalProperties": false, "required": ["projection_id", "source_position", "fingerprint", "completeness", "may_authorize_transition"],
+      "properties": {
+        "projection_id": {"$ref": "#/$defs/id"},
+        "source_position": {"type": "integer", "minimum": 0},
+        "fingerprint": {"type": "string", "pattern": "^[0-9a-f]+$"},
+        "completeness": {"enum": ["complete_history", "latest_state_only"]},
+        "may_authorize_transition": {"const": false}
+      }
+    },
+    "fingerprintVector": {
+      "type": "object", "additionalProperties": false, "required": ["id", "left", "right", "expected"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "left": {"$ref": "#/$defs/projectionFingerprint"},
+        "right": {"$ref": "#/$defs/projectionFingerprint"},
+        "expected": {
+          "type": "object", "additionalProperties": false, "required": ["same_source", "same_fingerprint", "same_completeness", "equivalent"],
+          "properties": {
+            "same_source": {"type": "boolean"},
+            "same_fingerprint": {"type": "boolean"},
+            "same_completeness": {"type": "boolean"},
+            "equivalent": {"type": "boolean"}
+          }
+        }
+      }
+    }
+  }
+}

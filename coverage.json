@@ -96,6 +96,10 @@
       "title": "Durable owner"
     },
     {
+      "id": "durable-capability",
+      "title": "Durable capability tiers"
+    },
+    {
       "id": "distributed",
       "title": "Distributed plane"
     },
@@ -1303,6 +1307,54 @@
         "C++": "Row-level, not binding-level: every binding is `~` here. The two cited fixtures pin the coalescing/outbox and lease-eviction behaviour that IS implemented; the rest of the row's feature — the full resync coordinator plus OR-set/LWW liveness — has no canonical fixture, so no ledger can separate a binding that finished it from one that did not. Promote only alongside fixtures that pin the uncovered half.",
         "C#": "Row-level, not binding-level: every binding is `~` here. The two cited fixtures pin the coalescing/outbox and lease-eviction behaviour that IS implemented; the rest of the row's feature — the full resync coordinator plus OR-set/LWW liveness — has no canonical fixture, so no ledger can separate a binding that finished it from one that did not. Promote only alongside fixtures that pin the uncovered half."
       }
+    },
+    {
+      "id": "durable-tier-core",
+      "label": "Durable tier: Core",
+      "family": "durable-capability",
+      "feature": "Reactive graph plus typed state and decision semantics (`#lzdurablefamily`)",
+      "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"]
+    },
+    {
+      "id": "durable-tier-client",
+      "label": "Durable tier: Client",
+      "family": "durable-capability",
+      "feature": "Typed NATS envelope through an injected compatible transport; no durable-owner authority (`#lzdurablefamily`)",
+      "fixtures": ["durable-client/envelope_v1.json"],
+      "marks": ["✅", "—", "—", "—", "—", "—", "—", "—", "—", "—"]
+    },
+    {
+      "id": "durable-tier-durable-host",
+      "label": "Durable tier: Durable Host",
+      "family": "durable-capability",
+      "feature": "Database-authoritative durable owner with atomic inbox/state/outbox/receipt boundary (`#lzdurablefamily`)",
+      "fixtures": [
+        "durable-owner/atomic_crash_boundary.json",
+        "durable-owner/ordered_replay.json",
+        "durable-owner/inbox_outbox_deduplication.json",
+        "durable-owner/projection_fingerprint.json"
+      ],
+      "marks": ["✅", "—", "—", "—", "—", "—", "—", "—", "—", "—"]
+    },
+    {
+      "id": "durable-tier-distributed-host",
+      "label": "Durable tier: Distributed Host",
+      "family": "durable-capability",
+      "feature": "Durable Host plus leased broker delivery/relay, recovery, drain, and poison disposition (`#lzdurablefamily`)",
+      "fixtures": [
+        "durable-owner/atomic_crash_boundary.json",
+        "durable-owner/ordered_replay.json",
+        "durable-owner/inbox_outbox_deduplication.json",
+        "durable-owner/projection_fingerprint.json"
+      ],
+      "marks": ["✅", "—", "—", "—", "—", "—", "—", "—", "—", "—"]
+    },
+    {
+      "id": "durable-tier-accelerated-host",
+      "label": "Durable tier: Accelerated Host",
+      "family": "durable-capability",
+      "feature": "Distributed Host plus bypassable Valkey acceleration with cache-loss equivalence (`#lzdurablefamily`)",
+      "marks": ["—", "—", "—", "—", "—", "—", "—", "—", "—", "—"]
     },
     {
       "id": "durable-owner-contracts",

@@ -40,6 +40,9 @@ _SCHEMA_NAMES = [
     "message-passing",
     "reliable-sync",
     "durable-owner",
+    "durable-envelope",
+    "durable-client-conformance",
+    "durable-tiers",
     "stdlib-fixture.schema",
 ]
 

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/durable-envelope.json",
+  "title": "Lazily durable client envelope v1",
+  "description": "Transport-neutral typed envelope used by NATS-compatible durable clients. It carries no owner position, fence, or transition authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol_version",
+    "message_id",
+    "schema_version",
+    "codec_version",
+    "payload"
+  ],
+  "properties": {
+    "protocol_version": {"const": 1},
+    "message_id": {"type": "string", "minLength": 1},
+    "schema_version": {"type": "integer", "minimum": 1, "maximum": 4294967295},
+    "codec_version": {"type": "integer", "minimum": 1, "maximum": 4294967295},
+    "payload": {
+      "type": "array",
+      "items": {"type": "integer", "minimum": 0, "maximum": 255}
+    }
+  }
+}

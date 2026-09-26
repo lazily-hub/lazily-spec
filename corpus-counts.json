@@ -1,5 +1,5 @@
 {
-  "fixtures": 160,
+  "fixtures": 161,
   "arrays": {
     "codec/blob_backend_discriminator.json": {
       "scenarios": 14
@@ -105,6 +105,14 @@
     },
     "distributed/crdt_sync_frames.json": {
       "frames": 4
+    },
+    "durable-client/envelope_v1.json": {
+      "envelope_vectors": 4,
+      "ordering_vectors": 1,
+      "projection_ordering_vectors": 1,
+      "dedup_vectors": 1,
+      "receipt_vectors": 1,
+      "projection_fingerprint_vectors": 4
     },
     "durable-owner/atomic_crash_boundary.json": {
       "scenarios": 1
@@ -589,6 +597,9 @@
     },
     "distributed/crdt_sync_frames.json": {
       "assertions": 4
+    },
+    "durable-client/envelope_v1.json": {
+      "expected": 8
     },
     "durable-owner/atomic_crash_boundary.json": {
       "expect": 5

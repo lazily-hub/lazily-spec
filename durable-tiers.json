@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "tiers": [
+    {
+      "id": "core",
+      "rank": 0,
+      "requires": [],
+      "transition_authority": "none",
+      "required_capabilities": [
+        "reactive_graph",
+        "typed_state_and_decisions"
+      ]
+    },
+    {
+      "id": "client",
+      "rank": 1,
+      "requires": ["core"],
+      "transition_authority": "none",
+      "required_capabilities": [
+        "durable_envelope_v1",
+        "injected_compatible_transport",
+        "typed_nats_publish_and_observe"
+      ]
+    },
+    {
+      "id": "durable_host",
+      "rank": 2,
+      "requires": ["client"],
+      "transition_authority": "durable_owner",
+      "required_capabilities": [
+        "mature_transactional_database_client",
+        "atomic_inbox_state_outbox_receipts",
+        "durable_timers_and_fences",
+        "shared_crash_replay_corpus"
+      ]
+    },
+    {
+      "id": "distributed_host",
+      "rank": 3,
+      "requires": ["durable_host"],
+      "transition_authority": "durable_owner",
+      "required_capabilities": [
+        "mature_broker_client",
+        "leased_delivery_and_relay",
+        "bounded_backpressure_and_drain",
+        "commit_before_ack_recovery",
+        "durable_poison_disposition"
+      ]
+    },
+    {
+      "id": "accelerated_host",
+      "rank": 4,
+      "requires": ["distributed_host"],
+      "transition_authority": "durable_owner",
+      "required_capabilities": [
+        "bypassable_valkey_acceleration",
+        "cache_loss_equivalence"
+      ]
+    }
+  ]
+}

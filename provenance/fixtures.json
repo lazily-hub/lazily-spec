@@ -261,6 +261,12 @@
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
+      "path": "conformance/durable-client/envelope_v1.json",
+      "sha256": "564869ee83c0fdc4b53b07e715b57392cc6139570eb91f5022613e877fabdbfb"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
       "path": "conformance/durable-owner/atomic_crash_boundary.json",
       "sha256": "ed09ea50fddd8bbffb9ab9b5c747cd607247368ebafd28866593be8d78c437d6"
     },

@@ -1,0 +1,92 @@
+{
+  "protocol_version": 1,
+  "kind": "DurableClient",
+  "model": "EnvelopeV1",
+  "description": "Portable client observations for the v1 typed NATS envelope over an injected compatible transport. They never grant durable-owner authority.",
+  "owner_authority": false,
+  "envelope_vectors": [
+    {
+      "id": "envelope_v1_round_trip",
+      "envelope": {"protocol_version": 1, "message_id": "sample-owner/message-1", "schema_version": 7, "codec_version": 11, "payload": [0, 1, 127, 128, 255]},
+      "expected": {"accepted": true, "reason": "accepted", "payload_decoded": true}
+    },
+    {
+      "id": "unknown_protocol_fails_before_payload_decode",
+      "envelope": {"protocol_version": 2, "message_id": "sample-owner/message-2", "schema_version": 7, "codec_version": 11, "payload": [255]},
+      "expected": {"accepted": false, "reason": "unsupported_protocol_version", "payload_decoded": false}
+    },
+    {
+      "id": "empty_identity_fails_closed",
+      "envelope": {"protocol_version": 1, "message_id": "", "schema_version": 7, "codec_version": 11, "payload": []},
+      "expected": {"accepted": false, "reason": "invalid_message_id", "payload_decoded": false}
+    },
+    {
+      "id": "zero_versions_fail_closed",
+      "envelope": {"protocol_version": 1, "message_id": "sample-owner/message-3", "schema_version": 0, "codec_version": 0, "payload": []},
+      "expected": {"accepted": false, "reason": "invalid_schema_version", "payload_decoded": false}
+    }
+  ],
+  "ordering_vectors": [
+    {
+      "id": "transport_observation_order_is_preserved",
+      "observed_message_ids": ["sample-owner/message-2", "sample-owner/message-1", "sample-owner/message-2"],
+      "expected_delivery_order": ["sample-owner/message-2", "sample-owner/message-1", "sample-owner/message-2"],
+      "owner_order_inferred": false
+    }
+  ],
+  "projection_ordering_vectors": [
+    {
+      "id": "advisory_projection_buffers_gaps_and_deduplicates_replay",
+      "observed_source_positions": [2, 1, 2],
+      "expected_applied_positions": [1, 2],
+      "expected_delivery_classification": ["buffered", "applied", "duplicate"],
+      "broker_order_authoritative": false,
+      "may_authorize_transition": false
+    }
+  ],
+  "dedup_vectors": [
+    {
+      "id": "identity_and_content_distinguish_duplicates_from_conflicts",
+      "deliveries": [
+        {"protocol_version": 1, "message_id": "sample-owner/message-4", "schema_version": 7, "codec_version": 11, "payload": [65]},
+        {"protocol_version": 1, "message_id": "sample-owner/message-4", "schema_version": 7, "codec_version": 11, "payload": [65]},
+        {"protocol_version": 1, "message_id": "sample-owner/message-4", "schema_version": 7, "codec_version": 11, "payload": [66]}
+      ],
+      "expected_classification": ["first", "duplicate", "conflict"]
+    }
+  ],
+  "receipt_vectors": [
+    {
+      "id": "durable_receipt_is_not_transport_ack",
+      "receipt": {"protocol_version": 1, "receipt_id": "sample-owner/receipt-1", "message_id": "sample-owner/message-4", "outcome": "committed", "owner_position": 42},
+      "expected_round_trip": {"protocol_version": 1, "receipt_id": "sample-owner/receipt-1", "message_id": "sample-owner/message-4", "outcome": "committed", "owner_position": 42},
+      "transport_ack_equivalent": false
+    }
+  ],
+  "projection_fingerprint_vectors": [
+    {
+      "id": "equal_source_and_fingerprint_are_equivalent",
+      "left": {"projection_id": "orders", "source_position": 42, "fingerprint": "aabbccdd", "completeness": "complete_history", "may_authorize_transition": false},
+      "right": {"projection_id": "orders", "source_position": 42, "fingerprint": "aabbccdd", "completeness": "complete_history", "may_authorize_transition": false},
+      "expected": {"same_source": true, "same_fingerprint": true, "same_completeness": true, "equivalent": true}
+    },
+    {
+      "id": "same_digest_at_different_source_is_not_equivalent",
+      "left": {"projection_id": "orders", "source_position": 41, "fingerprint": "aabbccdd", "completeness": "complete_history", "may_authorize_transition": false},
+      "right": {"projection_id": "orders", "source_position": 42, "fingerprint": "aabbccdd", "completeness": "complete_history", "may_authorize_transition": false},
+      "expected": {"same_source": false, "same_fingerprint": true, "same_completeness": true, "equivalent": false}
+    },
+    {
+      "id": "different_digest_at_same_source_is_not_equivalent",
+      "left": {"projection_id": "orders", "source_position": 42, "fingerprint": "aabbccdd", "completeness": "complete_history", "may_authorize_transition": false},
+      "right": {"projection_id": "orders", "source_position": 42, "fingerprint": "eeff0011", "completeness": "complete_history", "may_authorize_transition": false},
+      "expected": {"same_source": true, "same_fingerprint": false, "same_completeness": true, "equivalent": false}
+    },
+    {
+      "id": "latest_state_only_never_substitutes_for_complete_history",
+      "left": {"projection_id": "orders", "source_position": 42, "fingerprint": "aabbccdd", "completeness": "complete_history", "may_authorize_transition": false},
+      "right": {"projection_id": "orders", "source_position": 42, "fingerprint": "aabbccdd", "completeness": "latest_state_only", "may_authorize_transition": false},
+      "expected": {"same_source": true, "same_fingerprint": true, "same_completeness": false, "equivalent": false}
+    }
+  ]
+}

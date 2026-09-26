@@ -35,6 +35,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Message passing | ✅ | ✅ | ✅ | ✅ | ✅ | ~ | ✅ | ✅ | ✅ | — |
 | Reliable sync | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | — |
 | Durable owner | ✅ | — | — | — | — | — | — | — | — | — |
+| Durable capability tiers | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ |
 | Distributed plane | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Causal receipts | ~ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Security boundary | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -196,6 +197,16 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | --------- | :----: | :------: | :------: | :--: | :----: | :---: | :--: | :---: | :--: | :--------: |
 | Durable owner contracts [^durable-owner-contracts] | ✅ | — | — | — | — | — | — | — | — | — |
 
+#### Durable capability tiers
+
+| Feature | Rust | Python | Kotlin | JS | Dart | Zig | Go | C++ | C# | GDScript |
+| --------- | :----: | :------: | :------: | :--: | :----: | :---: | :--: | :---: | :--: | :--------: |
+| Durable tier: Core [^durable-tier-core] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Durable tier: Client [^durable-tier-client] | ✅ | — | — | — | — | — | — | — | — | — |
+| Durable tier: Durable Host [^durable-tier-durable-host] | ✅ | — | — | — | — | — | — | — | — | — |
+| Durable tier: Distributed Host [^durable-tier-distributed-host] | ✅ | — | — | — | — | — | — | — | — | — |
+| Durable tier: Accelerated Host [^durable-tier-accelerated-host] | — | — | — | — | — | — | — | — | — | — |
+
 #### Distributed plane
 
 | Feature | Rust | Python | Kotlin | JS | Dart | Zig | Go | C++ | C# | GDScript |
@@ -329,6 +340,11 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 [^cross-process-zero-copy-transport]: Cross-process zero-copy transport (`BlobBackend` / shm / arrow)
 [^distributed-crdt-plane]: Distributed CRDT plane (`CrdtPlaneRuntime` / anti-entropy)
 [^reliable-sync]: Reliable sync — resync coordinator + at-least-once durable outbox + OR-set/LWW liveness (`#lzsync`)
+[^durable-tier-core]: Reactive graph plus typed state and decision semantics (`#lzdurablefamily`)
+[^durable-tier-client]: Typed NATS envelope through an injected compatible transport; no durable-owner authority (`#lzdurablefamily`)
+[^durable-tier-durable-host]: Database-authoritative durable owner with atomic inbox/state/outbox/receipt boundary (`#lzdurablefamily`)
+[^durable-tier-distributed-host]: Durable Host plus leased broker delivery/relay, recovery, drain, and poison disposition (`#lzdurablefamily`)
+[^durable-tier-accelerated-host]: Distributed Host plus bypassable Valkey acceleration with cache-loss equivalence (`#lzdurablefamily`)
 [^durable-owner-contracts]: Backend-neutral durable owner — ordered history or snapshot state, monotone positions, exact CAS/fencing, versioned payloads, atomic inbox/outbox/receipt boundary, crash recovery, and source-bound projection fingerprints (`#lzdurablespec`)
 [^storage-independent-durable-outbox]: Storage-independent durable outbox (`OutboxStore` + shared outbox protocol; SQLite/Room/IndexedDB/file adapters)
 [^reliable-sync-transport-seam]: Reliable-sync transport seam + full-duplex `SyncDriver` loop (`IpcSink`/`IpcSource`, `#sync-driver`)
