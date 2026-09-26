@@ -202,7 +202,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Feature | Rust | Python | Kotlin | JS | Dart | Zig | Go | C++ | C# | GDScript |
 | --------- | :----: | :------: | :------: | :--: | :----: | :---: | :--: | :---: | :--: | :--------: |
 | Durable tier: Core [^durable-tier-core] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Durable tier: Client [^durable-tier-client] | ✅ | — | — | — | — | — | — | — | — | — |
+| Durable tier: Client [^durable-tier-client] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Durable tier: Durable Host [^durable-tier-durable-host] | ✅ | — | — | — | — | — | — | — | — | — |
 | Durable tier: Distributed Host [^durable-tier-distributed-host] | ✅ | — | — | — | — | — | — | — | — | — |
 | Durable tier: Accelerated Host [^durable-tier-accelerated-host] | — | — | — | — | — | — | — | — | — | — |

@@ -1321,7 +1321,7 @@
       "family": "durable-capability",
       "feature": "Typed NATS envelope through an injected compatible transport; no durable-owner authority (`#lzdurablefamily`)",
       "fixtures": ["durable-client/envelope_v1.json"],
-      "marks": ["✅", "—", "—", "—", "—", "—", "—", "—", "—", "—"]
+      "marks": ["✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅", "✅"]
     },
     {
       "id": "durable-tier-durable-host",
