@@ -600,7 +600,8 @@
       "expect": 6
     },
     "durable-owner/projection_fingerprint.json": {
-      "expect": 2
+      "expect": 6,
+      "expected": 4
     },
     "egress/egress_generation_fence.json": {
       "expected": 8

@@ -29,7 +29,123 @@
           "history_capability": "complete_history",
           "latest_capability": "latest_state_only"
         }
-      }
+      },
+      "reconciliation_cases": [
+        {
+          "id": "ordered_create_amend_replay_is_equivalent",
+          "history": [
+            { "position": 1, "type": "create", "entity_id": "a", "value": "one" },
+            { "position": 2, "type": "create", "entity_id": "b", "value": "two" },
+            { "position": 3, "type": "amend", "entity_id": "a", "value": "three" }
+          ],
+          "resume_from": null,
+          "expected": {
+            "through": 3,
+            "projection_version": 3,
+            "entries": [
+              { "entity_id": "a", "value": "three" },
+              { "entity_id": "b", "value": "two" }
+            ]
+          },
+          "observed_projection": {
+            "through": 3,
+            "projection_version": 3,
+            "entries": [
+              { "entity_id": "a", "value": "three" },
+              { "entity_id": "b", "value": "two" }
+            ]
+          },
+          "expect": {
+            "health": "healthy",
+            "drift": false,
+            "lag": 0,
+            "transition_authority": "durable_owner",
+            "reconciliation_effect_id": "reconcile/counter-1/3"
+          }
+        },
+        {
+          "id": "partial_retraction_preserves_unrelated_entities",
+          "history": [
+            { "position": 1, "type": "create", "entity_id": "a", "value": "one" },
+            { "position": 2, "type": "create", "entity_id": "b", "value": "two" },
+            { "position": 3, "type": "retract", "entity_id": "a" }
+          ],
+          "resume_from": null,
+          "expected": {
+            "through": 3,
+            "projection_version": 3,
+            "entries": [{ "entity_id": "b", "value": "two" }]
+          },
+          "observed_projection": {
+            "through": 2,
+            "projection_version": 2,
+            "entries": [
+              { "entity_id": "a", "value": "one" },
+              { "entity_id": "b", "value": "two" }
+            ]
+          },
+          "expect": {
+            "health": "lagging",
+            "drift": true,
+            "lag": 1,
+            "transition_authority": "durable_owner",
+            "reconciliation_effect_id": "reconcile/counter-1/3"
+          }
+        },
+        {
+          "id": "final_retraction_projects_empty_state",
+          "history": [
+            { "position": 1, "type": "create", "entity_id": "a", "value": "one" },
+            { "position": 2, "type": "retract", "entity_id": "a" }
+          ],
+          "resume_from": null,
+          "expected": { "through": 2, "projection_version": 2, "entries": [] },
+          "observed_projection": {
+            "through": 2,
+            "projection_version": 2,
+            "entries": [{ "entity_id": "a", "value": "stale-cache" }]
+          },
+          "expect": {
+            "health": "drifted",
+            "drift": true,
+            "lag": 0,
+            "transition_authority": "durable_owner",
+            "reconciliation_effect_id": "reconcile/counter-1/2"
+          }
+        },
+        {
+          "id": "checkpoint_restart_resumes_without_cache_authority",
+          "history": [
+            { "position": 3, "type": "amend", "entity_id": "a", "value": "three" },
+            { "position": 4, "type": "create", "entity_id": "b", "value": "four" }
+          ],
+          "resume_from": {
+            "through": 2,
+            "projection_version": 2,
+            "entries": [{ "entity_id": "a", "value": "two" }]
+          },
+          "expected": {
+            "through": 4,
+            "projection_version": 4,
+            "entries": [
+              { "entity_id": "a", "value": "three" },
+              { "entity_id": "b", "value": "four" }
+            ]
+          },
+          "observed_projection": {
+            "through": 1,
+            "projection_version": 1,
+            "entries": [{ "entity_id": "a", "value": "cache-only" }]
+          },
+          "expect": {
+            "health": "lagging",
+            "drift": true,
+            "lag": 3,
+            "transition_authority": "durable_owner",
+            "reconciliation_effect_id": "reconcile/counter-1/4"
+          }
+        }
+      ]
     },
     {
       "id": "schema_and_codec_versions_domain_separate_fingerprints",

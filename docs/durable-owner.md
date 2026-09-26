@@ -70,6 +70,30 @@ projection-content fingerprints may compare equal, while their history/source
 fingerprints MUST differ. This is why a final-value comparison alone cannot
 certify replay completeness.
 
+## Complete-history projection and reconciliation
+
+A complete-history projection consumes `create`, `amend`, and `retract` facts
+in exact durable-position order. Its checkpoint binds the last consumed source
+position, a monotonically increasing projection version, and the full projected
+state. Restart resumes only from that checkpoint plus the contiguous suffix;
+replaying the entire history and resuming from any valid checkpoint MUST produce
+the same state and frontier. Partial retraction removes only its named entity;
+retracting the final entity projects an empty state rather than a missing or
+stale value.
+
+A reconciliation pass is a dry-run comparison between a transaction-consistent
+durable-owner/projection snapshot and a deterministic history rebuild. It reports
+projection lag, content drift, and `healthy`, `lagging`, or `drifted` health. It
+MUST NOT mutate authority directly. A repair is scheduled with a stable identity
+such as `reconcile/<owner>/<source-position>` and joins the owner's existing
+transactional outbox in the same atomic commit, making repeated scheduling
+idempotent.
+
+Only the durable owner row loaded from the authority transaction may authorize
+a transition. A replica, projection, cache, health report, or reconciliation
+result is advisory even when fresh; a stale or cache-only read MUST NOT supply a
+position, fence, or state value used to accept a transition.
+
 ## Canonical evidence
 
 The `conformance/durable-owner/` corpus fixes four independent proof surfaces:
@@ -80,8 +104,11 @@ The `conformance/durable-owner/` corpus fixes four independent proof surfaces:
   order, snapshot replacement, and independent schema/codec versions;
 - `inbox_outbox_deduplication.json` — exact-repeat idempotency and identity
   conflict behavior for inboxes, effects, and receipts;
-- `projection_fingerprint.json` — equal projections from unequal histories and
-  the `complete_history` versus `latest_state_only` capability boundary.
+- `projection_fingerprint.json` — equal projections from unequal histories, the
+  `complete_history` versus `latest_state_only` capability boundary, ordered
+  create/amend/retract replay, checkpoint restart, partial and final retraction,
+  drift/lag health, stable reconciliation identity, and durable-only transition
+  authority.
 
 The JSON Schema is `schemas/durable-owner.json`. Every assertion compares a
 complete durable image or an explicit fingerprint relation, so an implementation

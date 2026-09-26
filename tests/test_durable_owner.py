@@ -165,3 +165,53 @@ def test_schema_rejects_unknown_contract_fields_and_zero_versions() -> None:
         "schema_version"
     ] = 0
     assert list(jsonschema.Draft202012Validator(SCHEMA).iter_errors(zero))
+
+
+def replay_reconciliation(case: dict) -> dict:
+    checkpoint = case["resume_from"] or {
+        "through": 0,
+        "projection_version": 0,
+        "entries": [],
+    }
+    entries = {entry["entity_id"]: entry["value"] for entry in checkpoint["entries"]}
+    through = checkpoint["through"]
+    version = checkpoint["projection_version"]
+    for event in case["history"]:
+        assert event["position"] == through + 1
+        if event["type"] in {"create", "amend"}:
+            entries[event["entity_id"]] = event["value"]
+        else:
+            entries.pop(event["entity_id"], None)
+        through = event["position"]
+        version += 1
+    return {
+        "through": through,
+        "projection_version": version,
+        "entries": [
+            {"entity_id": entity_id, "value": value}
+            for entity_id, value in sorted(entries.items())
+        ],
+    }
+
+
+def test_complete_history_rebuild_resume_retractions_and_dry_run_reconciliation() -> None:
+    fixture = load("projection_fingerprint.json")
+    seen_health = set()
+    for scenario in fixture["scenarios"]:
+        for case in scenario.get("reconciliation_cases", []):
+            rebuilt = replay_reconciliation(case)
+            assert rebuilt == case["expected"]
+
+            observed = case["observed_projection"]
+            lag = max(0, rebuilt["through"] - observed["through"])
+            drift = rebuilt["entries"] != observed["entries"]
+            health = "lagging" if lag else "drifted" if drift else "healthy"
+            assert case["expect"]["lag"] == lag
+            assert case["expect"]["drift"] == drift
+            assert case["expect"]["health"] == health
+            assert case["expect"]["transition_authority"] == "durable_owner"
+            assert case["expect"]["reconciliation_effect_id"] == (
+                f"reconcile/{scenario['owner_id']}/{rebuilt['through']}"
+            )
+            seen_health.add(health)
+    assert seen_health == {"healthy", "lagging", "drifted"}

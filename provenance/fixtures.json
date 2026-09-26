@@ -280,7 +280,7 @@
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/durable-owner/projection_fingerprint.json",
-      "sha256": "a4ea70774ca2ff5dee67846acb49d804518a58272b712cf7ba0853496e2e9fd9"
+      "sha256": "6e5097749dfd804f77eb29ac50e72fcd147fd5db03988626a4508f7190df550d"
     },
     {
       "license": "Apache-2.0",

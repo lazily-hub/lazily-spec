@@ -309,6 +309,91 @@
         }
       }
     },
+    "projection_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity_id", "value"],
+      "properties": {
+        "entity_id": { "$ref": "#/$defs/identity" },
+        "value": { "type": "string" }
+      }
+    },
+    "projection_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["position", "type", "entity_id"],
+      "properties": {
+        "position": { "$ref": "#/$defs/position" },
+        "type": { "enum": ["create", "amend", "retract"] },
+        "entity_id": { "$ref": "#/$defs/identity" },
+        "value": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "enum": ["create", "amend"] } } },
+          "then": { "required": ["value"] },
+          "else": { "not": { "required": ["value"] } }
+        }
+      ]
+    },
+    "projection_checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["through", "projection_version", "entries"],
+      "properties": {
+        "through": { "$ref": "#/$defs/position" },
+        "projection_version": { "$ref": "#/$defs/position" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/projection_entry" }
+        }
+      }
+    },
+    "reconciliation_case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "history",
+        "resume_from",
+        "expected",
+        "observed_projection",
+        "expect"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "history": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/projection_event" }
+        },
+        "resume_from": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/projection_checkpoint" }
+          ]
+        },
+        "expected": { "$ref": "#/$defs/projection_checkpoint" },
+        "observed_projection": { "$ref": "#/$defs/projection_checkpoint" },
+        "expect": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "health",
+            "drift",
+            "lag",
+            "transition_authority",
+            "reconciliation_effect_id"
+          ],
+          "properties": {
+            "health": { "enum": ["healthy", "lagging", "drifted"] },
+            "drift": { "type": "boolean" },
+            "lag": { "$ref": "#/$defs/position" },
+            "transition_authority": { "const": "durable_owner" },
+            "reconciliation_effect_id": { "$ref": "#/$defs/identity" }
+          }
+        }
+      }
+    },
     "scenario": {
       "type": "object",
       "additionalProperties": false,
@@ -319,11 +404,22 @@
         "mode": { "enum": ["event_history", "snapshot"] },
         "fence": { "$ref": "#/$defs/fence" },
         "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } },
-        "fingerprint_case": { "$ref": "#/$defs/fingerprint_case" }
+        "fingerprint_case": { "$ref": "#/$defs/fingerprint_case" },
+        "reconciliation_cases": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/reconciliation_case" }
+        }
       },
       "oneOf": [
-        { "required": ["steps"], "not": { "required": ["fingerprint_case"] } },
-        { "required": ["fingerprint_case"], "not": { "required": ["steps"] } }
+        {
+          "required": ["steps"],
+          "not": { "required": ["fingerprint_case"] }
+        },
+        {
+          "required": ["fingerprint_case"],
+          "not": { "required": ["steps"] }
+        }
       ]
     }
   }
