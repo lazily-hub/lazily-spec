@@ -2,6 +2,7 @@
 name = "lazily-spec-schemas"
 version = "0"
 description = "JSON Schema validation tooling for the lazily wire protocol spec. Not published; dev-only."
+license = "Apache-2.0"
 requires-python = ">=3.11"
 
 [dependency-groups]

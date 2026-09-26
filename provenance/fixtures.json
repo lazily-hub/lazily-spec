@@ -1,0 +1,1032 @@
+{
+  "canonical_fixtures": [
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/agent-doc/delta_agent_doc_state.json",
+      "sha256": "6b28a4546a93a2e80b0a2a788b6c4927ddf19bcccf240b9c8424872a04487042"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/agent-doc/snapshot_agent_doc_state.json",
+      "sha256": "5a3c0f4f8d3be154ccb249c3945526caa6911b266fcdb570c59b7803e18457df"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/arena_blob.json",
+      "sha256": "4bf1c923dfccdccb553b7cc280918f72200a0623d0f256b3f0206233b9d65e01"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/codec/blob_backend_discriminator.json",
+      "sha256": "29bb84e4185272b20b86467df80a1f025bdf78f8cf68afb163a48bd7462e0c81"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/codec/capability_handshake.json",
+      "sha256": "2af2c02dae9e3fdff2a595da464de6388f69f3c24fba0515e0ce9ceec91f3d93"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/codec/frame_roundtrip_json.json",
+      "sha256": "5e5d9f5d31addd5d1e03c2c047b455db9e3293d94c2f66db182b25290c2bc138"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/codec/frame_roundtrip_msgpack.json",
+      "sha256": "f21b7edaf663610f8c2767c7ed98ea4460ed602394a4d0db357ee1ee5fcdf4aa"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/codec/nodeid_exact_range.json",
+      "sha256": "5a487c5c7f232778ac0129fb050a608503d4c2380573f02313428aa1435af332"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/codec/nodekey_null_leniency.json",
+      "sha256": "dfaf04547eb43a21b80767082a0e23b4cc8c6e808516eb762464f47de0bbaed9"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/cellmap_atomic_move.json",
+      "sha256": "f7aed353601331948e17a46febec94b32df31e8dbba46ff5c08f17345caa2dc0"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/cellmap_independence.json",
+      "sha256": "aa7212c09e76ea57321c9a6f1f333a906d311e860dd8e18052570345b333e2b9"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/dependency_reactive_availability.json",
+      "sha256": "0deedf9089b6da227f65e90461c01028d493b404adbf18111a94e43d4a2545a6"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/keyed_reconciliation_lis.json",
+      "sha256": "5bc2ed6663ba49f164a53ee7f3d1692eb6b8a4f1c0f391c0f689ec30f5bb919f"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/mergecell_algebra.json",
+      "sha256": "c4cf497d19a9581991f86299010f0e89d8bc605a7ffe117e79021d95deb34a75"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/queuecell_bounded_backpressure.json",
+      "sha256": "53ab7f6bcea4d3fa2f2d5f078af7ed4ac04a9d0c32bee624543691a7d1fce22b"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/queuecell_closure_lifecycle.json",
+      "sha256": "3ce3c273a9fbda2a3ca5aa84f1b5a654378d5923e56fcd67172e5ed9113b7959"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/queuecell_mpsc_multi_writer.json",
+      "sha256": "4366c939efa8c59b3bcdf2b19a50dfaedf0e839eb732b55067c60074144efc50"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/queuecell_popped_head_observation.json",
+      "sha256": "30fcbe760c76f11c56b0eb85fde2cdbbf14775625aa8d2163a98dff23fe7ab9d"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/queuecell_spsc_push_pop.json",
+      "sha256": "0a78b51900c7ff644119f6d87111cc485b20c5a645ad9b009b457e4a2b65fe9e"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/registers_convergence.json",
+      "sha256": "e1faf4acdd7bdaa25bac071b1ad3a4eec3559dd1868762df502350fb9da2d2d0"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/semtree_incremental.json",
+      "sha256": "6f04632677068be17b16144040875450e1c6efc72754e20f1c2eb5b812da9db5"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/seqcrdt_convergence.json",
+      "sha256": "4b50c78629c83ee4225f7e211310ec6f0266586a2cb354f935933bdbe948cb56"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/stableid_alignment.json",
+      "sha256": "e7c13b58f47e0a5ae8d6bbee54efe7b962d0d898b9d853e539081f189b7b59f0"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/textcrdt_convergence.json",
+      "sha256": "476f34439ce047cefaac0524016b1ef34df099ee5e29d397da3d0381631faeef"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/textcrdt_delta_sync.json",
+      "sha256": "1981a67c06be99f2ff5602eb9b30820a3dcf2a26d088b1ab380c482a44104711"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/topiccell_broadcast_cursor_isolation.json",
+      "sha256": "23ddfd2b61251cbfddba2fc4e1fcb79652906f1f115b2bd77b90a0e45bee74e5"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/topiccell_durable_replay_gc.json",
+      "sha256": "8f81339a01eb14eebfc1e854158b90b28c8fd3a692aee0457b468142f0f1779d"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/topiccell_ephemeral_lifecycle.json",
+      "sha256": "056533bdcd07029d9073d1760a74d43358157cd7244f0aa3aadb85bc9548922c"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/topiccell_offline_tail_bounds.json",
+      "sha256": "1f9914f188fead4b673af3d8639f717e15241a8b920782bbb7b4b3b9669da9b9"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/workqueue_competing_delivery.json",
+      "sha256": "f24a6054d41be531762d1925881b1dfdeccd42aac8ad0460d537a5d8c54ec32c"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/collections/workqueue_lease_deadletter.json",
+      "sha256": "801cec96827cb825575e83bbf8826e9a4845d34d06b4c3ab6ceb23bc1456da3f"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/coordination/leader.json",
+      "sha256": "9cf8712762c22ae900e195a534c2f75120b49194be7604764841860796856911"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/coordination/lease.json",
+      "sha256": "102694a3b7a47e5410f830afcb14a87fe9f4bb1317ffceb26f77993d80f89cd8"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/coordination/lock.json",
+      "sha256": "ab9b2ba0a3ac8253bcfe97d666f19ce02c5a1af6ba1a940e4cd38bbb8cb73b82"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/coordination/quorum.json",
+      "sha256": "ac5d325044f30c7fa2604a2b8846d584d3d0aedef8388ce973c7461854586116"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/coordination/semaphore.json",
+      "sha256": "98bad0a930ec90979f1f19bbf302eb5d718c78b7f6832fc0ce146f4700371a6f"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/crdt-tree/algebra.json",
+      "sha256": "5ca1a6864c030787512b2be76505b0f2a15b3d570c679a26cc785e279127f26c"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/delta_non_sequential.json",
+      "sha256": "a804c0d09184ef41a06cc51fc2e29434b4d554c653f251743feefa3775471e2b"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/delta_sequential.json",
+      "sha256": "9a752a6d20e7d57a4e4cebf2a7691297eedf3c12ce14b628fe094a86e64370ac"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/delta_shared_blob.json",
+      "sha256": "f3725ef0761e887ca162fcb4ccfbd20ac38bc8bbe4101e7ab8892d8bb9cbd342"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/delta_zero_copy_arrow.json",
+      "sha256": "a8669f7f2663a86eb54e4b1b306d0c4047134384d40f5f05d4b2eef59542b606"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/distributed/anti_entropy_converge.json",
+      "sha256": "34103f8c81e0f373469372048c48a2495ee42064f88ac117551b33a7abbd2be5"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/distributed/crdt_sync_frames.json",
+      "sha256": "0aac98b847ee8ec8f1b078657f9c9d45c2ae2d34897854f0262e221e3b64b25f"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/durable-owner/atomic_crash_boundary.json",
+      "sha256": "ed09ea50fddd8bbffb9ab9b5c747cd607247368ebafd28866593be8d78c437d6"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/durable-owner/inbox_outbox_deduplication.json",
+      "sha256": "034c6eea7c243652e95d4c1c38d667f00b9e6c83934cd672f51982049abc36c8"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/durable-owner/ordered_replay.json",
+      "sha256": "086fcb5617de288bbfea418ab69dbbc5005b3b49a441a367108bdd01b92b46a7"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/durable-owner/projection_fingerprint.json",
+      "sha256": "a4ea70774ca2ff5dee67846acb49d804518a58272b712cf7ba0853496e2e9fd9"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/egress/egress_generation_fence.json",
+      "sha256": "3516b23426319cfa5e84b63ae2acad45be096ec15885a3cde0127111018cf254"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/egress/egress_inflight_window.json",
+      "sha256": "84619f372d1da3f8ad31baacb8998638cf3ace4f81f6d8cfb92254d7aebe74f3"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/egress/egress_ordered_ack.json",
+      "sha256": "bd95b5edb4adf3f150b126c3bc301b9fe2a5cf0ff82f91838d5c66578f4a4f67"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/egress/egress_retry_budget.json",
+      "sha256": "ca37e9ec6d4b944b392a60ac82b506c6430a8bc0ac468dc579d593b8b687e097"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/egress/latest_durable_projection.json",
+      "sha256": "ede0a66ad9f07424a43dda2425fee3348e295afec9638081a34314bf8a57cb09"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/familysync/materialize_on_ingest.json",
+      "sha256": "79bb938562b0740efb9ddca484476944f1de10a6c875f5cdcb2e3c4b380b12a3"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/ingress/boundary_ingress_adapter.json",
+      "sha256": "42747b09bfd05430c8e330215588fbab603c185c4453ce21583a9f9c27d2c7d5"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/ingress/ingress_backpressure.json",
+      "sha256": "67bd31db31e689c026d6ebc93c8ed2d6e415a8f77e7733b964206e1c18e5a3bb"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/ingress/ingress_disconnect_replay.json",
+      "sha256": "00e3d1a78c981edf6d687d60c590cba58bef4a2e1be5720a02e6363ae6ae0e07"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/ingress/ingress_freshness_and_retry.json",
+      "sha256": "e0b40eea1c3fd4133de2b0969b2d6c8b3d42f4231bf4f45dfeaea465a9afc662"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/ingress/ingress_generation_handoff.json",
+      "sha256": "5a2082f50f2afb9692d8bc0c361d483108128c1092b9cbef32a948320555e66c"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/ingress/ingress_ordered_delivery.json",
+      "sha256": "233c916e4702d4805eb36674c2334cd155e890def573f0ac73299260edecdc75"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/ingress/ingress_reorder_and_duplication.json",
+      "sha256": "9e7d606ab8a337f27611f39a3576341af2927f9636a598981b7ae28eb092377c"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/ingress/ingress_reorder_window_overflow.json",
+      "sha256": "ac0a18861f6aab3abe88c0b272e9e638e6a9ea5ba35b3a79f54c2dc1163b0aef"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/lossless-tree/apply_update_advances_counter.json",
+      "sha256": "b87fbb294a8d4032e2256ece292aec5c6e5d1c8250c7d1a899a1f79db9f40a29"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/lossless-tree/concurrent_conflict_preserves_text.json",
+      "sha256": "68a2872f00ba844d60622a33c8a20d8b76b8762939379012ee332ee334c87cb9"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/lossless-tree/concurrent_insert_same_parent.json",
+      "sha256": "a34d2ac6556586d52b70e66cf8ae956b3948bf423c0596b1a62b460a76563233"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/lossless-tree/concurrent_reorder_and_leaf_edit.json",
+      "sha256": "17e003e3ed27163227f51e6016864d3518692ed352d72491c53fb82a19255c79"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/lossless-tree/exact_roundtrip.json",
+      "sha256": "d63765f41fc1e5a30a3991bf8f34ae3a69583fbe246ccbb57fd62cd7c21544a5"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/lossless-tree/invalid_source_roundtrip.json",
+      "sha256": "63d50550bb09edbe207c9b5093a2c81741730c0d4ff320a32caa34d469d7e154"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/lossless-tree/non_contiguous_anti_entropy.json",
+      "sha256": "a4a347108f2b3ce005606a412b7b01d7a38dcf14406b1b1cb0d4b0bee0f5f03c"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/lossless-tree/one_leaf_edit_delta.json",
+      "sha256": "18be2bdfbe6fb7b38db13cbcc92f973b7d2a350620be54d603ae4bbd82679490"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/lossless-tree/out_of_order_delivery_buffers.json",
+      "sha256": "0c53c9ee3bd1c97edb5945b5a1f9b7dc3e45175ce08ffb0293cb3a89538456e6"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/lossless-tree/split_merge.json",
+      "sha256": "be1650e28e11105c3abe2e10d40f2f0a6c7f8dc74eea4e03ceb468d2aa494e71"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/lossless-tree/token_trivia_preservation.json",
+      "sha256": "4bdc3df05249c338dd0a0d941fe356adad5c1fadf43ae348835c65f7df365411"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/materialization/deferral_not_deallocation.json",
+      "sha256": "35e109dd581f984a9c3cbe1f764b2583c90a151874f884555b9427cd9ec86578"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/materialization/entry_kind_orthogonal_to_mode.json",
+      "sha256": "d69310ef310ff50b1213d7f27f72f0eb7c3c8e041894e7c847849affe854a5ed"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/materialization/observational_transparency.json",
+      "sha256": "2926fbe04369f866dac3d1b79ba057baa509c0b820892a7798913d84979f5719"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/membership/membership_lifecycle.json",
+      "sha256": "3a30f109cf4813941eac25001ec87cbdb4867a905d094bba0b7b6d94bc82d89f"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/message-passing/accepted_then_applied_receipt.json",
+      "sha256": "6ec92bf5186765af7c7ad097d36df66d48a8a5a454fb55b8c58bb856036f5039"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/message-passing/cancel_preempts_nonterminal.json",
+      "sha256": "eff6e926c904d7dee998ef7e9d023cb2fb5df68fcd7911a25012971348df09fb"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/message-passing/editor_route_submit.json",
+      "sha256": "5c6c8e9a370dc3b0aee84bdfdffab66c4513b1c56e4ff20d8a3fcb66b3c98968"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/message-passing/reconnect_command_projection.json",
+      "sha256": "f18d23cf8b4531260150f0ebe20765bec8c0768a2f3caad9d88b718c932e3bef"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/message-passing/rpc_call_waits_for_terminal.json",
+      "sha256": "1c11dcbc27065a0a7690ef6a0ca692487d991288d2230ccf7b6caf9e79bf0589"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/message-passing/stale_generation_ignored.json",
+      "sha256": "847f429aadfcf94f0b3b328f7083751e1dadad855353779a918f482e9081b3ff"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/message-passing/sync_tmux_layout_submit.json",
+      "sha256": "d8ae7c1ea0d73bd7ddb1bfa39f3d0d3b7efe79de594851acbc1963e7c4499b01"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/message-passing/terminal_conflict_fail_closed.json",
+      "sha256": "2fcc081b4b04dad592352904bddb302f0e5a97729366da887c5b8ea7d75f54d9"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/presence/awareness.json",
+      "sha256": "3995fc8243bdbda7f83137a4a45263c05b7f367a5fa7e6f80c83b0aab7fd3869"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/presence/ephemeral.json",
+      "sha256": "072feec62425b6f21f2867aa8272bc787113748ac75385e63799bd87fcb34180"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/presence/presence.json",
+      "sha256": "9a07208d42ecfdfd61b2885bd61db45ddbc25b075cbf6771a3a3971558586110"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/protobuf/graph_boundary_traces.json",
+      "sha256": "bc32111bb20bffda82dc2834aa61ce861f0164cb70c6f86d3d884e125b61796f"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/rateshape/debounce.json",
+      "sha256": "0f217ce9368fddd9c59da163dd6d64a9914c5c3a7a11dd543dcaad72b844ec56"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/rateshape/probabilistic_sample.json",
+      "sha256": "55bab1fedc9b3b0096909065149ed0abcfa06daf552affd1172bafdb78179b81"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/rateshape/sample_count.json",
+      "sha256": "bbab5a3751b6cc32eee8b6ef74ed8c39f0d1f445ca64f1955cd92c3bea721243"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/rateshape/sample_time.json",
+      "sha256": "a27423b116ad45248db9af14cc49cb492bda90818fdd6dac60b30c05ec4dfba0"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/rateshape/throttle_leading.json",
+      "sha256": "8495afe9a0f9eb0779190c4887f5b600792a4f6c31a1173b761fec0f8bb298cc"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/rateshape/throttle_trailing.json",
+      "sha256": "20b7da508f2628820418a4936be79fac31e4c55d998085594e985165eda538d7"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/churn_returns_to_baseline.json",
+      "sha256": "258bdfcb7ff7ee77de9219edfc882b042787cb5ec79973bf8be32bee79805fa9"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/cross_scope_teardown_hazard.json",
+      "sha256": "b7eb6d2312e367698b7e1e3a8276bc268e729012f7459e6377580c343d9e1704"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/disarm_disposes_nothing.json",
+      "sha256": "c29f226d891656867c53a84619fa6f3944898843cb0471646e91eb24316dcc8d"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/disposal_does_not_run_surviving_effects.json",
+      "sha256": "aac6de69330a2700c495e9109332f15927972d2c954aaad79ba990869e26d617"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/dispose_detaches_edges_both_directions.json",
+      "sha256": "8c454aba37d74e63de2197975763b618639a5e8a3fb426c2ee6ff59e9cef292e"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/dispose_signal_reverts_to_lazy.json",
+      "sha256": "04dc0b2cbb7dc483844bab9ed6aa83092c690a61a6d6de87926fb68ebd916859"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/exact_fold_paths_stay_exact.json",
+      "sha256": "700c6c84687cc751746d4cd93f750b9e5b616e51e8c3ac125030c483a6a35af9"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/failed_compute_is_never_cached.json",
+      "sha256": "1accba385e899b31d321cf0f556f9b24430cf1453ee7a03a8ab6a214af319a72"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/feedback_drain_bound_reports_exhaustion.json",
+      "sha256": "b2662234a06b1ba6240a4b5cc7afec2971845d1d78d987ad723b8b8da0f4faac"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/merge_cell_acquires_no_dependency_edge.json",
+      "sha256": "bbde9a9e624a9825c8db7128b132937c56c2d6899d9ac32b1aaf915ebd8a1396"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/merge_feed_through_a_formula_coalesces.json",
+      "sha256": "8b682ebebb28fe752bbcedb83d7c2bf4cd19889f1e6558c480939821ad75eb90"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/merge_folds_synchronously_in_batch.json",
+      "sha256": "cd5254ccacf9906fae96b94afa657ad40ed28f024da62bf512de8141114f7abe"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/merge_per_settled_cone_not_per_write.json",
+      "sha256": "701ac0d2286a18b4a82fb705fd3dd68d85d700d276604d5cb49a155975edae27"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/read_after_dispose_is_an_error.json",
+      "sha256": "a50bc18f9ff706c27e44edb346f1bc747e4c4e08b6629f35ba30c9ef1834f59e"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/recycled_id_inherits_nothing.json",
+      "sha256": "23f7733dd94bde592df4af0582c176f35106f2778285d81881ebe533e29868a2"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/scope_teardown_equals_fold_of_disposals.json",
+      "sha256": "02057e0a30f2742ca7950a9f980548ee7579c6c0838df265a0a5bc6cb39e228a"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/scoping_bounds_teardown_not_visibility.json",
+      "sha256": "b5013a7b348b75d98977b428ac9e6c25db463a41bb3672b202acb917f6a500f4"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/signal_materializes_once_per_batch.json",
+      "sha256": "12fae6f40743cff492f50674517c370b67a9e3a53661de77acaf43c6ba4e1b9c"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/signal_materializes_without_a_read.json",
+      "sha256": "fa2773789dcbf496e0ea275e2865a0108738c9ff74fd460f5ca716e7cf05729a"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/teardown_runs_members_in_reverse_creation_order.json",
+      "sha256": "f10405f46764cd3661d0370f69f0442257ffd8392b2fd3fb7910162cf165ea86"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/transitive_invalidation_reaches_depth.json",
+      "sha256": "1474b9d74e5b63821cd95e3e7abe5d89efc610fa2bf17b2895ef67abafeff0af"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/receipts/causal_receipts.json",
+      "sha256": "d6a6f1cb40b19427107de062b66eda9a6b08f3867459c765aabed8be5ce12734"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reliable-sync/coalesce_bounds_outbox.json",
+      "sha256": "0b0f1ef686bf1fa9eb2c452ab9e97e96671d95cc53e3c0fe232e009fdad273c5"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reliable-sync/idempotent_redelivery.json",
+      "sha256": "ad55e802c68835f0fe9c6db38c1fffaca31e07ace3a5390d78ad6228b9cef314"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reliable-sync/liveness_lease_eviction.json",
+      "sha256": "a592819e5b1685594c96dd1d829aba7494ff539ce475faa935bb82832c1c0c89"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reliable-sync/liveness_orset_lww.json",
+      "sha256": "e6ea5ec18d192973dc37f17cb68207f922fc96b157b4de34f1065594b87bab31"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reliable-sync/multi_epoch_delta.json",
+      "sha256": "ae3549bcbb2ab6a047de5c073dc06f1d75b66307fe30eb17bb2b91c295584eda"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reliable-sync/outbox_journal_decode.json",
+      "sha256": "a6f88563e781daa64bd6b73204690d415ef8f0e435206844870b1ceb2de23708"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reliable-sync/outbox_replay_after_crash.json",
+      "sha256": "1f986471df2cb50c06f31d625c6ad9f8e0ad8c53209a55590fe418ead53348e0"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reliable-sync/outbox_store_protocol.json",
+      "sha256": "4b90557793054980eb861ab34d8d19702fec8095571270a799abeb71e93f78e8"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reliable-sync/resync_gap_converge.json",
+      "sha256": "043f56f037e4c4cf1e7e3dcb8513624c2fbf4e5c29e33aebb0d86e62d0f7d999"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/replay/canonical_encoding_equality.json",
+      "sha256": "0b0584659e442ca0ded0a5e90659a39e121ea175a25cdb51fbe90de2cd3799f1"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/replay/divergence_localization.json",
+      "sha256": "127182484397c95c14732b92d1613b77b974ee6ccb0269bd432388e4b6f42a70"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/replay/fingerprint_log_binding.json",
+      "sha256": "0d4a601428a1c7ebf5461ff5b746b61fc27ad75da12043232d2b3f36d2bed884"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/resilience/bulkhead.json",
+      "sha256": "4b65fe1d12f0f9e34a66a9fe95ce391c7df79d904b2c346a59265f7d9bf7846e"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/resilience/circuit_breaker.json",
+      "sha256": "9e326ba012b0b8b364520e6f9419594c4790da87beaa9350d2b1bb48276f6643"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/resilience/retry.json",
+      "sha256": "beb6d653070faee1dfe2077953d021f2b4adbf26bba612f25cd9779f45fcadbc"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/resilience/timeout.json",
+      "sha256": "bdada8bdc505a9164b7179a057ab1fd7082a0be7750d1e2276ffa15629d7ecc3"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/service/discovery.json",
+      "sha256": "a16c206347eea1d61f1d6f30d29f7dd42410e84d4b2797a3770577632d450c2b"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/service/health.json",
+      "sha256": "fcf1dc65ddc03bd446298779b9d86c67b8e4bb14f97ec5c7ba0f366bdca49af0"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/service/readiness.json",
+      "sha256": "3990c020756cba976d200c6387bcbb3dcfcd41f311a01840382b1d79c3feecfe"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/service/service_registry.json",
+      "sha256": "2f1c8de71e405b7bd37b46b37dfe3135103da8ba6a9ee226c363c4f2f6a2c936"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/signaling/anti_spoof_session.json",
+      "sha256": "0d02bdd79b50b0bb65451a2b863612e6060dd2ef279c7509885c87e854cc5368"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/signaling/frames.json",
+      "sha256": "106fec090741df8ebc575ec812cd0379a997582c5092729030adece79911169e"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/snapshot_minimal.json",
+      "sha256": "afd194fac60196d1bbdd2fb5178c21d3ef0c4177a4b513fba54b1f786461a34b"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/snapshot_multi_node.json",
+      "sha256": "07c8aaa9973149520c600f3b0d1a360550c7b130533da3a96cdf50073f0abb1e"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/snapshot_shared_blob.json",
+      "sha256": "8ac920c3efd67d92028b9c75a5eaabe57a8d005ccdbbc81bfa6326a445caac5a"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/statechart/entry_exit_actions.json",
+      "sha256": "a92c94f94f2338ef9bb11ab20b4607b6aa5dfdf3da69d6587cdf31e67021295b"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/statechart/flat_cycle.json",
+      "sha256": "ec65e2cf7629379c9a36a972cb434972095d5a9418f9bbfe1b1e52b2988e0460"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/statechart/guarded_door.json",
+      "sha256": "4586d65fa3c7ef60ff7f653742c2ca21857c42990fbc9efb3e09577b5d8f4388"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/statechart/hierarchical_player.json",
+      "sha256": "9506e6a0f708d08775c3406a44da44e8b3bce824d567cf4131f3b8f811ef1394"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/statechart/history_deep.json",
+      "sha256": "bd6cc19152fe9bf97cc83f3d877c9d74f8c54dc2d587817bbd8e4942f8c2319a"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/statechart/history_shallow.json",
+      "sha256": "0212c27186116f0b7ff8b2922892b69c36cd7f497dcc38c4c01fca3892c56a95"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/statechart/malformed_rejected.json",
+      "sha256": "36a055c5ba8860d780b123ebc5386914578d012e1081f5447eafb05f7b60836f"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/statechart/parallel_regions.json",
+      "sha256": "ba35cfa5db3beab5f7a267742ac78c547d2388fee9e605dc60ab5c233db5b45f"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/stdlib/revision_barrier.json",
+      "sha256": "3670d2be6f66ade72cd87f06d03765d1a808d95a0f49635386300023457bc714"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/stdlib/timeout.json",
+      "sha256": "cfe7b848bcc7a3dddb27e6ee9f3bca510e5557d92802a1f12d99322d74f6ce90"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/stdlib/timer.json",
+      "sha256": "3bd3149c82afa9dfb6c21a7958e024e960d8bb8956c6732f2a0afbb17c94ce7d"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/temporal/cron_pattern.json",
+      "sha256": "af158d8dbbe606ef9e6978d1ffe3a957a5c7ffd9ca913917bc1d5d12ec4e4b91"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/temporal/deadline_expiry.json",
+      "sha256": "6fb968f004d0d7de4993f2d2c192b00109f66c48b981adcfdac98a1543cbcca0"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/temporal/interval_periodic.json",
+      "sha256": "58c7d4159bbe0a7ca60b0aeb3125b44e805e0e89c5107fcf1f12cd0bcf1e3d23"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/temporal/timer_single_shot.json",
+      "sha256": "4d910c19837e3d8022b55471adb2e60e02000df056bad0f89eb0829600269249"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/windowing/session.json",
+      "sha256": "ab08cfbfeeff802f2dce8b7e95e917ceeb1a919420434ac760e604105a40a74f"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/windowing/sliding_count.json",
+      "sha256": "155135f4d2fcba493990c3a670bec69ad12c6d650ff6423bf66cc070c52755f0"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/windowing/tumbling_count.json",
+      "sha256": "b236760f1eaa028781f52a805dc8b089e97613d1ff60b374de5e123a6950d9d5"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/windowing/tumbling_time.json",
+      "sha256": "5669ad4c7ab22fcb033a21eaf85ea90327b771153909f2ea253bfe0458c0c2a1"
+    }
+  ],
+  "fixture_reuse_terms": "Apache-2.0",
+  "repository_license": "Apache-2.0",
+  "schema_version": 1,
+  "vendored_copies": [
+    {
+      "canonical_path": "conformance/codec/blob_backend_discriminator.json",
+      "license": "Apache-2.0",
+      "path": "test/conformance/codec/blob_backend_discriminator.json",
+      "repository": "lazily-go",
+      "sha256": "29bb84e4185272b20b86467df80a1f025bdf78f8cf68afb163a48bd7462e0c81"
+    },
+    {
+      "canonical_path": "conformance/collections/dependency_reactive_availability.json",
+      "license": "Apache-2.0",
+      "path": "test/conformance/collections/dependency_reactive_availability.json",
+      "repository": "lazily-go",
+      "sha256": "0deedf9089b6da227f65e90461c01028d493b404adbf18111a94e43d4a2545a6"
+    },
+    {
+      "canonical_path": "conformance/crdt-tree/algebra.json",
+      "license": "Apache-2.0",
+      "path": "test/conformance/crdt-tree/algebra.json",
+      "repository": "lazily-go",
+      "sha256": "5ca1a6864c030787512b2be76505b0f2a15b3d570c679a26cc785e279127f26c"
+    },
+    {
+      "canonical_path": "conformance/reliable-sync/idempotent_redelivery.json",
+      "license": "Apache-2.0",
+      "path": "test/conformance/reliable-sync/idempotent_redelivery.json",
+      "repository": "lazily-go",
+      "sha256": "ad55e802c68835f0fe9c6db38c1fffaca31e07ace3a5390d78ad6228b9cef314"
+    },
+    {
+      "canonical_path": "conformance/reliable-sync/liveness_orset_lww.json",
+      "license": "Apache-2.0",
+      "path": "test/conformance/reliable-sync/liveness_orset_lww.json",
+      "repository": "lazily-go",
+      "sha256": "e6ea5ec18d192973dc37f17cb68207f922fc96b157b4de34f1065594b87bab31"
+    },
+    {
+      "canonical_path": "conformance/reliable-sync/multi_epoch_delta.json",
+      "license": "Apache-2.0",
+      "path": "test/conformance/reliable-sync/multi_epoch_delta.json",
+      "repository": "lazily-go",
+      "sha256": "ae3549bcbb2ab6a047de5c073dc06f1d75b66307fe30eb17bb2b91c295584eda"
+    },
+    {
+      "canonical_path": "conformance/reliable-sync/outbox_replay_after_crash.json",
+      "license": "Apache-2.0",
+      "path": "test/conformance/reliable-sync/outbox_replay_after_crash.json",
+      "repository": "lazily-go",
+      "sha256": "1f986471df2cb50c06f31d625c6ad9f8e0ad8c53209a55590fe418ead53348e0"
+    },
+    {
+      "canonical_path": "conformance/reliable-sync/outbox_store_protocol.json",
+      "license": "Apache-2.0",
+      "path": "test/conformance/reliable-sync/outbox_store_protocol.json",
+      "repository": "lazily-go",
+      "sha256": "4b90557793054980eb861ab34d8d19702fec8095571270a799abeb71e93f78e8"
+    },
+    {
+      "canonical_path": "conformance/reliable-sync/resync_gap_converge.json",
+      "license": "Apache-2.0",
+      "path": "test/conformance/reliable-sync/resync_gap_converge.json",
+      "repository": "lazily-go",
+      "sha256": "043f56f037e4c4cf1e7e3dcb8513624c2fbf4e5c29e33aebb0d86e62d0f7d999"
+    }
+  ]
+}

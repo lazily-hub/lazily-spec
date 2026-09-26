@@ -14,6 +14,11 @@ Concurrency-bearing APIs use the machine-readable
 [`concurrency-scopes.json`](concurrency-scopes.json) taxonomy documented in
 [Concurrency Scopes](docs/concurrency-scopes.md).
 
+The repository, including its first-party specifications and conformance
+fixtures, is licensed under [Apache License 2.0](LICENSE). Fixture reuse and
+generated/imported provenance requirements are recorded in
+[Fixture provenance and licensing](docs/fixture-provenance.md).
+
 ## Implementations
 
 Nine native language bindings plus a React adapter. Each one implements the same cell

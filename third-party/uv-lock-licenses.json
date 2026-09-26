@@ -1,0 +1,103 @@
+{
+  "packages": [
+    {
+      "license": "MIT",
+      "name": "attrs",
+      "notice_required": false,
+      "relationship": "transitive-development",
+      "source_url": "https://pypi.org/project/attrs/",
+      "version": "26.1.0"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "colorama",
+      "notice_required": false,
+      "relationship": "transitive-development",
+      "source_url": "https://github.com/tartley/colorama",
+      "version": "0.4.6"
+    },
+    {
+      "license": "MIT",
+      "name": "iniconfig",
+      "notice_required": false,
+      "relationship": "transitive-development",
+      "source_url": "https://pypi.org/project/iniconfig/",
+      "version": "2.3.0"
+    },
+    {
+      "license": "MIT",
+      "name": "jsonschema",
+      "notice_required": false,
+      "relationship": "direct-development",
+      "source_url": "https://github.com/python-jsonschema/jsonschema",
+      "version": "4.26.0"
+    },
+    {
+      "license": "MIT",
+      "name": "jsonschema-specifications",
+      "notice_required": false,
+      "relationship": "transitive-development",
+      "source_url": "https://github.com/python-jsonschema/jsonschema-specifications",
+      "version": "2025.9.1"
+    },
+    {
+      "license": "Apache-2.0 OR BSD-2-Clause",
+      "name": "packaging",
+      "notice_required": false,
+      "relationship": "transitive-development",
+      "source_url": "https://github.com/pypa/packaging",
+      "version": "26.2"
+    },
+    {
+      "license": "MIT",
+      "name": "pluggy",
+      "notice_required": false,
+      "relationship": "transitive-development",
+      "source_url": "https://github.com/pytest-dev/pluggy",
+      "version": "1.6.0"
+    },
+    {
+      "license": "BSD-2-Clause",
+      "name": "pygments",
+      "notice_required": false,
+      "relationship": "transitive-development",
+      "source_url": "https://github.com/pygments/pygments",
+      "version": "2.20.0"
+    },
+    {
+      "license": "MIT",
+      "name": "pytest",
+      "notice_required": false,
+      "relationship": "direct-development",
+      "source_url": "https://github.com/pytest-dev/pytest",
+      "version": "9.1.1"
+    },
+    {
+      "license": "MIT",
+      "name": "referencing",
+      "notice_required": false,
+      "relationship": "direct-development",
+      "source_url": "https://github.com/python-jsonschema/referencing",
+      "version": "0.37.0"
+    },
+    {
+      "license": "MIT",
+      "name": "rpds-py",
+      "notice_required": false,
+      "relationship": "transitive-development",
+      "source_url": "https://github.com/crate-py/rpds",
+      "version": "2026.6.3"
+    },
+    {
+      "license": "PSF-2.0",
+      "name": "typing-extensions",
+      "notice_required": false,
+      "relationship": "transitive-development",
+      "source_url": "https://github.com/python/typing_extensions",
+      "version": "4.15.0"
+    }
+  ],
+  "schema_version": 1,
+  "source": "uv.lock",
+  "source_sha256": "5a703a2b4e74d37209bd47fcc3b8244b257b42e1acf76fb6f814a515c50f73de"
+}

@@ -19,12 +19,17 @@ prose-keys-check \
 assertion-block-schema-check \
 assertion-ordering-check \
 fixture-discriminability-check \
+license-inventory-check \
 corpus-published-check \
 corpus-floors-check \
 corpus-counts-sync \
 corpus-blocks-report
 
-check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check corpus-floors-check corpus-published-check
+check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check
+
+license-inventory-check:
+>python3 scripts/generate-third-party-inventory.py --check
+>python3 scripts/generate-fixture-provenance.py --check
 
 # Fixture-discriminability guard (#lzfixturediscrim). Exact-value assertions and
 # boolean routes with both outcomes carry their own controls. Every remaining
@@ -146,4 +151,3 @@ corpus-counts-sync:
 # elements) and assert EQUALITY against it instead of a floor.
 corpus-blocks-report:
 >node scripts/check-corpus-floors.mjs --report-blocks
-
