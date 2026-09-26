@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/concurrency-scopes.json",
+  "title": "Lazily concurrency-scope registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scopes", "capabilities"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "scopes": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "boundary", "durable", "fenced"],
+        "properties": {
+          "id": {"enum": ["single_goroutine", "single_process_serialized", "durable_cross_process", "distributed_fenced"]},
+          "boundary": {"type": "string", "minLength": 1},
+          "durable": {"type": "boolean"},
+          "fenced": {"type": "boolean"}
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "scope", "database_atomic", "cross_replica_exclusion", "projection_maintenance_barrier"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "scope": {"enum": ["single_goroutine", "single_process_serialized", "durable_cross_process", "distributed_fenced"]},
+          "database_atomic": {"type": "boolean"},
+          "cross_replica_exclusion": {"type": "boolean"},
+          "projection_maintenance_barrier": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}

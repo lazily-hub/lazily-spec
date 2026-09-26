@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "scopes": [
+    {
+      "id": "single_goroutine",
+      "boundary": "one owner goroutine",
+      "durable": false,
+      "fenced": false
+    },
+    {
+      "id": "single_process_serialized",
+      "boundary": "one process using a lock or owner-goroutine channel",
+      "durable": false,
+      "fenced": false
+    },
+    {
+      "id": "durable_cross_process",
+      "boundary": "cooperating processes using one durable authority",
+      "durable": true,
+      "fenced": false
+    },
+    {
+      "id": "distributed_fenced",
+      "boundary": "replicas using an authority-issued fence or epoch",
+      "durable": true,
+      "fenced": true
+    }
+  ],
+  "capabilities": [
+    {"id": "context", "scope": "single_goroutine", "database_atomic": false, "cross_replica_exclusion": false, "projection_maintenance_barrier": false},
+    {"id": "queue", "scope": "single_goroutine", "database_atomic": false, "cross_replica_exclusion": false, "projection_maintenance_barrier": false},
+    {"id": "latest_durable_projection_core", "scope": "single_goroutine", "database_atomic": false, "cross_replica_exclusion": false, "projection_maintenance_barrier": false},
+    {"id": "thread_safe_context", "scope": "single_process_serialized", "database_atomic": false, "cross_replica_exclusion": false, "projection_maintenance_barrier": false},
+    {"id": "async_context", "scope": "single_process_serialized", "database_atomic": false, "cross_replica_exclusion": false, "projection_maintenance_barrier": false},
+    {"id": "thread_safe_queue", "scope": "single_process_serialized", "database_atomic": false, "cross_replica_exclusion": false, "projection_maintenance_barrier": false},
+    {"id": "async_queue", "scope": "single_process_serialized", "database_atomic": false, "cross_replica_exclusion": false, "projection_maintenance_barrier": false},
+    {"id": "thread_safe_latest_durable_projection", "scope": "single_process_serialized", "database_atomic": false, "cross_replica_exclusion": false, "projection_maintenance_barrier": false},
+    {"id": "async_latest_durable_projection", "scope": "single_process_serialized", "database_atomic": false, "cross_replica_exclusion": false, "projection_maintenance_barrier": false},
+    {"id": "postgres_projection_barrier", "scope": "durable_cross_process", "database_atomic": true, "cross_replica_exclusion": true, "projection_maintenance_barrier": true},
+    {"id": "distributed_fenced_capability", "scope": "distributed_fenced", "database_atomic": false, "cross_replica_exclusion": true, "projection_maintenance_barrier": false}
+  ]
+}

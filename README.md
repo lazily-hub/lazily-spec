@@ -10,6 +10,9 @@ converges with a graph built in any other.
 
 Start here: the [wire protocol](protocol.md), the [cell model](cell-model.md), the
 **Feature Set** matrix below, and the **Conformance Fixtures** every binding must pass.
+Concurrency-bearing APIs use the machine-readable
+[`concurrency-scopes.json`](concurrency-scopes.json) taxonomy documented in
+[Concurrency Scopes](docs/concurrency-scopes.md).
 
 ## Implementations
 
