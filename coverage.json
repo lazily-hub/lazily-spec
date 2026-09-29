@@ -797,6 +797,28 @@
       ]
     },
     {
+      "id": "consumer-simulation-testkit",
+      "label": "Consumer simulation testkit",
+      "family": "reactive-graph",
+      "optional": true,
+      "feature": "Consumer simulation testkit — one materialized generated history through a deterministic in-memory baseline and explicitly selected real or external-process adapters, with per-action observation, history-prefix, and world-execution proof (**MAY**, `#lzconsumerstestkit`)",
+      "fixtures": [
+        "simulation/consumer_testkit.json"
+      ],
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "—"
+      ]
+    },
+    {
       "id": "reactive-egress",
       "label": "Reactive egress",
       "family": "egress",

@@ -61,6 +61,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Async reactive context [^async-reactive-context] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Merge algebra [^merge-algebra] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ~ |
 | Replay-equivalence proof *(opt)* [^replay-equivalence-proof] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| Consumer simulation testkit *(opt)* [^consumer-simulation-testkit] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 
 #### Materialization
 
@@ -317,6 +318,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 [^work-queue-core-async]: Competing-consumer work queue (`WorkQueueCell`) **Core surface** — async flavor (reader kinds + eventual transparency)
 [^merge-algebra]: Merge algebra + `Source<T, M>` — associative `MergePolicy` (`KeepLatest`/`Sum`/`Max`/`SetUnion`/`RawFifo`), `Cell ≡ Source<KeepLatest>`, read-any-cell/write-`Source` split (`#relaycell`)
 [^replay-equivalence-proof]: Replay-equivalence harness — a log-bound fingerprint revalidated before any value compare, first-checkpoint divergence localization, canonical observation encoding (**MAY**, `#lzreplayproof`)
+[^consumer-simulation-testkit]: Consumer simulation testkit — one materialized generated history through a deterministic in-memory baseline and explicitly selected real or external-process adapters, with per-action observation, history-prefix, and world-execution proof (**MAY**, `#lzconsumerstestkit`)
 [^reactive-egress]: Transport-agnostic reactive egress (`EgressCore`) — monotone sequence assignment, bounded unacknowledged window, cumulative ACK watermark, bounded retry/backoff/exhaustion, producer-generation fence (`#lzegress`)
 [^latest-durable-projection]: Keyed latest durable projection (`LatestDurableProjectionCore`) — monotone caller epochs, one in-flight effect per key, pending-value supersession without false acknowledgement, monotone `durable_through`, retryable failure, and sink-generation fencing (`#lzlatestdurableprojection`)
 [^egress-thread-safe]: Egress family — `Send + Sync` flavor (`ThreadSafeEgressCell`): delivery authority stays in the shared core, one attached transport Effect per incarnation (`#lzegress`)
