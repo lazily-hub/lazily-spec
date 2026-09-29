@@ -43,8 +43,9 @@
 //   6. any other nested key stating an obligation must be promoted into the
 //      fixture's `assertions` block and declared, since only a declared key has
 //      a discharge path
-//   7. generator provenance is top-level metadata naming an existing script,
-//      never an assertion key that nine bindings must excuse
+//   7. generator provenance is top-level metadata naming an existing script
+//      (either the legacy string or `{ path, version }` form), never an
+//      assertion key that nine bindings must excuse
 //
 // The BINDING half — that each declared key is discharged by naming executable
 // assertion keys the same fixture run actually asserted — is enforced inside
@@ -192,15 +193,29 @@ for (const path of fixtures(CORPUS)) {
 
   const generator = doc?.generator;
   if (generator !== undefined) {
-    if (typeof generator !== "string" || generator.length === 0) {
-      violations.push(`${id}: top-level \`generator\` must be a non-empty script path`);
+    const generatorPath =
+      typeof generator === "string"
+        ? generator
+        : generator !== null &&
+            typeof generator === "object" &&
+            !Array.isArray(generator) &&
+            typeof generator.path === "string" &&
+            generator.path.length > 0 &&
+            typeof generator.version === "string" &&
+            generator.version.length > 0
+          ? generator.path
+          : null;
+    if (generatorPath === null) {
+      violations.push(
+        `${id}: top-level \`generator\` must be a non-empty script path or { path, version }`,
+      );
     } else {
       try {
-        if (!statSync(join(ROOT, generator)).isFile()) {
-          violations.push(`${id}: top-level \`generator\` does not name a file: ${generator}`);
+        if (!statSync(join(ROOT, generatorPath)).isFile()) {
+          violations.push(`${id}: top-level \`generator\` does not name a file: ${generatorPath}`);
         }
       } catch {
-        violations.push(`${id}: top-level \`generator\` does not exist: ${generator}`);
+        violations.push(`${id}: top-level \`generator\` does not exist: ${generatorPath}`);
       }
     }
   }

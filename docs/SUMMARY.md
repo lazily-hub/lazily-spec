@@ -7,6 +7,7 @@
 - [Deterministic-Replay Safety](replay-safety.md)
 - [Replay-Equivalence Proof](replay-equivalence.md)
 - [Deterministic Simulation Oracles](deterministic-simulation-oracles.md)
+- [Consumer Simulation Testkit](consumer-simulation-testkit.md)
 - [RelayCell — Algebra-Backed Backpressure](relaycell.md)
 - [State Machine](state-machine.md)
 - [State Charts](state-charts.md)

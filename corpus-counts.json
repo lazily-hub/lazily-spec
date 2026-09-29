@@ -1,5 +1,5 @@
 {
-  "fixtures": 161,
+  "fixtures": 162,
   "arrays": {
     "codec/blob_backend_discriminator.json": {
       "scenarios": 14
@@ -397,6 +397,11 @@
     "signaling/frames.json": {
       "frames": 17,
       "rejects": 3
+    },
+    "simulation/consumer_testkit.json": {
+      "ports": 3,
+      "actions": 3,
+      "scenarios": 5
     },
     "statechart/entry_exit_actions.json": {
       "initial_actions": 2,
@@ -889,6 +894,9 @@
     },
     "signaling/frames.json": {
       "assertions": 17
+    },
+    "simulation/consumer_testkit.json": {
+      "expected": 5
     },
     "snapshot_minimal.json": {
       "assertions": 1

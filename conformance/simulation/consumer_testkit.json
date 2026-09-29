@@ -1,0 +1,317 @@
+{
+  "schema_version": 1,
+  "origin": "first-party-lazily-spec",
+  "license": "Apache-2.0",
+  "seed": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "generator": {
+    "path": "scripts/generate-consumer-simulation-fixture.py",
+    "version": "1"
+  },
+  "description": "Consumer simulation testkit applies one materialized counter history through a SimWorld baseline and explicitly selected real or external-process adapters, checking exact history prefixes and canonical observations after every action.",
+  "kind": "ConsumerSimulationTestkit",
+  "model": "CounterReducerV1",
+  "protocol_id": "counter.protocol.v1",
+  "production_reducer_id": "counter.reducer.v1",
+  "ports": [
+    {
+      "id": "state.store",
+      "kind": "storage",
+      "determinism": "deterministic"
+    },
+    {
+      "id": "event.stream",
+      "kind": "messaging",
+      "determinism": "nondeterministic"
+    },
+    {
+      "id": "logical.clock",
+      "kind": "clock",
+      "determinism": "nondeterministic"
+    }
+  ],
+  "actions": [
+    {
+      "id": "increment.0",
+      "actor_id": "consumer",
+      "kind": "counter.increment",
+      "version": "1",
+      "payload": 1
+    },
+    {
+      "id": "increment.1",
+      "actor_id": "consumer",
+      "kind": "counter.increment",
+      "version": "1",
+      "payload": 2
+    },
+    {
+      "id": "increment.2",
+      "actor_id": "consumer",
+      "kind": "counter.increment",
+      "version": "1",
+      "payload": 3
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "selected_real_adapters_match_every_checkpoint",
+      "simulation_adapter_id": "memory",
+      "required_real_adapters": [
+        "postgres",
+        "nats"
+      ],
+      "required_external_processes": [],
+      "adapters": [
+        {
+          "id": "nats.integration",
+          "kind": "nats",
+          "service_id": "nats.integration.service",
+          "reducer_id": "counter.reducer.v1",
+          "production_reducer_id": "counter.reducer.v1",
+          "protocol_id": "counter.protocol.v1",
+          "clock_stub": "none",
+          "delta_bias": 0,
+          "history_mode": "exact",
+          "execution_mode": "real"
+        },
+        {
+          "id": "memory",
+          "kind": "in_memory",
+          "service_id": "",
+          "reducer_id": "counter.reducer.v1",
+          "production_reducer_id": "counter.reducer.v1",
+          "protocol_id": "counter.protocol.v1",
+          "clock_stub": "stubbed",
+          "delta_bias": 0,
+          "history_mode": "none",
+          "execution_mode": "sim_world"
+        },
+        {
+          "id": "postgres.integration",
+          "kind": "postgres",
+          "service_id": "postgres.integration.service",
+          "reducer_id": "counter.reducer.v1",
+          "production_reducer_id": "counter.reducer.v1",
+          "protocol_id": "counter.protocol.v1",
+          "clock_stub": "none",
+          "delta_bias": 0,
+          "history_mode": "exact",
+          "execution_mode": "real"
+        }
+      ],
+      "expected": {
+        "outcome": "success",
+        "adapter_ids": [
+          "memory",
+          "nats.integration",
+          "postgres.integration"
+        ],
+        "checkpoint_steps": [
+          1,
+          2,
+          3
+        ],
+        "checkpoint_action_ids": [
+          "increment.0",
+          "increment.1",
+          "increment.2"
+        ],
+        "checkpoint_values": [
+          1,
+          3,
+          6
+        ],
+        "observation_relation": "all_equal_at_every_checkpoint",
+        "materialized_history_relation": "exact_prefix_at_every_checkpoint",
+        "probe_relation": "every_real_adapter_once"
+      }
+    },
+    {
+      "id": "selected_external_process_preserves_independent_reducer_identity",
+      "simulation_adapter_id": "memory",
+      "required_real_adapters": [],
+      "required_external_processes": [
+        {
+          "adapter_id": "sample.cli",
+          "port": "cli"
+        }
+      ],
+      "adapters": [
+        {
+          "id": "memory",
+          "kind": "in_memory",
+          "service_id": "",
+          "reducer_id": "counter.reducer.v1",
+          "production_reducer_id": "counter.reducer.v1",
+          "protocol_id": "counter.protocol.v1",
+          "clock_stub": "stubbed",
+          "delta_bias": 0,
+          "history_mode": "none",
+          "execution_mode": "sim_world"
+        },
+        {
+          "id": "sample.cli",
+          "kind": "external_process",
+          "service_id": "sample.cli.service",
+          "reducer_id": "sample.cli.reducer.v1",
+          "production_reducer_id": "",
+          "protocol_id": "counter.protocol.v1",
+          "clock_stub": "none",
+          "delta_bias": 0,
+          "history_mode": "exact",
+          "execution_mode": "real",
+          "external_port": "cli"
+        }
+      ],
+      "expected": {
+        "outcome": "success",
+        "adapter_ids": [
+          "memory",
+          "sample.cli"
+        ],
+        "checkpoint_steps": [
+          1,
+          2,
+          3
+        ],
+        "checkpoint_values": [
+          1,
+          3,
+          6
+        ],
+        "external_adapter_id": "sample.cli",
+        "external_port": "cli",
+        "external_protocol_id": "counter.protocol.v1",
+        "external_reducer_id": "sample.cli.reducer.v1",
+        "external_production_reducer_id": ""
+      }
+    },
+    {
+      "id": "real_adapter_divergence_is_localized_to_first_action",
+      "simulation_adapter_id": "memory",
+      "required_real_adapters": [
+        "postgres"
+      ],
+      "required_external_processes": [],
+      "adapters": [
+        {
+          "id": "memory",
+          "kind": "in_memory",
+          "service_id": "",
+          "reducer_id": "counter.reducer.v1",
+          "production_reducer_id": "counter.reducer.v1",
+          "protocol_id": "counter.protocol.v1",
+          "clock_stub": "stubbed",
+          "delta_bias": 0,
+          "history_mode": "none",
+          "execution_mode": "sim_world"
+        },
+        {
+          "id": "postgres.mutant",
+          "kind": "postgres",
+          "service_id": "postgres.mutant.service",
+          "reducer_id": "counter.reducer.v1",
+          "production_reducer_id": "counter.reducer.v1",
+          "protocol_id": "counter.protocol.v1",
+          "clock_stub": "none",
+          "delta_bias": 1,
+          "history_mode": "exact",
+          "execution_mode": "real"
+        }
+      ],
+      "expected": {
+        "outcome": "observation_divergence",
+        "step": 1,
+        "action_id": "increment.0",
+        "adapter_id": "postgres.mutant",
+        "observation_id": "consumer.value"
+      }
+    },
+    {
+      "id": "real_adapter_history_drift_fails_at_first_prefix",
+      "simulation_adapter_id": "memory",
+      "required_real_adapters": [],
+      "required_external_processes": [
+        {
+          "adapter_id": "sample.filesystem",
+          "port": "filesystem"
+        }
+      ],
+      "adapters": [
+        {
+          "id": "memory",
+          "kind": "in_memory",
+          "service_id": "",
+          "reducer_id": "counter.reducer.v1",
+          "production_reducer_id": "counter.reducer.v1",
+          "protocol_id": "counter.protocol.v1",
+          "clock_stub": "stubbed",
+          "delta_bias": 0,
+          "history_mode": "none",
+          "execution_mode": "sim_world"
+        },
+        {
+          "id": "sample.filesystem",
+          "kind": "external_process",
+          "service_id": "sample.filesystem.service",
+          "reducer_id": "sample.filesystem.reducer.v1",
+          "production_reducer_id": "",
+          "protocol_id": "counter.protocol.v1",
+          "clock_stub": "none",
+          "delta_bias": 0,
+          "history_mode": "empty",
+          "execution_mode": "real",
+          "external_port": "filesystem"
+        }
+      ],
+      "expected": {
+        "outcome": "materialized_history_mismatch",
+        "step": 1,
+        "action_id": "increment.0",
+        "adapter_id": "sample.filesystem",
+        "expected_prefix_length": 1,
+        "actual_prefix_length": 0
+      }
+    },
+    {
+      "id": "simulation_adapter_bypass_is_rejected",
+      "simulation_adapter_id": "memory",
+      "required_real_adapters": [
+        "postgres"
+      ],
+      "required_external_processes": [],
+      "adapters": [
+        {
+          "id": "memory",
+          "kind": "in_memory",
+          "service_id": "",
+          "reducer_id": "counter.reducer.v1",
+          "production_reducer_id": "counter.reducer.v1",
+          "protocol_id": "counter.protocol.v1",
+          "clock_stub": "stubbed",
+          "delta_bias": 0,
+          "history_mode": "none",
+          "execution_mode": "bypass"
+        },
+        {
+          "id": "postgres.integration",
+          "kind": "postgres",
+          "service_id": "postgres.integration.service",
+          "reducer_id": "counter.reducer.v1",
+          "production_reducer_id": "counter.reducer.v1",
+          "protocol_id": "counter.protocol.v1",
+          "clock_stub": "none",
+          "delta_bias": 0,
+          "history_mode": "exact",
+          "execution_mode": "real"
+        }
+      ],
+      "expected": {
+        "outcome": "simulation_world_bypass",
+        "step": 1,
+        "action_id": "increment.0",
+        "adapter_id": "memory"
+      }
+    }
+  ]
+}

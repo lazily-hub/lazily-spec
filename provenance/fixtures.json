@@ -837,6 +837,12 @@
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
+      "path": "conformance/simulation/consumer_testkit.json",
+      "sha256": "f690faa44388bfc64f2c8e1409654c516f124ce92526affb65c75fade7299821"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
       "path": "conformance/snapshot_minimal.json",
       "sha256": "afd194fac60196d1bbdd2fb5178c21d3ef0c4177a4b513fba54b1f786461a34b"
     },

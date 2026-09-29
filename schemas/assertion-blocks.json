@@ -2152,6 +2152,20 @@
       }
     },
     {
+      "title": "simulation/consumer_testkit.json#/scenarios/*/expected",
+      "properties": {
+        "fixture": {
+          "const": "simulation/consumer_testkit.json"
+        },
+        "pointer": {
+          "const": "/scenarios/*/expected"
+        },
+        "value": {
+          "$ref": "#/$defs/route_0153"
+        }
+      }
+    },
+    {
       "title": "snapshot_minimal.json#/assertions",
       "properties": {
         "fixture": {
@@ -2161,7 +2175,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0153"
+          "$ref": "#/$defs/route_0154"
         }
       }
     },
@@ -2175,7 +2189,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0154"
+          "$ref": "#/$defs/route_0155"
         }
       }
     },
@@ -2189,7 +2203,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0155"
+          "$ref": "#/$defs/route_0156"
         }
       }
     },
@@ -2203,7 +2217,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0156"
+          "$ref": "#/$defs/route_0157"
         }
       }
     },
@@ -2217,7 +2231,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0157"
+          "$ref": "#/$defs/route_0158"
         }
       }
     },
@@ -2231,7 +2245,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0158"
+          "$ref": "#/$defs/route_0159"
         }
       }
     },
@@ -2245,7 +2259,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0159"
+          "$ref": "#/$defs/route_0160"
         }
       }
     },
@@ -2259,7 +2273,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0160"
+          "$ref": "#/$defs/route_0161"
         }
       }
     },
@@ -2273,7 +2287,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0161"
+          "$ref": "#/$defs/route_0162"
         }
       }
     },
@@ -2287,7 +2301,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0162"
+          "$ref": "#/$defs/route_0163"
         }
       }
     },
@@ -2301,7 +2315,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0163"
+          "$ref": "#/$defs/route_0164"
         }
       }
     },
@@ -2315,7 +2329,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0164"
+          "$ref": "#/$defs/route_0165"
         }
       }
     },
@@ -2329,7 +2343,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0165"
+          "$ref": "#/$defs/route_0166"
         }
       }
     },
@@ -2343,7 +2357,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0166"
+          "$ref": "#/$defs/route_0167"
         }
       }
     }
@@ -11278,6 +11292,84 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "action_id": {
+          "type": "string"
+        },
+        "actual_prefix_length": {
+          "type": "integer"
+        },
+        "adapter_id": {
+          "type": "string"
+        },
+        "adapter_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "checkpoint_action_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "checkpoint_steps": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "checkpoint_values": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "expected_prefix_length": {
+          "type": "integer"
+        },
+        "external_adapter_id": {
+          "type": "string"
+        },
+        "external_port": {
+          "type": "string"
+        },
+        "external_production_reducer_id": {
+          "type": "string"
+        },
+        "external_protocol_id": {
+          "type": "string"
+        },
+        "external_reducer_id": {
+          "type": "string"
+        },
+        "materialized_history_relation": {
+          "type": "string"
+        },
+        "observation_id": {
+          "type": "string"
+        },
+        "observation_relation": {
+          "type": "string"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "probe_relation": {
+          "type": "string"
+        },
+        "step": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "outcome"
+      ]
+    },
+    "route_0154": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
         "edge_count": {
           "type": "integer"
         },
@@ -11302,7 +11394,7 @@
         "root_count"
       ]
     },
-    "route_0154": {
+    "route_0155": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11334,7 +11426,7 @@
         "root_count"
       ]
     },
-    "route_0155": {
+    "route_0156": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11374,7 +11466,7 @@
         "root_count"
       ]
     },
-    "route_0156": {
+    "route_0157": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11400,7 +11492,7 @@
         "revision"
       ]
     },
-    "route_0157": {
+    "route_0158": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11427,7 +11519,7 @@
         "outcome"
       ]
     },
-    "route_0158": {
+    "route_0159": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11448,7 +11540,7 @@
         "outcome"
       ]
     },
-    "route_0159": {
+    "route_0160": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11477,7 +11569,7 @@
         "next_fire"
       ]
     },
-    "route_0160": {
+    "route_0161": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11506,7 +11598,7 @@
         "value"
       ]
     },
-    "route_0161": {
+    "route_0162": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11535,7 +11627,7 @@
         "next_fire"
       ]
     },
-    "route_0162": {
+    "route_0163": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11582,7 +11674,7 @@
         "value"
       ]
     },
-    "route_0163": {
+    "route_0164": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11607,31 +11699,6 @@
               "type": "integer"
             }
           ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "output"
-      ]
-    },
-    "route_0164": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "output": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "output"
-          ]
-        },
-        "output": {
-          "type": "integer"
         }
       },
       "required": [
@@ -11656,6 +11723,31 @@
           ]
         },
         "output": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "invalidates",
+        "output"
+      ]
+    },
+    "route_0166": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "output": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "output"
+          ]
+        },
+        "output": {
           "anyOf": [
             {
               "type": "null"
@@ -11671,7 +11763,7 @@
         "output"
       ]
     },
-    "route_0166": {
+    "route_0167": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -12473,74 +12565,79 @@
       "schema": "route_0152"
     },
     {
-      "fixture": "snapshot_minimal.json",
-      "pointer": "/assertions",
+      "fixture": "simulation/consumer_testkit.json",
+      "pointer": "/scenarios/*/expected",
       "schema": "route_0153"
     },
     {
-      "fixture": "snapshot_multi_node.json",
+      "fixture": "snapshot_minimal.json",
       "pointer": "/assertions",
       "schema": "route_0154"
     },
     {
-      "fixture": "snapshot_shared_blob.json",
+      "fixture": "snapshot_multi_node.json",
       "pointer": "/assertions",
       "schema": "route_0155"
     },
     {
-      "fixture": "stdlib/revision_barrier.json",
-      "pointer": "/scenarios/*/steps/*/expect",
+      "fixture": "snapshot_shared_blob.json",
+      "pointer": "/assertions",
       "schema": "route_0156"
     },
     {
-      "fixture": "stdlib/timeout.json",
+      "fixture": "stdlib/revision_barrier.json",
       "pointer": "/scenarios/*/steps/*/expect",
       "schema": "route_0157"
     },
     {
-      "fixture": "stdlib/timer.json",
+      "fixture": "stdlib/timeout.json",
       "pointer": "/scenarios/*/steps/*/expect",
       "schema": "route_0158"
     },
     {
-      "fixture": "temporal/cron_pattern.json",
-      "pointer": "/steps/*/expected",
+      "fixture": "stdlib/timer.json",
+      "pointer": "/scenarios/*/steps/*/expect",
       "schema": "route_0159"
     },
     {
-      "fixture": "temporal/deadline_expiry.json",
+      "fixture": "temporal/cron_pattern.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0160"
     },
     {
-      "fixture": "temporal/interval_periodic.json",
+      "fixture": "temporal/deadline_expiry.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0161"
     },
     {
-      "fixture": "temporal/timer_single_shot.json",
+      "fixture": "temporal/interval_periodic.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0162"
     },
     {
-      "fixture": "windowing/session.json",
+      "fixture": "temporal/timer_single_shot.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0163"
     },
     {
-      "fixture": "windowing/sliding_count.json",
+      "fixture": "windowing/session.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0164"
     },
     {
-      "fixture": "windowing/tumbling_count.json",
+      "fixture": "windowing/sliding_count.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0165"
     },
     {
-      "fixture": "windowing/tumbling_time.json",
+      "fixture": "windowing/tumbling_count.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0166"
+    },
+    {
+      "fixture": "windowing/tumbling_time.json",
+      "pointer": "/steps/*/expected",
+      "schema": "route_0167"
     }
   ]
 }
