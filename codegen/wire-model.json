@@ -1,0 +1,143 @@
+{
+  "model_version": 1,
+  "generator": "scripts/wire_codegen.py",
+  "surfaces": [
+    {
+      "name": "receipts",
+      "schema": "schemas/receipts.json",
+      "types": [
+        {
+          "name": "ReceiptOutcome",
+          "kind": "enum",
+          "open": false,
+          "doc": "Outcome vocabulary. observed/accepted are non-terminal; applied/rejected are terminal.",
+          "values": [
+            {
+              "wire": "observed",
+              "doc": "A peer/process observed the causation request."
+            },
+            {
+              "wire": "accepted",
+              "doc": "A peer/process accepted or queued the request."
+            },
+            {
+              "wire": "applied",
+              "doc": "The requested effect/state change was applied."
+            },
+            {
+              "wire": "rejected",
+              "doc": "The requested effect/state change was rejected."
+            }
+          ]
+        },
+        {
+          "name": "CausalReceipt",
+          "kind": "record",
+          "closed": true,
+          "doc": "One receipt event for a command/effect causation id.",
+          "fields": [
+            {
+              "name": "receipt_id",
+              "doc": "Idempotency key for this receipt event.",
+              "presence": "required",
+              "type": {
+                "kind": "string",
+                "min_length": 1
+              }
+            },
+            {
+              "name": "causation_id",
+              "doc": "Stable id of the command, event, or effect request this receipt observes.",
+              "presence": "required",
+              "type": {
+                "kind": "string",
+                "min_length": 1
+              }
+            },
+            {
+              "name": "observer",
+              "doc": "Peer, process, or subsystem that produced the receipt.",
+              "presence": "required",
+              "type": {
+                "kind": "string",
+                "min_length": 1
+              }
+            },
+            {
+              "name": "generation",
+              "doc": "Producer/editor generation. Consumers discard receipts outside the current generation for the causation id.",
+              "presence": "required",
+              "type": {
+                "kind": "u64"
+              }
+            },
+            {
+              "name": "outcome",
+              "doc": "Receipt outcome.",
+              "presence": "required",
+              "type": {
+                "kind": "ref",
+                "name": "ReceiptOutcome"
+              }
+            },
+            {
+              "name": "reason",
+              "doc": "Optional human/debug rejection reason.",
+              "presence": "required",
+              "type": {
+                "kind": "nullable",
+                "inner": {
+                  "kind": "string"
+                }
+              }
+            },
+            {
+              "name": "payload_hash",
+              "doc": "Optional hash of the state/payload observed by the receipt.",
+              "presence": "required",
+              "type": {
+                "kind": "nullable",
+                "inner": {
+                  "kind": "string"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "CausalReceipts",
+          "kind": "record",
+          "closed": true,
+          "doc": "Wire body for the externally-tagged `CausalReceipts` envelope.",
+          "fields": [
+            {
+              "name": "receipts",
+              "doc": "Receipt batch.",
+              "presence": "required",
+              "type": {
+                "kind": "list",
+                "items": {
+                  "kind": "ref",
+                  "name": "CausalReceipt"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "ReceiptMessage",
+          "kind": "envelope",
+          "tagging": "external",
+          "doc": "Externally-tagged receipt wire message.",
+          "variants": [
+            {
+              "tag": "CausalReceipts",
+              "type": "CausalReceipts"
+            }
+          ]
+        }
+      ],
+      "model_sha256": "faf31f5c1db054295114b513d51ae6d4b7b47658147cf8044838340a72946b87"
+    }
+  ]
+}

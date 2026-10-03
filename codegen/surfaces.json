@@ -1,0 +1,13 @@
+{
+  "description": "Wire surfaces whose binding types are generated from the shared wire model (#lzwiremodel). Each surface names its source schema and the generated file each participating binding commits. Kernel semantics (Source/Computed/Effect, scheduling, scopes) are never generated.",
+  "surfaces": [
+    {
+      "name": "receipts",
+      "schema": "schemas/receipts.json",
+      "targets": {
+        "rust": { "repo": "lazily-rs", "path": "src/generated/receipts.rs" },
+        "go": { "repo": "lazily-go", "path": "receipts_wire_gen.go", "package": "lazily" }
+      }
+    }
+  ]
+}

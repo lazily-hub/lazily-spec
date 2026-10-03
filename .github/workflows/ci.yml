@@ -60,6 +60,15 @@ jobs:
             git -C "../lazily-$repo" sparse-checkout set scripts
           done
 
+      # Generated wire files (#lzwiremodel) must match the shared model byte for
+      # byte in every participating binding's published main. Go's file sits at
+      # the repo root, which a cone-mode sparse checkout always includes.
+      - name: Check generated wire files match the shared model
+        run: |
+          set -e
+          git -C ../lazily-rs sparse-checkout add src/generated
+          python3 scripts/wire_codegen.py --check --require-all
+
       - name: Check every shipped mark is backed by a replayed fixture
         run: node scripts/check-coverage-claims.mjs --check --require-all
 

@@ -6,14 +6,20 @@
   "type": "object",
   "required": ["CausalReceipts"],
   "additionalProperties": false,
+  "x-lazily-envelope": {
+    "name": "ReceiptMessage",
+    "description": "Externally-tagged receipt wire message."
+  },
   "properties": {
     "CausalReceipts": {
       "type": "object",
+      "description": "Wire body for the externally-tagged `CausalReceipts` envelope.",
       "required": ["receipts"],
       "additionalProperties": false,
       "properties": {
         "receipts": {
           "type": "array",
+          "description": "Receipt batch.",
           "items": { "$ref": "#/$defs/CausalReceipt" }
         }
       }
@@ -23,9 +29,16 @@
     "ReceiptOutcome": {
       "type": "string",
       "enum": ["observed", "accepted", "applied", "rejected"],
-      "description": "Outcome vocabulary. observed/accepted are non-terminal; applied/rejected are terminal."
+      "description": "Outcome vocabulary. observed/accepted are non-terminal; applied/rejected are terminal.",
+      "x-lazily-enum-docs": {
+        "observed": "A peer/process observed the causation request.",
+        "accepted": "A peer/process accepted or queued the request.",
+        "applied": "The requested effect/state change was applied.",
+        "rejected": "The requested effect/state change was rejected."
+      }
     },
     "OptionalString": {
+      "description": "A string that is always present on the wire and is null when absent.",
       "oneOf": [
         { "type": "null" },
         { "type": "string" }
@@ -33,6 +46,7 @@
     },
     "CausalReceipt": {
       "type": "object",
+      "description": "One receipt event for a command/effect causation id.",
       "required": [
         "receipt_id",
         "causation_id",
@@ -64,9 +78,9 @@
           "minimum": 0,
           "description": "Producer/editor generation. Consumers discard receipts outside the current generation for the causation id."
         },
-        "outcome": { "$ref": "#/$defs/ReceiptOutcome" },
-        "reason": { "$ref": "#/$defs/OptionalString" },
-        "payload_hash": { "$ref": "#/$defs/OptionalString" }
+        "outcome": { "$ref": "#/$defs/ReceiptOutcome", "description": "Receipt outcome." },
+        "reason": { "$ref": "#/$defs/OptionalString", "description": "Optional human/debug rejection reason." },
+        "payload_hash": { "$ref": "#/$defs/OptionalString", "description": "Optional hash of the state/payload observed by the receipt." }
       }
     }
   }

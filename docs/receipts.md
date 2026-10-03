@@ -15,3 +15,6 @@ those terminal outcomes, but they should not invent a delivery-ACK authority.
 The normative field list and projection rules live in
 [protocol.md § Causal Receipts](protocol.md#causal-receipts). The schema is
 [`schemas/receipts.json`](schemas.md#receiptsjson).
+
+The Rust and Go wire types for this schema are generated from the shared wire
+model; see [Shared Wire Model and Codec Generation](wire-codegen.md).

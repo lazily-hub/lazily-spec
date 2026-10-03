@@ -23,9 +23,24 @@ license-inventory-check \
 corpus-published-check \
 corpus-floors-check \
 corpus-counts-sync \
-corpus-blocks-report
+corpus-blocks-report \
+wire-codegen \
+wire-codegen-check
 
-check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check
+check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check
+
+# Shared wire model + per-binding codec generation (#lzwiremodel). The golden
+# codegen/wire-model.json is derived from the schemas named in
+# codegen/surfaces.json, and every present sibling binding's generated wire file
+# must match the backend output byte for byte. Absent siblings are reported as
+# staged; CI passes --require-all only where the bindings are checked out.
+wire-codegen-check:
+>python3 scripts/wire_codegen.py --check
+
+# Regenerate the golden model and every present sibling's generated file after a
+# deliberate schema change. Commit each repo's result with the schema edit.
+wire-codegen:
+>python3 scripts/wire_codegen.py --write
 
 license-inventory-check:
 >python3 scripts/generate-third-party-inventory.py --check

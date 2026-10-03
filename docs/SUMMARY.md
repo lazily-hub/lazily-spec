@@ -30,6 +30,7 @@
 - [Fixture Provenance and Licensing](fixture-provenance.md)
 - [Portable Standard Library](stdlib.md)
 - [JSON Schemas](schemas.md)
+- [Shared Wire Model and Codec Generation](wire-codegen.md)
 - [Lean Formal Model](formal-model.md)
 
 ---
