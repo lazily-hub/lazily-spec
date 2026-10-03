@@ -323,6 +323,10 @@ def _rust_type(expr: dict) -> str:
     raise UnsupportedSchema(f"rust: unsupported type kind {kind}")
 
 
+def _required_nullable(field: dict) -> bool:
+    return field["presence"] == "required" and field["type"]["kind"] == "nullable"
+
+
 def render_rust(surface: dict, target: dict) -> str:
     _require_lowerable(surface, "rust")
     lines = [
@@ -330,6 +334,22 @@ def render_rust(surface: dict, target: dict) -> str:
         f"// Surface `{surface['name']}` from {surface['schema']}, model sha256:{surface['model_sha256']}.",
         "// Regenerate from lazily-spec with `make wire-codegen`; semantics stay hand-written.",
     ]
+    if any(_required_nullable(f) for t in surface["types"] for f in t.get("fields", [])):
+        lines.extend(
+            [
+                "",
+                "/// Decodes a field that is always on the wire and is `null` when absent. A bare",
+                "/// `Option` would let serde default a missing key to `None`.",
+                '#[cfg(feature = "serde")]',
+                "fn required_nullable<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>",
+                "where",
+                "    D: serde::Deserializer<'de>,",
+                "    T: serde::Deserialize<'de>,",
+                "{",
+                "    <Option<T> as serde::Deserialize>::deserialize(deserializer)",
+                "}",
+            ]
+        )
     for t in surface["types"]:
         lines.append("")
         lines.extend(_comment("/// ", t["doc"], 100))
@@ -350,9 +370,12 @@ def render_rust(surface: dict, target: dict) -> str:
         elif t["kind"] == "record":
             lines.append("#[derive(Debug, Clone, PartialEq, Eq)]")
             lines.append(RUST_SERDE)
+            lines.append('#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]')
             lines.append(f"pub struct {t['name']} {{")
             for field in t["fields"]:
                 lines.extend(_comment("    /// ", field["doc"], 100))
+                if _required_nullable(field):
+                    lines.append('    #[cfg_attr(feature = "serde", serde(deserialize_with = "required_nullable"))]')
                 lines.append(f"    pub {field['name']}: {_rust_type(field['type'])},")
             lines.append("}")
         elif t["kind"] == "envelope":
@@ -403,9 +426,46 @@ def render_go(surface: dict, target: dict) -> str:
         "import (",
         '\t"encoding/json"',
     ]
-    if has_enum:
+    has_record = any(t["kind"] == "record" for t in surface["types"])
+    if has_enum or has_record:
         lines.append('\t"fmt"')
+    if has_record:
+        lines.append('\t"sort"')
     lines.append(")")
+    check_fields = f"{surface['name']}CheckWireFields"
+    if has_record:
+        lines.extend(
+            [
+                "",
+                f"// {check_fields} rejects a record whose wire keys are not exactly its",
+                "// declared fields: a closed record has no unknown keys, and a required field",
+                "// is present even when its value is null.",
+                f"func {check_fields}(name string, data []byte, fields []string) error {{",
+                "\tvar keys map[string]json.RawMessage",
+                "\tif err := json.Unmarshal(data, &keys); err != nil {",
+                "\t\treturn err",
+                "\t}",
+                "\tif keys == nil {",
+                '\t\treturn fmt.Errorf("%s: expected an object, got null", name)',
+                "\t}",
+                "\tfor _, field := range fields {",
+                "\t\tif _, ok := keys[field]; !ok {",
+                '\t\t\treturn fmt.Errorf("%s: missing field %q", name, field)',
+                "\t\t}",
+                "\t\tdelete(keys, field)",
+                "\t}",
+                "\tif len(keys) > 0 {",
+                "\t\tunknown := make([]string, 0, len(keys))",
+                "\t\tfor key := range keys {",
+                "\t\t\tunknown = append(unknown, key)",
+                "\t\t}",
+                "\t\tsort.Strings(unknown)",
+                '\t\treturn fmt.Errorf("%s: unknown field %q", name, unknown[0])',
+                "\t}",
+                "\treturn nil",
+                "}",
+            ]
+        )
     for t in surface["types"]:
         name = t["name"]
         if t["kind"] == "enum":
@@ -474,6 +534,21 @@ def render_go(surface: dict, target: dict) -> str:
                     lines.append("\t}")
                 lines.append("\treturn json.Marshal(w)")
                 lines.append("}")
+            wire_fields = ", ".join(f'"{f["name"]}"' for f in t["fields"])
+            lines.append("")
+            lines.append(f"// UnmarshalJSON decodes {name}, rejecting unknown and missing fields.")
+            lines.append(f"func (r *{name}) UnmarshalJSON(data []byte) error {{")
+            lines.append(f'\tif err := {check_fields}("{name}", data, []string{{{wire_fields}}}); err != nil {{')
+            lines.append("\t\treturn err")
+            lines.append("\t}")
+            lines.append(f"\ttype wire {name}")
+            lines.append("\tvar w wire")
+            lines.append("\tif err := json.Unmarshal(data, &w); err != nil {")
+            lines.append("\t\treturn err")
+            lines.append("\t}")
+            lines.append(f"\t*r = {name}(w)")
+            lines.append("\treturn nil")
+            lines.append("}")
             lines.append("")
             lines.append(f"// {name}FromWire decodes a {name} from its JSON wire form.")
             lines.append(f"func {name}FromWire(data []byte) ({name}, error) {{")
@@ -486,7 +561,326 @@ def render_go(surface: dict, target: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-BACKENDS = {"rust": render_rust, "go": render_go}
+# ---------------------------------------------------------------------------
+# Python backend
+# ---------------------------------------------------------------------------
+
+_PY_HELPERS = {
+    "object": [
+        "def _wire_object(name: str, value: Any, fields: tuple[str, ...]) -> dict[str, Any]:",
+        '    """Return ``value`` as a wire object whose keys are exactly ``fields``."""',
+        "    if not isinstance(value, dict):",
+        '        raise ValueError(f"{name}: expected an object, got {value!r}")',
+        "    missing = [key for key in fields if key not in value]",
+        "    if missing:",
+        '        raise ValueError(f"{name}: missing field {missing[0]!r}")',
+        "    unknown = sorted(key for key in value if key not in fields)",
+        "    if unknown:",
+        '        raise ValueError(f"{name}: unknown field {unknown[0]!r}")',
+        "    return value",
+    ],
+    "string": [
+        "def _wire_str(name: str, value: Any) -> str:",
+        "    if not isinstance(value, str):",
+        '        raise ValueError(f"{name}: expected a string, got {value!r}")',
+        "    return value",
+    ],
+    "u64": [
+        "def _wire_u64(name: str, value: Any) -> int:",
+        "    if isinstance(value, bool) or not isinstance(value, int):",
+        '        raise ValueError(f"{name}: expected an unsigned integer, got {value!r}")',
+        "    return value",
+    ],
+    "bool": [
+        "def _wire_bool(name: str, value: Any) -> bool:",
+        "    if not isinstance(value, bool):",
+        '        raise ValueError(f"{name}: expected a boolean, got {value!r}")',
+        "    return value",
+    ],
+    "list": [
+        "def _wire_list(name: str, value: Any) -> list[Any]:",
+        "    if not isinstance(value, list):",
+        '        raise ValueError(f"{name}: expected an array, got {value!r}")',
+        "    return value",
+    ],
+}
+
+
+def _py_type(expr: dict) -> str:
+    kind = expr["kind"]
+    if kind == "string":
+        return "str"
+    if kind == "u64":
+        return "int"
+    if kind == "bool":
+        return "bool"
+    if kind == "ref":
+        return expr["name"]
+    if kind == "nullable":
+        return f"{_py_type(expr['inner'])} | None"
+    if kind == "list":
+        return f"list[{_py_type(expr['items'])}]"
+    raise UnsupportedSchema(f"python: unsupported type kind {kind}")
+
+
+def _py_kinds(expr: dict) -> set[str]:
+    kinds = {expr["kind"]}
+    for key in ("inner", "items"):
+        if key in expr:
+            kinds |= _py_kinds(expr[key])
+    return kinds
+
+
+def _py_decode(expr: dict, src: str, label: str, depth: int = 0) -> str:
+    kind = expr["kind"]
+    if kind in ("string", "u64", "bool"):
+        helper = {"string": "_wire_str", "u64": "_wire_u64", "bool": "_wire_bool"}[kind]
+        return f'{helper}("{label}", {src})'
+    if kind == "ref":
+        return f"{expr['name']}.from_wire({src})"
+    if kind == "nullable":
+        return f"None if {src} is None else {_py_decode(expr['inner'], src, label, depth)}"
+    if kind == "list":
+        item = f"item{depth}" if depth else "item"
+        inner = _py_decode(expr["items"], item, f"{label}[]", depth + 1)
+        return f'[{inner} for {item} in _wire_list("{label}", {src})]'
+    raise UnsupportedSchema(f"python: unsupported type kind {kind}")
+
+
+def _py_encode(expr: dict, src: str, depth: int = 0) -> str:
+    kind = expr["kind"]
+    if kind in ("string", "u64", "bool"):
+        return src
+    if kind == "ref":
+        return f"{src}.to_wire()"
+    if kind == "nullable":
+        inner = _py_encode(expr["inner"], src, depth)
+        return src if inner == src else f"None if {src} is None else {inner}"
+    if kind == "list":
+        item = f"item{depth}" if depth else "item"
+        inner = _py_encode(expr["items"], item, depth + 1)
+        return f"list({src})" if inner == item else f"[{inner} for {item} in {src}]"
+    raise UnsupportedSchema(f"python: unsupported type kind {kind}")
+
+
+def _py_constraints(record: str, field: dict) -> list[str]:
+    """`__post_init__` checks for the schema constraints a field's type carries."""
+    expr = field["type"]
+    name = field["name"]
+    guard = ""
+    if expr["kind"] == "nullable":
+        expr = expr["inner"]
+        guard = f"self.{name} is not None and "
+    if any(k in ("u64",) or "min_length" in e for k, e in _walk_nested(expr)):
+        raise UnsupportedSchema(f"python: constraints inside lists are not lowered ({record}.{name})")
+    if expr["kind"] == "u64":
+        return [
+            f"        if {guard}not 0 <= self.{name} <= _U64_MAX:",
+            f'            raise ValueError(f"{name} must be in 0..=2^64-1, got {{self.{name}}}")',
+        ]
+    min_length = expr.get("min_length")
+    if expr["kind"] == "string" and min_length:
+        message = "a non-empty string" if min_length == 1 else f"at least {min_length} characters"
+        return [
+            f"        if {guard}len(self.{name}) < {min_length}:",
+            f'            raise ValueError("{name} must be {message}")',
+        ]
+    return []
+
+
+def _walk_nested(expr: dict) -> list[tuple[str, dict]]:
+    """Constrained element types nested under a list (top-level constraints are checked)."""
+    out = []
+    if expr["kind"] == "list":
+        stack = [expr["items"]]
+        while stack:
+            e = stack.pop()
+            out.append((e["kind"], e))
+            stack.extend(e[k] for k in ("inner", "items") if k in e)
+    return out
+
+
+def _py_docstring(indent: str, text: str) -> list[str]:
+    one = f'{indent}"""{text}"""'
+    if len(one) <= 88:
+        return [one]
+    body = textwrap.wrap(text, width=88 - len(indent), break_on_hyphens=False)
+    return [f'{indent}"""{body[0]}', *[f"{indent}{line}" for line in body[1:]], f'{indent}"""']
+
+
+def _py_tuple(const: str, names: list[str]) -> list[str]:
+    quoted = [f'"{n}"' for n in names]
+    one = f"{const} = ({', '.join(quoted)}{',' if len(quoted) == 1 else ''})"
+    if len(one) <= 88:
+        return [one]
+    return [f"{const} = (", *[f"    {q}," for q in quoted], ")"]
+
+
+def _py_enum_member(wire: str) -> str:
+    return snake(pascal(wire)).upper()
+
+
+def render_python(surface: dict, target: dict) -> str:
+    _require_lowerable(surface, "python")
+    types = _types_by_name(surface)
+    mixins: dict[str, str] = target.get("mixins", {})
+    unknown_mixins = sorted(set(mixins) - set(types))
+    if unknown_mixins:
+        raise UnsupportedSchema(f"python: mixins name types the surface does not generate: {unknown_mixins}")
+    if mixins and "semantics_module" not in target:
+        raise UnsupportedSchema("python: mixins need a `semantics_module`")
+
+    # A single-variant external envelope lowers onto its variant record: the record's
+    # codec carries the tag, exactly as the hand-written frame types always have.
+    tagged: dict[str, str] = {}
+    for t in surface["types"]:
+        if t["kind"] != "envelope":
+            continue
+        (variant,) = t["variants"]
+        if types[variant["type"]]["kind"] != "record":
+            raise UnsupportedSchema(f"python: envelope {t['name']} must wrap a record")
+        for other in surface["types"]:
+            for f in other.get("fields", []):
+                if variant["type"] in _refs(f["type"]):
+                    raise UnsupportedSchema(
+                        f"python: {variant['type']} is an envelope variant and a field type ({other['name']}.{f['name']})"
+                    )
+        tagged[variant["type"]] = variant["tag"]
+
+    records = [t for t in surface["types"] if t["kind"] == "record"]
+    enums = [t for t in surface["types"] if t["kind"] == "enum"]
+    kinds: set[str] = set()
+    for t in records:
+        for f in t["fields"]:
+            kinds |= _py_kinds(f["type"])
+    has_u64 = "u64" in kinds
+    needs_factory = False
+
+    body: list[str] = []
+    for t in surface["types"]:
+        name = t["name"]
+        bases = ", ".join([*([mixins[name]] if name in mixins else []), *(["Enum"] if t["kind"] == "enum" else [])])
+        if t["kind"] == "enum":
+            body += ["", "", f"class {name}({bases}):"]
+            body += _py_docstring("    ", t["doc"])
+            body.append("")
+            for v in t["values"]:
+                body.append(f'    {_py_enum_member(v["wire"])} = "{v["wire"]}"')
+                body += _py_docstring("    ", v["doc"])
+            expected = "/".join(v["wire"] for v in t["values"])
+            body += [
+                "",
+                "    @classmethod",
+                f"    def from_wire(cls, value: Any) -> {name}:",
+                '        """Parse a wire string, rejecting unknown values."""',
+                "        for member in cls:",
+                "            if member.value == value:",
+                "                return member",
+                "        raise ValueError(",
+                f'            f"unknown {name}: {{value!r}} (expected one of {expected})"',
+                "        )",
+                "",
+                "    def to_wire(self) -> str:",
+                "        return self.value",
+            ]
+        elif t["kind"] == "record":
+            fields = t["fields"]
+            defaultable = [False] * len(fields)
+            for i in range(len(fields) - 1, -1, -1):
+                if fields[i]["type"]["kind"] in ("nullable", "list"):
+                    defaultable[i] = True
+                else:
+                    break
+            const = f"_{snake(name).upper()}_FIELDS"
+            body += ["", "", *_py_tuple(const, [f["name"] for f in fields])]
+            body += ["", "", "@dataclass(frozen=True, slots=True)", f"class {name}({bases}):" if bases else f"class {name}:"]
+            body += _py_docstring("    ", t["doc"])
+            body.append("")
+            for f, has_default in zip(fields, defaultable, strict=True):
+                decl = f"    {f['name']}: {_py_type(f['type'])}"
+                if has_default and f["type"]["kind"] == "nullable":
+                    decl += " = None"
+                elif has_default:
+                    decl += " = field(default_factory=list)"
+                    needs_factory = True
+                body.append(decl)
+                body += _py_docstring("    ", f["doc"])
+            checks = [line for f in fields for line in _py_constraints(name, f)]
+            if checks:
+                body += ["", "    def __post_init__(self) -> None:", *checks]
+            encoded = [f'            "{f["name"]}": {_py_encode(f["type"], "self." + f["name"])},' for f in fields]
+            if name in tagged:
+                tag = tagged[name]
+                body += [
+                    "",
+                    "    def to_wire(self) -> dict[str, Any]:",
+                    f'        """Encode the externally-tagged ``{tag}`` frame."""',
+                    "        body = {",
+                    *encoded,
+                    "        }",
+                    f'        return {{"{tag}": body}}',
+                ]
+                envelope = next(e["name"] for e in surface["types"] if e["kind"] == "envelope")
+                prelude = [
+                    f'        tagged = _wire_object("{envelope}", value, ("{tag}",))',
+                    f'        d = _wire_object("{name}", tagged["{tag}"], {const})',
+                ]
+                doc = f'        """Decode the externally-tagged ``{tag}`` frame strictly."""'
+            else:
+                body += [
+                    "",
+                    "    def to_wire(self) -> dict[str, Any]:",
+                    "        return {",
+                    *encoded,
+                    "        }",
+                ]
+                prelude = [f'        d = _wire_object("{name}", value, {const})']
+                doc = '        """Decode strictly: exactly the declared keys, each well-typed."""'
+            decoded = []
+            for f in fields:
+                src = 'd["' + f["name"] + '"]'
+                decoded.append(f"            {f['name']}={_py_decode(f['type'], src, name + '.' + f['name'])},")
+            body += [
+                "",
+                "    @classmethod",
+                f"    def from_wire(cls, value: Any) -> {name}:",
+                doc,
+                *prelude,
+                "        return cls(",
+                *decoded,
+                "        )",
+            ]
+
+    helpers: list[str] = []
+    if records:
+        helpers += ["", "", *_PY_HELPERS["object"]]
+    for kind in ("string", "u64", "bool", "list"):
+        if kind in kinds:
+            helpers += ["", "", *_PY_HELPERS[kind]]
+
+    header = [
+        f"# @generated by lazily-spec {GENERATOR}. DO NOT EDIT.",
+        f"# Surface `{surface['name']}` from {surface['schema']},",
+        f"# model sha256:{surface['model_sha256']}.",
+        "# Regenerate from lazily-spec with `make wire-codegen`; semantics stay hand-written.",
+        "# fmt: off",
+        f'"""Generated wire types for the `{surface["name"]}` surface."""',
+        "",
+        "from __future__ import annotations",
+        "",
+        "from dataclasses import dataclass, field" if needs_factory else "from dataclasses import dataclass",
+    ]
+    if enums:
+        header.append("from enum import Enum")
+    header.append("from typing import Any")
+    if mixins:
+        header += ["", f"from {target['semantics_module']} import {', '.join(sorted(mixins.values()))}"]
+    if has_u64:
+        header += ["", "", "_U64_MAX = 0xFFFF_FFFF_FFFF_FFFF"]
+    return "\n".join(header + helpers + body) + "\n"
+
+
+BACKENDS = {"rust": render_rust, "go": render_go, "python": render_python}
 
 
 # ---------------------------------------------------------------------------

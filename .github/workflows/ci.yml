@@ -67,6 +67,7 @@ jobs:
         run: |
           set -e
           git -C ../lazily-rs sparse-checkout add src/generated
+          git -C ../lazily-py sparse-checkout add src/lazily
           python3 scripts/wire_codegen.py --check --require-all
 
       - name: Check every shipped mark is backed by a replayed fixture

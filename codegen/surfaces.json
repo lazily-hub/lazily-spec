@@ -5,8 +5,24 @@
       "name": "receipts",
       "schema": "schemas/receipts.json",
       "targets": {
-        "rust": { "repo": "lazily-rs", "path": "src/generated/receipts.rs" },
-        "go": { "repo": "lazily-go", "path": "receipts_wire_gen.go", "package": "lazily" }
+        "rust": {
+          "repo": "lazily-rs",
+          "path": "src/generated/receipts.rs"
+        },
+        "go": {
+          "repo": "lazily-go",
+          "path": "receipts_wire_gen.go",
+          "package": "lazily"
+        },
+        "python": {
+          "repo": "lazily-py",
+          "path": "src/lazily/_receipts_wire_gen.py",
+          "semantics_module": "._receipt_semantics",
+          "mixins": {
+            "ReceiptOutcome": "ReceiptOutcomeSemantics",
+            "CausalReceipts": "CausalReceiptsSemantics"
+          }
+        }
       }
     }
   ]
