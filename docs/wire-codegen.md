@@ -109,6 +109,30 @@ Three target options shape what is emitted:
 | `variant_fields` | field name for each non-record union payload |
 | `envelope: false` | do not emit the envelope; the binding's own message type carries the tag (lazily-py's `IpcMessage`) |
 
+### Go union lowering (`#lzwiremodel6`)
+
+A surface with a union takes a separate Go path; receipts keep the struct-tag
+lowering byte for byte. The plan (flattened record payloads, `variant_fields`,
+`external`, reachability) is the Python backend's.
+
+- **A union is an interface** (`json.Marshaler` plus an `is<Union>()` marker)
+  and one struct per variant, named `<Union><Tag>` (`DeltaOpCellSet`,
+  `IpcValueInline{Bytes}`, `NodeStateOpaque{}`), which is the shape lazily-go's
+  hand-written IPC types already had. `unmarshal<Union>(raw)` decodes strictly.
+- **`interface_methods`** adds hand-written methods to the interface
+  (`DeltaOp.TargetReadable`); each variant's implementation stays in the
+  binding beside the generated file, as a Go method on a generated type.
+- **`int64`** maps a u64 slot to a hand-written signed type: an alias
+  (`"NodeId": "NodeId"`) or a field (`"Delta.base_epoch": "Epoch"`). lazily-go
+  holds node ids and epochs in `int64`; the decoder refuses a value past 2^63-1
+  rather than wrap it (protocol.md § NodeId / PeerId lets a narrower binding
+  refuse at decode), and the encoder refuses a negative one. This is the
+  alternative to a binding-wide `uint64` migration.
+- **JSON is built by hand** (keys in declaration order, no struct tags), so
+  the output needs no tag alignment and stays `gofmt`-clean as generated.
+- An optional field is a pointer (`Key *NodeKey`), omitted when nil and read as
+  absent from either an omitted key or `null`.
+
 `external` is how decoder rules beyond the schema stay hand-written:
 `NodeKey`'s byte and segment bounds, and `ShmBlobRef`'s `backend: null`
 leniency (`#lzblobbackendstrict`), which the schema rejects.
@@ -186,7 +210,7 @@ bindings' published `main`.
 | Surface | Schema | Bindings |
 |---|---|---|
 | `receipts` | `schemas/receipts.json` | lazily-rs `src/generated/receipts.rs`, lazily-go `receipts_wire_gen.go`, lazily-py `src/lazily/_receipts_wire_gen.py`, lazily-kt `src/main/kotlin/io/github/lazily/ReceiptsWireGen.kt` |
-| `delta` | `schemas/delta.json` | lazily-py `src/lazily/_delta_wire_gen.py` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`, `NodeId`; `NodeKey` and `ShmBlobRef` stay hand-written in `_wire_scalars.py`) |
+| `delta` | `schemas/delta.json` | lazily-py `src/lazily/_delta_wire_gen.py` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`, `NodeId`; `NodeKey` and `ShmBlobRef` stay hand-written in `_wire_scalars.py`), lazily-go `delta_wire_gen.go` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`; `NodeId`/`Epoch` stay `int64` in `types.go`, `NodeKey` and `ShmBlobRef` stay hand-written in `ipc.go`) |
 
 Lowering the receipts surface found the same real wire mismatch twice. Go
 had `generation` as `int64` and Kotlin had it as `Long`; both accept negative
@@ -244,6 +268,13 @@ externals) on every corpus `Delta` frame and 338 single-edit perturbations,
 and requires the schema's verdict on each, plus a byte-for-byte re-encode of
 every accepted frame (an explicit `key: null` re-encodes omitted).
 
+lazily-go's lowering (`#lzwiremodel6`) removed 408 hand-written lines from
+`ipc.go` for 888 generated ones and about 540 lines of Go backend, so in Go the
+generator does not yet pay for itself in lines. What lazily-go gained is the
+strictness it lacked: its decoder accepted unknown keys, a missing `node`
+(decoded as zero), a missing or `null` `ops` list, and negative ids and epochs.
+All of those are now refused, and encoding a negative id is an error.
+
 The remaining bindings are harder, for reasons the model records but their
 backends do not handle yet:
 
@@ -253,13 +284,12 @@ backends do not handle yet:
   `Serialize`.
 - **Decoder leniency beyond the schema.** `backend: null` is schema-invalid,
   but `protocol.md` requires decoders to read it as `shm`
-  (`#lzblobbackendstrict`). Python keeps `ShmBlobRef` `external` for that;
-  another backend needs the same option.
-- **Unions in Rust, Go and Kotlin.** Each needs a union lowering (Rust enum
-  with struct variants, Go interface or tagged struct, a Kotlin sealed
-  hierarchy) before it can emit `DeltaOp`, `IpcValue` or `NodeState`. Kotlin
-  also types `NodeId` as `Long`, so lowering there means the same `ULong`
-  migration receipts' `generation` needed.
+  (`#lzblobbackendstrict`). Python and Go keep `ShmBlobRef` `external` for
+  that.
+- **Unions in Rust and Kotlin.** Each needs a union lowering (a Rust enum with
+  struct variants, a Kotlin sealed hierarchy). Kotlin types `NodeId` as
+  `Long`, which the Go `int64` option now covers: a Kotlin equivalent would
+  avoid the `ULong` migration receipts' `generation` needed.
 
 The other candidates still do not model:
 

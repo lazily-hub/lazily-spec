@@ -57,6 +57,35 @@
             "NodeState.SharedBlob": "blob"
           },
           "envelope": false
+        },
+        "go": {
+          "repo": "lazily-go",
+          "path": "delta_wire_gen.go",
+          "package": "lazily",
+          "external": {
+            "NodeKey": "",
+            "ShmBlobRef": ""
+          },
+          "int64": {
+            "NodeId": "NodeId",
+            "Delta.base_epoch": "Epoch",
+            "Delta.epoch": "Epoch"
+          },
+          "variant_fields": {
+            "IpcValue.Inline": "Bytes",
+            "IpcValue.SharedBlob": "Blob",
+            "NodeState.Payload": "Bytes",
+            "NodeState.SharedBlob": "Blob"
+          },
+          "interface_methods": {
+            "DeltaOp": [
+              {
+                "sig": "TargetReadable(permissions *PeerPermissions, peer PeerId) bool",
+                "doc": "TargetReadable reports whether peer may read every node this op names. Ops targeting an unreadable node are omitted from a permission-filtered delta."
+              }
+            ]
+          },
+          "envelope": false
         }
       }
     }

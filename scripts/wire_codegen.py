@@ -600,6 +600,8 @@ def _go_type(expr: dict, types: dict[str, dict]) -> str:
 
 
 def render_go(surface: dict, target: dict) -> str:
+    if any(t["kind"] == "union" for t in surface["types"]):
+        return _render_go_unions(surface, target)
     _require_lowerable(surface, "go")
     types = _types_by_name(surface)
     has_enum = any(t["kind"] == "enum" for t in surface["types"])
@@ -747,6 +749,537 @@ def render_go(surface: dict, target: dict) -> str:
             lines.append("\treturn r, nil")
             lines.append("}")
     return "\n".join(lines) + "\n"
+
+
+# Go lowering for surfaces with unions (#lzwiremodel6). Receipts keep the
+# struct-tag path above; this path builds JSON by hand so it can carry
+# interface-typed union fields, flattened variant bodies, optional fields, and
+# u64 values held in a binding's signed 64-bit types.
+
+_GO_UNION_HELPERS = {
+    "core": [
+        "// {p}Field is one key of a JSON object, written in declaration order.",
+        "type {p}Field struct {",
+        "\tname  string",
+        "\tvalue any",
+        "}",
+        "",
+        "// {p}Object writes a JSON object whose keys keep declaration order.",
+        "func {p}Object(fields []{p}Field) ([]byte, error) {",
+        "\tvar buf bytes.Buffer",
+        "\tbuf.WriteByte('{')",
+        "\tfor i, f := range fields {",
+        "\t\tif i > 0 {",
+        "\t\t\tbuf.WriteByte(',')",
+        "\t\t}",
+        "\t\tkey, err := json.Marshal(f.name)",
+        "\t\tif err != nil {",
+        "\t\t\treturn nil, err",
+        "\t\t}",
+        "\t\tvalue, err := json.Marshal(f.value)",
+        "\t\tif err != nil {",
+        "\t\t\treturn nil, err",
+        "\t\t}",
+        "\t\tbuf.Write(key)",
+        "\t\tbuf.WriteByte(':')",
+        "\t\tbuf.Write(value)",
+        "\t}",
+        "\tbuf.WriteByte('}')",
+        "\treturn buf.Bytes(), nil",
+        "}",
+        "",
+        "// {p}Tagged wraps an encoded body as the externally-tagged {tag: body}.",
+        "func {p}Tagged(tag string, body any) ([]byte, error) {",
+        "\treturn {p}Object([]{p}Field{{tag, body}})",
+        "}",
+        "",
+        "// {p}Fields decodes a JSON object whose keys are every required field and",
+        "// any optional ones, rejecting an unknown or missing key.",
+        "func {p}Fields(name string, data []byte, required, optional []string) (map[string]json.RawMessage, error) {",
+        "\ttrimmed := bytes.TrimSpace(data)",
+        "\tif len(trimmed) == 0 || trimmed[0] != '{' {",
+        "\t\treturn nil, fmt.Errorf(\"%s: expected an object, got %s\", name, trimmed)",
+        "\t}",
+        "\tvar fields map[string]json.RawMessage",
+        "\tif err := json.Unmarshal(trimmed, &fields); err != nil {",
+        "\t\treturn nil, fmt.Errorf(\"%s: %w\", name, err)",
+        "\t}",
+        "\tfor _, key := range required {",
+        "\t\tif _, ok := fields[key]; !ok {",
+        "\t\t\treturn nil, fmt.Errorf(\"%s: missing field %q\", name, key)",
+        "\t\t}",
+        "\t}",
+        "\tunknown := make([]string, 0)",
+        "\tfor key := range fields {",
+        "\t\tif !{p}Contains(required, key) && !{p}Contains(optional, key) {",
+        "\t\t\tunknown = append(unknown, key)",
+        "\t\t}",
+        "\t}",
+        "\tif len(unknown) > 0 {",
+        "\t\tsort.Strings(unknown)",
+        "\t\treturn nil, fmt.Errorf(\"%s: unknown field %q\", name, unknown[0])",
+        "\t}",
+        "\treturn fields, nil",
+        "}",
+        "",
+        "func {p}Contains(keys []string, key string) bool {",
+        "\tfor _, k := range keys {",
+        "\t\tif k == key {",
+        "\t\t\treturn true",
+        "\t\t}",
+        "\t}",
+        "\treturn false",
+        "}",
+        "",
+        "// {p}IsNull reports whether raw is the JSON null literal.",
+        "func {p}IsNull(raw json.RawMessage) bool {",
+        "\treturn bytes.Equal(bytes.TrimSpace(raw), []byte(\"null\"))",
+        "}",
+        "",
+        "// {p}Tag splits an externally-tagged single-key object.",
+        "func {p}Tag(name string, raw json.RawMessage) (string, json.RawMessage, error) {",
+        "\ttrimmed := bytes.TrimSpace(raw)",
+        "\tif len(trimmed) == 0 || trimmed[0] != '{' {",
+        "\t\treturn \"\", nil, fmt.Errorf(\"%s: expected a single-key object, got %s\", name, trimmed)",
+        "\t}",
+        "\tvar tagged map[string]json.RawMessage",
+        "\tif err := json.Unmarshal(trimmed, &tagged); err != nil {",
+        "\t\treturn \"\", nil, fmt.Errorf(\"%s: %w\", name, err)",
+        "\t}",
+        "\tif len(tagged) != 1 {",
+        "\t\treturn \"\", nil, fmt.Errorf(\"%s: expected a single-key object, got %d keys\", name, len(tagged))",
+        "\t}",
+        "\tfor tag, body := range tagged {",
+        "\t\treturn tag, body, nil",
+        "\t}",
+        "\treturn \"\", nil, fmt.Errorf(\"%s: expected a single-key object\", name)",
+        "}",
+    ],
+    "string": [
+        "func {p}String(name string, raw json.RawMessage) (string, error) {",
+        "\ttrimmed := bytes.TrimSpace(raw)",
+        "\tif len(trimmed) == 0 || trimmed[0] != '\"' {",
+        "\t\treturn \"\", fmt.Errorf(\"%s: expected a string, got %s\", name, trimmed)",
+        "\t}",
+        "\tvar s string",
+        "\tif err := json.Unmarshal(trimmed, &s); err != nil {",
+        "\t\treturn \"\", fmt.Errorf(\"%s: %w\", name, err)",
+        "\t}",
+        "\treturn s, nil",
+        "}",
+    ],
+    "u64": [
+        "// {p}U64 decodes an unsigned integer literal: digits only, no sign, fraction,",
+        "// exponent or leading zero, and at most 2^64-1.",
+        "func {p}U64(name string, raw json.RawMessage) (uint64, error) {",
+        "\ttrimmed := string(bytes.TrimSpace(raw))",
+        "\tvalid := trimmed != \"\" && (trimmed == \"0\" || trimmed[0] != '0')",
+        "\tfor _, c := range trimmed {",
+        "\t\tif c < '0' || c > '9' {",
+        "\t\t\tvalid = false",
+        "\t\t}",
+        "\t}",
+        "\tif !valid {",
+        "\t\treturn 0, fmt.Errorf(\"%s: expected an unsigned integer, got %s\", name, trimmed)",
+        "\t}",
+        "\tv, err := strconv.ParseUint(trimmed, 10, 64)",
+        "\tif err != nil {",
+        "\t\treturn 0, fmt.Errorf(\"%s: expected an unsigned integer in 0..=2^64-1, got %s\", name, trimmed)",
+        "\t}",
+        "\treturn v, nil",
+        "}",
+    ],
+    "int64": [
+        "// {p}Int64 decodes a u64 into a signed 64-bit field. A value past",
+        "// 2^63-1 is refused rather than wrapped: a binding that cannot represent a",
+        "// wire value exactly must reject the frame (protocol.md § NodeId / PeerId).",
+        "func {p}Int64(name string, raw json.RawMessage) (int64, error) {",
+        "\tv, err := {p}U64(name, raw)",
+        "\tif err != nil {",
+        "\t\treturn 0, err",
+        "\t}",
+        "\tif v > math.MaxInt64 {",
+        "\t\treturn 0, fmt.Errorf(\"%s: %d exceeds this binding's int64 range\", name, v)",
+        "\t}",
+        "\treturn int64(v), nil",
+        "}",
+        "",
+        "// {p}CheckInt64 refuses to encode a negative value as a u64.",
+        "func {p}CheckInt64(name string, v int64) error {",
+        "\tif v < 0 {",
+        "\t\treturn fmt.Errorf(\"%s: %d is negative; the wire type is u64\", name, v)",
+        "\t}",
+        "\treturn nil",
+        "}",
+    ],
+    "bytes": [
+        "// {p}Bytes decodes serialized bytes from a JSON array of u8 (never base64).",
+        "func {p}Bytes(name string, raw json.RawMessage) ([]byte, error) {",
+        "\titems, err := {p}List(name, raw)",
+        "\tif err != nil {",
+        "\t\treturn nil, err",
+        "\t}",
+        "\tout := make([]byte, len(items))",
+        "\tfor i, item := range items {",
+        "\t\tv, err := {p}U64(name, item)",
+        "\t\tif err != nil || v > 255 {",
+        "\t\t\treturn nil, fmt.Errorf(\"%s: expected an array of bytes (0..=255), got %s\", name, bytes.TrimSpace(raw))",
+        "\t\t}",
+        "\t\tout[i] = byte(v)",
+        "\t}",
+        "\treturn out, nil",
+        "}",
+        "",
+        "// {p}ByteArray encodes bytes as a JSON array of u8; empty is [].",
+        "func {p}ByteArray(b []byte) []int {",
+        "\tout := make([]int, len(b))",
+        "\tfor i, x := range b {",
+        "\t\tout[i] = int(x)",
+        "\t}",
+        "\treturn out",
+        "}",
+    ],
+    "list": [
+        "func {p}List(name string, raw json.RawMessage) ([]json.RawMessage, error) {",
+        "\ttrimmed := bytes.TrimSpace(raw)",
+        "\tif len(trimmed) == 0 || trimmed[0] != '[' {",
+        "\t\treturn nil, fmt.Errorf(\"%s: expected an array, got %s\", name, trimmed)",
+        "\t}",
+        "\tvar items []json.RawMessage",
+        "\tif err := json.Unmarshal(trimmed, &items); err != nil {",
+        "\t\treturn nil, fmt.Errorf(\"%s: %w\", name, err)",
+        "\t}",
+        "\treturn items, nil",
+        "}",
+    ],
+}
+
+
+def _go_ident(snake_name: str) -> str:
+    name = pascal(snake_name)
+    return "f" + name
+
+
+def _render_go_unions(surface: dict, target: dict) -> str:
+    emitted, bodies = _py_plan(surface, target, "go")
+    external: dict[str, str] = target.get("external", {})
+    types = _types_by_name(surface)
+    variant_fields: dict[str, str] = target.get("variant_fields", {})
+    int64: dict[str, str] = target.get("int64", {})
+    methods: dict[str, list[dict]] = target.get("interface_methods", {})
+    p = target.get("helper_prefix", f"{surface['name']}Wire")
+    for t in emitted:
+        if t["kind"] == "alias" and t["name"] not in int64:
+            raise UnsupportedSchema(f"go: alias {t['name']} needs an `int64` mapping to a hand-written type")
+        if t["kind"] == "envelope":
+            raise UnsupportedSchema(f"go: envelope {t['name']} is not lowered (set `envelope: false`)")
+        if t["kind"] == "enum":
+            raise UnsupportedSchema(f"go: enum {t['name']} in a union surface is not lowered yet")
+    used: set[str] = {"core"}
+
+    def go_type(expr: dict, slot: str) -> str:
+        kind = expr["kind"]
+        if kind == "u64":
+            if slot in int64:
+                used.add("int64")
+                return int64[slot]
+            return "uint64"
+        if kind == "string":
+            return "string"
+        if kind == "bool":
+            raise UnsupportedSchema("go: bool in a union surface is not lowered yet")
+        if kind == "bytes":
+            return "[]byte"
+        if kind == "ref":
+            if expr["name"] in int64:
+                used.add("int64")
+                return int64[expr["name"]]
+            return expr["name"]
+        if kind == "list":
+            return "[]" + go_type(expr["items"], slot)
+        if kind == "nullable":
+            inner = go_type(expr["inner"], slot)
+            return inner if _is_iface(expr["inner"]) else "*" + inner
+        raise UnsupportedSchema(f"go: unsupported type kind {kind}")
+
+    def _is_iface(expr: dict) -> bool:
+        return expr["kind"] == "ref" and types[expr["name"]]["kind"] == "union"
+
+    def i64_slot(expr: dict, slot: str) -> bool:
+        return (expr["kind"] == "u64" and slot in int64) or (expr["kind"] == "ref" and expr["name"] in int64)
+
+    def encode(expr: dict, src: str) -> str:
+        kind = expr["kind"]
+        if kind == "bytes":
+            used.add("bytes")
+            return f"{p}ByteArray({src})"
+        if kind == "list" and expr["items"]["kind"] != "bytes":
+            return f"{p}NonNil({src})"
+        return src
+
+    def decode(expr: dict, raw: str, label: str, slot: str, var: str) -> list[str]:
+        """Statements assigning the decoded value of `raw` to `var` (declared)."""
+        kind = expr["kind"]
+        fail = "\t\treturn nil, err"
+        if i64_slot(expr, slot):
+            return [f'\t{var}, err := {p}Int64("{label}", {raw})', "\tif err != nil {", fail, "\t}"]
+        if kind == "u64":
+            used.add("u64")
+            return [f'\t{var}, err := {p}U64("{label}", {raw})', "\tif err != nil {", fail, "\t}"]
+        if kind == "string":
+            used.add("string")
+            return [f'\t{var}, err := {p}String("{label}", {raw})', "\tif err != nil {", fail, "\t}"]
+        if kind == "bytes":
+            used.add("bytes")
+            used.add("list")
+            return [f'\t{var}, err := {p}Bytes("{label}", {raw})', "\tif err != nil {", fail, "\t}"]
+        if kind == "ref":
+            name = expr["name"]
+            if types[name]["kind"] == "union":
+                return [f"\t{var}, err := unmarshal{name}({raw})", "\tif err != nil {", fail, "\t}"]
+            return [
+                f"\tvar {var} {name}",
+                f"\tif err := json.Unmarshal({raw}, &{var}); err != nil {{",
+                f'\t\treturn nil, fmt.Errorf("{label}: %w", err)',
+                "\t}",
+            ]
+        if kind == "list":
+            used.add("list")
+            item_type = go_type(expr["items"], slot)
+            lines = [
+                f'\t{var}Items, err := {p}List("{label}", {raw})',
+                "\tif err != nil {",
+                fail,
+                "\t}",
+                f"\t{var} := make([]{item_type}, len({var}Items))",
+                f"\tfor i, item := range {var}Items {{",
+            ]
+            inner = decode(expr["items"], "item", f"{label}[]", slot, "v")
+            lines += ["\t" + line for line in inner]
+            lines += [f"\t\t{var}[i] = v", "\t}"]
+            return lines
+        raise UnsupportedSchema(f"go: unsupported type kind {kind}")
+
+    def field_block(owner: str, fields: list[dict]) -> list[str]:
+        lines = []
+        for f in fields:
+            slot = f"{owner}.{f['name']}"
+            go_name = pascal(f["name"])
+            ftype = go_type(f["type"], slot)
+            if f["presence"] == "optional" and not ftype.startswith("*") and not _is_iface(f["type"]):
+                ftype = "*" + ftype
+            lines += _comment("\t// ", f"{go_name}: {f['doc']}", 80)
+            lines.append(f"\t{go_name} {ftype}")
+        return lines
+
+    def marshal_body(owner: str, fields: list[dict], recv: str) -> list[str]:
+        lines = []
+        for f in fields:
+            slot = f"{owner}.{f['name']}"
+            if i64_slot(f["type"], slot) and f["presence"] == "required":
+                lines += [
+                    f'\tif err := {p}CheckInt64("{owner}.{f["name"]}", {recv}.{pascal(f["name"])}); err != nil {{',
+                    "\t\treturn nil, err",
+                    "\t}",
+                ]
+        lines.append(f"\tfields := []{p}Field{{")
+        for f in fields:
+            if f["presence"] == "required":
+                lines.append(f'\t\t{{"{f["name"]}", {encode(f["type"], recv + "." + pascal(f["name"]))}}},')
+        lines.append("\t}")
+        for f in fields:
+            if f["presence"] == "optional":
+                go_name = pascal(f["name"])
+                lines += [
+                    f"\tif {recv}.{go_name} != nil {{",
+                    f'\t\tfields = append(fields, {p}Field{{"{f["name"]}", {recv}.{go_name}}})',
+                    "\t}",
+                ]
+        return lines
+
+    def unmarshal_body(owner: str, fields: list[dict], data: str) -> list[str]:
+        req = ", ".join(f'"{f["name"]}"' for f in fields if f["presence"] == "required")
+        opt = ", ".join(f'"{f["name"]}"' for f in fields if f["presence"] == "optional")
+        lines = [
+            f'\tf, err := {p}Fields("{owner}", {data}, []string{{{req}}}, {"[]string{" + opt + "}" if opt else "nil"})',
+            "\tif err != nil {",
+            "\t\treturn nil, err",
+            "\t}",
+        ]
+        for f in fields:
+            var = _go_ident(f["name"])
+            slot = f"{owner}.{f['name']}"
+            label = f"{owner}.{f['name']}"
+            if f["presence"] == "optional":
+                inner = f["type"]["inner"] if f["type"]["kind"] == "nullable" else f["type"]
+                ftype = go_type(f["type"], slot)
+                if not ftype.startswith("*") and not _is_iface(f["type"]):
+                    ftype = "*" + ftype
+                lines += [
+                    f"\tvar {var} {ftype}",
+                    f'\tif raw, ok := f["{f["name"]}"]; ok && !{p}IsNull(raw) {{',
+                ]
+                lines += ["\t" + line for line in decode(inner, "raw", label, slot, "v")]
+                lines += [f"\t\t{var} = &v" if ftype.startswith("*") else f"\t\t{var} = v", "\t}"]
+            else:
+                lines += decode(f["type"], f'f["{f["name"]}"]', label, slot, var)
+        return lines
+
+    def construct(name: str, fields: list[dict]) -> str:
+        args = ", ".join(f"{pascal(f['name'])}: {_go_ident(f['name'])}" for f in fields)
+        return f"{name}{{{args}}}"
+
+    body: list[str] = []
+    for t in emitted:
+        name = t["name"]
+        if t["kind"] == "alias":
+            continue
+        body.append("")
+        if t["kind"] == "union":
+            units = [v for v in t["variants"] if v["payload"] is None]
+            body += _comment("// ", f"{name}: {t['doc']}", 80)
+            body += [f"type {name} interface {{", "\tjson.Marshaler"]
+            for m in methods.get(name, []):
+                body += _comment("\t// ", m["doc"], 80)
+                body.append(f"\t{m['sig']}")
+            body += [f"\tis{name}()", "}"]
+            body += [
+                "",
+                f"// unmarshal{name} decodes a {name} strictly: exactly one known variant.",
+                f"func unmarshal{name}(raw json.RawMessage) ({name}, error) {{",
+            ]
+            if units:
+                body += [
+                    "\ttrimmed := bytes.TrimSpace(raw)",
+                    "\tif len(trimmed) > 0 && trimmed[0] == '\"' {",
+                    "\t\tvar s string",
+                    "\t\tif err := json.Unmarshal(trimmed, &s); err != nil {",
+                    "\t\t\treturn nil, err",
+                    "\t\t}",
+                    "\t\tswitch s {",
+                ]
+                for v in units:
+                    body += [f'\t\tcase "{v["tag"]}":', f"\t\t\treturn {name}{v['tag']}{{}}, nil"]
+                body += ["\t\t}", f'\t\treturn nil, fmt.Errorf("unknown {name} unit variant: %s", s)', "\t}"]
+            body += [
+                f'\ttag, inner, err := {p}Tag("{name}", raw)',
+                "\tif err != nil {",
+                "\t\treturn nil, err",
+                "\t}",
+                "\tswitch tag {",
+            ]
+            for v in t["variants"]:
+                if v["payload"] is not None:
+                    body += [f'\tcase "{v["tag"]}":', f"\t\treturn unmarshal{name}{v['tag']}(inner)"]
+            body += ["\t}", f'\treturn nil, fmt.Errorf("unknown {name} variant: %s", tag)', "}"]
+            for v in t["variants"]:
+                vname = f"{name}{v['tag']}"
+                key = f"{name}.{v['tag']}"
+                body.append("")
+                body += _comment("// ", f"{vname}: {v['doc']}", 80)
+                if v["payload"] is None:
+                    body += [
+                        f"type {vname} struct{{}}",
+                        "",
+                        f"func ({vname}) is{name}() {{}}",
+                        "",
+                        f"// MarshalJSON emits the bare unit tag \"{v['tag']}\".",
+                        f'func ({vname}) MarshalJSON() ([]byte, error) {{ return json.Marshal("{v["tag"]}") }}',
+                    ]
+                    continue
+                if key in variant_fields:
+                    fname = variant_fields[key]
+                    ftype = go_type(v["payload"], key)
+                    body += [f"type {vname} struct {{", f"\t{fname} {ftype}", "}"]
+                    body += ["", f"func ({vname}) is{name}() {{}}", ""]
+                    body += [
+                        f"// MarshalJSON emits {{\"{v['tag']}\": ...}}.",
+                        f"func (v {vname}) MarshalJSON() ([]byte, error) {{",
+                        f'\treturn {p}Tagged("{v["tag"]}", {encode(v["payload"], "v." + fname)})',
+                        "}",
+                        "",
+                        f"func unmarshal{vname}(data json.RawMessage) ({name}, error) {{",
+                    ]
+                    body += decode(v["payload"], "data", key, key, "value")
+                    body += [f"\treturn {vname}{{{fname}: value}}, nil", "}"]
+                    continue
+                record = types[v["payload"]["name"]]
+                body += [f"type {vname} struct {{", *field_block(key, record["fields"]), "}"]
+                body += ["", f"func ({vname}) is{name}() {{}}", ""]
+                body += [
+                    f"// MarshalJSON emits {{\"{v['tag']}\": {{...}}}}, omitting an absent optional field.",
+                    f"func (o {vname}) MarshalJSON() ([]byte, error) {{",
+                    *marshal_body(key, record["fields"], "o"),
+                    f"\tinner, err := {p}Object(fields)",
+                    "\tif err != nil {",
+                    "\t\treturn nil, err",
+                    "\t}",
+                    f'\treturn {p}Tagged("{v["tag"]}", json.RawMessage(inner))',
+                    "}",
+                    "",
+                    f"func unmarshal{vname}(data json.RawMessage) ({name}, error) {{",
+                    *unmarshal_body(key, record["fields"], "data"),
+                    f"\treturn {construct(vname, record['fields'])}, nil",
+                    "}",
+                ]
+        elif t["kind"] == "record":
+            fields = t["fields"]
+            body += _comment("// ", f"{name}: {t['doc']}", 80)
+            body += [f"type {name} struct {{", *field_block(name, fields), "}"]
+            un = unmarshal_body(name, fields, "data")
+            un = [line.replace("return nil, err", "return err").replace("return nil, fmt.Errorf", "return fmt.Errorf") for line in un]
+            body += [
+                "",
+                f"// MarshalJSON emits {name}, writing absent lists as [] rather than null.",
+                f"func (r {name}) MarshalJSON() ([]byte, error) {{",
+                *marshal_body(name, fields, "r"),
+                f"\treturn {p}Object(fields)",
+                "}",
+                "",
+                f"// UnmarshalJSON decodes {name} strictly: the declared keys only, each well-typed.",
+                f"func (r *{name}) UnmarshalJSON(data []byte) error {{",
+                *un,
+                f"\t*r = {construct(name, fields)}",
+                "\treturn nil",
+                "}",
+            ]
+    if any("NonNil" in line for line in body):
+        body += [
+            "",
+            f"// {p}NonNil returns s, or an empty slice when s is nil, so it encodes as [].",
+            f"func {p}NonNil[T any](s []T) []T {{",
+            "\tif s == nil {",
+            "\t\treturn []T{}",
+            "\t}",
+            "\treturn s",
+            "}",
+        ]
+    if "bytes" in used:
+        used.add("list")
+    if "int64" in used:
+        used.add("u64")
+    helpers: list[str] = []
+    for key in ("core", "string", "u64", "int64", "bytes", "list"):
+        if key in used:
+            helpers += [""] + [line.replace("{p}", p) for line in _GO_UNION_HELPERS[key]]
+    imports = ["bytes", "encoding/json", "fmt"]
+    if "int64" in used:
+        imports.append("math")
+    imports.append("sort")
+    if "u64" in used:
+        imports.append("strconv")
+    lines = [
+        f"// Code generated by lazily-spec {GENERATOR}. DO NOT EDIT.",
+        f"// Surface `{surface['name']}` from {surface['schema']}, model sha256:{surface['model_sha256']}.",
+        "// Regenerate from lazily-spec with `make wire-codegen`; semantics stay hand-written.",
+        "",
+        f"package {target['package']}",
+        "",
+        "import (",
+        *[f'\t"{i}"' for i in imports],
+        ")",
+    ]
+    return "\n".join(lines + helpers + body) + "\n"
 
 
 # ---------------------------------------------------------------------------
@@ -953,7 +1486,7 @@ _PY_KINDS = frozenset({"enum", "record", "envelope", "union", "alias"})
 _PY_EXPRS = frozenset({"string", "u64", "bool", "ref", "nullable", "list", "bytes"})
 
 
-def _py_plan(surface: dict, target: dict) -> tuple[list[dict], dict[str, dict]]:
+def _py_plan(surface: dict, target: dict, backend: str = "python") -> tuple[list[dict], dict[str, dict]]:
     """(declarations to emit in model order, flattened union-variant bodies).
 
     A union variant whose payload is a record is lowered with the record's fields
@@ -967,7 +1500,7 @@ def _py_plan(surface: dict, target: dict) -> tuple[list[dict], dict[str, dict]]:
     variant_fields: dict[str, str] = target.get("variant_fields", {})
     unknown = sorted((set(external) - set(types)) | {k.split(".")[0] for k in variant_fields} - set(types))
     if unknown:
-        raise UnsupportedSchema(f"python: target names types the surface does not declare: {unknown}")
+        raise UnsupportedSchema(f"{backend}: target names types the surface does not declare: {unknown}")
     bodies: dict[str, dict] = {}
     for t in surface["types"]:
         if t["kind"] != "union":
@@ -977,21 +1510,21 @@ def _py_plan(surface: dict, target: dict) -> tuple[list[dict], dict[str, dict]]:
             key = f"{t['name']}.{v['tag']}"
             if payload is None:
                 if key in variant_fields:
-                    raise UnsupportedSchema(f"python: unit variant {key} carries no field to name")
+                    raise UnsupportedSchema(f"{backend}: unit variant {key} carries no field to name")
                 continue
             ref = payload["name"] if payload["kind"] == "ref" else None
             if key in variant_fields:
                 continue
             if ref is None or ref in external or types[ref]["kind"] != "record":
                 raise UnsupportedSchema(
-                    f"python: variant {key} carries a non-record payload; name its field in `variant_fields`"
+                    f"{backend}: variant {key} carries a non-record payload; name its field in `variant_fields`"
                 )
             bodies[ref] = types[ref]
     for t in surface["types"]:
         for _label, expr in ([] if t["kind"] == "union" else _type_exprs(t)):
             for ref in _refs(expr):
                 if ref in bodies:
-                    raise UnsupportedSchema(f"python: {ref} is a flattened variant body and a field type ({t['name']})")
+                    raise UnsupportedSchema(f"{backend}: {ref} is a flattened variant body and a field type ({t['name']})")
 
     envelope_on = target.get("envelope", True)
     referenced = {
@@ -1023,7 +1556,7 @@ def _py_plan(surface: dict, target: dict) -> tuple[list[dict], dict[str, dict]]:
     ]
     _require_lowerable(
         surface,
-        "python",
+        backend,
         types=emitted + list(bodies.values()),
         kinds=_PY_KINDS,
         exprs=_PY_EXPRS,
@@ -1031,7 +1564,7 @@ def _py_plan(surface: dict, target: dict) -> tuple[list[dict], dict[str, dict]]:
     )
     for t in emitted:
         if t["kind"] == "alias" and t["target"]["kind"] not in ("string", "u64", "bool"):
-            raise UnsupportedSchema(f"python: alias {t['name']} must name a scalar")
+            raise UnsupportedSchema(f"{backend}: alias {t['name']} must name a scalar")
     return emitted, bodies
 
 
