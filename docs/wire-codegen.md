@@ -13,7 +13,8 @@ lazily has two halves that need different treatment across bindings:
 
 ```text
 schemas/*.json ──► codegen/wire-model.json ──► per-binding backend ──► generated wire file
- (normative)        (golden, committed)        (rust, go, python)     (committed in the binding)
+ (normative)        (golden, committed)        (rust, go, python,     (committed in the binding)
+                                                kotlin)
 ```
 
 1. `codegen/surfaces.json` names each generated surface: its source schema,
@@ -28,17 +29,17 @@ schemas/*.json ──► codegen/wire-model.json ──► per-binding backend �
 
 ## Model kinds
 
-| Kind | Schema shape | Rust | Go | Python |
-|---|---|---|---|---|
-| `string` | `"type": "string"` | `String` | `string` | `str` |
-| `u64` | `"type": "integer", "minimum": 0` | `u64` | `uint64` | `int`, range-checked to `0..=2^64-1` |
-| `bool` | `"type": "boolean"` | `bool` | `bool` | `bool` |
-| `list` | `"type": "array"` + `items` | `Vec<T>` | `[]T` (marshals `[]`, never `null`) | `list[T]` |
-| `nullable` | `oneOf: [null, T]` (inline or a `$defs` alias) | `Option<T>` | `*T` | `T \| None` |
-| `ref` | local `#/$defs/X` record or enum | `X` | `X` | `X` |
-| `enum` | string `enum` + `x-lazily-enum-docs` | `enum`, `rename_all = "snake_case"` when every value round-trips | string type, constants, `…FromWire`, rejecting `UnmarshalJSON` | `Enum` with `from_wire` / `to_wire` |
-| `record` | closed object (`additionalProperties: false`) | `struct` with optional serde derives | `struct` + `…FromWire` | frozen, slotted `dataclass` with `from_wire` / `to_wire` |
-| `envelope` | root `x-lazily-envelope`, externally tagged | single-variant `enum` | not lowered (callers decode the tagged body) | lowered onto the variant record, whose codec carries the tag |
+| Kind | Schema shape | Rust | Go | Python | Kotlin |
+|---|---|---|---|---|---|
+| `string` | `"type": "string"` | `String` | `string` | `str` | `String`, `min_length` checked in `init` |
+| `u64` | `"type": "integer", "minimum": 0` | `u64` | `uint64` | `int`, range-checked to `0..=2^64-1` | `ULong`; the decoder accepts only a bare integer literal in `0..=2^64-1` |
+| `bool` | `"type": "boolean"` | `bool` | `bool` | `bool` | `Boolean` |
+| `list` | `"type": "array"` + `items` | `Vec<T>` | `[]T` (marshals `[]`, never `null`) | `list[T]` | `List<T>` (defaults to empty) |
+| `nullable` | `oneOf: [null, T]` (inline or a `$defs` alias) | `Option<T>` | `*T` | `T \| None` | `T?` |
+| `ref` | local `#/$defs/X` record or enum | `X` | `X` | `X` | `X` |
+| `enum` | string `enum` + `x-lazily-enum-docs` | `enum`, `rename_all = "snake_case"` when every value round-trips | string type, constants, `…FromWire`, rejecting `UnmarshalJSON` | `Enum` with `from_wire` / `to_wire` | `enum class` with `wireName` and a rejecting `fromWire` |
+| `record` | closed object (`additionalProperties: false`) | `struct` with optional serde derives | `struct` + `…FromWire` | frozen, slotted `dataclass` with `from_wire` / `to_wire` | `data class` with `toJson` and a strict companion `fromJson` |
+| `envelope` | root `x-lazily-envelope`, externally tagged | single-variant `enum` | not lowered (callers decode the tagged body) | lowered onto the variant record, whose codec carries the tag | `sealed interface`, one `data class` per variant, with `encodeJson` / `decodeJson` |
 
 Python cannot add methods to a generated class from another module the way a
 Rust `impl` block or a Go method can. Its target therefore names
@@ -47,6 +48,16 @@ inherits from. For receipts, `ReceiptOutcomeSemantics` supplies `is_terminal`
 and `CausalReceiptsSemantics` supplies `group_by_causation` and the JSON byte
 helpers. Generated Python is marked `# fmt: off`, because the generator
 cannot depend on a formatter.
+
+Kotlin needs no mixins: extension members add behaviour to a generated class
+from another file. Every generated record and envelope declares a `companion
+object`, so hand-written factories such as `CausalReceipt.observed(...)` are
+extensions on the companion and keep their call syntax. The Kotlin target names
+`variant_fields`, the property each envelope variant wraps its record in
+(`CausalReceiptsMessage.batch` for receipts; `value` by default). Generated
+Kotlin goes through lazily-kt's `spotlessCheck` like any other source, so the
+backend emits exactly the layout ktlint produces, and a formatter change shows
+up as generated-file drift.
 
 A field's *presence* is modelled separately from its type: a `required` +
 `nullable` field is always on the wire and is `null` when absent, while an
@@ -68,10 +79,13 @@ Every generated decoder enforces what the schema says about a record's keys:
 | Rust | `serde(deny_unknown_fields)` | `deserialize_with = "required_nullable"` (a bare `Option` defaults a missing key to `None`) |
 | Go | `UnmarshalJSON` compares the exact key set first; `encoding/json` alone ignores unknown keys and matches keys case-insensitively | same check |
 | Python | `from_wire` compares the exact key set and type-checks each value | same check |
+| Kotlin | `fromJson` compares the exact key set and type-checks each value; kotlinx.serialization's `jsonPrimitive.content` alone reads a number as a string and a string as a number | same check |
 
 This was a decision, not a refactor. Before `#lzwiremodel2`, Rust and Go
 accepted unknown keys and a missing `reason` / `payload_hash`, and Python also
-accepted a missing `receipts` list. The case for strict:
+accepted a missing `receipts` list. Until `#lzwiremodel3`, Kotlin accepted
+unknown keys, a missing `reason` / `payload_hash`, and a number where a
+string belongs. The case for strict:
 
 - Every receipt in the conformance corpus carries all seven keys and no
   others, so no fixture changes.
@@ -114,22 +128,33 @@ bindings' published `main`.
 
 | Surface | Schema | Bindings |
 |---|---|---|
-| `receipts` | `schemas/receipts.json` | lazily-rs `src/generated/receipts.rs`, lazily-go `receipts_wire_gen.go`, lazily-py `src/lazily/_receipts_wire_gen.py` |
+| `receipts` | `schemas/receipts.json` | lazily-rs `src/generated/receipts.rs`, lazily-go `receipts_wire_gen.go`, lazily-py `src/lazily/_receipts_wire_gen.py`, lazily-kt `src/main/kotlin/io/github/lazily/ReceiptsWireGen.kt` |
 
-Lowering the receipts surface found one real wire mismatch. Go had
-`generation` as `int64`, which accepts negative values that the schema
-forbids. Go now decodes it as `uint64`. The command plane keeps its `int64`
-generations and compares the two without wrapping either side.
+Lowering the receipts surface found the same real wire mismatch twice. Go
+had `generation` as `int64` and Kotlin had it as `Long`; both accept negative
+values that the schema forbids, and neither can hold a generation past
+`2^63-1`. Go now decodes it as `uint64` and Kotlin as `ULong`. Both command
+planes keep their signed generations and compare the two without wrapping
+either side (`receiptGenerationMatches`), reporting a receipt generation past
+the signed maximum capped rather than wrapped.
 
 ## When to add a surface
 
 Add a surface only when the generator removes more hand-written code than it
-adds. After receipts in three bindings, the generator does not pass that test:
+adds. After receipts in four bindings, the generator still does not pass that
+test:
 
 - **Removed:** about 170 hand-written lines across Rust and Go, plus 141 from
-  lazily-py `ipc.py`. 81 of those Python lines moved into
-  `_receipt_semantics.py`, because they are behaviour, not wire format.
-- **Added:** about 960 lines of generator.
+  lazily-py `ipc.py`, plus 177 from lazily-kt `Receipt.kt`. 81 of the Python
+  lines and 58 of the Kotlin lines moved back as hand-written semantics,
+  because they are behaviour, not wire format.
+- **Added:** about 1,290 lines of generator, of which the Kotlin backend is
+  about 330.
+
+Each binding's backend costs roughly twice the hand-written codec it removes.
+What a binding gains is strictness and one source of truth, not fewer lines:
+Kotlin's hand-written decoder accepted unknown keys, missing nullable keys,
+numbers in string fields, and negative generations.
 
 Nor is any second surface a cheap addition. Each candidate needs a model kind
 that does not exist yet, so the generator must grow before it can remove
@@ -142,6 +167,9 @@ anything:
 | `message-passing.json` | `CommandId`, a newtype alias |
 | `snapshot.json` | declarations without a `description` |
 
-The next binding (js or kt) on the receipts surface costs one backend and
-removes a hand-written codec. That is a better trade than any second surface,
-until multi-variant unions are modelled.
+lazily-js is the remaining large binding on receipts. Its codec lives in the
+`index.js` monolith beside a hand-written `index.d.ts`, so a js backend must
+generate both and split the module, which costs more than the Kotlin backend
+did. Modelling multi-variant tagged unions is the step that unlocks a second
+surface (`delta`, then `reliable-sync`) and is where the generator can start
+removing more than it adds.

@@ -22,6 +22,14 @@
             "ReceiptOutcome": "ReceiptOutcomeSemantics",
             "CausalReceipts": "CausalReceiptsSemantics"
           }
+        },
+        "kotlin": {
+          "repo": "lazily-kt",
+          "path": "src/main/kotlin/io/github/lazily/ReceiptsWireGen.kt",
+          "package": "io.github.lazily",
+          "variant_fields": {
+            "CausalReceipts": "batch"
+          }
         }
       }
     }
