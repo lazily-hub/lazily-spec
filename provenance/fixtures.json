@@ -34,13 +34,13 @@
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/codec/frame_roundtrip_json.json",
-      "sha256": "5e5d9f5d31addd5d1e03c2c047b455db9e3293d94c2f66db182b25290c2bc138"
+      "sha256": "7c29e21a284c86e1d5bd30cd07e1e69ade98e1561eae14b70738c99ef3807f30"
     },
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/codec/frame_roundtrip_msgpack.json",
-      "sha256": "f21b7edaf663610f8c2767c7ed98ea4460ed602394a4d0db357ee1ee5fcdf4aa"
+      "sha256": "765de9f0874c45d7ebbcdbd207700be5e7a5ae33a50317d5c5e0e47ba6a57cd2"
     },
     {
       "license": "Apache-2.0",

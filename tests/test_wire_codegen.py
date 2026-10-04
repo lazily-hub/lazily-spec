@@ -101,9 +101,15 @@ def test_optional_fields_are_modelled_but_not_yet_lowered() -> None:
     surface = _surface(schema)
     reason = next(f for f in _types(surface)["CausalReceipt"]["fields"] if f["name"] == "reason")
     assert reason["presence"] == "optional"
-    for render in wire_codegen.BACKENDS.values():
+    for backend, render in wire_codegen.BACKENDS.items():
+        if backend == "python":
+            continue
         with pytest.raises(UnsupportedSchema, match="optional"):
             render(surface, {"package": "lazily"})
+    # Python lowers a may-be-absent field: omitted when None, absent or null on decode.
+    out = wire_codegen.render_python(surface, PY_TARGET)
+    assert '        if self.reason is not None:\n            body["reason"] = self.reason\n' in out
+    assert 'reason=None if d.get("reason") is None else _wire_str("CausalReceipt.reason", d.get("reason")),' in out
 
 
 def test_rust_backend_lowering() -> None:
@@ -265,11 +271,16 @@ def test_delta_model_carries_unions_aliases_and_shared_defs() -> None:
     assert [v["wire"] for v in types["BlobBackendKind"]["values"]] == ["shm", "arrow", "in_process"]
 
 
-def test_delta_is_modelled_but_no_backend_lowers_it_yet() -> None:
+def test_delta_lowers_only_into_python_so_far() -> None:
     surface = _delta_surface()
-    for render in wire_codegen.BACKENDS.values():
+    for backend, render in wire_codegen.BACKENDS.items():
+        if backend == "python":
+            continue
         with pytest.raises(UnsupportedSchema, match="modelled but not yet lowered"):
             render(surface, {"package": "p"})
+    # Python needs the target to name each non-record variant payload's field.
+    with pytest.raises(UnsupportedSchema, match="variant_fields"):
+        wire_codegen.render_python(surface, {})
 
 
 def _op_branch(schema: dict, tag: str) -> dict:
@@ -532,3 +543,110 @@ def test_check_reports_absent_siblings_as_staged(tmp_path, monkeypatch, capsys) 
     assert wire_codegen.main(["--check"]) == 0
     assert "staged: receipts:rust" in capsys.readouterr().out
     assert wire_codegen.main(["--check", "--require-all"]) == 1
+
+
+# Stand-ins for the two hand-written externals, each reading its declaration
+# exactly as the schema does, so a disagreement below is the GENERATED code's.
+_DELTA_STUBS = '''
+import re as _re
+
+
+class DeltaOpSemantics:
+    __slots__ = ()
+
+
+class DeltaSemantics:
+    __slots__ = ()
+
+
+class IpcValueSemantics:
+    __slots__ = ()
+
+
+class NodeKey:
+    def __init__(self, path):
+        self.path = path
+
+    @classmethod
+    def from_wire(cls, value):
+        if not isinstance(value, str) or not 1 <= len(value) <= 1024:
+            raise ValueError("NodeKey")
+        if _re.search(r"^[^/]+(/[^/]+)*$", value) is None:
+            raise ValueError("NodeKey pattern")
+        return cls(value)
+
+    def to_wire(self):
+        return self.path
+
+
+class ShmBlobRef:
+    _REQUIRED = ("offset", "len", "generation", "epoch", "checksum")
+
+    def __init__(self, d):
+        self.d = d
+
+    @classmethod
+    def from_wire(cls, d):
+        if not isinstance(d, dict) or set(cls._REQUIRED) - set(d) or set(d) - {*cls._REQUIRED, "backend"}:
+            raise ValueError("ShmBlobRef keys")
+        for key in cls._REQUIRED:
+            if isinstance(d[key], bool) or not isinstance(d[key], int) or not 0 <= d[key] < 2**64:
+                raise ValueError("ShmBlobRef " + key)
+        if "backend" in d and d["backend"] not in ("shm", "arrow", "in_process"):
+            raise ValueError("ShmBlobRef backend")
+        return cls(d)
+
+    def to_wire(self):
+        return dict(self.d)
+'''
+
+
+def _delta_py_target() -> dict:
+    manifest = json.loads((ROOT / "codegen" / "surfaces.json").read_text())
+    entry = next(s for s in manifest["surfaces"] if s["name"] == "delta")
+    return entry["targets"]["python"]
+
+
+def _exec_delta_python() -> dict:
+    out = wire_codegen.render_python(_delta_surface(), _delta_py_target())
+    for line in out.splitlines():
+        if line.startswith("from ._"):
+            out = out.replace(line + "\n", "")
+    module = types.ModuleType("delta_gen")
+    sys.modules[module.__name__] = module
+    try:
+        source = out.replace("from typing import Any\n", "from typing import Any\n" + _DELTA_STUBS, 1)
+        exec(compile(source, "<generated delta>", "exec"), module.__dict__)
+    finally:
+        del sys.modules[module.__name__]
+    return module.__dict__
+
+
+def test_generated_python_delta_decoder_agrees_with_schema_on_every_corpus_frame() -> None:
+    """The GENERATED Python decoder, not a reading of the model, against the schema."""
+    ns = _exec_delta_python()
+    validator = _delta_validator()
+    checked = accepted = 0
+    disagreements = []
+    for where, frame in _delta_frames():
+        for label, candidate in _perturbations(frame):
+            schema_ok = validator.is_valid(candidate)
+            try:
+                decoded = ns["Delta"].from_wire(candidate["Delta"]) if isinstance(candidate, dict) else None
+                generated_ok = decoded is not None
+            except ValueError:
+                generated_ok = False
+            checked += 1
+            accepted += schema_ok
+            if schema_ok != generated_ok:
+                disagreements.append(f"{where} [{label}]: schema={schema_ok} generated={generated_ok}")
+            elif generated_ok:
+                # What decodes re-encodes to the frame it came from, except that an
+                # explicit `key: null` is the absent form and an encoder omits it.
+                expected = copy.deepcopy(candidate)
+                for op in expected["Delta"]["ops"]:
+                    if op.get("NodeAdd", {}).get("key", "") is None:
+                        del op["NodeAdd"]["key"]
+                assert {"Delta": decoded.to_wire()} == expected, f"{where} [{label}] re-encode"
+    assert not disagreements, "\n".join(disagreements[:20])
+    assert 0 < accepted < checked

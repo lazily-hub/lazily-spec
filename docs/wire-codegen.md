@@ -61,13 +61,15 @@ up as generated-file drift.
 
 A field's *presence* is modelled separately from its type: a `required` +
 `nullable` field is always on the wire and is `null` when absent, while an
-`optional` field may be missing. Open enums and optional fields are already
-modelled, but no backend lowers them yet, so the backends refuse them.
+`optional` field may be missing. Open enums are modelled but no backend lowers
+them yet. Optional fields are lowered by the Python backend only (omitted on
+encode when `None`; absent or `null` on decode); the other backends refuse them.
 
-### Kinds modelled but not yet lowered (`#lzwiremodel4`)
+### Kinds added for `delta` (`#lzwiremodel4`, lowered for Python by `#lzwiremodel5`)
 
-These kinds exist so the `delta` surface can be modelled. Every backend refuses
-them with "modelled but not yet lowered", so no binding generates from them yet.
+These kinds exist so the `delta` surface can be modelled. The Python backend
+lowers `union`, `alias` (of a scalar) and `bytes`; every other backend refuses
+them with "modelled but not yet lowered".
 
 | Kind | Schema shape | Model |
 |---|---|---|
@@ -82,6 +84,34 @@ them with "modelled but not yet lowered", so no binding generates from them yet.
 A variant's doc comes from its `oneOf` branch `description`, else from its
 payload's. A union needs two or more distinct tags, and a branch `title`, when
 present, must equal its tag.
+
+### Python union lowering
+
+A union lowers to a base class plus one frozen, slotted dataclass per variant,
+named `<Union>_<Tag>` (`DeltaOp_CellSet`, `NodeState_Opaque`), which is the
+shape lazily-py's hand-written IPC types already had.
+
+- **Record payloads are flattened.** `CellSet` carries `CellSetBody`; the
+  variant class takes the body's fields directly (`DeltaOp_CellSet(node,
+  payload)`), and the body record is not emitted.
+- **Any other payload is one named field**, which the target names in
+  `variant_fields` (`"IpcValue.Inline": "data"`, `"IpcValue.SharedBlob":
+  "blob"`). A non-record payload without a name is refused.
+- **Unit variants** (`"Opaque"`) are fieldless classes encoding to the bare tag.
+- **`from_wire` on the base** accepts exactly one known tag; each variant
+  decodes its body strictly through `_from_body`.
+
+Three target options shape what is emitted:
+
+| Option | Effect |
+|---|---|
+| `external` | `{"NodeKey": "._wire_scalars"}`: the type is hand-written in that module and keeps its own codec. The generator imports it, never resolves it as an alias, and does not emit declarations reachable only through it (`BlobBackendKind`). |
+| `variant_fields` | field name for each non-record union payload |
+| `envelope: false` | do not emit the envelope; the binding's own message type carries the tag (lazily-py's `IpcMessage`) |
+
+`external` is how decoder rules beyond the schema stay hand-written:
+`NodeKey`'s byte and segment bounds, and `ShmBlobRef`'s `backend: null`
+leniency (`#lzblobbackendstrict`), which the schema rejects.
 
 ## Strict decoding
 
@@ -131,6 +161,9 @@ the generated surface. That includes:
   `#lzwiremodel4` such a root was skipped silently, so `signaling.json`
   "modelled" as zero types);
 - an integer without `minimum: 0`, or with a `maximum` other than u64's;
+- in Python, a union payload that is neither a flattenable record nor named in
+  `variant_fields`, a flattened body also used as a field type, or an optional
+  field before a required one;
 - an open object;
 - a declaration without a `description`;
 - an enum value without an `x-lazily-enum-docs` entry;
@@ -153,7 +186,7 @@ bindings' published `main`.
 | Surface | Schema | Bindings |
 |---|---|---|
 | `receipts` | `schemas/receipts.json` | lazily-rs `src/generated/receipts.rs`, lazily-go `receipts_wire_gen.go`, lazily-py `src/lazily/_receipts_wire_gen.py`, lazily-kt `src/main/kotlin/io/github/lazily/ReceiptsWireGen.kt` |
-| `delta` | `schemas/delta.json` | none yet: modelled only (golden model checked, no targets) |
+| `delta` | `schemas/delta.json` | lazily-py `src/lazily/_delta_wire_gen.py` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`, `NodeId`; `NodeKey` and `ShmBlobRef` stay hand-written in `_wire_scalars.py`) |
 
 Lowering the receipts surface found the same real wire mismatch twice. Go
 had `generation` as `int64` and Kotlin had it as `Long`; both accept negative
@@ -181,7 +214,7 @@ What a binding gains is strictness and one source of truth, not fewer lines:
 Kotlin's hand-written decoder accepted unknown keys, missing nullable keys,
 numbers in string fields, and negative generations.
 
-`delta` is the second surface, modelled but not yet lowered. Modelling it
+`delta` is the second surface, lowered into lazily-py. Modelling it
 needed more than multi-variant unions: shared `defs.json` references, scalar
 aliases, byte arrays, a named inline enum with a default, and unit variants.
 It also found a family-wide gap. `protocol.md` makes `QueuePush` / `QueuePop`
@@ -190,8 +223,29 @@ and the round-trip fixtures carried only the seven graph ops. `#lzdeltaqueueops`
 added the three ops to the `Delta` scenario of both `codec/frame_roundtrip_*`
 fixtures and to every binding with an IPC codec (lazily-gd has none).
 
-Lowering `delta` into a binding is harder than lowering receipts was, for
-reasons the model records but no backend handles yet:
+lazily-py's delta lowering (`#lzwiremodel5`) is the first surface where the
+generator removes more hand-written code than its backend adds:
+
+- **Removed:** about 440 hand-written lines of `DeltaOp` / `IpcValue` /
+  `NodeState` / `Delta` declarations and codecs from `ipc.py`; 171 lines of
+  constructors, read filtering and the epoch decision moved to
+  `_delta_semantics.py`.
+- **Added:** about 360 lines of Python backend (unions, aliases, bytes,
+  optional fields, `external`), against 579 generated lines.
+- **Stricter, in the `ValueError` family every decode already raises:**
+  unknown keys, a missing `ops` list, a non-integer or out-of-range node id or
+  epoch, a byte outside 0..=255, a base64 string where bytes belong, and the
+  dict form `{"Opaque": ...}` of a unit variant are now refused. A missing
+  required field used to raise `KeyError`.
+
+`test_generated_python_delta_decoder_agrees_with_schema_on_every_corpus_frame`
+executes the generated module (with schema-faithful stand-ins for the two
+externals) on every corpus `Delta` frame and 338 single-edit perturbations,
+and requires the schema's verdict on each, plus a byte-for-byte re-encode of
+every accepted frame (an explicit `key: null` re-encodes omitted).
+
+The remaining bindings are harder, for reasons the model records but their
+backends do not handle yet:
 
 - **Codec-aware optional fields.** lazily-rs omits an absent `NodeAdd.key` in
   self-describing codecs and keeps it in positional Postcard. A generated serde
@@ -199,11 +253,13 @@ reasons the model records but no backend handles yet:
   `Serialize`.
 - **Decoder leniency beyond the schema.** `backend: null` is schema-invalid,
   but `protocol.md` requires decoders to read it as `shm`
-  (`#lzblobbackendstrict`). A generated decoder that follows the model alone
-  would refuse it.
-- **Unions in every backend.** Each backend needs a union lowering (Rust enum
-  with struct variants, Go interface or tagged struct, Python and Kotlin sealed
-  hierarchies) before it can emit `DeltaOp`, `IpcValue` or `NodeState`.
+  (`#lzblobbackendstrict`). Python keeps `ShmBlobRef` `external` for that;
+  another backend needs the same option.
+- **Unions in Rust, Go and Kotlin.** Each needs a union lowering (Rust enum
+  with struct variants, Go interface or tagged struct, a Kotlin sealed
+  hierarchy) before it can emit `DeltaOp`, `IpcValue` or `NodeState`. Kotlin
+  also types `NodeId` as `Long`, so lowering there means the same `ULong`
+  migration receipts' `generation` needed.
 
 The other candidates still do not model:
 

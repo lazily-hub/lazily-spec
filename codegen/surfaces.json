@@ -1,5 +1,5 @@
 {
-  "description": "Wire surfaces whose binding types are generated from the shared wire model (#lzwiremodel). Each surface names its source schema and the generated file each participating binding commits. Kernel semantics (Source/Computed/Effect, scheduling, scopes) are never generated. A surface with no targets is modelled only: its golden model is checked, and no binding generates from it yet.",
+  "description": "Wire surfaces whose binding types are generated from the shared wire model (#lzwiremodel). Each surface names its source schema and the generated file each participating binding commits. Kernel semantics (Source/Computed/Effect, scheduling, scopes) are never generated.",
   "surfaces": [
     {
       "name": "receipts",
@@ -36,7 +36,29 @@
     {
       "name": "delta",
       "schema": "schemas/delta.json",
-      "targets": {}
+      "targets": {
+        "python": {
+          "repo": "lazily-py",
+          "path": "src/lazily/_delta_wire_gen.py",
+          "semantics_module": "._delta_semantics",
+          "mixins": {
+            "DeltaOp": "DeltaOpSemantics",
+            "IpcValue": "IpcValueSemantics",
+            "Delta": "DeltaSemantics"
+          },
+          "external": {
+            "NodeKey": "._wire_scalars",
+            "ShmBlobRef": "._wire_scalars"
+          },
+          "variant_fields": {
+            "IpcValue.Inline": "data",
+            "IpcValue.SharedBlob": "blob",
+            "NodeState.Payload": "data",
+            "NodeState.SharedBlob": "blob"
+          },
+          "envelope": false
+        }
+      }
     }
   ]
 }
