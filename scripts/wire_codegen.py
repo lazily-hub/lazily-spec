@@ -69,57 +69,113 @@ def _nullable_inner(node: dict) -> dict | None:
     return others[0]
 
 
+U64_MAX = 2**64 - 1
+SHARED_DEFS = "schemas/defs.json"
+SHARED_DEFS_PREFIX = "https://lazily.dev/schemas/defs.json#/$defs/"
+LOCAL_PREFIX = "#/$defs/"
+
+
 class _SurfaceBuilder:
-    def __init__(self, name: str, schema_path: str, schema: dict) -> None:
+    def __init__(self, name: str, schema_path: str, schema: dict, root: Path = SPEC_ROOT) -> None:
         self.name = name
         self.schema_path = schema_path
         self.schema = schema
+        self.root = root
         self.defs: dict[str, dict] = schema.get("$defs", {})
+        self._shared: dict[str, dict] | None = None
+        # The document whose `#/$defs/` a local ref resolves against while a
+        # declaration is being modelled: the surface schema, or defs.json.
+        self.scope = (schema_path, self.defs)
         self.types: list[dict] = []
+        self.emitted: set[str] = set()
+        self.shared_queue: list[str] = []
 
-    def _def_kind(self, def_name: str) -> str:
-        node = self.defs.get(def_name)
+    @property
+    def shared(self) -> dict[str, dict]:
+        if self._shared is None:
+            self._shared = json.loads((self.root / SHARED_DEFS).read_text()).get("$defs", {})
+        return self._shared
+
+    def _resolve(self, ref: Any, where: str) -> tuple[str, dict, bool]:
+        """(def name, node, is_shared) for a local or defs.json reference."""
+        if not isinstance(ref, str):
+            raise UnsupportedSchema(f"{where}: a $ref must be a string ({ref!r})")
+        scope_path, scope_defs = self.scope
+        if ref.startswith(LOCAL_PREFIX):
+            name = ref[len(LOCAL_PREFIX) :]
+            shared = scope_path == SHARED_DEFS
+            defs = scope_defs
+        elif ref.startswith(SHARED_DEFS_PREFIX):
+            name = ref[len(SHARED_DEFS_PREFIX) :]
+            shared = True
+            defs = self.shared
+        else:
+            raise UnsupportedSchema(
+                f"{where}: only local #/$defs/ and {SHARED_DEFS} references are modelled ({ref!r})"
+            )
+        node = defs.get(name)
         if node is None:
-            raise UnsupportedSchema(f"{self.schema_path}: unresolved $ref to {def_name!r}")
+            raise UnsupportedSchema(f"{where}: unresolved $ref to {name!r}")
+        if shared and name in self.defs and self.schema_path != SHARED_DEFS:
+            raise UnsupportedSchema(f"{where}: {name!r} is declared both locally and in {SHARED_DEFS}")
+        return name, node, shared
+
+    def _def_kind(self, node: dict, where: str) -> str:
         if _nullable_inner(node) is not None:
-            return "alias"
+            return "nullable_alias"
+        if isinstance(node.get("oneOf"), list):
+            return "union"
         if node.get("type") == "string" and "enum" in node:
             return "enum"
         if node.get("type") == "object":
             return "record"
-        raise UnsupportedSchema(f"{self.schema_path}#/$defs/{def_name}: unsupported definition shape")
+        if node.get("type") in ("string", "integer", "boolean"):
+            return "alias"
+        raise UnsupportedSchema(f"{where}: unsupported definition shape")
 
     def type_expr(self, node: dict, where: str) -> dict:
         if "$ref" in node:
-            ref = node["$ref"]
-            prefix = "#/$defs/"
-            if not isinstance(ref, str) or not ref.startswith(prefix):
-                raise UnsupportedSchema(f"{where}: only local #/$defs/ references are modelled ({ref!r})")
-            def_name = ref[len(prefix) :]
-            if self._def_kind(def_name) == "alias":
-                return self.type_expr(self.defs[def_name], f"{where} -> {def_name}")
-            return {"kind": "ref", "name": def_name}
+            name, target, shared = self._resolve(node["$ref"], where)
+            if self._def_kind(target, f"{where} -> {name}") == "nullable_alias":
+                return self.type_expr(target, f"{where} -> {name}")
+            if shared and name not in self.shared_queue:
+                self.shared_queue.append(name)
+            return {"kind": "ref", "name": name}
         inner = _nullable_inner(node)
         if inner is not None:
             return {"kind": "nullable", "inner": self.type_expr(inner, where)}
         kind = node.get("type")
-        if kind == "string" and "enum" not in node and "const" not in node:
+        if kind == "string" and "enum" in node:
+            enum_name = node.get("x-lazily-name")
+            if not isinstance(enum_name, str) or not re.fullmatch(r"[A-Z][A-Za-z0-9]*", enum_name):
+                raise UnsupportedSchema(f"{where}: an inline enum needs an `x-lazily-name` PascalCase type name")
+            if enum_name not in self.emitted:
+                self.emitted.add(enum_name)
+                self.types.append(self.enum_type(enum_name, node, where))
+            return {"kind": "ref", "name": enum_name}
+        if kind == "string" and "const" not in node:
             expr: dict[str, Any] = {"kind": "string"}
-            if "minLength" in node:
-                expr["min_length"] = node["minLength"]
+            for key, model_key in (("minLength", "min_length"), ("maxLength", "max_length"), ("pattern", "pattern")):
+                if key in node:
+                    expr[model_key] = node[key]
             return expr
         if kind == "integer":
             if node.get("minimum") != 0:
                 raise UnsupportedSchema(f"{where}: only non-negative integers (minimum: 0 -> u64) are modelled")
-            return {"kind": "u64"}
+            maximum = node.get("maximum")
+            if maximum is None or maximum == U64_MAX:
+                return {"kind": "u64"}
+            raise UnsupportedSchema(f"{where}: integer maximum {maximum!r} is not modelled (u64 or u8 bytes only)")
         if kind == "boolean":
             return {"kind": "bool"}
         if kind == "array" and isinstance(node.get("items"), dict):
-            return {"kind": "list", "items": self.type_expr(node["items"], f"{where}[]")}
+            items = node["items"]
+            if items == {"type": "integer", "minimum": 0, "maximum": 255}:
+                return {"kind": "bytes"}
+            return {"kind": "list", "items": self.type_expr(items, f"{where}[]")}
         raise UnsupportedSchema(f"{where}: unsupported type shape {json.dumps(node, sort_keys=True)}")
 
-    def enum_type(self, name: str, node: dict) -> dict:
-        where = f"{self.schema_path}#/$defs/{name}"
+    def enum_type(self, name: str, node: dict, where: str) -> dict:
         values = node["enum"]
         if not values or not all(isinstance(v, str) for v in values):
             raise UnsupportedSchema(f"{where}: enum values must be non-empty strings")
@@ -141,6 +197,53 @@ class _SurfaceBuilder:
             "values": out_values,
         }
 
+    def alias_type(self, name: str, node: dict, where: str) -> dict:
+        """A named scalar (`NodeId` = u64, `NodeKey` = constrained string)."""
+        return {"name": name, "kind": "alias", "doc": _require_doc(node, where), "target": self.type_expr(node, where)}
+
+    def union_type(self, name: str, node: dict, where: str) -> dict:
+        """A multi-variant externally-tagged union.
+
+        Each `oneOf` branch is either a closed single-key object whose key is the
+        PascalCase variant tag (`{"CellSet": {...}}`), or a bare string `const`
+        unit variant (`"Opaque"`).
+        """
+        variants = []
+        for i, branch in enumerate(node["oneOf"]):
+            bwhere = f"{where}/oneOf/{i}"
+            if not isinstance(branch, dict):
+                raise UnsupportedSchema(f"{bwhere}: a union branch must be an object")
+            if branch.get("type") == "string" and "const" in branch:
+                tag = branch["const"]
+                payload_node = None
+            elif branch.get("type") == "object":
+                if branch.get("additionalProperties") is not False:
+                    raise UnsupportedSchema(f"{bwhere}: a tagged variant must be closed (additionalProperties: false)")
+                props = branch.get("properties")
+                if not isinstance(props, dict) or len(props) != 1:
+                    raise UnsupportedSchema(f"{bwhere}: a tagged variant is a single-key object")
+                (tag, payload_node), = props.items()
+                if branch.get("required") != [tag]:
+                    raise UnsupportedSchema(f"{bwhere}: a tagged variant must require its tag {tag!r}")
+            else:
+                raise UnsupportedSchema(f"{bwhere}: unsupported union branch shape")
+            if not isinstance(tag, str) or not re.fullmatch(r"[A-Z][A-Za-z0-9]*", tag):
+                raise UnsupportedSchema(f"{bwhere}: variant tag {tag!r} must be PascalCase")
+            if "title" in branch and branch["title"] != tag:
+                raise UnsupportedSchema(f"{bwhere}: title {branch['title']!r} differs from tag {tag!r}")
+            doc_source = branch if "description" in branch else (payload_node or {})
+            variants.append(
+                {
+                    "tag": tag,
+                    "doc": _require_doc(doc_source, f"{bwhere} ({tag})"),
+                    "payload": None if payload_node is None else self.type_expr(payload_node, f"{bwhere}.{tag}"),
+                }
+            )
+        tags = [v["tag"] for v in variants]
+        if len(tags) != len(set(tags)) or len(tags) < 2:
+            raise UnsupportedSchema(f"{where}: a union needs two or more distinct variant tags {tags}")
+        return {"name": name, "kind": "union", "tagging": "external", "doc": _require_doc(node, where), "variants": variants}
+
     def record_type(self, name: str, node: dict, where: str) -> dict:
         if node.get("additionalProperties") is not False:
             raise UnsupportedSchema(f"{where}: generated records must be closed (additionalProperties: false)")
@@ -156,14 +259,17 @@ class _SurfaceBuilder:
             if not re.fullmatch(r"[a-z][a-z0-9_]*", field_name):
                 raise UnsupportedSchema(f"{where}.{field_name}: wire field names must be snake_case")
             field_where = f"{where}.{field_name}"
-            fields.append(
-                {
-                    "name": field_name,
-                    "doc": _require_doc(field_node, field_where),
-                    "presence": "required" if field_name in required else "optional",
-                    "type": self.type_expr(field_node, field_where),
-                }
-            )
+            field = {
+                "name": field_name,
+                "doc": _require_doc(field_node, field_where),
+                "presence": "required" if field_name in required else "optional",
+                "type": self.type_expr(field_node, field_where),
+            }
+            if "default" in field_node:
+                if field["presence"] == "required":
+                    raise UnsupportedSchema(f"{field_where}: a required field cannot carry a `default`")
+                field["default"] = field_node["default"]
+            fields.append(field)
         return {
             "name": name,
             "kind": "record",
@@ -172,13 +278,29 @@ class _SurfaceBuilder:
             "fields": fields,
         }
 
+    def declaration(self, name: str, node: dict, where: str) -> dict | None:
+        kind = self._def_kind(node, where)
+        if kind == "nullable_alias":
+            return None
+        if kind == "enum":
+            return self.enum_type(name, node, where)
+        if kind == "record":
+            return self.record_type(name, node, where)
+        if kind == "union":
+            return self.union_type(name, node, where)
+        return self.alias_type(name, node, where)
+
+    def _emit(self, name: str, node: dict, where: str) -> None:
+        if name in self.emitted:
+            return
+        self.emitted.add(name)
+        decl = self.declaration(name, node, where)
+        if decl is not None:
+            self.types.append(decl)
+
     def build(self) -> dict:
         for def_name, node in self.defs.items():
-            kind = self._def_kind(def_name)
-            if kind == "enum":
-                self.types.append(self.enum_type(def_name, node))
-            elif kind == "record":
-                self.types.append(self.record_type(def_name, node, f"{self.schema_path}#/$defs/{def_name}"))
+            self._emit(def_name, node, f"{self.schema_path}#/$defs/{def_name}")
 
         root = self.schema
         envelope = root.get("x-lazily-envelope")
@@ -194,6 +316,7 @@ class _SurfaceBuilder:
                         raise UnsupportedSchema(f"{where}: an envelope variant must name a record")
                     type_name = target["name"]
                 else:
+                    self.emitted.add(tag)
                     self.types.append(self.record_type(tag, node, where))
                     type_name = tag
                 variants.append({"tag": tag, "type": type_name})
@@ -211,16 +334,54 @@ class _SurfaceBuilder:
                 }
             )
 
+        elif any(key in root for key in ("properties", "oneOf", "anyOf", "allOf", "items")):
+            # A root that is not an x-lazily-envelope would otherwise be skipped
+            # silently, leaving a model that describes none of the wire.
+            raise UnsupportedSchema(
+                f"{self.schema_path}: the root declares a wire shape but is not an x-lazily-envelope"
+            )
+
+        # Shared declarations from defs.json, in first-reference order, closed
+        # transitively: a shared record can itself reference shared types.
+        self.scope = (SHARED_DEFS, self.shared)
+        i = 0
+        while i < len(self.shared_queue):
+            name = self.shared_queue[i]
+            self._emit(name, self.shared[name], f"{SHARED_DEFS}#/$defs/{name}")
+            i += 1
+
         names = [t["name"] for t in self.types]
+        if not names:
+            raise UnsupportedSchema(f"{self.schema_path}: the schema declares nothing the model can generate")
         if len(names) != len(set(names)):
             raise UnsupportedSchema(f"{self.schema_path}: duplicate generated type names {names}")
         known = set(names)
         for t in self.types:
-            for field in t.get("fields", []):
-                for ref in _refs(field["type"]):
+            for label, expr in _type_exprs(t):
+                for ref in _refs(expr):
                     if ref not in known:
-                        raise UnsupportedSchema(f"{self.schema_path}: {t['name']}.{field['name']} names unknown {ref}")
+                        raise UnsupportedSchema(f"{self.schema_path}: {t['name']}.{label} names unknown {ref}")
         return {"name": self.name, "schema": self.schema_path, "types": self.types}
+
+
+def _type_exprs(t: dict) -> list[tuple[str, dict]]:
+    """Every (label, type expression) a declaration carries."""
+    if t["kind"] == "record":
+        return [(f["name"], f["type"]) for f in t["fields"]]
+    if t["kind"] == "union":
+        return [(v["tag"], v["payload"]) for v in t["variants"] if v["payload"] is not None]
+    if t["kind"] == "alias":
+        return [("target", t["target"])]
+    return []
+
+
+def _all_exprs(expr: dict) -> list[dict]:
+    """``expr`` and every expression nested under it."""
+    out = [expr]
+    for key in ("inner", "items"):
+        if key in expr:
+            out += _all_exprs(expr[key])
+    return out
 
 
 def _refs(expr: dict) -> list[str]:
@@ -243,7 +404,7 @@ def surface_digest(surface: dict) -> str:
 
 def build_surface(name: str, schema_path: str, root: Path = SPEC_ROOT) -> dict:
     schema = json.loads((root / schema_path).read_text())
-    return _SurfaceBuilder(name, schema_path, schema).build()
+    return _SurfaceBuilder(name, schema_path, schema, root).build()
 
 
 def load_manifest(root: Path = SPEC_ROOT) -> dict:
@@ -287,11 +448,30 @@ def _comment(prefix: str, text: str, width: int) -> list[str]:
     return [prefix + line for line in textwrap.wrap(text, width=width - len(prefix), break_on_hyphens=False)]
 
 
+_LOWERED_KINDS = frozenset({"enum", "record", "envelope"})
+_LOWERED_EXPRS = frozenset({"string", "u64", "bool", "ref", "nullable", "list"})
+
+
 def _require_lowerable(surface: dict, backend: str) -> None:
     for t in surface["types"]:
+        if t["kind"] not in _LOWERED_KINDS:
+            raise UnsupportedSchema(f"{backend}: {t['kind']} declarations are modelled but not yet lowered ({t['name']})")
+        for label, expr in _type_exprs(t):
+            for node in _all_exprs(expr):
+                kind = node["kind"]
+                if kind not in _LOWERED_EXPRS:
+                    raise UnsupportedSchema(f"{backend}: {kind} is modelled but not yet lowered ({t['name']}.{label})")
+                if {"max_length", "pattern"} & set(node):
+                    raise UnsupportedSchema(
+                        f"{backend}: string max_length/pattern are modelled but not yet lowered ({t['name']}.{label})"
+                    )
         if t["kind"] == "enum" and t["open"]:
             raise UnsupportedSchema(f"{backend}: open enums are modelled but not yet lowered ({t['name']})")
         for field in t.get("fields", []):
+            if "default" in field:
+                raise UnsupportedSchema(
+                    f"{backend}: field defaults are modelled but not yet lowered ({t['name']}.{field['name']})"
+                )
             if field["presence"] != "required":
                 raise UnsupportedSchema(
                     f"{backend}: optional (may-be-absent) fields are modelled but not yet lowered "

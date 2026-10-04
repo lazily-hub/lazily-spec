@@ -36,7 +36,7 @@ schemas/*.json ──► codegen/wire-model.json ──► per-binding backend �
 | `bool` | `"type": "boolean"` | `bool` | `bool` | `bool` | `Boolean` |
 | `list` | `"type": "array"` + `items` | `Vec<T>` | `[]T` (marshals `[]`, never `null`) | `list[T]` | `List<T>` (defaults to empty) |
 | `nullable` | `oneOf: [null, T]` (inline or a `$defs` alias) | `Option<T>` | `*T` | `T \| None` | `T?` |
-| `ref` | local `#/$defs/X` record or enum | `X` | `X` | `X` | `X` |
+| `ref` | `#/$defs/X` in the same schema, or `defs.json#/$defs/X` (pulled into the surface transitively) | `X` | `X` | `X` | `X` |
 | `enum` | string `enum` + `x-lazily-enum-docs` | `enum`, `rename_all = "snake_case"` when every value round-trips | string type, constants, `…FromWire`, rejecting `UnmarshalJSON` | `Enum` with `from_wire` / `to_wire` | `enum class` with `wireName` and a rejecting `fromWire` |
 | `record` | closed object (`additionalProperties: false`) | `struct` with optional serde derives | `struct` + `…FromWire` | frozen, slotted `dataclass` with `from_wire` / `to_wire` | `data class` with `toJson` and a strict companion `fromJson` |
 | `envelope` | root `x-lazily-envelope`, externally tagged | single-variant `enum` | not lowered (callers decode the tagged body) | lowered onto the variant record, whose codec carries the tag | `sealed interface`, one `data class` per variant, with `encodeJson` / `decodeJson` |
@@ -63,6 +63,25 @@ A field's *presence* is modelled separately from its type: a `required` +
 `nullable` field is always on the wire and is `null` when absent, while an
 `optional` field may be missing. Open enums and optional fields are already
 modelled, but no backend lowers them yet, so the backends refuse them.
+
+### Kinds modelled but not yet lowered (`#lzwiremodel4`)
+
+These kinds exist so the `delta` surface can be modelled. Every backend refuses
+them with "modelled but not yet lowered", so no binding generates from them yet.
+
+| Kind | Schema shape | Model |
+|---|---|---|
+| `union` | `$defs` entry whose `oneOf` branches are closed single-key objects keyed by a PascalCase tag (`{"CellSet": {...}}`), or bare string `const` unit variants (`"Opaque"`) | `variants: [{tag, doc, payload}]`, `payload: null` for a unit variant |
+| `alias` | a named scalar `$defs` entry (`NodeId` = u64, `NodeKey` = constrained string) | `target` type expression |
+| `bytes` | `array` of `integer` `0..=255` | serialized bytes as a JSON array of u8, never base64 |
+| `u64` with `maximum` | `maximum: 18446744073709551615` | same as `u64`; any other maximum is refused |
+| string constraints | `maxLength`, `pattern` | `max_length`, `pattern` beside `min_length` |
+| inline enum | a field's `"type": "string", "enum"` with `x-lazily-name` + `x-lazily-enum-docs` | a named `enum` declaration (`BlobBackendKind`) |
+| field `default` | `default` on an optional field | `default` on the field; refused on a required one |
+
+A variant's doc comes from its `oneOf` branch `description`, else from its
+payload's. A union needs two or more distinct tags, and a branch `title`, when
+present, must equal its tag.
 
 ## Strict decoding
 
@@ -106,8 +125,12 @@ The model accepts only the shapes it can lower faithfully. Anything else stops
 generation with an `UnsupportedSchema` error rather than drifting quietly out of
 the generated surface. That includes:
 
-- a non-local `$ref`;
-- an integer without `minimum: 0`;
+- a `$ref` outside the same schema and `defs.json`, or a name declared in both;
+- a root that declares a wire shape (`properties`, `oneOf`, ...) without
+  `x-lazily-envelope`, and a schema that yields no declarations at all (before
+  `#lzwiremodel4` such a root was skipped silently, so `signaling.json`
+  "modelled" as zero types);
+- an integer without `minimum: 0`, or with a `maximum` other than u64's;
 - an open object;
 - a declaration without a `description`;
 - an enum value without an `x-lazily-enum-docs` entry;
@@ -117,6 +140,7 @@ the generated surface. That includes:
 
 | Command | What it proves |
 |---|---|
+| `test_delta_model_agrees_with_schema_on_every_corpus_frame` | A strict reading of the model and the JSON Schema validator give the same verdict on every `{"Delta": ...}` frame in the conformance corpus (21) and on single-edit perturbations of each (338 candidates, 35 schema-valid). Mutation-checked: dropping `pattern` from the model, or widening `bytes` to a u64 list, each produces a disagreement. |
 | `make wire-codegen-check` | The golden model matches the schemas, and every present sibling's generated file matches backend output byte for byte. Absent siblings are reported as `staged`. |
 | `make wire-codegen` | Regenerates the golden model and every present sibling's file. Commit each repository's result alongside the schema edit. |
 | CI (`coverage` job) | Same check with `--require-all` against the published `main` of every participating binding. |
@@ -129,6 +153,7 @@ bindings' published `main`.
 | Surface | Schema | Bindings |
 |---|---|---|
 | `receipts` | `schemas/receipts.json` | lazily-rs `src/generated/receipts.rs`, lazily-go `receipts_wire_gen.go`, lazily-py `src/lazily/_receipts_wire_gen.py`, lazily-kt `src/main/kotlin/io/github/lazily/ReceiptsWireGen.kt` |
+| `delta` | `schemas/delta.json` | none yet: modelled only (golden model checked, no targets) |
 
 Lowering the receipts surface found the same real wire mismatch twice. Go
 had `generation` as `int64` and Kotlin had it as `Long`; both accept negative
@@ -156,20 +181,38 @@ What a binding gains is strictness and one source of truth, not fewer lines:
 Kotlin's hand-written decoder accepted unknown keys, missing nullable keys,
 numbers in string fields, and negative generations.
 
-Nor is any second surface a cheap addition. Each candidate needs a model kind
-that does not exist yet, so the generator must grow before it can remove
-anything:
+`delta` is the second surface, modelled but not yet lowered. Modelling it
+needed more than multi-variant unions: shared `defs.json` references, scalar
+aliases, byte arrays, a named inline enum with a default, and unit variants.
+It also found a family-wide gap. `protocol.md` makes `QueuePush` / `QueuePop`
+/ `QueueClose` ordinary `DeltaOp` variants, and only lazily-cs decodes them;
+the other nine bindings reject a schema-valid `Delta` carrying one.
+
+Lowering `delta` into a binding is harder than lowering receipts was, for
+reasons the model records but no backend handles yet:
+
+- **Codec-aware optional fields.** lazily-rs omits an absent `NodeAdd.key` in
+  self-describing codecs and keeps it in positional Postcard. A generated serde
+  derive cannot express that, so Rust's `DeltaOp` keeps its hand-written
+  `Serialize`.
+- **Decoder leniency beyond the schema.** `backend: null` is schema-invalid,
+  but `protocol.md` requires decoders to read it as `shm`
+  (`#lzblobbackendstrict`). A generated decoder that follows the model alone
+  would refuse it.
+- **Unions in every backend.** Each backend needs a union lowering (Rust enum
+  with struct variants, Go interface or tagged struct, Python and Kotlin sealed
+  hierarchies) before it can emit `DeltaOp`, `IpcValue` or `NodeState`.
+
+The other candidates still do not model:
 
 | Schema | First blocker |
 |---|---|
-| `reliable-sync.json` | multi-variant externally-tagged unions with PascalCase tags |
-| `delta.json` | `DeltaOp`, a multi-variant tagged union |
-| `message-passing.json` | `CommandId`, a newtype alias |
+| `reliable-sync.json` | a single-key PascalCase wrapper declared as a record (`ResyncRequest`), not as a `oneOf` union |
+| `message-passing.json` | enum values without `x-lazily-enum-docs` (`DedupePolicy`) |
 | `snapshot.json` | declarations without a `description` |
+| `distributed.json` | a `$defs` entry that is only a `$ref` (`NodeId` re-exported from `defs.json`) |
 
 lazily-js is the remaining large binding on receipts. Its codec lives in the
 `index.js` monolith beside a hand-written `index.d.ts`, so a js backend must
 generate both and split the module, which costs more than the Kotlin backend
-did. Modelling multi-variant tagged unions is the step that unlocks a second
-surface (`delta`, then `reliable-sync`) and is where the generator can start
-removing more than it adds.
+did.

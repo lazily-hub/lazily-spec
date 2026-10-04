@@ -1,5 +1,5 @@
 {
-  "description": "Wire surfaces whose binding types are generated from the shared wire model (#lzwiremodel). Each surface names its source schema and the generated file each participating binding commits. Kernel semantics (Source/Computed/Effect, scheduling, scopes) are never generated.",
+  "description": "Wire surfaces whose binding types are generated from the shared wire model (#lzwiremodel). Each surface names its source schema and the generated file each participating binding commits. Kernel semantics (Source/Computed/Effect, scheduling, scopes) are never generated. A surface with no targets is modelled only: its golden model is checked, and no binding generates from it yet.",
   "surfaces": [
     {
       "name": "receipts",
@@ -32,6 +32,11 @@
           }
         }
       }
+    },
+    {
+      "name": "delta",
+      "schema": "schemas/delta.json",
+      "targets": {}
     }
   ]
 }

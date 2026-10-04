@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 import sys
 import types
 from pathlib import Path
@@ -75,9 +76,15 @@ def test_model_digest_moves_with_any_schema_change() -> None:
         (lambda s: s["$defs"]["CausalReceipt"]["properties"].update(extra={"type": "number", "description": "x"}), "unsupported type"),
         (
             lambda s: s["$defs"]["CausalReceipt"]["properties"].update(
+                bad={"$ref": "https://example.com/schemas/other.json#/$defs/X", "description": "x"}
+            ),
+            "only local",
+        ),
+        (
+            lambda s: s["$defs"]["CausalReceipt"]["properties"].update(
                 bad={"$ref": "https://lazily.dev/schemas/defs.json#/$defs/X", "description": "x"}
             ),
-            "local",
+            "unresolved",
         ),
     ],
 )
@@ -212,6 +219,257 @@ def test_python_backend_decodes_strictly() -> None:
 def test_python_backend_rejects_mixins_for_unknown_types() -> None:
     with pytest.raises(UnsupportedSchema, match="mixins"):
         wire_codegen.render_python(_surface(RECEIPTS), {"semantics_module": ".x", "mixins": {"Nope": "X"}})
+
+
+# ---------------------------------------------------------------------------
+# Delta surface (#lzwiremodel4): unions, aliases, bytes, shared defs.json refs
+# ---------------------------------------------------------------------------
+
+DELTA = json.loads((ROOT / "schemas" / "delta.json").read_text())
+
+
+def _delta_surface(schema: dict | None = None) -> dict:
+    surface = wire_codegen._SurfaceBuilder("delta", "schemas/delta.json", schema or DELTA, ROOT).build()
+    surface["model_sha256"] = wire_codegen.surface_digest(surface)
+    return surface
+
+
+def test_delta_model_carries_unions_aliases_and_shared_defs() -> None:
+    types = _types(_delta_surface())
+    op = types["DeltaOp"]
+    assert op["kind"] == "union"
+    assert [v["tag"] for v in op["variants"]] == [
+        "CellSet", "SlotValue", "Invalidate", "NodeAdd", "NodeRemove",
+        "EdgeAdd", "EdgeRemove", "QueuePush", "QueuePop", "QueueClose",
+    ]
+    assert {v["tag"]: v["payload"] for v in op["variants"]}["QueuePush"] == {"kind": "ref", "name": "CellSetBody"}
+    # Shared defs.json declarations are pulled in transitively.
+    assert types["IpcValue"]["variants"][0] == {
+        "tag": "Inline",
+        "doc": "Inline serialized bytes as JSON array of u8 (NOT base64).",
+        "payload": {"kind": "bytes"},
+    }
+    assert types["NodeState"]["variants"][2]["payload"] is None  # unit variant "Opaque"
+    assert types["NodeId"] == {
+        "name": "NodeId", "kind": "alias", "doc": types["NodeId"]["doc"], "target": {"kind": "u64"},
+    }
+    assert types["NodeKey"]["target"] == {
+        "kind": "string", "min_length": 1, "max_length": 1024, "pattern": "^[^/]+(/[^/]+)*$",
+    }
+    key = next(f for f in types["NodeAddBody"]["fields"] if f["name"] == "key")
+    assert key["presence"] == "optional"
+    assert key["type"] == {"kind": "nullable", "inner": {"kind": "ref", "name": "NodeKey"}}
+    backend = next(f for f in types["ShmBlobRef"]["fields"] if f["name"] == "backend")
+    assert backend["default"] == "shm"
+    assert backend["type"] == {"kind": "ref", "name": "BlobBackendKind"}
+    assert [v["wire"] for v in types["BlobBackendKind"]["values"]] == ["shm", "arrow", "in_process"]
+
+
+def test_delta_is_modelled_but_no_backend_lowers_it_yet() -> None:
+    surface = _delta_surface()
+    for render in wire_codegen.BACKENDS.values():
+        with pytest.raises(UnsupportedSchema, match="modelled but not yet lowered"):
+            render(surface, {"package": "p"})
+
+
+def _op_branch(schema: dict, tag: str) -> dict:
+    return next(b for b in schema["$defs"]["DeltaOp"]["oneOf"] if b.get("title") == tag)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (lambda s: _op_branch(s, "CellSet").update(required=[]), "must require its tag"),
+        (lambda s: _op_branch(s, "CellSet").update(title="Other"), "differs from tag"),
+        (lambda s: _op_branch(s, "CellSet").pop("additionalProperties"), "must be closed"),
+        (lambda s: _op_branch(s, "CellSet").pop("description"), "description"),
+        (lambda s: s["$defs"]["DeltaOp"]["oneOf"].append(copy.deepcopy(_op_branch(s, "CellSet"))), "distinct"),
+        (lambda s: s["$defs"].update(NodeId={"type": "integer", "minimum": 0, "description": "x"}), "both locally"),
+        (
+            lambda s: s["$defs"]["NodeBody"]["properties"].update(
+                extra={"type": "integer", "minimum": 0, "maximum": 7, "description": "x"}
+            ),
+            "maximum",
+        ),
+    ],
+)
+def test_unlowerable_union_shapes_fail_closed(mutate, message: str) -> None:
+    schema = copy.deepcopy(DELTA)
+    mutate(schema)
+    with pytest.raises(UnsupportedSchema, match=message):
+        _delta_surface(schema)
+
+
+def test_a_root_the_model_would_skip_fails_closed() -> None:
+    # Before #lzwiremodel4 a root that was not an x-lazily-envelope was skipped
+    # silently: signaling.json "modelled" as zero types.
+    schema = copy.deepcopy(DELTA)
+    del schema["x-lazily-envelope"]
+    with pytest.raises(UnsupportedSchema, match="not an x-lazily-envelope"):
+        _delta_surface(schema)
+    with pytest.raises(UnsupportedSchema, match="declares nothing"):
+        wire_codegen._SurfaceBuilder("e", "schemas/e.json", {"$defs": {}}, ROOT).build()
+
+
+def _model_accepts(types: dict, expr: dict, value) -> bool:
+    """A strict reference reading of the model: does ``value`` conform to ``expr``?"""
+    kind = expr["kind"]
+    if kind == "string":
+        return (
+            isinstance(value, str)
+            and expr.get("min_length", 0) <= len(value) <= expr.get("max_length", len(value))
+            and ("pattern" not in expr or re.search(expr["pattern"], value) is not None)
+        )
+    if kind == "u64":
+        return isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= wire_codegen.U64_MAX
+    if kind == "bool":
+        return isinstance(value, bool)
+    if kind == "bytes":
+        return isinstance(value, list) and all(
+            isinstance(b, int) and not isinstance(b, bool) and 0 <= b <= 255 for b in value
+        )
+    if kind == "list":
+        return isinstance(value, list) and all(_model_accepts(types, expr["items"], v) for v in value)
+    if kind == "nullable":
+        return value is None or _model_accepts(types, expr["inner"], value)
+    assert kind == "ref", kind
+    t = types[expr["name"]]
+    if t["kind"] == "alias":
+        return _model_accepts(types, t["target"], value)
+    if t["kind"] == "enum":
+        return value in [v["wire"] for v in t["values"]]
+    if t["kind"] == "record":
+        if not isinstance(value, dict):
+            return False
+        fields = {f["name"]: f for f in t["fields"]}
+        required = {n for n, f in fields.items() if f["presence"] == "required"}
+        return (
+            required <= set(value) <= set(fields)
+            and all(_model_accepts(types, fields[k]["type"], v) for k, v in value.items())
+        )
+    if t["kind"] == "union":
+        for variant in t["variants"]:
+            if variant["payload"] is None:
+                if value == variant["tag"]:
+                    return True
+            elif isinstance(value, dict) and list(value) == [variant["tag"]]:
+                return _model_accepts(types, variant["payload"], value[variant["tag"]])
+        return False
+    assert t["kind"] == "envelope", t["kind"]
+    if not isinstance(value, dict) or len(value) != 1:
+        return False
+    (tag, body), = value.items()
+    match = [v for v in t["variants"] if v["tag"] == tag]
+    return bool(match) and _model_accepts(types, {"kind": "ref", "name": match[0]["type"]}, body)
+
+
+def _delta_frames() -> list[tuple[str, dict]]:
+    """Every `{"Delta": {...}}` frame anywhere in the conformance corpus."""
+    frames = []
+
+    def walk(where: str, node) -> None:
+        if isinstance(node, dict):
+            if list(node) == ["Delta"] and isinstance(node["Delta"], dict):
+                frames.append((where, node))
+            for k, v in node.items():
+                walk(f"{where}.{k}", v)
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                walk(f"{where}[{i}]", v)
+
+    for path in sorted((ROOT / "conformance").rglob("*.json")):
+        walk(str(path.relative_to(ROOT)), json.loads(path.read_text()))
+    return frames
+
+
+def _perturbations(frame: dict):
+    """Off-schema (and on-schema) variants of one frame, each a single edit."""
+    yield "as-is", frame
+    body = frame["Delta"]
+    for key in ("base_epoch", "epoch", "ops"):
+        dropped = copy.deepcopy(frame)
+        del dropped["Delta"][key]
+        yield f"drop {key}", dropped
+    extra = copy.deepcopy(frame)
+    extra["Delta"]["extra"] = 1
+    yield "unknown frame key", extra
+    negative = copy.deepcopy(frame)
+    negative["Delta"]["epoch"] = -1
+    yield "negative epoch", negative
+    for i, op in enumerate(body["ops"]):
+        if not isinstance(op, dict) or len(op) != 1:
+            continue
+        (tag, op_body), = op.items()
+        lower = copy.deepcopy(frame)
+        lower["Delta"]["ops"][i] = {tag.lower(): op_body}
+        yield f"op {i} lowercase tag", lower
+        if isinstance(op_body, dict):
+            unknown = copy.deepcopy(frame)
+            unknown["Delta"]["ops"][i][tag]["extra"] = 1
+            yield f"op {i} unknown body key", unknown
+            for field in list(op_body):
+                gone = copy.deepcopy(frame)
+                del gone["Delta"]["ops"][i][tag][field]
+                yield f"op {i} drop {field}", gone
+            if "key" in op_body or tag == "NodeAdd":
+                for key in (None, "", "a//b", "scores/alice"):
+                    keyed = copy.deepcopy(frame)
+                    keyed["Delta"]["ops"][i][tag]["key"] = key
+                    yield f"op {i} key {key!r}", keyed
+            if tag == "NodeAdd":
+                for state in ("Opaque", "opaque", {"Payload": [1, 256]}, {"Payload": "AQ=="}):
+                    stated = copy.deepcopy(frame)
+                    stated["Delta"]["ops"][i][tag]["state"] = state
+                    yield f"op {i} state {state!r}", stated
+            payload = op_body.get("payload")
+            if isinstance(payload, dict) and "SharedBlob" in payload:
+                for backend in ("arrow", "rdma", None):
+                    blob = copy.deepcopy(frame)
+                    blob["Delta"]["ops"][i][tag]["payload"]["SharedBlob"]["backend"] = backend
+                    yield f"op {i} backend {backend!r}", blob
+
+
+def _delta_validator():
+    from referencing import Registry
+    from referencing.jsonschema import DRAFT202012
+
+    jsonschema = pytest.importorskip("jsonschema")
+    resources = [
+        (f"https://lazily.dev/schemas/{n}.json", DRAFT202012.create_resource(json.loads((ROOT / "schemas" / f"{n}.json").read_text())))
+        for n in ("defs", "delta")
+    ]
+    return jsonschema.Draft202012Validator(DELTA, registry=Registry().with_resources(resources))
+
+
+def test_delta_model_agrees_with_schema_on_every_corpus_frame() -> None:
+    """The model reads every corpus Delta frame, and single-edit perturbations of it,
+    exactly as the JSON Schema does: what one accepts the other accepts."""
+    validator = _delta_validator()
+    surface = _delta_surface()
+    types = _types(surface)
+    frames = _delta_frames()
+    assert len(frames) >= 20, f"expected a substantial Delta corpus, found {len(frames)}"
+    tags_seen: set[str] = set()
+    checked = accepted = 0
+    disagreements = []
+    for where, frame in frames:
+        for label, candidate in _perturbations(frame):
+            schema_ok = validator.is_valid(candidate)
+            model_ok = _model_accepts(types, {"kind": "ref", "name": "DeltaFrame"}, candidate)
+            checked += 1
+            accepted += schema_ok
+            if schema_ok != model_ok:
+                disagreements.append(f"{where} [{label}]: schema={schema_ok} model={model_ok}")
+        for op in frame["Delta"].get("ops", []):
+            if isinstance(op, dict):
+                tags_seen |= set(op)
+    assert not disagreements, "\n".join(disagreements[:20])
+    # Both verdicts occurred, so neither side is vacuously agreeing.
+    assert 0 < accepted < checked
+    # The corpus exercises every op tag the union declares except the two
+    # queue ops it has never carried a frame for.
+    declared = {v["tag"] for v in types["DeltaOp"]["variants"]}
+    assert declared - tags_seen <= {"QueuePop", "QueueClose"}, declared - tags_seen
 
 
 KT_TARGET = {"package": "io.github.lazily", "variant_fields": {"CausalReceipts": "batch"}}

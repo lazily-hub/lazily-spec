@@ -6,9 +6,11 @@
   "type": "object",
   "required": ["Delta"],
   "additionalProperties": false,
+  "x-lazily-envelope": { "name": "DeltaFrame", "description": "Externally-tagged `Delta` IPC frame." },
   "properties": {
     "Delta": {
       "type": "object",
+      "description": "Incremental change set: ordered ops that take the receiver from `base_epoch` to `epoch`.",
       "required": ["base_epoch", "epoch", "ops"],
       "additionalProperties": false,
       "properties": {
@@ -25,6 +27,7 @@
         {
           "type": "object",
           "title": "CellSet",
+          "description": "A source cell was changed to `payload`.",
           "required": ["CellSet"],
           "additionalProperties": false,
           "properties": { "CellSet": { "$ref": "#/$defs/CellSetBody" } }
@@ -32,6 +35,7 @@
         {
           "type": "object",
           "title": "SlotValue",
+          "description": "A lazily recomputed slot published a concrete value.",
           "required": ["SlotValue"],
           "additionalProperties": false,
           "properties": { "SlotValue": { "$ref": "#/$defs/SlotValueBody" } }
@@ -39,6 +43,7 @@
         {
           "type": "object",
           "title": "Invalidate",
+          "description": "A node was dirtied without publishing a concrete value.",
           "required": ["Invalidate"],
           "additionalProperties": false,
           "properties": { "Invalidate": { "$ref": "#/$defs/NodeBody" } }
@@ -46,6 +51,7 @@
         {
           "type": "object",
           "title": "NodeAdd",
+          "description": "A new node became visible.",
           "required": ["NodeAdd"],
           "additionalProperties": false,
           "properties": { "NodeAdd": { "$ref": "#/$defs/NodeAddBody" } }
@@ -53,6 +59,7 @@
         {
           "type": "object",
           "title": "NodeRemove",
+          "description": "A node was removed.",
           "required": ["NodeRemove"],
           "additionalProperties": false,
           "properties": { "NodeRemove": { "$ref": "#/$defs/NodeBody" } }
@@ -60,6 +67,7 @@
         {
           "type": "object",
           "title": "EdgeAdd",
+          "description": "A dependency edge was added.",
           "required": ["EdgeAdd"],
           "additionalProperties": false,
           "properties": { "EdgeAdd": { "$ref": "#/$defs/EdgeBody" } }
@@ -67,6 +75,7 @@
         {
           "type": "object",
           "title": "EdgeRemove",
+          "description": "A dependency edge was removed.",
           "required": ["EdgeRemove"],
           "additionalProperties": false,
           "properties": { "EdgeRemove": { "$ref": "#/$defs/EdgeBody" } }
@@ -99,36 +108,40 @@
     },
     "CellSetBody": {
       "type": "object",
+      "description": "Body of a `CellSet` or `QueuePush` op: the node and its new value or appended element.",
       "required": ["node", "payload"],
       "additionalProperties": false,
       "properties": {
-        "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
-        "payload": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/IpcValue" }
+        "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId", "description": "Target node." },
+        "payload": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/IpcValue", "description": "Value, inline or by blob descriptor." }
       }
     },
     "SlotValueBody": {
       "type": "object",
+      "description": "Body of a `SlotValue` op: the slot and the value it published.",
       "required": ["node", "payload"],
       "additionalProperties": false,
       "properties": {
-        "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
-        "payload": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/IpcValue" }
+        "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId", "description": "Target node." },
+        "payload": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/IpcValue", "description": "Value, inline or by blob descriptor." }
       }
     },
     "NodeBody": {
       "type": "object",
+      "description": "Body of an op that names only its node (`Invalidate`, `NodeRemove`, `QueuePop`, `QueueClose`).",
       "required": ["node"],
       "additionalProperties": false,
-      "properties": { "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" } }
+      "properties": { "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId", "description": "Target node." } }
     },
     "NodeAddBody": {
       "type": "object",
+      "description": "Body of a `NodeAdd` op: the new node, its type tag and its initial state.",
       "required": ["node", "type_tag", "state"],
       "additionalProperties": false,
       "properties": {
-        "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
-        "type_tag": { "type": "string" },
-        "state": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeState" },
+        "node": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId", "description": "New node." },
+        "type_tag": { "type": "string", "description": "Binding-defined type tag of the new node." },
+        "state": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeState", "description": "Initial node body." },
         "key": {
           "description": "Optional wire-stable keyed address. A conforming ENCODER omits it when absent; an explicit null is also wire-valid and a decoder MUST read both forms as absent (protocol.md § NodeKey, #lzkeynullstrict). This carried a bare NodeKey $ref until that audit, which made a frame the spec now requires decoders to accept schema-invalid.",
           "oneOf": [
@@ -140,11 +153,12 @@
     },
     "EdgeBody": {
       "type": "object",
+      "description": "Body of an `EdgeAdd` or `EdgeRemove` op: one dependency edge.",
       "required": ["dependent", "dependency"],
       "additionalProperties": false,
       "properties": {
-        "dependent": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" },
-        "dependency": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId" }
+        "dependent": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId", "description": "Node that reads `dependency`." },
+        "dependency": { "$ref": "https://lazily.dev/schemas/defs.json#/$defs/NodeId", "description": "Node read by `dependent`." }
       }
     }
   }

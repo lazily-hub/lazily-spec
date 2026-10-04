@@ -138,6 +138,438 @@
         }
       ],
       "model_sha256": "faf31f5c1db054295114b513d51ae6d4b7b47658147cf8044838340a72946b87"
+    },
+    {
+      "name": "delta",
+      "schema": "schemas/delta.json",
+      "types": [
+        {
+          "name": "DeltaOp",
+          "kind": "union",
+          "tagging": "external",
+          "doc": "One incremental graph mutation. Externally tagged: a single-key object whose key is the PascalCase variant name.",
+          "variants": [
+            {
+              "tag": "CellSet",
+              "doc": "A source cell was changed to `payload`.",
+              "payload": {
+                "kind": "ref",
+                "name": "CellSetBody"
+              }
+            },
+            {
+              "tag": "SlotValue",
+              "doc": "A lazily recomputed slot published a concrete value.",
+              "payload": {
+                "kind": "ref",
+                "name": "SlotValueBody"
+              }
+            },
+            {
+              "tag": "Invalidate",
+              "doc": "A node was dirtied without publishing a concrete value.",
+              "payload": {
+                "kind": "ref",
+                "name": "NodeBody"
+              }
+            },
+            {
+              "tag": "NodeAdd",
+              "doc": "A new node became visible.",
+              "payload": {
+                "kind": "ref",
+                "name": "NodeAddBody"
+              }
+            },
+            {
+              "tag": "NodeRemove",
+              "doc": "A node was removed.",
+              "payload": {
+                "kind": "ref",
+                "name": "NodeBody"
+              }
+            },
+            {
+              "tag": "EdgeAdd",
+              "doc": "A dependency edge was added.",
+              "payload": {
+                "kind": "ref",
+                "name": "EdgeBody"
+              }
+            },
+            {
+              "tag": "EdgeRemove",
+              "doc": "A dependency edge was removed.",
+              "payload": {
+                "kind": "ref",
+                "name": "EdgeBody"
+              }
+            },
+            {
+              "tag": "QueuePush",
+              "doc": "Op-log delta form for a QueueCell node: append `payload` to the tail. The op-log delta is the incremental counterpart to the storage-snapshot form (cell-model.md § Wire and snapshot shape); a run of same-direction QueuePush ops fuses into one multi-epoch batch Delta (protocol.md § Backpressure & outbox coalescing).",
+              "payload": {
+                "kind": "ref",
+                "name": "CellSetBody"
+              }
+            },
+            {
+              "tag": "QueuePop",
+              "doc": "Op-log delta form for a QueueCell node: remove the head. Carries no value (the popped element is determined by ordered replay); a re-delivered pop is Ignored by the epoch gap rule. Crosses the wire only when consumption is authoritatively replicated (mirror sync); in the default producer→consumer sync the remote consumer's pops are local. A QueuePop/QueueClose is a fusion boundary (order-sensitive).",
+              "payload": {
+                "kind": "ref",
+                "name": "NodeBody"
+              }
+            },
+            {
+              "tag": "QueueClose",
+              "doc": "Op-log delta form for a QueueCell node: mark closed (idempotent, terminal — Closed is distinct from Empty). A fusion boundary.",
+              "payload": {
+                "kind": "ref",
+                "name": "NodeBody"
+              }
+            }
+          ]
+        },
+        {
+          "name": "CellSetBody",
+          "kind": "record",
+          "closed": true,
+          "doc": "Body of a `CellSet` or `QueuePush` op: the node and its new value or appended element.",
+          "fields": [
+            {
+              "name": "node",
+              "doc": "Target node.",
+              "presence": "required",
+              "type": {
+                "kind": "ref",
+                "name": "NodeId"
+              }
+            },
+            {
+              "name": "payload",
+              "doc": "Value, inline or by blob descriptor.",
+              "presence": "required",
+              "type": {
+                "kind": "ref",
+                "name": "IpcValue"
+              }
+            }
+          ]
+        },
+        {
+          "name": "SlotValueBody",
+          "kind": "record",
+          "closed": true,
+          "doc": "Body of a `SlotValue` op: the slot and the value it published.",
+          "fields": [
+            {
+              "name": "node",
+              "doc": "Target node.",
+              "presence": "required",
+              "type": {
+                "kind": "ref",
+                "name": "NodeId"
+              }
+            },
+            {
+              "name": "payload",
+              "doc": "Value, inline or by blob descriptor.",
+              "presence": "required",
+              "type": {
+                "kind": "ref",
+                "name": "IpcValue"
+              }
+            }
+          ]
+        },
+        {
+          "name": "NodeBody",
+          "kind": "record",
+          "closed": true,
+          "doc": "Body of an op that names only its node (`Invalidate`, `NodeRemove`, `QueuePop`, `QueueClose`).",
+          "fields": [
+            {
+              "name": "node",
+              "doc": "Target node.",
+              "presence": "required",
+              "type": {
+                "kind": "ref",
+                "name": "NodeId"
+              }
+            }
+          ]
+        },
+        {
+          "name": "NodeAddBody",
+          "kind": "record",
+          "closed": true,
+          "doc": "Body of a `NodeAdd` op: the new node, its type tag and its initial state.",
+          "fields": [
+            {
+              "name": "node",
+              "doc": "New node.",
+              "presence": "required",
+              "type": {
+                "kind": "ref",
+                "name": "NodeId"
+              }
+            },
+            {
+              "name": "type_tag",
+              "doc": "Binding-defined type tag of the new node.",
+              "presence": "required",
+              "type": {
+                "kind": "string"
+              }
+            },
+            {
+              "name": "state",
+              "doc": "Initial node body.",
+              "presence": "required",
+              "type": {
+                "kind": "ref",
+                "name": "NodeState"
+              }
+            },
+            {
+              "name": "key",
+              "doc": "Optional wire-stable keyed address. A conforming ENCODER omits it when absent; an explicit null is also wire-valid and a decoder MUST read both forms as absent (protocol.md § NodeKey, #lzkeynullstrict). This carried a bare NodeKey $ref until that audit, which made a frame the spec now requires decoders to accept schema-invalid.",
+              "presence": "optional",
+              "type": {
+                "kind": "nullable",
+                "inner": {
+                  "kind": "ref",
+                  "name": "NodeKey"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "EdgeBody",
+          "kind": "record",
+          "closed": true,
+          "doc": "Body of an `EdgeAdd` or `EdgeRemove` op: one dependency edge.",
+          "fields": [
+            {
+              "name": "dependent",
+              "doc": "Node that reads `dependency`.",
+              "presence": "required",
+              "type": {
+                "kind": "ref",
+                "name": "NodeId"
+              }
+            },
+            {
+              "name": "dependency",
+              "doc": "Node read by `dependent`.",
+              "presence": "required",
+              "type": {
+                "kind": "ref",
+                "name": "NodeId"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delta",
+          "kind": "record",
+          "closed": true,
+          "doc": "Incremental change set: ordered ops that take the receiver from `base_epoch` to `epoch`.",
+          "fields": [
+            {
+              "name": "base_epoch",
+              "doc": "Epoch this delta applies to (must equal the receiver's last_epoch).",
+              "presence": "required",
+              "type": {
+                "kind": "u64"
+              }
+            },
+            {
+              "name": "epoch",
+              "doc": "New epoch, >= base_epoch + 1. Usually base_epoch + 1; a multi-epoch-span delta has epoch > base_epoch + 1 (epoch - base_epoch = accepted-event span). See protocol.md § Multi-epoch-span delta.",
+              "presence": "required",
+              "type": {
+                "kind": "u64"
+              }
+            },
+            {
+              "name": "ops",
+              "doc": "Ordered operations.",
+              "presence": "required",
+              "type": {
+                "kind": "list",
+                "items": {
+                  "kind": "ref",
+                  "name": "DeltaOp"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "DeltaFrame",
+          "kind": "envelope",
+          "tagging": "external",
+          "doc": "Externally-tagged `Delta` IPC frame.",
+          "variants": [
+            {
+              "tag": "Delta",
+              "type": "Delta"
+            }
+          ]
+        },
+        {
+          "name": "NodeId",
+          "kind": "alias",
+          "doc": "Wire-stable node identifier (u64). The full u64 range is wire-valid; the 2^53-1 bound is a PRODUCER obligation on peers whose runtime represents integers as IEEE-754 doubles, and a decoder that cannot represent a received value exactly MUST reject the frame rather than round it (protocol.md § NodeId / PeerId, #lzspecdecoderbound). Schema validity is therefore u64-wide — a narrower binding refuses at decode, not here.",
+          "target": {
+            "kind": "u64"
+          }
+        },
+        {
+          "name": "IpcValue",
+          "kind": "union",
+          "tagging": "external",
+          "doc": "Externally-tagged delta payload: inline bytes or a shared-memory blob reference.",
+          "variants": [
+            {
+              "tag": "Inline",
+              "doc": "Inline serialized bytes as JSON array of u8 (NOT base64).",
+              "payload": {
+                "kind": "bytes"
+              }
+            },
+            {
+              "tag": "SharedBlob",
+              "doc": "Value stored in a blob backend, by descriptor.",
+              "payload": {
+                "kind": "ref",
+                "name": "ShmBlobRef"
+              }
+            }
+          ]
+        },
+        {
+          "name": "NodeState",
+          "kind": "union",
+          "tagging": "external",
+          "doc": "Externally-tagged node body: concrete bytes, a shared-memory value, or an opaque (visible but non-serializable) node.",
+          "variants": [
+            {
+              "tag": "Payload",
+              "doc": "Serialized value bytes as JSON array of u8 (NOT base64).",
+              "payload": {
+                "kind": "bytes"
+              }
+            },
+            {
+              "tag": "SharedBlob",
+              "doc": "Value stored in a blob backend, by descriptor.",
+              "payload": {
+                "kind": "ref",
+                "name": "ShmBlobRef"
+              }
+            },
+            {
+              "tag": "Opaque",
+              "doc": "Visible but non-serializable node: no body crosses the wire.",
+              "payload": null
+            }
+          ]
+        },
+        {
+          "name": "NodeKey",
+          "kind": "alias",
+          "doc": "Optional wire-stable keyed address: a '/'-joined path (e.g. 'scores/alice'). The pattern rejects empty/leading/trailing/double slashes; construction-time code also enforces the ≤1024 *byte* and ≤32 *segment* bounds (see protocol.md § NodeKey). Serialized as a bare string; the field is omitted in self-describing codecs when absent.",
+          "target": {
+            "kind": "string",
+            "min_length": 1,
+            "max_length": 1024,
+            "pattern": "^[^/]+(/[^/]+)*$"
+          }
+        },
+        {
+          "name": "BlobBackendKind",
+          "kind": "enum",
+          "open": false,
+          "doc": "Which pluggable backend holds the blob. Optional; defaults to 'shm' (POSIX shared memory) for backward compatibility. The receiver routes resolution by this discriminator.",
+          "values": [
+            {
+              "wire": "shm",
+              "doc": "POSIX shared memory (the default)."
+            },
+            {
+              "wire": "arrow",
+              "doc": "Apache Arrow IPC/Flight buffer."
+            },
+            {
+              "wire": "in_process",
+              "doc": "In-process arena."
+            }
+          ]
+        },
+        {
+          "name": "ShmBlobRef",
+          "kind": "record",
+          "closed": true,
+          "doc": "Descriptor into a blob backend (zero-copy transport). The standard fields locate and integrity-check a byte range within the backend's resolved buffer; `backend` selects which pluggable backend resolves it ('shm' = POSIX shared memory, the default for backward compatibility; 'arrow' = Apache Arrow IPC/Flight; 'in_process' = an in-process arena). See protocol.md § Zero-copy transport. `backend` is optional and defaults to 'shm' so legacy descriptors validate unchanged.",
+          "fields": [
+            {
+              "name": "offset",
+              "doc": "Offset of the blob header from the start of the backend's buffer.",
+              "presence": "required",
+              "type": {
+                "kind": "u64"
+              }
+            },
+            {
+              "name": "len",
+              "doc": "Payload length in bytes, excluding the blob header.",
+              "presence": "required",
+              "type": {
+                "kind": "u64"
+              }
+            },
+            {
+              "name": "generation",
+              "doc": "Per-write generation, used to reject a stale descriptor after wraparound.",
+              "presence": "required",
+              "type": {
+                "kind": "u64"
+              }
+            },
+            {
+              "name": "epoch",
+              "doc": "IPC epoch of the message that published this blob.",
+              "presence": "required",
+              "type": {
+                "kind": "u64"
+              }
+            },
+            {
+              "name": "checksum",
+              "doc": "Non-cryptographic payload checksum for torn-write and stale-region checks.",
+              "presence": "required",
+              "type": {
+                "kind": "u64"
+              }
+            },
+            {
+              "name": "backend",
+              "doc": "Which pluggable backend holds the blob. Optional; defaults to 'shm' (POSIX shared memory) for backward compatibility. The receiver routes resolution by this discriminator.",
+              "presence": "optional",
+              "type": {
+                "kind": "ref",
+                "name": "BlobBackendKind"
+              },
+              "default": "shm"
+            }
+          ]
+        }
+      ],
+      "model_sha256": "cf7dfa4e63bdb67441babc61f7e861b18cb1a9d822ca8e6b8757d66ce943b5e7"
     }
   ]
 }
