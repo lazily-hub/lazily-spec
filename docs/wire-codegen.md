@@ -185,8 +185,10 @@ numbers in string fields, and negative generations.
 needed more than multi-variant unions: shared `defs.json` references, scalar
 aliases, byte arrays, a named inline enum with a default, and unit variants.
 It also found a family-wide gap. `protocol.md` makes `QueuePush` / `QueuePop`
-/ `QueueClose` ordinary `DeltaOp` variants, and only lazily-cs decodes them;
-the other nine bindings reject a schema-valid `Delta` carrying one.
+/ `QueueClose` ordinary `DeltaOp` variants, but only lazily-cs decoded them,
+and the round-trip fixtures carried only the seven graph ops. `#lzdeltaqueueops`
+added the three ops to the `Delta` scenario of both `codec/frame_roundtrip_*`
+fixtures and to every binding with an IPC codec (lazily-gd has none).
 
 Lowering `delta` into a binding is harder than lowering receipts was, for
 reasons the model records but no backend handles yet:
