@@ -67,9 +67,10 @@ encode when `None`; absent or `null` on decode); the other backends refuse them.
 
 ### Kinds added for `delta` (`#lzwiremodel4`, lowered for Python by `#lzwiremodel5`)
 
-These kinds exist so the `delta` surface can be modelled. The Python backend
-lowers `union`, `alias` (of a scalar) and `bytes`; every other backend refuses
-them with "modelled but not yet lowered".
+These kinds exist so the `delta` surface can be modelled. The Python, Go
+(`#lzwiremodel6`) and Kotlin (`#lzwiremodel7`) backends lower `union`, `alias`
+(of a scalar) and `bytes`; the Rust backend still refuses them with "modelled
+but not yet lowered".
 
 | Kind | Schema shape | Model |
 |---|---|---|
@@ -137,6 +138,41 @@ lowering byte for byte. The plan (flattened record payloads, `variant_fields`,
 `NodeKey`'s byte and segment bounds, and `ShmBlobRef`'s `backend: null`
 leniency (`#lzblobbackendstrict`), which the schema rejects.
 
+### Kotlin union lowering (`#lzwiremodel7`)
+
+A surface with a union takes a separate Kotlin path; receipts keep the
+record/envelope lowering byte for byte. The plan is again the Python backend's.
+
+- **A union is a `sealed interface`** with one nested `data class` per variant
+  (`DeltaOp.CellSet`, `IpcValue.Inline(bytes)`) and a `data object` per unit
+  variant (`NodeState.Opaque`), which is the shape lazily-kt's hand-written IPC
+  types already had. Record payloads are flattened; other payloads take their
+  `variant_fields` name. `toJson()` returns `JsonObject`, or `JsonElement` when
+  the union has a unit variant (the bare tag is a string).
+- **Every class declares a `companion object`**, so the binding's factories
+  stay hand-written extensions (`DeltaOp.cellSet(...)`, `IpcValue.inline(...)`,
+  `Delta.next(...)`). The old secondary constructor `DeltaOp.CellSet(node,
+  bytes)` keeps its call syntax as an `operator fun invoke` extension on the
+  variant's companion. Per-variant behaviour (`targetReadable`) becomes an
+  extension with an exhaustive `when`, so the generator needs no
+  `interface_methods`.
+- **A class holding a `ByteArray`** gets `equals` / `hashCode` by content; a
+  data class alone compares arrays by identity.
+- **`int64`** is the Go option with the same meaning: lazily-kt holds node ids
+  and epochs in `Long` (`NodeId` is a `typealias`). The decoder refuses a value
+  past 2^63-1 and anything but a bare unsigned integer literal; the encoder
+  refuses a negative value with `IllegalArgumentException`. This avoids the
+  binding-wide `ULong` migration that receipts' `generation` needed.
+- **`decode_error`** names the exception every refusal throws
+  (`IpcDecodeException.Malformed`, default `IllegalArgumentException`).
+  lazily-kt's callers guard an `IpcMessage` decode with one catch on
+  `IpcDecodeException`, and the externals (`ShmBlobRef`'s
+  `UnknownBlobBackend` / `NonStringBlobBackend`, `NodeKeyError`) propagate
+  unwrapped.
+- **ktlint layout is emitted directly**, and the generator refuses a body line
+  past ktlint's 120 columns instead of emitting one `spotlessCheck` would
+  rewrite.
+
 ## Strict decoding
 
 Every generated decoder enforces what the schema says about a record's keys:
@@ -152,7 +188,7 @@ Every generated decoder enforces what the schema says about a record's keys:
 | Rust | `serde(deny_unknown_fields)` | `deserialize_with = "required_nullable"` (a bare `Option` defaults a missing key to `None`) |
 | Go | `UnmarshalJSON` compares the exact key set first; `encoding/json` alone ignores unknown keys and matches keys case-insensitively | same check |
 | Python | `from_wire` compares the exact key set and type-checks each value | same check |
-| Kotlin | `fromJson` compares the exact key set and type-checks each value; kotlinx.serialization's `jsonPrimitive.content` alone reads a number as a string and a string as a number | same check |
+| Kotlin | `fromJson` compares the exact key set (required plus optional) and type-checks each value; kotlinx.serialization's `jsonPrimitive.content` alone reads a number as a string and a string as a number | same check |
 
 This was a decision, not a refactor. Before `#lzwiremodel2`, Rust and Go
 accepted unknown keys and a missing `reason` / `payload_hash`, and Python also
@@ -210,7 +246,7 @@ bindings' published `main`.
 | Surface | Schema | Bindings |
 |---|---|---|
 | `receipts` | `schemas/receipts.json` | lazily-rs `src/generated/receipts.rs`, lazily-go `receipts_wire_gen.go`, lazily-py `src/lazily/_receipts_wire_gen.py`, lazily-kt `src/main/kotlin/io/github/lazily/ReceiptsWireGen.kt` |
-| `delta` | `schemas/delta.json` | lazily-py `src/lazily/_delta_wire_gen.py` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`, `NodeId`; `NodeKey` and `ShmBlobRef` stay hand-written in `_wire_scalars.py`), lazily-go `delta_wire_gen.go` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`; `NodeId`/`Epoch` stay `int64` in `types.go`, `NodeKey` and `ShmBlobRef` stay hand-written in `ipc.go`) |
+| `delta` | `schemas/delta.json` | lazily-py `src/lazily/_delta_wire_gen.py` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`, `NodeId`; `NodeKey` and `ShmBlobRef` stay hand-written in `_wire_scalars.py`), lazily-go `delta_wire_gen.go` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`; `NodeId`/`Epoch` stay `int64` in `types.go`, `NodeKey` and `ShmBlobRef` stay hand-written in `ipc.go`), lazily-kt `src/main/kotlin/io/github/lazily/DeltaWireGen.kt` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`; `NodeId` stays a `Long` typealias and `NodeKey` / `ShmBlobRef` stay hand-written in `Ipc.kt`; semantics in `DeltaSemantics.kt`) |
 
 Lowering the receipts surface found the same real wire mismatch twice. Go
 had `generation` as `int64` and Kotlin had it as `Long`; both accept negative
@@ -275,6 +311,24 @@ strictness it lacked: its decoder accepted unknown keys, a missing `node`
 (decoded as zero), a missing or `null` `ops` list, and negative ids and epochs.
 All of those are now refused, and encoding a negative id is an error.
 
+lazily-kt's lowering (`#lzwiremodel7`) removed 515 hand-written lines from
+`Ipc.kt` for 566 generated ones; 146 lines of constructors, factories, read
+filtering and the epoch decision moved to `DeltaSemantics.kt`, and the Kotlin
+union path is about 430 lines of backend. As in Go, the generator does not pay
+for itself in lines. Measured against lazily-kt `main` before the change, the
+hand-written decoder accepted unknown keys (on `Delta` and on every op body),
+negative node ids and epochs, a node id, epoch or byte written as a JSON
+string, a node id written as `1e2`, the `{"Opaque": ...}` dict form of a unit
+variant, and a number where `type_tag` or `key` belongs (read back as the
+string `"5"`). It refused a missing `ops` list, a `null` one, a byte outside
+0..=255, base64 bytes and an id past 2^63-1, but through a mix of
+`IpcDecodeException`, bare `IllegalArgumentException` and
+`NumberFormatException`. All of those frames are now refused, every one as
+`IpcDecodeException.Malformed`; `NodeKey.fromJson` (hand-written) now refuses
+a non-string too. An explicit `key: null` and `backend: null` are still read
+as absent. `ShmBlobRef` is outside this lowering: its hand-written decoder
+still accepts an unknown key and an integer field written as a JSON string.
+
 The remaining bindings are harder, for reasons the model records but their
 backends do not handle yet:
 
@@ -284,12 +338,10 @@ backends do not handle yet:
   `Serialize`.
 - **Decoder leniency beyond the schema.** `backend: null` is schema-invalid,
   but `protocol.md` requires decoders to read it as `shm`
-  (`#lzblobbackendstrict`). Python and Go keep `ShmBlobRef` `external` for
-  that.
-- **Unions in Rust and Kotlin.** Each needs a union lowering (a Rust enum with
-  struct variants, a Kotlin sealed hierarchy). Kotlin types `NodeId` as
-  `Long`, which the Go `int64` option now covers: a Kotlin equivalent would
-  avoid the `ULong` migration receipts' `generation` needed.
+  (`#lzblobbackendstrict`). Python, Go and Kotlin keep `ShmBlobRef` `external`
+  for that.
+- **Unions in Rust.** Rust needs a union lowering (an enum with struct
+  variants).
 
 The other candidates still do not model:
 

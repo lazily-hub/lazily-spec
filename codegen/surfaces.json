@@ -86,6 +86,28 @@
             ]
           },
           "envelope": false
+        },
+        "kotlin": {
+          "repo": "lazily-kt",
+          "path": "src/main/kotlin/io/github/lazily/DeltaWireGen.kt",
+          "package": "io.github.lazily",
+          "external": {
+            "NodeKey": "",
+            "ShmBlobRef": ""
+          },
+          "int64": {
+            "NodeId": "NodeId",
+            "Delta.base_epoch": "Long",
+            "Delta.epoch": "Long"
+          },
+          "variant_fields": {
+            "IpcValue.Inline": "bytes",
+            "IpcValue.SharedBlob": "blob",
+            "NodeState.Payload": "bytes",
+            "NodeState.SharedBlob": "blob"
+          },
+          "decode_error": "IpcDecodeException.Malformed",
+          "envelope": false
         }
       }
     }

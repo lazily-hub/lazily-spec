@@ -2070,6 +2070,8 @@ _KT_HELPERS = {
 
 
 def render_kotlin(surface: dict, target: dict) -> str:
+    if any(t["kind"] == "union" for t in surface["types"]):
+        return _render_kotlin_unions(surface, target)
     _require_lowerable(surface, "kotlin")
     types = _types_by_name(surface)
     helper = _kt_name(surface["name"]) + "Wire"
@@ -2228,6 +2230,431 @@ def render_kotlin(surface: dict, target: dict) -> str:
     header += ["", f"package {target['package']}", ""]
     header += [f"import {i}" for i in sorted(imports)]
     return "\n".join(header + helpers + body) + "\n"
+
+
+# Kotlin union lowering (#lzwiremodel7). A surface with a union takes this path;
+# receipts keep the record/envelope lowering above byte for byte. The plan
+# (flattened record payloads, `variant_fields`, `external`, reachability) is the
+# Python backend's. Every helper throws the target's `decode_error` (default
+# IllegalArgumentException), so a binding keeps one catch for every refusal.
+
+_KT_UNION_HELPERS = {
+    "fail": [
+        "private fun {h}Fail(message: String): Nothing = throw {E}(message)",
+    ],
+    "object": [
+        "private fun {h}Object(",
+        "    name: String,",
+        "    value: JsonElement,",
+        "    required: List<String>,",
+        "    optional: List<String>,",
+        "): JsonObject {",
+        '    val obj = value as? JsonObject ?: {h}Fail("$name: expected an object, got $value")',
+        "    val missing = required.firstOrNull { it !in obj }",
+        '    if (missing != null) {h}Fail("$name: missing field \\"$missing\\"")',
+        "    val unknown = obj.keys.filter { it !in required && it !in optional }.minOrNull()",
+        '    if (unknown != null) {h}Fail("$name: unknown field \\"$unknown\\"")',
+        "    return obj",
+        "}",
+    ],
+    "tag": [
+        "private fun {h}Tag(",
+        "    name: String,",
+        "    value: JsonElement,",
+        "): Map.Entry<String, JsonElement> {",
+        '    val obj = value as? JsonObject ?: {h}Fail("$name: expected a single-key object, got $value")',
+        '    if (obj.size != 1) {h}Fail("$name: expected exactly one variant tag, got ${obj.keys.sorted()}")',
+        "    return obj.entries.single()",
+        "}",
+    ],
+    "string": [
+        "private fun {h}String(",
+        "    name: String,",
+        "    value: JsonElement,",
+        "): String {",
+        "    val primitive = value as? JsonPrimitive",
+        '    if (primitive == null || !primitive.isString) {h}Fail("$name: expected a string, got $value")',
+        "    return primitive.content",
+        "}",
+    ],
+    "literal": [
+        "private val {h}U64Literal = Regex(\"0|[1-9][0-9]*\")",
+        "",
+        "/** The text of a bare unsigned integer literal: no sign, fraction, exponent, leading zero or quotes. */",
+        "private fun {h}Unsigned(value: JsonElement): String? =",
+        "    (value as? JsonPrimitive)?.takeUnless { it.isString }?.content?.takeIf { {h}U64Literal.matches(it) }",
+    ],
+    "long": [
+        "/**",
+        " * Decode a u64 into a signed `Long`. A value past 2^63-1 is refused rather than",
+        " * wrapped: a binding that cannot represent a wire value exactly must reject the",
+        " * frame (protocol.md § NodeId / PeerId).",
+        " */",
+        "private fun {h}Long(",
+        "    name: String,",
+        "    value: JsonElement,",
+        "): Long {",
+        '    val literal = {h}Unsigned(value) ?: {h}Fail("$name: expected an unsigned integer, got $value")',
+        '    return literal.toLongOrNull() ?: {h}Fail("$name: $literal exceeds this binding\'s range 0..=2^63-1")',
+        "}",
+        "",
+        "/** Encode a `Long` as a u64, refusing a negative value. */",
+        "private fun {h}LongJson(",
+        "    name: String,",
+        "    value: Long,",
+        "): JsonPrimitive {",
+        '    require(value >= 0) { "$name: $value is negative; the wire type is u64" }',
+        "    return JsonPrimitive(value)",
+        "}",
+    ],
+    "bytes": [
+        "/** Decode serialized bytes from a JSON array of u8 (never base64). */",
+        "private fun {h}Bytes(",
+        "    name: String,",
+        "    value: JsonElement,",
+        "): ByteArray {",
+        '    val items = value as? JsonArray ?: {h}Fail("$name: expected an array of bytes, got $value")',
+        "    val out = ByteArray(items.size)",
+        "    for (i in items.indices) {",
+        "        val byte = {h}Unsigned(items[i])?.toIntOrNull()",
+        '        if (byte == null || byte > 255) {h}Fail("$name: expected an array of bytes (0..=255), got $value")',
+        "        out[i] = byte.toByte()",
+        "    }",
+        "    return out",
+        "}",
+        "",
+        "/** Encode bytes as a JSON array of u8. */",
+        "private fun {h}ByteArray(bytes: ByteArray): JsonArray {",
+        "    val items = ArrayList<JsonPrimitive>(bytes.size)",
+        "    for (i in bytes.indices) {",
+        "        items.add(JsonPrimitive(bytes[i].toInt() and 0xff))",
+        "    }",
+        "    return JsonArray(items)",
+        "}",
+    ],
+    "list": [
+        "private fun {h}List(",
+        "    name: String,",
+        "    value: JsonElement,",
+        "): JsonArray = value as? JsonArray ?: {h}Fail(\"$name: expected an array, got $value\")",
+    ],
+}
+
+
+def _render_kotlin_unions(surface: dict, target: dict) -> str:
+    emitted, bodies = _py_plan(surface, target, "kotlin")
+    types = _types_by_name(surface)
+    external: dict[str, str] = target.get("external", {})
+    variant_fields: dict[str, str] = target.get("variant_fields", {})
+    int64: dict[str, str] = target.get("int64", {})
+    error = target.get("decode_error", "IllegalArgumentException")
+    h = _kt_name(surface["name"]) + "Wire"
+    for t in emitted:
+        if t["kind"] == "alias" and t["name"] not in int64:
+            raise UnsupportedSchema(f"kotlin: alias {t['name']} needs an `int64` mapping to a hand-written type")
+        if t["kind"] == "envelope":
+            raise UnsupportedSchema(f"kotlin: envelope {t['name']} is not lowered in a union surface (set `envelope: false`)")
+        if t["kind"] == "enum":
+            raise UnsupportedSchema(f"kotlin: enum {t['name']} in a union surface is not lowered yet")
+    used: set[str] = set()
+    imports = {"kotlinx.serialization.json.JsonElement", "kotlinx.serialization.json.JsonObject"}
+
+    def is_union(expr: dict) -> bool:
+        return expr["kind"] == "ref" and expr["name"] in types and types[expr["name"]]["kind"] == "union"
+
+    def is_long(expr: dict, slot: str) -> bool:
+        return (expr["kind"] == "u64" and slot in int64) or (expr["kind"] == "ref" and expr["name"] in int64)
+
+    def kt_type(expr: dict, slot: str) -> str:
+        kind = expr["kind"]
+        if is_long(expr, slot):
+            return int64[expr["name"]] if kind == "ref" else int64[slot]
+        if kind == "u64":
+            raise UnsupportedSchema(f"kotlin: u64 {slot} in a union surface needs an `int64` mapping")
+        if kind == "string":
+            return "String"
+        if kind == "bytes":
+            return "ByteArray"
+        if kind == "ref":
+            return expr["name"]
+        if kind == "list":
+            return f"List<{kt_type(expr['items'], slot)}>"
+        if kind == "nullable":
+            return kt_type(expr["inner"], slot) + "?"
+        raise UnsupportedSchema(f"kotlin: {kind} in a union surface is not lowered yet ({slot})")
+
+    def encode(expr: dict, src: str, slot: str, depth: int = 0) -> str:
+        kind = expr["kind"]
+        if is_long(expr, slot):
+            used.add("long")
+            return f'{h}LongJson("{slot}", {src})'
+        if kind == "string":
+            imports.add("kotlinx.serialization.json.JsonPrimitive")
+            return f"JsonPrimitive({src})"
+        if kind == "bytes":
+            used.add("bytes")
+            return f"{h}ByteArray({src})"
+        if kind == "ref":
+            return f"{src}.toJson()"
+        if kind == "list":
+            imports.add("kotlinx.serialization.json.JsonArray")
+            item = f"item{depth}" if depth else "item"
+            return f"JsonArray({src}.map {{ {item} -> {encode(expr['items'], item, slot, depth + 1)} }})"
+        if kind == "nullable":
+            imports.add("kotlinx.serialization.json.JsonNull")
+            return f"{src}?.let {{ {encode(expr['inner'], 'it', slot, depth)} }} ?: JsonNull"
+        raise UnsupportedSchema(f"kotlin: {kind} in a union surface is not lowered yet ({slot})")
+
+    def decode(expr: dict, src: str, slot: str, depth: int = 0) -> str:
+        kind = expr["kind"]
+        if is_long(expr, slot):
+            used.add("long")
+            return f'{h}Long("{slot}", {src})'
+        if kind == "string":
+            used.add("string")
+            return f'{h}String("{slot}", {src})'
+        if kind == "bytes":
+            used.add("bytes")
+            return f'{h}Bytes("{slot}", {src})'
+        if kind == "ref":
+            return f"{expr['name']}.fromJson({src})"
+        if kind == "list":
+            used.add("list")
+            item = f"item{depth}" if depth else "item"
+            return f'{h}List("{slot}", {src}).map {{ {item} -> {decode(expr["items"], item, slot + "[]", depth + 1)} }}'
+        if kind == "nullable":
+            imports.add("kotlinx.serialization.json.JsonNull")
+            value = f"value{depth}" if depth else "value"
+            return f"{src}.let {{ {value} -> if ({value} is JsonNull) null else {decode(expr['inner'], value, slot, depth + 1)} }}"
+        raise UnsupportedSchema(f"kotlin: {kind} in a union surface is not lowered yet ({slot})")
+
+    def defaultable(fields: list[dict]) -> list[bool]:
+        out = [False] * len(fields)
+        for i in range(len(fields) - 1, -1, -1):
+            f = fields[i]
+            if f["presence"] == "optional" or f["type"]["kind"] in ("nullable", "list"):
+                out[i] = True
+            elif any(g["presence"] == "optional" for g in fields[:i]):
+                raise UnsupportedSchema(f"kotlin: optional field {fields[i - 1]['name']} must follow every required one")
+            else:
+                break
+        return out
+
+    def field_decls(owner: str, fields: list[dict], indent: str, docs: bool = True) -> list[str]:
+        lines = []
+        for f, has_default in zip(fields, defaultable(fields), strict=True):
+            slot = f"{owner}.{f['name']}"
+            ftype = kt_type(f["type"], slot)
+            if f["presence"] == "optional" and not ftype.endswith("?"):
+                ftype += "?"
+            if docs and f.get("doc"):
+                lines += _kt_kdoc(indent, f["doc"])
+            decl = f"{indent}val {f['kt']}: {ftype}"
+            if has_default:
+                decl += " = emptyList()" if f["type"]["kind"] == "list" and f["presence"] == "required" else " = null"
+            lines.append(decl + ",")
+        return lines
+
+    def put_lines(owner: str, fields: list[dict], indent: str) -> list[str]:
+        lines = []
+        for f in fields:
+            slot = f"{owner}.{f['name']}"
+            if f["presence"] == "optional":
+                inner = f["type"]["inner"] if f["type"]["kind"] == "nullable" else f["type"]
+                lines.append(f'{indent}if ({f["kt"]} != null) put("{f["name"]}", {encode(inner, f["kt"], slot)})')
+            else:
+                lines.append(f'{indent}put("{f["name"]}", {encode(f["type"], f["kt"], slot)})')
+        return lines
+
+    def decode_body(owner: str, ctor: str, fields: list[dict], src: str) -> list[str]:
+        req = ", ".join(f'"{f["name"]}"' for f in fields if f["presence"] == "required")
+        opt = ", ".join(f'"{f["name"]}"' for f in fields if f["presence"] == "optional")
+        lines = [
+            f'    val obj = {h}Object("{owner}", {src}, listOf({req}), {"listOf(" + opt + ")" if opt else "emptyList()"})',
+            f"    return {ctor}(",
+        ]
+        used.add("object")
+        for f in fields:
+            slot = f"{owner}.{f['name']}"
+            if f["presence"] == "optional":
+                imports.add("kotlinx.serialization.json.JsonNull")
+                inner = f["type"]["inner"] if f["type"]["kind"] == "nullable" else f["type"]
+                # An optional key may be omitted, and an explicit null reads as absent.
+                got = f'obj["{f["name"]}"]?.takeUnless {{ it is JsonNull }}'
+                lines.append(f"        {f['kt']} = {got}?.let {{ value -> {decode(inner, 'value', slot, 1)} }},")
+            else:
+                lines.append(f"        {f['kt']} = {decode(f['type'], 'obj.getValue(' + chr(34) + f['name'] + chr(34) + ')', slot)},")
+        lines.append("    )")
+        return lines
+
+    def equality(cls: str, fields: list[dict], indent: str) -> list[str]:
+        """equals/hashCode for a class holding a ByteArray (a data class compares arrays by identity)."""
+        if not any(f["type"]["kind"] == "bytes" for f in fields):
+            return []
+        same = " && ".join(
+            f"{f['kt']}.contentEquals(other.{f['kt']})" if f["type"]["kind"] == "bytes" else f"{f['kt']} == other.{f['kt']}"
+            for f in fields
+        )
+        hashes = [f"{f['kt']}.contentHashCode()" if f["type"]["kind"] == "bytes" else f"{f['kt']}.hashCode()" for f in fields]
+        hash_expr = hashes[0]
+        for x in hashes[1:]:
+            hash_expr = f"31 * ({hash_expr}) + {x}"
+        return [
+            "",
+            f"{indent}override fun equals(other: Any?): Boolean = other is {cls} && {same}",
+            "",
+            f"{indent}override fun hashCode(): Int = {hash_expr}",
+        ]
+
+    def with_kt(fields: list[dict]) -> list[dict]:
+        return [{**f, "kt": _kt_name(f["name"])} for f in fields]
+
+    body: list[str] = []
+    decoders: list[str] = []
+    for t in emitted:
+        name = t["name"]
+        if t["kind"] == "alias":
+            continue
+        body.append("")
+        body += _kt_kdoc("", t["doc"])
+        if t["kind"] == "union":
+            units = [v for v in t["variants"] if v["payload"] is None]
+            json_type = "JsonElement" if units else "JsonObject"
+            body += [
+                f"sealed interface {name} {{",
+                "    /** Encode the externally-tagged wire form. */",
+                f"    fun toJson(): {json_type}",
+            ]
+            for v in t["variants"]:
+                tag = v["tag"]
+                key = f"{name}.{tag}"
+                body.append("")
+                body += _kt_kdoc("    ", v["doc"])
+                if v["payload"] is None:
+                    imports.add("kotlinx.serialization.json.JsonPrimitive")
+                    body += [
+                        f"    data object {tag} : {name} {{",
+                        f'        override fun toJson(): {json_type} = JsonPrimitive("{tag}")',
+                        "    }",
+                    ]
+                    continue
+                imports.add("kotlinx.serialization.json.buildJsonObject")
+                if key in variant_fields:
+                    fields = with_kt([{"name": variant_fields[key], "presence": "required", "type": v["payload"]}])
+                    fields[0]["kt"] = variant_fields[key]
+                    docs = False
+                else:
+                    fields = with_kt(types[v["payload"]["name"]]["fields"])
+                    docs = True
+                body += [f"    data class {tag}(", *field_decls(key, fields, "        ", docs), f"    ) : {name} {{"]
+                if key in variant_fields:
+                    f = fields[0]
+                    body.append(
+                        f'        override fun toJson(): JsonObject = buildJsonObject {{ put("{tag}", {encode(f["type"], f["kt"], key)}) }}'
+                    )
+                else:
+                    body += [
+                        "        override fun toJson(): JsonObject =",
+                        "            buildJsonObject {",
+                        "                put(",
+                        f'                    "{tag}",',
+                        "                    buildJsonObject {",
+                        *put_lines(key, fields, "                        "),
+                        "                    },",
+                        "                )",
+                        "            }",
+                    ]
+                body += equality(tag, fields, "        ")
+                body += ["", "        companion object", "    }"]
+                decoders.append("")
+                signature = f"private fun {h}{name}{tag}(body: JsonElement): {name}.{tag}"
+                if key in variant_fields:
+                    expr = f"{name}.{tag}({decode(fields[0]['type'], 'body', key)})"
+                    one = f"{signature} = {expr}"
+                    decoders += [one] if len(one) <= 120 else [f"{signature} =", f"    {expr}"]
+                else:
+                    decoders += [f"{signature} {{", *decode_body(key, f"{name}.{tag}", fields, "body"), "}"]
+            used.add("tag")
+            body += [
+                "",
+                "    companion object {",
+                "        /** Decode strictly: exactly one known variant. */",
+                f"        fun fromJson(element: JsonElement): {name} {{",
+            ]
+            if units:
+                imports.add("kotlinx.serialization.json.JsonPrimitive")
+                body += [
+                    "            if (element is JsonPrimitive && element.isString) {",
+                    "                return when (val unit = element.content) {",
+                    *[f'                    "{v["tag"]}" -> {v["tag"]}' for v in units],
+                    f'                    else -> {h}Fail("{name}: unknown unit variant \\"$unit\\"")',
+                    "                }",
+                    "            }",
+                ]
+            body += [
+                f'            val (tag, body) = {h}Tag("{name}", element)',
+                "            return when (tag) {",
+                *[
+                    f'                "{v["tag"]}" -> {h}{name}{v["tag"]}(body)'
+                    for v in t["variants"]
+                    if v["payload"] is not None
+                ],
+                f'                else -> {h}Fail("{name}: unknown variant \\"$tag\\"")',
+                "            }",
+                "        }",
+                "    }",
+                "}",
+                *decoders,
+            ]
+            decoders = []
+        elif t["kind"] == "record":
+            imports.add("kotlinx.serialization.json.buildJsonObject")
+            fields = with_kt(t["fields"])
+            body += [f"data class {name}(", *field_decls(name, fields, "    "), ") {"]
+            body += [
+                "    /** Encode the wire object, omitting an absent optional field. */",
+                "    fun toJson(): JsonObject =",
+                "        buildJsonObject {",
+                *put_lines(name, fields, "            "),
+                "        }",
+            ]
+            body += equality(name, fields, "    ")
+            dec = decode_body(name, name, fields, "element")
+            body += [
+                "",
+                "    companion object {",
+                "        /** Decode strictly: exactly the declared keys, each well-typed. */",
+                f"        fun fromJson(element: JsonElement): {name} {{",
+                *["        " + line for line in dec],
+                "        }",
+                "    }",
+                "}",
+            ]
+    if "long" in used or "bytes" in used:
+        used.add("literal")
+    if "bytes" in used or "list" in used:
+        imports.add("kotlinx.serialization.json.JsonArray")
+    if used & {"string", "literal", "long", "bytes"}:
+        imports.add("kotlinx.serialization.json.JsonPrimitive")
+    helpers: list[str] = []
+    used.add("fail")
+    for key in ("fail", "object", "tag", "string", "literal", "long", "bytes", "list"):
+        if key in used:
+            helpers += [""] + [line.replace("{h}", h).replace("{E}", error) for line in _KT_UNION_HELPERS[key]]
+    header = [
+        f"// @generated by lazily-spec {GENERATOR}. DO NOT EDIT.",
+        f"// Surface `{surface['name']}` from {surface['schema']}, model sha256:{surface['model_sha256']}.",
+        "// Regenerate from lazily-spec with `make wire-codegen`; semantics stay hand-written.",
+        "",
+        f"package {target['package']}",
+        "",
+        *[f"import {i}" for i in sorted(imports)],
+    ]
+    out = header + helpers + body
+    long_lines = [line for line in helpers + body if len(line) > 120]
+    if long_lines:
+        raise UnsupportedSchema(f"kotlin: generated line exceeds ktlint's 120 columns: {long_lines[0].strip()[:80]}")
+    return "\n".join(out) + "\n"
 
 
 BACKENDS = {"rust": render_rust, "go": render_go, "python": render_python, "kotlin": render_kotlin}
