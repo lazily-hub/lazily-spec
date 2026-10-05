@@ -62,14 +62,17 @@ up as generated-file drift.
 A field's *presence* is modelled separately from its type: a `required` +
 `nullable` field is always on the wire and is `null` when absent, while an
 `optional` field may be missing. Open enums are modelled but no backend lowers
-them yet. Optional fields are lowered by the Python backend only (omitted on
-encode when `None`; absent or `null` on decode); the other backends refuse them.
+them yet. Optional fields are lowered by the Python backend (omitted on encode
+when `None`; absent or `null` on decode), by Go (a pointer, omitted when nil),
+and by Rust inside union variant bodies (codec-aware, below); Kotlin refuses
+them.
 
 ### Kinds added for `delta` (`#lzwiremodel4`, lowered for Python by `#lzwiremodel5`)
 
-These kinds exist so the `delta` surface can be modelled. The Python backend
-lowers `union`, `alias` (of a scalar) and `bytes`; every other backend refuses
-them with "modelled but not yet lowered".
+These kinds exist so the `delta` surface can be modelled. The Python, Go and
+Rust backends lower `union` and `bytes`; Python lowers a scalar `alias`, Go maps
+one onto a hand-written signed type, and Rust requires it `external`. Kotlin
+refuses all three with "modelled but not yet lowered".
 
 | Kind | Schema shape | Model |
 |---|---|---|
@@ -136,6 +139,65 @@ lowering byte for byte. The plan (flattened record payloads, `variant_fields`,
 `external` is how decoder rules beyond the schema stay hand-written:
 `NodeKey`'s byte and segment bounds, and `ShmBlobRef`'s `backend: null`
 leniency (`#lzblobbackendstrict`), which the schema rejects.
+
+### Rust union lowering (`#lzwiremodel7`)
+
+A surface with a union takes a separate Rust path; receipts keep theirs byte
+for byte. The plan (flattened record payloads, `external`, reachability) is the
+Python backend's.
+
+- **A union is an `enum`** in schema order, which is also the Postcard variant
+  index. A record payload flattens into a struct variant
+  (`DeltaOp::CellSet { node, payload }`), any other payload is a tuple variant
+  (`IpcValue::Inline(Vec<u8>)`), and a unit variant stays a unit
+  (`NodeState::Opaque`). That is the shape lazily-rs's hand-written IPC types
+  already had, so constructors, `filter_readable`, `is_queue_op` and
+  `Delta::next` / `Delta::new` stay hand-written `impl` blocks in `ipc.rs`.
+  Rust needs no `variant_fields`, and the target refuses one.
+- **`external`** maps a type to the Rust path it is imported from
+  (`"NodeId": "crate::distributed::NodeId"`, `"NodeKey": "super::NodeKey"`).
+  Every alias must be external: lazily-rs's `NodeId` is a newtype and
+  `NodeKey` validates its bounds on decode.
+- **Codec-aware optional fields** (`"codec_aware_optional": true`). lazily-rs
+  omits an absent `NodeAdd.key` in self-describing codecs (JSON, and msgpack,
+  whose encoder sets `with_human_readable`) and always writes its option tag in
+  positional Postcard, whose schema has no field names to omit. serde's derive
+  cannot make a field's presence depend on the codec, so a union with an
+  optional field derives only `Deserialize` and gets a generated `Serialize`.
+  Each arm is what the derive emits for `skip_serializing_if`
+  (`serialize_struct_variant` with the field count, then `skip_field`), except
+  that the skip is taken only when `serializer.is_human_readable()`:
+
+  ```rust
+  let emit_key = key.is_some() || !self_describing;
+  let len = 3 + usize::from(emit_key);
+  ```
+
+  The decoder is derived: `serde(default)` on the `Option` reads an omitted key
+  and an explicit `null` as `None` in the self-describing codecs, and Postcard
+  reads the option tag positionally. Without the option the backend refuses an
+  optional field, because the derive's `skip_serializing_if` would drop the
+  field from Postcard and misalign every field after it.
+- **Strict keys.** Struct variants and records carry `deny_unknown_fields`.
+
+Encoding is unchanged byte for byte: twelve frames covering every `DeltaOp`
+variant, every `IpcValue` and `NodeState` form, and a keyed and an unkeyed
+`NodeAdd` encode identically through JSON, json-intern, msgpack and Postcard
+before and after the lowering. Decoding is unchanged except for unknown keys,
+measured against lazily-rs `main` before the change:
+
+| Frame | Before (JSON and msgpack) | After |
+|---|---|---|
+| unknown key in an op body (`{"Invalidate": {"node": 1, "extra": 2}}`) | accepted, key ignored | refused, `unknown field` |
+| unknown key in a `NodeAdd` body | accepted, key ignored | refused |
+| unknown key in `Delta` | accepted, key ignored | refused |
+| `key: null`, `key` omitted | `None` | `None` |
+| missing `node`, missing or `null` `ops`, unknown tag | refused | refused |
+| an op body or `Delta` as a positional array (`{"Invalidate": [1]}`) | accepted | accepted |
+
+The last row is serde's derive, which reads a struct from a sequence in any
+codec; Python and Go refuse it. It is not schema-valid, and the generated
+decoder keeps it because Postcard needs the sequence path.
 
 ## Strict decoding
 
@@ -210,7 +272,7 @@ bindings' published `main`.
 | Surface | Schema | Bindings |
 |---|---|---|
 | `receipts` | `schemas/receipts.json` | lazily-rs `src/generated/receipts.rs`, lazily-go `receipts_wire_gen.go`, lazily-py `src/lazily/_receipts_wire_gen.py`, lazily-kt `src/main/kotlin/io/github/lazily/ReceiptsWireGen.kt` |
-| `delta` | `schemas/delta.json` | lazily-py `src/lazily/_delta_wire_gen.py` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`, `NodeId`; `NodeKey` and `ShmBlobRef` stay hand-written in `_wire_scalars.py`), lazily-go `delta_wire_gen.go` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`; `NodeId`/`Epoch` stay `int64` in `types.go`, `NodeKey` and `ShmBlobRef` stay hand-written in `ipc.go`) |
+| `delta` | `schemas/delta.json` | lazily-rs `src/generated/delta.rs` (`DeltaOp` with its codec-aware `Serialize`, `IpcValue`, `NodeState`, `Delta`; `NodeId`, `NodeKey` and `ShmBlobRef` stay hand-written in `distributed.rs` / `ipc.rs`), lazily-py `src/lazily/_delta_wire_gen.py` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`, `NodeId`; `NodeKey` and `ShmBlobRef` stay hand-written in `_wire_scalars.py`), lazily-go `delta_wire_gen.go` (`DeltaOp`, `IpcValue`, `NodeState`, `Delta`; `NodeId`/`Epoch` stay `int64` in `types.go`, `NodeKey` and `ShmBlobRef` stay hand-written in `ipc.go`) |
 
 Lowering the receipts surface found the same real wire mismatch twice. Go
 had `generation` as `int64` and Kotlin had it as `Long`; both accept negative
@@ -275,21 +337,24 @@ strictness it lacked: its decoder accepted unknown keys, a missing `node`
 (decoded as zero), a missing or `null` `ops` list, and negative ids and epochs.
 All of those are now refused, and encoding a negative id is an error.
 
+lazily-rs's lowering (`#lzwiremodel7`) removed 339 hand-written lines from
+`ipc.rs` (the `DeltaOp` declaration, its two borrowed `Serialize` shadows and
+`Deserialize` shadow, `Delta`, `IpcValue`, `NodeState`) and added 9 lines to
+include the generated module, for 219 generated lines and about 200 lines of
+Rust backend. Unlike Go, lazily-rs's decoder was already range-exact
+(`u64`-wide ids, `0..=255` bytes), so its only new strictness is unknown keys.
+
 The remaining bindings are harder, for reasons the model records but their
 backends do not handle yet:
 
-- **Codec-aware optional fields.** lazily-rs omits an absent `NodeAdd.key` in
-  self-describing codecs and keeps it in positional Postcard. A generated serde
-  derive cannot express that, so Rust's `DeltaOp` keeps its hand-written
-  `Serialize`.
 - **Decoder leniency beyond the schema.** `backend: null` is schema-invalid,
   but `protocol.md` requires decoders to read it as `shm`
-  (`#lzblobbackendstrict`). Python and Go keep `ShmBlobRef` `external` for
-  that.
-- **Unions in Rust and Kotlin.** Each needs a union lowering (a Rust enum with
-  struct variants, a Kotlin sealed hierarchy). Kotlin types `NodeId` as
-  `Long`, which the Go `int64` option now covers: a Kotlin equivalent would
-  avoid the `ULong` migration receipts' `generation` needed.
+  (`#lzblobbackendstrict`). Python, Go and Rust keep `ShmBlobRef` `external`
+  for that.
+- **Unions in Kotlin.** Kotlin needs a union lowering (a sealed hierarchy).
+  Kotlin types `NodeId` as `Long`, which the Go `int64` option now covers: a
+  Kotlin equivalent would avoid the `ULong` migration receipts' `generation`
+  needed.
 
 The other candidates still do not model:
 

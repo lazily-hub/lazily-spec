@@ -37,6 +37,17 @@
       "name": "delta",
       "schema": "schemas/delta.json",
       "targets": {
+        "rust": {
+          "repo": "lazily-rs",
+          "path": "src/generated/delta.rs",
+          "external": {
+            "NodeId": "crate::distributed::NodeId",
+            "NodeKey": "super::NodeKey",
+            "ShmBlobRef": "super::ShmBlobRef"
+          },
+          "codec_aware_optional": true,
+          "envelope": false
+        },
         "python": {
           "repo": "lazily-py",
           "path": "src/lazily/_delta_wire_gen.py",
