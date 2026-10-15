@@ -5,11 +5,12 @@ Language-agnostic wire protocol specification for the **lazily** reactive signal
 **lazily** is one reactive model — sources, computeds, effects, keyed collections,
 CRDTs, and a distributed sync plane — implemented natively in nine languages. This repo
 is the hub: it defines the canonical message schemas, the cross-language feature matrix,
-and the conformance corpus every implementation replays, so a graph built in one language
-converges with a graph built in any other.
+and the conformance corpus. Each binding declares the subset it actually replays; the
+coverage and Core-profile gates reject claims that outrun that executable evidence.
 
 Start here: the [wire protocol](protocol.md), the [cell model](cell-model.md), the
-**Feature Set** matrix below, and the **Conformance Fixtures** every binding must pass.
+[Core support contract](docs/core-support.md), the **Feature Set** matrix below, and
+the **Conformance Fixtures** each binding declares and must pass.
 Concurrency-bearing APIs use the machine-readable
 [`concurrency-scopes.json`](concurrency-scopes.json) taxonomy documented in
 [Concurrency Scopes](docs/concurrency-scopes.md).
@@ -21,10 +22,10 @@ generated/imported provenance requirements are recorded in
 
 ## Implementations
 
-Nine native language bindings plus a React adapter. Each one implements the same cell
-model and the same wire protocol, and each replays the conformance corpus in this repo —
-per-binding parity is tracked in the **Feature Set** matrix below and in
-**Binding Conformance**.
+Nine native language bindings plus a React adapter. Their shipped and partial surfaces,
+declared fixture closures, and execution flavors differ. Per-binding evidence is tracked
+in the **Feature Set** matrix, **Binding Conformance**, and the generated Core support
+contract; presence in this repository family alone does not imply Core qualification.
 
 | Repo | Language |
 |------|----------|

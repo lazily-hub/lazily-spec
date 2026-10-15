@@ -1,0 +1,141 @@
+{
+  "$schema": "../schemas/core-artifact-consumers.schema.json",
+  "schema_version": 1,
+  "profile": "core-v1",
+  "policy": {
+    "pre_1_0_compatibility": "Core remains pre-1.0, but a released Core symbol is kept compatible throughout its declared deprecation window; accidental breaks are defects.",
+    "deprecation": {
+      "minimum_compatible_cohorts": 2,
+      "minimum_days": 90
+    },
+    "preview_disclaimer": "Exports outside the declared Core allow-list remain Preview. Their presence in an umbrella package does not grant Core compatibility or Beta status."
+  },
+  "required_scenarios": [
+    {
+      "id": "source-computed-effect",
+      "description": "A Source invalidates a Computed and an Effect observes the settled derived value."
+    },
+    {
+      "id": "batch-coalescing",
+      "description": "Multiple writes in one batch produce one settled effect rerun."
+    },
+    {
+      "id": "scoped-disposal",
+      "description": "Disposing a scope detaches its effects and prevents later reruns."
+    },
+    {
+      "id": "typed-context",
+      "description": "The binding's declared typed-context surface preserves context identity and rejects cross-context use where the language can express it."
+    }
+  ],
+  "bindings": [
+    {
+      "id": "rust",
+      "repository": "lazily-rs",
+      "package": { "ecosystem": "cargo", "coordinate": "lazily" },
+      "consumer": {
+        "target": "core-artifact-consumer-check",
+        "isolation": "clean-temporary-project",
+        "dependency_source": "built-artifact-only",
+        "toolchain_points": ["minimum", "current"],
+        "scenarios": ["source-computed-effect", "batch-coalescing", "scoped-disposal", "typed-context"]
+      }
+    },
+    {
+      "id": "javascript",
+      "repository": "lazily-js",
+      "package": { "ecosystem": "npm", "coordinate": "@lazily-hub/lazily-js" },
+      "consumer": {
+        "target": "core-artifact-consumer-check",
+        "isolation": "clean-temporary-project",
+        "dependency_source": "built-artifact-only",
+        "toolchain_points": ["minimum", "current"],
+        "scenarios": ["source-computed-effect", "batch-coalescing", "scoped-disposal", "typed-context"]
+      }
+    },
+    {
+      "id": "python",
+      "repository": "lazily-py",
+      "package": { "ecosystem": "pypi", "coordinate": "lazily" },
+      "consumer": {
+        "target": "core-artifact-consumer-check",
+        "isolation": "clean-temporary-project",
+        "dependency_source": "built-artifact-only",
+        "toolchain_points": ["minimum", "current"],
+        "scenarios": ["source-computed-effect", "batch-coalescing", "scoped-disposal", "typed-context"]
+      }
+    },
+    {
+      "id": "go",
+      "repository": "lazily-go",
+      "package": { "ecosystem": "go", "coordinate": "github.com/lazily-hub/lazily-go" },
+      "consumer": {
+        "target": "core-artifact-consumer-check",
+        "isolation": "clean-temporary-project",
+        "dependency_source": "built-artifact-only",
+        "toolchain_points": ["minimum", "current"],
+        "scenarios": ["source-computed-effect", "batch-coalescing", "scoped-disposal", "typed-context"]
+      }
+    },
+    {
+      "id": "kotlin",
+      "repository": "lazily-kt",
+      "package": { "ecosystem": "maven", "coordinate": "io.github.lazily:lazily" },
+      "consumer": {
+        "target": "core-artifact-consumer-check",
+        "isolation": "clean-temporary-project",
+        "dependency_source": "built-artifact-only",
+        "toolchain_points": ["minimum", "current"],
+        "scenarios": ["source-computed-effect", "batch-coalescing", "scoped-disposal", "typed-context"]
+      }
+    },
+    {
+      "id": "cpp",
+      "repository": "lazily-cpp",
+      "package": { "ecosystem": "cmake", "coordinate": "lazily-cpp" },
+      "consumer": {
+        "target": "core-artifact-consumer-check",
+        "isolation": "clean-temporary-project",
+        "dependency_source": "built-artifact-only",
+        "toolchain_points": ["minimum", "current"],
+        "scenarios": ["source-computed-effect", "batch-coalescing", "scoped-disposal", "typed-context"]
+      }
+    },
+    {
+      "id": "csharp",
+      "repository": "lazily-cs",
+      "package": { "ecosystem": "nuget", "coordinate": "Lazily" },
+      "consumer": {
+        "target": "core-artifact-consumer-check",
+        "isolation": "clean-temporary-project",
+        "dependency_source": "built-artifact-only",
+        "toolchain_points": ["minimum", "current"],
+        "scenarios": ["source-computed-effect", "batch-coalescing", "scoped-disposal", "typed-context"]
+      }
+    },
+    {
+      "id": "dart",
+      "repository": "lazily-dart",
+      "package": { "ecosystem": "pub", "coordinate": "lazily" },
+      "consumer": {
+        "target": "core-artifact-consumer-check",
+        "isolation": "clean-temporary-project",
+        "dependency_source": "built-artifact-only",
+        "toolchain_points": ["minimum", "current"],
+        "scenarios": ["source-computed-effect", "batch-coalescing", "scoped-disposal", "typed-context"]
+      }
+    },
+    {
+      "id": "zig",
+      "repository": "lazily-zig",
+      "package": { "ecosystem": "zig", "coordinate": "lazily" },
+      "consumer": {
+        "target": "core-artifact-consumer-check",
+        "isolation": "clean-temporary-project",
+        "dependency_source": "built-artifact-only",
+        "toolchain_points": ["minimum", "current"],
+        "scenarios": ["source-computed-effect", "batch-coalescing", "scoped-disposal", "typed-context"]
+      }
+    }
+  ]
+}

@@ -20,6 +20,7 @@
 - [Durable Effect Sinks](durable-sinks.md)
 - [Reactive Egress](transport-egress.md)
 - [Cross-Language Coverage](coverage.md)
+- [Core Support and Artifact Consumers](core-support.md)
 - [Wire Protocol](protocol.md)
 - [Protobuf Graph-Boundary Interoperability](protobuf-interop.md)
 - [Assertion-Block Schemas](assertion-block-schemas.md)

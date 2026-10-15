@@ -9,6 +9,10 @@ CORE_EVIDENCE_TIMEOUT_MS ?= 600000
 
 .PHONY: \
 check \
+core-support-check \
+core-support-sync \
+core-artifact-consumers-check \
+core-artifact-consumers-check-all \
 test-schemas \
 test-lean-formal \
 coverage-check \
@@ -34,7 +38,7 @@ wire-codegen \
 wire-codegen-check \
 core-profile-check
 
-check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check core-evidence-self-test fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check core-profile-check
+check: core-support-check assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check core-evidence-self-test fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check core-profile-check
 
 # Core evidence verifier self-test (#lzcoreclaims). Real qualification passes
 # binding-produced reports explicitly and uses --require-all; the repository's
@@ -56,6 +60,24 @@ core-evidence-check:
 # negative boundary still turns red. The generated human view must be byte-exact.
 core-profile-check:
 >node scripts/check-core-profile.mjs --self-test
+
+# Core support is rendered from the canonical Core profile plus the separate
+# artifact-consumer contract. The local gate proves the generator and document
+# are current. The aggregate gate additionally executes every sibling binding's
+# clean installed-artifact consumer; --require-all keeps a missing checkout or
+# target from becoming vacuous release evidence.
+core-support-check:
+>node --test tests/test_core_support.mjs
+>node scripts/core-support.mjs --check
+
+core-support-sync:
+>node scripts/core-support.mjs --write
+
+core-artifact-consumers-check:
+>node scripts/core-support.mjs --check --run-consumers
+
+core-artifact-consumers-check-all:
+>node scripts/core-support.mjs --check --run-consumers --require-all
 
 # Shared wire model + per-binding codec generation (#lzwiremodel). The golden
 # codegen/wire-model.json is derived from the schemas named in
