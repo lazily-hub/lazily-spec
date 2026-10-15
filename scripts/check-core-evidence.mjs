@@ -11,10 +11,12 @@ import {
   lstatSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   realpathSync,
   rmSync,
   statSync,
+  utimesSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -154,12 +156,14 @@ function executeFixturelessProof({
     rmSync(candidate);
   }
 
+  const startedMarker = startGenerationMarker(dirname(candidate), `${claimId}.proof`);
   const result = spawnSync(command[0], command.slice(1), {
     cwd,
     encoding: "utf8",
     env: {
       ...process.env,
       LAZILY_CORE_CLAIM_ID: claimId,
+      LAZILY_CORE_COMMAND_TIMEOUT_MS: String(timeoutMs),
       LAZILY_CORE_EVIDENCE_PATH: candidate,
       LAZILY_CORE_REPORT_PATH: reportPath,
     },
@@ -167,12 +171,60 @@ function executeFixturelessProof({
     shell: false,
     timeout: timeoutMs,
   });
-  if (result.error) fail(`${label}.command could not run: ${result.error.message}`);
+  const startedMs = finishGenerationMarker(startedMarker);
+  if (result.error) {
+    if (result.error.code === "ETIMEDOUT") {
+      fail(`${label}.command timed out after ${timeoutMs}ms`);
+    }
+    fail(`${label}.command could not run: ${result.error.message}`);
+  }
   if (result.status !== 0) {
     const detail = `${result.stderr ?? ""}${result.stdout ?? ""}`.trim().slice(0, 1000);
     fail(`${label}.command exited ${result.status}${detail ? `: ${detail}` : ""}`);
   }
+  if (existsSync(candidate)) requireFresh([candidate], startedMs, `${label}.evidence`);
   validateEvidenceReference(evidenceReference, reportsRoot, `${label}.evidence`);
+}
+
+// Freshness is measured against a marker file the verifier writes immediately
+// before spawning, on the same filesystem as the outputs, so the comparison
+// uses one clock and one timestamp granularity. Deleting outputs before the
+// spawn already proves existence-after-spawn means "written by this run";
+// the mtime check additionally rejects a command that restores a preserved
+// artifact (`cp -p`, `shutil.copy2`, a cache) instead of producing one.
+function startGenerationMarker(directory, name) {
+  mkdirSync(directory, { recursive: true });
+  const marker = join(directory, `.${name}.generation-started`);
+  rmSync(marker, { force: true });
+  writeFileSync(marker, `${process.pid}\n`);
+  return marker;
+}
+
+function finishGenerationMarker(marker) {
+  const startedMs = statSync(marker).mtimeMs;
+  rmSync(marker, { force: true });
+  return startedMs;
+}
+
+function regularFilesBeneath(directory) {
+  const files = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...regularFilesBeneath(path));
+    else if (entry.isFile()) files.push(path);
+  }
+  return files;
+}
+
+function requireFresh(paths, startedMs, label) {
+  const stale = paths.filter((path) => lstatSync(path).mtimeMs < startedMs);
+  if (stale.length > 0) {
+    for (const path of stale) rmSync(path, { force: true });
+    fail(
+      `${label} is not freshly generated: ${stale.length} file(s) predate the command start ` +
+        `(${new Date(startedMs).toISOString()}): ${stale.join(", ")}`,
+    );
+  }
 }
 
 function generateBindingReport({
@@ -206,12 +258,14 @@ function generateBindingReport({
     }
     rmSync(reportPath);
   }
+  const startedMarker = startGenerationMarker(options.reports, binding.id);
   const result = spawnSync(command[0], command.slice(1), {
     cwd: bindingDir,
     encoding: "utf8",
     env: {
       ...process.env,
       LAZILY_CORE_BINDING_ID: binding.id,
+      LAZILY_CORE_COMMAND_TIMEOUT_MS: String(options.commandTimeoutMs),
       LAZILY_CORE_PROFILE_PATH: options.profile,
       LAZILY_CORE_REPORT_PATH: reportPath,
       LAZILY_CORE_REPORTS_ROOT: options.reports,
@@ -221,7 +275,13 @@ function generateBindingReport({
     shell: false,
     timeout: options.commandTimeoutMs,
   });
-  if (result.error) fail(`binding ${binding.id}: report_command could not run: ${result.error.message}`);
+  const startedMs = finishGenerationMarker(startedMarker);
+  if (result.error) {
+    if (result.error.code === "ETIMEDOUT") {
+      fail(`binding ${binding.id}: report_command timed out after ${options.commandTimeoutMs}ms`);
+    }
+    fail(`binding ${binding.id}: report_command could not run: ${result.error.message}`);
+  }
   if (result.status !== 0) {
     const detail = `${result.stderr ?? ""}${result.stdout ?? ""}`.trim().slice(0, 1000);
     fail(`binding ${binding.id}: report_command exited ${result.status}${detail ? `: ${detail}` : ""}`);
@@ -231,6 +291,12 @@ function generateBindingReport({
   if (metadata.isSymbolicLink() || !metadata.isFile() || statSync(reportPath).size === 0) {
     fail(`binding ${binding.id}: report_command must produce a non-empty regular report file`);
   }
+  requireFresh(
+    [reportPath, ...regularFilesBeneath(evidenceDir)],
+    startedMs,
+    `binding ${binding.id}: report_command output`,
+  );
+  return startedMs;
 }
 
 function strings(value, label) {
@@ -749,7 +815,7 @@ function selfTest() {
       generateBindingReport({
         binding: profile.bindings[0],
         bindingDir,
-        command: [process.execPath, "-e", ""],
+        command: [process.execPath, "-e", "process.exit(0)"],
         options: generationOptions,
         reportPath: generatedReportPath,
       });
@@ -757,6 +823,107 @@ function selfTest() {
       missingGeneratedReportRejected = true;
     }
     if (!missingGeneratedReportRejected) fail("self-test did not reject missing generated report");
+    if (existsSync(generatedReportPath)) {
+      fail("self-test accepted a stale report after report_command produced no report");
+    }
+
+    const staleEvidencePath = join(reportsRoot, "rust", "stale-before-timeout.json");
+    mkdirSync(dirname(staleEvidencePath), { recursive: true });
+    writeFileSync(staleEvidencePath, "stale evidence\n");
+    writeFileSync(generatedReportPath, "stale report\n");
+    let timeoutRejected = false;
+    try {
+      generateBindingReport({
+        binding: profile.bindings[0],
+        bindingDir,
+        command: [process.execPath, "-e", "setTimeout(() => {}, 10_000)"],
+        options: { ...generationOptions, commandTimeoutMs: 25 },
+        reportPath: generatedReportPath,
+      });
+    } catch (error) {
+      timeoutRejected = error.message.includes("report_command timed out after 25ms");
+    }
+    if (!timeoutRejected) fail("self-test did not reject a timed-out report_command deterministically");
+    if (existsSync(generatedReportPath) || existsSync(staleEvidencePath)) {
+      fail("self-test retained stale report/evidence after report_command timeout");
+    }
+
+    // The per-command budget reaches the generator so it can bound its own
+    // children below the verifier's blind timeout (#lzcoreevidencedarttimeout).
+    generateBindingReport({
+      binding: profile.bindings[0],
+      bindingDir,
+      command: [
+        process.execPath,
+        "-e",
+        'if (process.env.LAZILY_CORE_COMMAND_TIMEOUT_MS !== "10000") process.exit(3); require("node:fs").writeFileSync(process.env.LAZILY_CORE_REPORT_PATH, "{}")',
+      ],
+      options: generationOptions,
+      reportPath: generatedReportPath,
+    });
+
+    // Freshness: a command that restores a preserved artifact instead of
+    // producing one is rejected, and the stale artifact does not survive to be
+    // validated by a later non-generating run. Timestamps are pinned far in the
+    // past, so the outcome does not depend on scheduling or clock resolution.
+    const ancient = new Date("2000-01-01T00:00:00Z");
+    const backdate = (target) =>
+      `const fs = require("node:fs"); fs.writeFileSync(${target}, "{}"); ` +
+      `fs.utimesSync(${target}, new Date(${ancient.getTime()}), new Date(${ancient.getTime()}));`;
+    const freshReport = 'require("node:fs").writeFileSync(process.env.LAZILY_CORE_REPORT_PATH, "{}");';
+    const staleCases = [
+      {
+        name: "backdated report",
+        script: backdate("process.env.LAZILY_CORE_REPORT_PATH"),
+        stale: generatedReportPath,
+      },
+      {
+        name: "backdated evidence",
+        script: `${freshReport} ${backdate(
+          'require("node:path").join(process.env.LAZILY_CORE_REPORTS_ROOT, "rust", "copied.json")',
+        )}`,
+        stale: join(reportsRoot, "rust", "copied.json"),
+      },
+    ];
+    for (const staleCase of staleCases) {
+      let staleRejected = false;
+      try {
+        generateBindingReport({
+          binding: profile.bindings[0],
+          bindingDir,
+          command: [process.execPath, "-e", staleCase.script],
+          options: generationOptions,
+          reportPath: generatedReportPath,
+        });
+      } catch (error) {
+        staleRejected = error.message.includes("is not freshly generated");
+      }
+      if (!staleRejected) fail(`self-test accepted a ${staleCase.name}`);
+      if (existsSync(staleCase.stale)) fail(`self-test retained a rejected ${staleCase.name}`);
+    }
+    if (existsSync(join(reportsRoot, ".rust.generation-started"))) {
+      fail("self-test left a generation marker behind");
+    }
+
+    const proofEvidence = join(reportsRoot, "rust", "fresh-proof.json");
+    let staleProofRejected = false;
+    try {
+      executeFixturelessProof({
+        bindingId: "rust",
+        claimId: "c_abi_ffi_boundary",
+        command: [process.execPath, "-e", backdate("process.env.LAZILY_CORE_EVIDENCE_PATH")],
+        cwd: bindingDir,
+        evidenceReference: "rust/fresh-proof.json",
+        reportsRoot,
+        reportPath,
+        label: "self-test proof",
+        timeoutMs: 10_000,
+      });
+    } catch (error) {
+      staleProofRejected = error.message.includes("is not freshly generated");
+    }
+    if (!staleProofRejected) fail("self-test accepted backdated fixtureless proof evidence");
+    if (existsSync(proofEvidence)) fail("self-test retained backdated fixtureless proof evidence");
     writeFileSync(
       join(reportsRoot, "rust", "assertion-evidence.json"),
       `${JSON.stringify({ claims: { a: { status: "mutation-killed", witness: "fixture-a" } } })}\n`,
@@ -870,7 +1037,7 @@ function selfTest() {
       }
       if (!rejected) fail(`self-test did not reject ${name}`);
     }
-    console.log(`core evidence self-test OK (${probes.length + 1} negative probes)`);
+    console.log(`core evidence self-test OK (${probes.length + 2} negative probes)`);
   } finally {
     rmSync(sandbox, { force: true, recursive: true });
   }
@@ -909,8 +1076,9 @@ function main() {
       fail(`binding ${binding.id}: declaration identity does not match the selected profile binding`);
     }
     const reportCommand = strings(declaration.report_command, `binding ${binding.id}.report_command`);
+    let generatedAtMs = null;
     if (options.generateReports) {
-      generateBindingReport({
+      generatedAtMs = generateBindingReport({
         binding,
         bindingDir: dirname(dirname(declarationPath)),
         command: reportCommand,
@@ -937,7 +1105,12 @@ function main() {
         reportsRoot: options.reports,
       },
     );
-    console.log(`core evidence: ${binding.id} OK`);
+    const reportDate = new Date(statSync(reportPath).mtimeMs).toISOString();
+    console.log(
+      generatedAtMs === null
+        ? `core evidence: ${binding.id} OK (report dated ${reportDate}; not regenerated)`
+        : `core evidence: ${binding.id} OK (report dated ${reportDate}; generated by a command started ${new Date(generatedAtMs).toISOString()})`,
+    );
   }
   if (skipped.length > 0) {
     const message = `missing declaration/report for: ${skipped.join(", ")}`;

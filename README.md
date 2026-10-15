@@ -198,6 +198,23 @@ make core-evidence-check \
   CORE_EVIDENCE_REPORTS=/path/to/fresh/reports
 ```
 
+The verifier passes its per-command budget to every report and proof command as
+`LAZILY_CORE_COMMAND_TIMEOUT_MS`, so a runner can bound its own children and
+fail with a precise diagnostic before the verifier's blind timeout fires. A
+report command that exceeds `CORE_EVIDENCE_TIMEOUT_MS` fails with the exact
+timeout, after its old report and binding evidence directory have already been
+removed. The Dart runner probes each distinct `dart` on `PATH` with a bounded
+`dart --version` and skips one that never exits or prints no SDK banner (the AUR
+flutter wrapper `exec`s itself forever when its unionfs mount fails);
+`DART=/absolute/path/to/dart` pins the SDK instead.
+
+Generated outputs must also be fresh: the verifier stamps a marker file next to
+the outputs immediately before spawning, and rejects (and deletes) a report,
+binding evidence file, or proof artifact whose mtime predates it, so a command
+that restores a preserved artifact (`cp -p`, a cache) instead of producing one
+fails closed. Each `OK` line prints the report's date and the command's start
+time.
+
 The verifier executes every fixtureless proof command without a shell from the
 binding root. It exposes `LAZILY_CORE_EVIDENCE_PATH` and requires the command to
 recreate that regular file beneath the report directory. Assertion evidence must
