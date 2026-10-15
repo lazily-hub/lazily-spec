@@ -9,6 +9,8 @@ CORE_EVIDENCE_TIMEOUT_MS ?= 600000
 
 .PHONY: \
 check \
+core-cohort-check \
+core-ci-reach \
 core-support-check \
 core-support-sync \
 core-artifact-consumers-check \
@@ -38,7 +40,7 @@ wire-codegen \
 wire-codegen-check \
 core-profile-check
 
-check: core-support-check assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check core-evidence-self-test fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check core-profile-check
+check: core-profile-check core-evidence-self-test core-support-check core-cohort-check core-ci-reach assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check
 
 # Core evidence verifier self-test (#lzcoreclaims). Real qualification passes
 # binding-produced reports explicitly and uses --require-all; the repository's
@@ -74,10 +76,23 @@ core-support-sync:
 >node scripts/core-support.mjs --write
 
 core-artifact-consumers-check:
->node scripts/core-support.mjs --check --run-consumers
+>node scripts/core-support.mjs --check --run-consumers --bindings-root "$(CORE_BINDINGS_ROOT)"
 
 core-artifact-consumers-check-all:
->node scripts/core-support.mjs --check --run-consumers --require-all
+>node scripts/core-support.mjs --check --run-consumers --bindings-root "$(CORE_BINDINGS_ROOT)" --require-all
+
+# Immutable Core cohort/BOM schema and semantic verifier (#lzcorecohort). This
+# proves the verifier and its negative cases through the schema test suite; a
+# real candidate manifest lands only after the profile, API, packaged-consumer,
+# and release-pin prerequisites are green.
+core-cohort-check: test-schemas
+
+# CI reachability pins (#lzcoreciactivationfixes): every Core make gate must be
+# reached by exactly one unconditional step in ci.yml's core job and in the
+# reusable cohort publish gate; --self-test proves each mutation turns red.
+core-ci-reach:
+>node scripts/check-core-ci-reach.mjs --self-test
+>node scripts/check-core-ci-reach.mjs
 
 # Shared wire model + per-binding codec generation (#lzwiremodel). The golden
 # codegen/wire-model.json is derived from the schemas named in

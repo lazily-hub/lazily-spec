@@ -1,0 +1,34 @@
+{
+  "workflow": ".github/workflows/ci.yml",
+  "job": "core",
+  "activation": {
+    "continue-on-error": "",
+    "if": "",
+    "needs": "",
+    "strategy": ""
+  },
+  "steps": {
+    "Core CI reachability pins": "make core-ci-reach",
+    "Core cohort schema and negative probes": "make core-cohort-check",
+    "Core evidence contract and negative probes": "make core-evidence-self-test",
+    "Core profile contract": "make core-profile-check",
+    "Core support contract": "make core-support-check"
+  },
+  "reusable": {
+    "workflow": ".github/workflows/core-cohort-publish-gate.yml",
+    "job": "aggregate-core-gates",
+    "activation": {
+      "continue-on-error": "",
+      "if": "",
+      "needs": "",
+      "strategy": ""
+    },
+    "steps": {
+      "Core artifact consumers aggregate": "make core-artifact-consumers-check-all",
+      "Core cohort aggregate": "make core-cohort-check",
+      "Core evidence aggregate": "make core-evidence-check",
+      "Core profile aggregate": "make core-profile-check",
+      "Core support aggregate": "make core-support-check"
+    }
+  }
+}

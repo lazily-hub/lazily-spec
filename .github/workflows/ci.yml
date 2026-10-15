@@ -84,6 +84,36 @@ jobs:
       - name: Check binding floors still describe the corpus
         run: node scripts/check-corpus-floors.mjs --require-all
 
+  core:
+    name: Core profile, evidence, support, and cohort gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Core profile contract
+        run: make core-profile-check
+
+      - name: Core evidence contract and negative probes
+        run: make core-evidence-self-test
+
+      - name: Core support contract
+        run: make core-support-check
+
+      - name: Core cohort schema and negative probes
+        run: make core-cohort-check
+
+      - name: Core CI reachability pins
+        run: make core-ci-reach
+
   lean:
     name: Lean formal model
     runs-on: ubuntu-latest

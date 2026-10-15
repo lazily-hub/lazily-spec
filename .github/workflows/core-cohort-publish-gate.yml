@@ -1,0 +1,238 @@
+name: Core cohort publish gate
+
+on:
+  workflow_call:
+    inputs:
+      spec_commit:
+        description: Exact 40-hex lazily-spec commit containing the candidate manifest
+        required: true
+        type: string
+      manifest_path:
+        description: Candidate manifest path relative to the pinned lazily-spec checkout
+        required: true
+        type: string
+      evidence_artifact:
+        description: Artifact name containing packages and their immutable evidence
+        required: true
+        type: string
+      binding:
+        description: Binding id in the cohort manifest
+        required: true
+        type: string
+      binding_commit:
+        description: Exact release commit; must equal the caller's GITHUB_SHA
+        required: true
+        type: string
+      binding_tag:
+        description: Exact v-prefixed version tag; must equal the caller's ref name
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  aggregate-core-gates:
+    name: Re-run pinned Core aggregate gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact Lazily Spec revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: lazily-hub/lazily-spec
+          ref: ${{ inputs.spec_commit }}
+          path: lazily-spec
+          persist-credentials: false
+
+      - name: Reject floating manifest and binding revisions
+        shell: bash
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+          SPEC_COMMIT: ${{ inputs.spec_commit }}
+        run: |
+          set -euo pipefail
+          [[ "$SPEC_COMMIT" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::spec_commit must be a lowercase 40-hex commit"
+            exit 1
+          }
+          case "$MANIFEST_PATH" in
+            /*|../*|*/../*)
+              echo "::error::manifest_path must stay inside lazily-spec"
+              exit 1
+              ;;
+          esac
+          test -f "lazily-spec/$MANIFEST_PATH" || {
+            echo "::error::candidate manifest is absent from the pinned spec commit"
+            exit 1
+          }
+          jq -e '
+            .spec.commit == $spec and
+            (.bindings | length == 9) and
+            ([.bindings[].id] | unique | length == 9) and
+            all(.bindings[];
+              (.source.commit | test("^[0-9a-f]{40}$")) and
+              (.source.repository | test("^https://github.com/lazily-hub/lazily-[a-z]+$")))
+          ' --arg spec "$SPEC_COMMIT" "lazily-spec/$MANIFEST_PATH" >/dev/null
+
+      - name: Check out all nine exact binding revisions
+        shell: bash
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: |
+          set -euo pipefail
+          jq -r '.bindings[] | [.source.repository, .source.commit] | @tsv' \
+            "lazily-spec/$MANIFEST_PATH" |
+          while IFS=$'\t' read -r repository commit; do
+            directory="${repository##*/}"
+            test ! -e "$directory" || {
+              echo "::error::duplicate binding repository $repository"
+              exit 1
+            }
+            git init -q "$directory"
+            git -C "$directory" remote add origin "$repository"
+            git -C "$directory" fetch -q --depth 1 origin "$commit"
+            git -C "$directory" checkout -q --detach FETCH_HEAD
+            test "$(git -C "$directory" rev-parse HEAD)" = "$commit"
+          done
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@caf0cab7a618c569241d31dcd442f54681755d39 # v3
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: "3.10.0"
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: "0.16.0"
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Download candidate packages and evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ inputs.evidence_artifact }}
+          path: cohort-evidence
+
+      - name: Core profile aggregate
+        working-directory: lazily-spec
+        run: make core-profile-check
+
+      - name: Core evidence aggregate
+        working-directory: lazily-spec
+        env:
+          CORE_EVIDENCE_REPORTS: ../cohort-evidence
+        run: make core-evidence-check
+
+      - name: Core support aggregate
+        working-directory: lazily-spec
+        run: make core-support-check
+
+      - name: Core artifact consumers aggregate
+        working-directory: lazily-spec
+        run: make core-artifact-consumers-check-all
+
+      - name: Core cohort aggregate
+        working-directory: lazily-spec
+        run: make core-cohort-check
+
+  verify:
+    name: Verify pinned cohort candidate
+    needs: aggregate-core-gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject floating or mismatched caller pins
+        shell: bash
+        env:
+          SPEC_COMMIT: ${{ inputs.spec_commit }}
+          BINDING_COMMIT: ${{ inputs.binding_commit }}
+          BINDING_TAG: ${{ inputs.binding_tag }}
+        run: |
+          set -euo pipefail
+          [[ "$SPEC_COMMIT" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::spec_commit must be a lowercase 40-hex commit"
+            exit 1
+          }
+          [[ "$BINDING_COMMIT" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::binding_commit must be a lowercase 40-hex commit"
+            exit 1
+          }
+          [[ "$BINDING_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]] || {
+            echo "::error::binding_tag must be an exact v-prefixed version"
+            exit 1
+          }
+          test "$BINDING_COMMIT" = "$GITHUB_SHA" || {
+            echo "::error::binding_commit does not equal caller GITHUB_SHA"
+            exit 1
+          }
+          test "$BINDING_TAG" = "$GITHUB_REF_NAME" || {
+            echo "::error::binding_tag does not equal caller GITHUB_REF_NAME"
+            exit 1
+          }
+
+      - name: Check out exact Lazily Spec revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: lazily-hub/lazily-spec
+          ref: ${{ inputs.spec_commit }}
+          path: lazily-spec
+          persist-credentials: false
+
+      - name: Download candidate packages and evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ inputs.evidence_artifact }}
+          path: cohort-evidence
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@caf0cab7a618c569241d31dcd442f54681755d39 # v3
+
+      - name: Verify manifest, artifacts, caller commit, and caller tag
+        shell: bash
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+          SPEC_COMMIT: ${{ inputs.spec_commit }}
+          BINDING: ${{ inputs.binding }}
+          BINDING_COMMIT: ${{ inputs.binding_commit }}
+          BINDING_TAG: ${{ inputs.binding_tag }}
+        run: |
+          set -euo pipefail
+          case "$MANIFEST_PATH" in
+            /*|../*|*/../*)
+              echo "::error::manifest_path must stay inside lazily-spec"
+              exit 1
+              ;;
+          esac
+          cd lazily-spec
+          uv run python scripts/verify_core_cohort.py "$MANIFEST_PATH" \
+            --artifact-root ../cohort-evidence \
+            --spec-root . \
+            --require-publish-ready \
+            --expected-spec-commit "$SPEC_COMMIT" \
+            --expected-binding "$BINDING" \
+            --expected-commit "$BINDING_COMMIT" \
+            --expected-tag "$BINDING_TAG"
