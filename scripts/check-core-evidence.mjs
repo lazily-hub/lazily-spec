@@ -179,11 +179,22 @@ function executeFixturelessProof({
     fail(`${label}.command could not run: ${result.error.message}`);
   }
   if (result.status !== 0) {
-    const detail = `${result.stderr ?? ""}${result.stdout ?? ""}`.trim().slice(0, 1000);
+    const detail = failureDetail(result);
     fail(`${label}.command exited ${result.status}${detail ? `: ${detail}` : ""}`);
   }
   if (existsSync(candidate)) requireFresh([candidate], startedMs, `${label}.evidence`);
   validateEvidenceReference(evidenceReference, reportsRoot, `${label}.evidence`);
+}
+
+// A failing command's cause is at the END of its output: build tools print
+// thousands of progress lines first, so a head slice reported only
+// "Compiling ..." and hid the error. Keep the tail of each stream.
+function failureDetail(result) {
+  const tail = (text, limit) => {
+    const trimmed = (text ?? "").trim();
+    return trimmed.length > limit ? `...${trimmed.slice(-limit)}` : trimmed;
+  };
+  return [tail(result.stderr, 2000), tail(result.stdout, 1000)].filter(Boolean).join("\n--- stdout ---\n");
 }
 
 // Freshness is measured against a marker file the verifier writes immediately
@@ -283,7 +294,7 @@ function generateBindingReport({
     fail(`binding ${binding.id}: report_command could not run: ${result.error.message}`);
   }
   if (result.status !== 0) {
-    const detail = `${result.stderr ?? ""}${result.stdout ?? ""}`.trim().slice(0, 1000);
+    const detail = failureDetail(result);
     fail(`binding ${binding.id}: report_command exited ${result.status}${detail ? `: ${detail}` : ""}`);
   }
   if (!existsSync(reportPath)) fail(`binding ${binding.id}: report_command produced no report`);
@@ -698,6 +709,14 @@ function loadAssertionRoutes(path, fixtureDefinitions) {
 
 function selfTest() {
   const sandbox = mkdtempSync(join(tmpdir(), "lazily-core-evidence-"));
+  // A failed command must surface its trailing cause, not a progress prefix.
+  const noisyFailure = failureDetail({
+    stderr: `${"   Compiling some-crate v1.0.0\n".repeat(400)}error: the real cause`,
+    stdout: "",
+  });
+  if (!noisyFailure.includes("error: the real cause") || noisyFailure.length > 2100) {
+    throw new Error(`self-test: failure detail hides the trailing cause: ${noisyFailure.slice(0, 200)}`);
+  }
   const assertionEvidenceRoot = join(sandbox, "spec");
   const bindingDir = join(sandbox, "lazily-rust");
   const reportsRoot = join(sandbox, "reports");
