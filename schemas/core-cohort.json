@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/core-cohort.json",
+  "title": "Lazily Core cohort bill of materials",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "cohort_id",
+    "state",
+    "created_at",
+    "profile",
+    "spec",
+    "conformance_revision",
+    "core_api_generation",
+    "wire_version",
+    "bindings"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "cohort_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "state": { "enum": ["candidate", "final"] },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "registry_path", "sha256"],
+      "properties": {
+        "status": { "enum": ["candidate", "beta"] },
+        "registry_path": { "$ref": "#/$defs/relativePath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "spec": { "$ref": "#/$defs/sourcePin" },
+    "conformance_revision": { "$ref": "#/$defs/commit" },
+    "core_api_generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "wire_version": {
+      "type": "string",
+      "pattern": "^[0-9]+(?:\\.[0-9]+){0,2}$"
+    },
+    "bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/binding" }
+    }
+  },
+  "$defs": {
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "sourcePin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "tag"],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://github\\.com/lazily-hub/lazily-[a-z0-9-]+(?:\\.git)?$"
+        },
+        "commit": { "$ref": "#/$defs/commit" },
+        "tag": {
+          "type": "string",
+          "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+        }
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "minimum", "current"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._+-]*$"
+        },
+        "minimum": { "type": "string", "minLength": 1 },
+        "current": { "type": "string", "minLength": 1 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "uri", "file", "sha256"],
+      "properties": {
+        "kind": {
+          "enum": ["github-attestation", "sigstore", "slsa", "signed-source-archive"]
+        },
+        "uri": { "type": "string", "format": "uri" },
+        "file": { "$ref": "#/$defs/relativePath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "registryEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "status", "checked_at", "metadata_file", "metadata_sha256"],
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "status": { "enum": ["available", "missing", "yanked"] },
+        "checked_at": { "type": "string", "format": "date-time" },
+        "metadata_file": { "$ref": "#/$defs/relativePath" },
+        "metadata_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "sha256", "provenance", "registry"],
+      "properties": {
+        "file": { "$ref": "#/$defs/relativePath" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "registry": { "$ref": "#/$defs/registryEvidence" }
+      }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ecosystem", "coordinate", "version", "artifacts"],
+      "properties": {
+        "ecosystem": {
+          "enum": ["cargo", "npm", "pypi", "go", "maven", "pub", "zig", "cmake", "nuget"]
+        },
+        "coordinate": { "type": "string", "minLength": 1 },
+        "version": { "$ref": "#/$defs/semver" },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/artifact" }
+        }
+      }
+    },
+    "apiRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "maximum"],
+      "properties": {
+        "minimum": { "type": "integer", "minimum": 1 },
+        "maximum": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "moduleRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coordinate", "minimum_core_api", "maximum_core_api"],
+      "properties": {
+        "coordinate": { "type": "string", "minLength": 1 },
+        "minimum_core_api": { "type": "integer", "minimum": 1 },
+        "maximum_core_api": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status", "evidence_file", "evidence_sha256"],
+      "properties": {
+        "name": {
+          "enum": ["profile", "api", "fixture", "package", "pre_publish_consumer", "published_consumer"]
+        },
+        "status": { "enum": ["passed", "pending", "failed"] },
+        "evidence_file": { "$ref": "#/$defs/relativePath" },
+        "evidence_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "profile",
+        "source",
+        "spec_revision",
+        "fixture_revision",
+        "core_api_generation",
+        "wire_version",
+        "core_imports",
+        "toolchains",
+        "compatibility",
+        "packages",
+        "gates"
+      ],
+      "properties": {
+        "id": {
+          "enum": ["rust", "javascript", "python", "go", "kotlin", "cpp", "csharp", "dart", "zig"]
+        },
+        "profile": { "enum": ["core-candidate", "core-beta", "preview"] },
+        "source": { "$ref": "#/$defs/sourcePin" },
+        "spec_revision": { "$ref": "#/$defs/commit" },
+        "fixture_revision": { "$ref": "#/$defs/commit" },
+        "core_api_generation": { "type": "integer", "minimum": 1 },
+        "wire_version": {
+          "type": "string",
+          "pattern": "^[0-9]+(?:\\.[0-9]+){0,2}$"
+        },
+        "core_imports": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "toolchains": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/toolchain" }
+        },
+        "compatibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["core_api", "modules"],
+          "properties": {
+            "core_api": { "$ref": "#/$defs/apiRange" },
+            "modules": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/moduleRange" }
+            }
+          }
+        },
+        "packages": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/package" }
+        },
+        "gates": {
+          "type": "array",
+          "minItems": 6,
+          "items": { "$ref": "#/$defs/gate" }
+        }
+      }
+    }
+  }
+}

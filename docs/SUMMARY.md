@@ -28,6 +28,7 @@
 - [Command / RPC Message Plane](message-passing.md)
 - [Cross-Process Zero-Copy Transport](zero-copy-transport.md)
 - [Conformance Fixtures](conformance.md)
+- [Reproducible Core Cohorts](core-cohorts.md)
 - [Fixture Provenance and Licensing](fixture-provenance.md)
 - [Portable Standard Library](stdlib.md)
 - [JSON Schemas](schemas.md)
