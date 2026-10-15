@@ -44,6 +44,7 @@ _SCHEMA_NAMES = [
     "durable-client-conformance",
     "durable-tiers",
     "stdlib-fixture.schema",
+    "core-profile.schema",
 ]
 
 

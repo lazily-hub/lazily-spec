@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/core-profile.schema.json",
+  "title": "Lazily Core profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "profile_id",
+    "status",
+    "core_api_generation",
+    "abstract_symbols",
+    "proof_classes",
+    "required_fixtures",
+    "fixture_corpus",
+    "coverage",
+    "capability_exclusions",
+    "bindings",
+    "dependency_policy",
+    "modules",
+    "core_build"
+  ],
+  "properties": {
+    "$schema": { "const": "../schemas/core-profile.schema.json" },
+    "profile_id": { "const": "core-v1" },
+    "status": { "enum": ["candidate", "beta"] },
+    "core_api_generation": { "type": "integer", "minimum": 1 },
+    "abstract_symbols": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/abstractSymbol" }
+    },
+    "proof_classes": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/proofClass" },
+      "propertyNames": { "$ref": "#/$defs/snakeId" }
+    },
+    "required_fixtures": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/fixture" }
+    },
+    "fixture_corpus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "digest"],
+      "properties": {
+        "algorithm": { "const": "sha256-path-nul-bytes-v1" },
+        "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["core_row_ids"],
+      "properties": {
+        "core_row_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/kebabId" }
+        }
+      }
+    },
+    "capability_exclusions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coverage_families", "public_symbols"],
+      "properties": {
+        "coverage_families": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/kebabId" }
+        },
+        "public_symbols": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/binding" }
+    },
+    "dependency_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_module_edges"],
+      "properties": {
+        "allowed_module_edges": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/dependencyEdge" }
+        }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/module" }
+    },
+    "core_build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["module_id", "optional_modules_enabled"],
+      "properties": {
+        "module_id": { "const": "core" },
+        "optional_modules_enabled": {
+          "type": "array",
+          "maxItems": 0,
+          "items": { "$ref": "#/$defs/snakeId" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "snakeId": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "kebabId": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "generation": { "type": "integer", "minimum": 1 },
+    "abstractSymbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "introduced",
+        "deprecated_since",
+        "replacement",
+        "earliest_removal"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/snakeId" },
+        "kind": { "enum": ["type", "function", "operation"] },
+        "introduced": { "$ref": "#/$defs/generation" },
+        "deprecated_since": { "oneOf": [{ "$ref": "#/$defs/generation" }, { "type": "null" }] },
+        "replacement": { "type": ["string", "null"] },
+        "earliest_removal": { "oneOf": [{ "$ref": "#/$defs/generation" }, { "type": "null" }] }
+      }
+    },
+    "proofClass": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "fixture_required"],
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "fixture_required": { "type": "boolean" }
+      }
+    },
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "scenario_ids", "proof_classes"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^[a-z0-9_/-]+\\.json$" },
+        "scenario_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/snakeId" }
+        },
+        "proof_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/snakeId" }
+        }
+      }
+    },
+    "import": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "kind"],
+      "properties": {
+        "id": { "$ref": "#/$defs/snakeId" },
+        "path": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["root", "module", "package", "header", "namespace"] }
+      }
+    },
+    "symbolMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["import_id", "public_names"],
+      "properties": {
+        "import_id": { "$ref": "#/$defs/snakeId" },
+        "public_names": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "toolchainPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "toolchains": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "current"],
+      "properties": {
+        "minimum": { "$ref": "#/$defs/toolchainPoint" },
+        "current": { "$ref": "#/$defs/toolchainPoint" }
+      }
+    },
+    "supportRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_core_api_generation", "maximum_core_api_generation"],
+      "properties": {
+        "minimum_core_api_generation": { "$ref": "#/$defs/generation" },
+        "maximum_core_api_generation": {
+          "oneOf": [{ "$ref": "#/$defs/generation" }, { "type": "null" }]
+        }
+      }
+    },
+    "fixturelessClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "scope", "proof_classes"],
+      "properties": {
+        "id": { "$ref": "#/$defs/snakeId" },
+        "scope": { "enum": ["core", "module"] },
+        "proof_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/snakeId" }
+        }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "language",
+        "maturity",
+        "execution_flavors",
+        "imports",
+        "symbol_mappings",
+        "required_fixtures",
+        "fixtureless_claims",
+        "toolchains",
+        "support_range"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/snakeId" },
+        "language": { "type": "string", "minLength": 1 },
+        "maturity": { "enum": ["preview", "candidate", "beta"] },
+        "execution_flavors": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["single_threaded", "thread_safe", "async"] }
+        },
+        "imports": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/import" }
+        },
+        "symbol_mappings": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/symbolMapping" },
+          "propertyNames": { "$ref": "#/$defs/snakeId" }
+        },
+        "required_fixtures": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z0-9_/-]+\\.json$" }
+        },
+        "fixtureless_claims": {
+          "description": "Module or Core claims that are not backed by the required fixture closure. An empty array explicitly means that the binding makes no fixtureless claim.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/fixturelessClaim" }
+        },
+        "toolchains": { "$ref": "#/$defs/toolchains" },
+        "support_range": { "$ref": "#/$defs/supportRange" }
+      }
+    },
+    "dependencyEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+        "from": { "$ref": "#/$defs/snakeId" },
+        "to": { "$ref": "#/$defs/snakeId" }
+      }
+    },
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "depends_on", "core_api_range"],
+      "properties": {
+        "id": { "$ref": "#/$defs/snakeId" },
+        "kind": { "enum": ["core", "module", "adapter"] },
+        "depends_on": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/snakeId" }
+        },
+        "core_api_range": { "$ref": "#/$defs/supportRange" }
+      }
+    }
+  }
+}

@@ -25,9 +25,16 @@ corpus-floors-check \
 corpus-counts-sync \
 corpus-blocks-report \
 wire-codegen \
-wire-codegen-check
+wire-codegen-check \
+core-profile-check
 
-check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check
+check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check core-profile-check
+
+# Canonical candidate Core profile. The semantic checker enforces closed symbol,
+# fixture, coverage, proof, and dependency boundaries; --self-test proves each
+# negative boundary still turns red. The generated human view must be byte-exact.
+core-profile-check:
+>node scripts/check-core-profile.mjs --self-test
 
 # Shared wire model + per-binding codec generation (#lzwiremodel). The golden
 # codegen/wire-model.json is derived from the schemas named in

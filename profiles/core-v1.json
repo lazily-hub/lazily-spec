@@ -1,0 +1,256 @@
+{
+  "$schema": "../schemas/core-profile.schema.json",
+  "profile_id": "core-v1",
+  "status": "candidate",
+  "core_api_generation": 1,
+  "abstract_symbols": [
+    { "id": "context", "kind": "type", "introduced": 1, "deprecated_since": null, "replacement": null, "earliest_removal": null },
+    { "id": "source", "kind": "type", "introduced": 1, "deprecated_since": null, "replacement": null, "earliest_removal": null },
+    { "id": "computed", "kind": "type", "introduced": 1, "deprecated_since": null, "replacement": null, "earliest_removal": null },
+    { "id": "effect", "kind": "type", "introduced": 1, "deprecated_since": null, "replacement": null, "earliest_removal": null },
+    { "id": "batch", "kind": "operation", "introduced": 1, "deprecated_since": null, "replacement": null, "earliest_removal": null },
+    { "id": "scope", "kind": "operation", "introduced": 1, "deprecated_since": null, "replacement": null, "earliest_removal": null },
+    { "id": "typed_context", "kind": "type", "introduced": 1, "deprecated_since": null, "replacement": null, "earliest_removal": null }
+  ],
+  "proof_classes": {
+    "fixture_replay": {
+      "description": "The binding executes every named fixture and scenario with no unexplained skip.",
+      "fixture_required": true
+    },
+    "native_artifact_consumer": {
+      "description": "A clean consumer builds and invokes the shipped native artifact boundary.",
+      "fixture_required": false
+    },
+    "package_api": {
+      "description": "The declared symbol is visible from the shipped package import and matches its API snapshot.",
+      "fixture_required": false
+    }
+  },
+  "required_fixtures": [
+    { "path": "reactive-graph/churn_returns_to_baseline.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/cross_scope_teardown_hazard.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/disarm_disposes_nothing.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/disposal_does_not_run_surviving_effects.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/dispose_detaches_edges_both_directions.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/dispose_signal_reverts_to_lazy.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/failed_compute_is_never_cached.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/feedback_drain_bound_reports_exhaustion.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/read_after_dispose_is_an_error.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/recycled_id_inherits_nothing.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/scope_teardown_equals_fold_of_disposals.json", "scenario_ids": ["scope_teardown", "individual_disposal"], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/scoping_bounds_teardown_not_visibility.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/signal_materializes_once_per_batch.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/signal_materializes_without_a_read.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/teardown_runs_members_in_reverse_creation_order.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] },
+    { "path": "reactive-graph/transitive_invalidation_reaches_depth.json", "scenario_ids": [], "proof_classes": ["fixture_replay"] }
+  ],
+  "fixture_corpus": {
+    "algorithm": "sha256-path-nul-bytes-v1",
+    "digest": "3a959fd0d7d16bd7c3f0e6ee11b500c79dfdf1a87c59d565e0cc3f4b5bf4fc37"
+  },
+  "coverage": {
+    "core_row_ids": ["reactive-graph", "thread-safe-context", "async-reactive-context"]
+  },
+  "capability_exclusions": {
+    "coverage_families": [
+      "materialization", "familysync", "statechart", "collections", "queue", "topic",
+      "work-queue", "crdt", "lossless-tree", "egress", "ingress", "codec", "transport",
+      "message-passing", "reliable-sync", "durable-owner", "durable-capability", "distributed",
+      "receipts", "security", "membership", "coordination", "presence", "temporal", "rateshape",
+      "windowing", "resilience", "stdlib", "service", "instrumentation"
+    ],
+    "public_symbols": [
+      "SourceMap", "ComputedMap", "StateChart", "QueueCell", "TopicCell", "WorkQueueCell",
+      "TextCrdt", "RelayCell", "IngressCell", "EgressCore", "TimerCell", "IpcMessage",
+      "ShmBlobArena", "MergePolicy", "ReactAdapter", "R3Adapters"
+    ]
+  },
+  "bindings": [
+    {
+      "id": "rust", "language": "Rust", "maturity": "candidate",
+      "execution_flavors": ["single_threaded", "thread_safe", "async"],
+      "imports": [{ "id": "root", "path": "lazily", "kind": "root" }],
+      "symbol_mappings": {
+        "context": { "import_id": "root", "public_names": ["Context"] },
+        "source": { "import_id": "root", "public_names": ["Source"] },
+        "computed": { "import_id": "root", "public_names": ["Computed"] },
+        "effect": { "import_id": "root", "public_names": ["Effect"] },
+        "batch": { "import_id": "root", "public_names": ["Context::batch"] },
+        "scope": { "import_id": "root", "public_names": ["Context::scope", "TeardownScope"] },
+        "typed_context": { "import_id": "root", "public_names": ["TypedContext"] }
+      },
+      "required_fixtures": ["reactive-graph/churn_returns_to_baseline.json", "reactive-graph/cross_scope_teardown_hazard.json", "reactive-graph/disarm_disposes_nothing.json", "reactive-graph/disposal_does_not_run_surviving_effects.json", "reactive-graph/dispose_detaches_edges_both_directions.json", "reactive-graph/dispose_signal_reverts_to_lazy.json", "reactive-graph/failed_compute_is_never_cached.json", "reactive-graph/feedback_drain_bound_reports_exhaustion.json", "reactive-graph/read_after_dispose_is_an_error.json", "reactive-graph/recycled_id_inherits_nothing.json", "reactive-graph/scope_teardown_equals_fold_of_disposals.json", "reactive-graph/scoping_bounds_teardown_not_visibility.json", "reactive-graph/signal_materializes_once_per_batch.json", "reactive-graph/signal_materializes_without_a_read.json", "reactive-graph/teardown_runs_members_in_reverse_creation_order.json", "reactive-graph/transitive_invalidation_reaches_depth.json"],
+      "fixtureless_claims": [{ "id": "c_abi_ffi_boundary", "scope": "module", "proof_classes": ["native_artifact_consumer"] }],
+      "toolchains": { "minimum": { "name": "rust", "version": "1.88" }, "current": { "name": "rust", "version": "stable" } },
+      "support_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 }
+    },
+    {
+      "id": "python", "language": "Python", "maturity": "candidate",
+      "execution_flavors": ["single_threaded", "thread_safe", "async"],
+      "imports": [{ "id": "root", "path": "lazily", "kind": "root" }],
+      "symbol_mappings": {
+        "context": { "import_id": "root", "public_names": ["Context"] },
+        "source": { "import_id": "root", "public_names": ["Source"] },
+        "computed": { "import_id": "root", "public_names": ["Computed"] },
+        "effect": { "import_id": "root", "public_names": ["Effect"] },
+        "batch": { "import_id": "root", "public_names": ["batch", "AsyncContext.batch"] },
+        "scope": { "import_id": "root", "public_names": ["teardown_scope", "AsyncContext.scope"] },
+        "typed_context": { "import_id": "root", "public_names": ["Context"] }
+      },
+      "required_fixtures": ["reactive-graph/churn_returns_to_baseline.json", "reactive-graph/cross_scope_teardown_hazard.json", "reactive-graph/disarm_disposes_nothing.json", "reactive-graph/disposal_does_not_run_surviving_effects.json", "reactive-graph/dispose_detaches_edges_both_directions.json", "reactive-graph/dispose_signal_reverts_to_lazy.json", "reactive-graph/failed_compute_is_never_cached.json", "reactive-graph/feedback_drain_bound_reports_exhaustion.json", "reactive-graph/read_after_dispose_is_an_error.json", "reactive-graph/recycled_id_inherits_nothing.json", "reactive-graph/scope_teardown_equals_fold_of_disposals.json", "reactive-graph/scoping_bounds_teardown_not_visibility.json", "reactive-graph/signal_materializes_once_per_batch.json", "reactive-graph/signal_materializes_without_a_read.json", "reactive-graph/teardown_runs_members_in_reverse_creation_order.json", "reactive-graph/transitive_invalidation_reaches_depth.json"],
+      "fixtureless_claims": [],
+      "toolchains": { "minimum": { "name": "python", "version": "3.12" }, "current": { "name": "python", "version": "3.14" } },
+      "support_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 }
+    },
+    {
+      "id": "kotlin", "language": "Kotlin", "maturity": "candidate",
+      "execution_flavors": ["single_threaded", "thread_safe", "async"],
+      "imports": [{ "id": "root", "path": "io.github.lazily", "kind": "package" }],
+      "symbol_mappings": {
+        "context": { "import_id": "root", "public_names": ["Context"] },
+        "source": { "import_id": "root", "public_names": ["Source"] },
+        "computed": { "import_id": "root", "public_names": ["Computed"] },
+        "effect": { "import_id": "root", "public_names": ["Effect"] },
+        "batch": { "import_id": "root", "public_names": ["Context.batch"] },
+        "scope": { "import_id": "root", "public_names": ["Context.scope", "TeardownScope"] },
+        "typed_context": { "import_id": "root", "public_names": ["Context"] }
+      },
+      "required_fixtures": ["reactive-graph/churn_returns_to_baseline.json", "reactive-graph/cross_scope_teardown_hazard.json", "reactive-graph/disarm_disposes_nothing.json", "reactive-graph/disposal_does_not_run_surviving_effects.json", "reactive-graph/dispose_detaches_edges_both_directions.json", "reactive-graph/dispose_signal_reverts_to_lazy.json", "reactive-graph/failed_compute_is_never_cached.json", "reactive-graph/feedback_drain_bound_reports_exhaustion.json", "reactive-graph/read_after_dispose_is_an_error.json", "reactive-graph/recycled_id_inherits_nothing.json", "reactive-graph/scope_teardown_equals_fold_of_disposals.json", "reactive-graph/scoping_bounds_teardown_not_visibility.json", "reactive-graph/signal_materializes_once_per_batch.json", "reactive-graph/signal_materializes_without_a_read.json", "reactive-graph/teardown_runs_members_in_reverse_creation_order.json", "reactive-graph/transitive_invalidation_reaches_depth.json"],
+      "fixtureless_claims": [],
+      "toolchains": { "minimum": { "name": "jdk", "version": "21" }, "current": { "name": "jdk", "version": "21" } },
+      "support_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 }
+    },
+    {
+      "id": "javascript", "language": "JavaScript", "maturity": "candidate",
+      "execution_flavors": ["single_threaded", "thread_safe", "async"],
+      "imports": [{ "id": "reactive", "path": "@lazily-hub/lazily-js/reactive", "kind": "module" }],
+      "symbol_mappings": {
+        "context": { "import_id": "reactive", "public_names": ["Context"] },
+        "source": { "import_id": "reactive", "public_names": ["Source"] },
+        "computed": { "import_id": "reactive", "public_names": ["Computed"] },
+        "effect": { "import_id": "reactive", "public_names": ["Effect"] },
+        "batch": { "import_id": "reactive", "public_names": ["Context.batch"] },
+        "scope": { "import_id": "reactive", "public_names": ["Context.scope", "TeardownScope"] },
+        "typed_context": { "import_id": "reactive", "public_names": ["Context"] }
+      },
+      "required_fixtures": ["reactive-graph/churn_returns_to_baseline.json", "reactive-graph/cross_scope_teardown_hazard.json", "reactive-graph/disarm_disposes_nothing.json", "reactive-graph/disposal_does_not_run_surviving_effects.json", "reactive-graph/dispose_detaches_edges_both_directions.json", "reactive-graph/dispose_signal_reverts_to_lazy.json", "reactive-graph/failed_compute_is_never_cached.json", "reactive-graph/feedback_drain_bound_reports_exhaustion.json", "reactive-graph/read_after_dispose_is_an_error.json", "reactive-graph/recycled_id_inherits_nothing.json", "reactive-graph/scope_teardown_equals_fold_of_disposals.json", "reactive-graph/scoping_bounds_teardown_not_visibility.json", "reactive-graph/signal_materializes_once_per_batch.json", "reactive-graph/signal_materializes_without_a_read.json", "reactive-graph/teardown_runs_members_in_reverse_creation_order.json", "reactive-graph/transitive_invalidation_reaches_depth.json"],
+      "fixtureless_claims": [],
+      "toolchains": { "minimum": { "name": "node", "version": "24" }, "current": { "name": "node", "version": "24" } },
+      "support_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 }
+    },
+    {
+      "id": "dart", "language": "Dart", "maturity": "candidate",
+      "execution_flavors": ["single_threaded", "thread_safe", "async"],
+      "imports": [{ "id": "root", "path": "package:lazily/lazily.dart", "kind": "root" }],
+      "symbol_mappings": {
+        "context": { "import_id": "root", "public_names": ["Context"] },
+        "source": { "import_id": "root", "public_names": ["Source"] },
+        "computed": { "import_id": "root", "public_names": ["Computed"] },
+        "effect": { "import_id": "root", "public_names": ["Effect"] },
+        "batch": { "import_id": "root", "public_names": ["Context.batch"] },
+        "scope": { "import_id": "root", "public_names": ["Context.scope", "TeardownScope"] },
+        "typed_context": { "import_id": "root", "public_names": ["Context"] }
+      },
+      "required_fixtures": ["reactive-graph/churn_returns_to_baseline.json", "reactive-graph/cross_scope_teardown_hazard.json", "reactive-graph/disarm_disposes_nothing.json", "reactive-graph/disposal_does_not_run_surviving_effects.json", "reactive-graph/dispose_detaches_edges_both_directions.json", "reactive-graph/dispose_signal_reverts_to_lazy.json", "reactive-graph/failed_compute_is_never_cached.json", "reactive-graph/feedback_drain_bound_reports_exhaustion.json", "reactive-graph/read_after_dispose_is_an_error.json", "reactive-graph/recycled_id_inherits_nothing.json", "reactive-graph/scope_teardown_equals_fold_of_disposals.json", "reactive-graph/scoping_bounds_teardown_not_visibility.json", "reactive-graph/signal_materializes_once_per_batch.json", "reactive-graph/signal_materializes_without_a_read.json", "reactive-graph/teardown_runs_members_in_reverse_creation_order.json", "reactive-graph/transitive_invalidation_reaches_depth.json"],
+      "fixtureless_claims": [],
+      "toolchains": { "minimum": { "name": "dart", "version": "3.5" }, "current": { "name": "dart", "version": "3.10" } },
+      "support_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 }
+    },
+    {
+      "id": "zig", "language": "Zig", "maturity": "candidate",
+      "execution_flavors": ["single_threaded", "thread_safe", "async"],
+      "imports": [{ "id": "root", "path": "@import(\"lazily\")", "kind": "module" }],
+      "symbol_mappings": {
+        "context": { "import_id": "root", "public_names": ["Context"] },
+        "source": { "import_id": "root", "public_names": ["Source"] },
+        "computed": { "import_id": "root", "public_names": ["Computed"] },
+        "effect": { "import_id": "root", "public_names": ["Effect"] },
+        "batch": { "import_id": "root", "public_names": ["Context.batch"] },
+        "scope": { "import_id": "root", "public_names": ["Context.scope", "TeardownScope"] },
+        "typed_context": { "import_id": "root", "public_names": ["Context"] }
+      },
+      "required_fixtures": ["reactive-graph/churn_returns_to_baseline.json", "reactive-graph/cross_scope_teardown_hazard.json", "reactive-graph/disarm_disposes_nothing.json", "reactive-graph/disposal_does_not_run_surviving_effects.json", "reactive-graph/dispose_detaches_edges_both_directions.json", "reactive-graph/dispose_signal_reverts_to_lazy.json", "reactive-graph/failed_compute_is_never_cached.json", "reactive-graph/feedback_drain_bound_reports_exhaustion.json", "reactive-graph/read_after_dispose_is_an_error.json", "reactive-graph/recycled_id_inherits_nothing.json", "reactive-graph/scope_teardown_equals_fold_of_disposals.json", "reactive-graph/scoping_bounds_teardown_not_visibility.json", "reactive-graph/signal_materializes_once_per_batch.json", "reactive-graph/signal_materializes_without_a_read.json", "reactive-graph/teardown_runs_members_in_reverse_creation_order.json", "reactive-graph/transitive_invalidation_reaches_depth.json"],
+      "fixtureless_claims": [{ "id": "c_abi_ffi_boundary", "scope": "module", "proof_classes": ["native_artifact_consumer"] }],
+      "toolchains": { "minimum": { "name": "zig", "version": "0.16.0" }, "current": { "name": "zig", "version": "0.16.0" } },
+      "support_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 }
+    },
+    {
+      "id": "go", "language": "Go", "maturity": "candidate",
+      "execution_flavors": ["single_threaded", "thread_safe", "async"],
+      "imports": [{ "id": "root", "path": "github.com/lazily-hub/lazily-go", "kind": "package" }],
+      "symbol_mappings": {
+        "context": { "import_id": "root", "public_names": ["Context"] },
+        "source": { "import_id": "root", "public_names": ["Source"] },
+        "computed": { "import_id": "root", "public_names": ["Computed"] },
+        "effect": { "import_id": "root", "public_names": ["Effect"] },
+        "batch": { "import_id": "root", "public_names": ["Context.Batch"] },
+        "scope": { "import_id": "root", "public_names": ["Context.Scope", "TeardownScope"] },
+        "typed_context": { "import_id": "root", "public_names": ["Context"] }
+      },
+      "required_fixtures": ["reactive-graph/churn_returns_to_baseline.json", "reactive-graph/cross_scope_teardown_hazard.json", "reactive-graph/disarm_disposes_nothing.json", "reactive-graph/disposal_does_not_run_surviving_effects.json", "reactive-graph/dispose_detaches_edges_both_directions.json", "reactive-graph/dispose_signal_reverts_to_lazy.json", "reactive-graph/failed_compute_is_never_cached.json", "reactive-graph/feedback_drain_bound_reports_exhaustion.json", "reactive-graph/read_after_dispose_is_an_error.json", "reactive-graph/recycled_id_inherits_nothing.json", "reactive-graph/scope_teardown_equals_fold_of_disposals.json", "reactive-graph/scoping_bounds_teardown_not_visibility.json", "reactive-graph/signal_materializes_once_per_batch.json", "reactive-graph/signal_materializes_without_a_read.json", "reactive-graph/teardown_runs_members_in_reverse_creation_order.json", "reactive-graph/transitive_invalidation_reaches_depth.json"],
+      "fixtureless_claims": [{ "id": "c_abi_ffi_boundary", "scope": "module", "proof_classes": ["native_artifact_consumer"] }],
+      "toolchains": { "minimum": { "name": "go", "version": "1.24" }, "current": { "name": "go", "version": "1.25" } },
+      "support_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 }
+    },
+    {
+      "id": "cpp", "language": "C++", "maturity": "candidate",
+      "execution_flavors": ["single_threaded", "thread_safe", "async"],
+      "imports": [{ "id": "core_header", "path": "lazily/core.hpp", "kind": "header" }],
+      "symbol_mappings": {
+        "context": { "import_id": "core_header", "public_names": ["lazily::Context"] },
+        "source": { "import_id": "core_header", "public_names": ["lazily::Source"] },
+        "computed": { "import_id": "core_header", "public_names": ["lazily::Computed"] },
+        "effect": { "import_id": "core_header", "public_names": ["lazily::Effect"] },
+        "batch": { "import_id": "core_header", "public_names": ["lazily::Context::batch"] },
+        "scope": { "import_id": "core_header", "public_names": ["lazily::Context::scope", "lazily::TeardownScope"] },
+        "typed_context": { "import_id": "core_header", "public_names": ["lazily::Context"] }
+      },
+      "required_fixtures": ["reactive-graph/churn_returns_to_baseline.json", "reactive-graph/cross_scope_teardown_hazard.json", "reactive-graph/disarm_disposes_nothing.json", "reactive-graph/disposal_does_not_run_surviving_effects.json", "reactive-graph/dispose_detaches_edges_both_directions.json", "reactive-graph/dispose_signal_reverts_to_lazy.json", "reactive-graph/failed_compute_is_never_cached.json", "reactive-graph/feedback_drain_bound_reports_exhaustion.json", "reactive-graph/read_after_dispose_is_an_error.json", "reactive-graph/recycled_id_inherits_nothing.json", "reactive-graph/scope_teardown_equals_fold_of_disposals.json", "reactive-graph/scoping_bounds_teardown_not_visibility.json", "reactive-graph/signal_materializes_once_per_batch.json", "reactive-graph/signal_materializes_without_a_read.json", "reactive-graph/teardown_runs_members_in_reverse_creation_order.json", "reactive-graph/transitive_invalidation_reaches_depth.json"],
+      "fixtureless_claims": [{ "id": "c_abi_ffi_boundary", "scope": "module", "proof_classes": ["native_artifact_consumer"] }],
+      "toolchains": { "minimum": { "name": "c++", "version": "17" }, "current": { "name": "c++", "version": "23" } },
+      "support_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 }
+    },
+    {
+      "id": "csharp", "language": "C#", "maturity": "candidate",
+      "execution_flavors": ["single_threaded", "thread_safe", "async"],
+      "imports": [{ "id": "root", "path": "Lazily", "kind": "namespace" }],
+      "symbol_mappings": {
+        "context": { "import_id": "root", "public_names": ["Context"] },
+        "source": { "import_id": "root", "public_names": ["Source"] },
+        "computed": { "import_id": "root", "public_names": ["Computed"] },
+        "effect": { "import_id": "root", "public_names": ["Effect"] },
+        "batch": { "import_id": "root", "public_names": ["Context.Batch"] },
+        "scope": { "import_id": "root", "public_names": ["Context.Scope", "TeardownScope"] },
+        "typed_context": { "import_id": "root", "public_names": ["Context"] }
+      },
+      "required_fixtures": ["reactive-graph/churn_returns_to_baseline.json", "reactive-graph/cross_scope_teardown_hazard.json", "reactive-graph/disarm_disposes_nothing.json", "reactive-graph/disposal_does_not_run_surviving_effects.json", "reactive-graph/dispose_detaches_edges_both_directions.json", "reactive-graph/dispose_signal_reverts_to_lazy.json", "reactive-graph/failed_compute_is_never_cached.json", "reactive-graph/feedback_drain_bound_reports_exhaustion.json", "reactive-graph/read_after_dispose_is_an_error.json", "reactive-graph/recycled_id_inherits_nothing.json", "reactive-graph/scope_teardown_equals_fold_of_disposals.json", "reactive-graph/scoping_bounds_teardown_not_visibility.json", "reactive-graph/signal_materializes_once_per_batch.json", "reactive-graph/signal_materializes_without_a_read.json", "reactive-graph/teardown_runs_members_in_reverse_creation_order.json", "reactive-graph/transitive_invalidation_reaches_depth.json"],
+      "fixtureless_claims": [{ "id": "c_abi_ffi_boundary", "scope": "module", "proof_classes": ["native_artifact_consumer"] }],
+      "toolchains": { "minimum": { "name": "dotnet", "version": "8.0" }, "current": { "name": "dotnet", "version": "10.0" } },
+      "support_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 }
+    }
+  ],
+  "dependency_policy": {
+    "allowed_module_edges": [
+      { "from": "collections", "to": "core" }, { "from": "statecharts", "to": "core" },
+      { "from": "synchronization", "to": "core" }, { "from": "durable", "to": "core" },
+      { "from": "distributed", "to": "core" }, { "from": "distributed", "to": "synchronization" },
+      { "from": "distributed", "to": "transport" }, { "from": "distributed", "to": "codecs" },
+      { "from": "transport", "to": "core" }, { "from": "codecs", "to": "core" },
+      { "from": "ffi", "to": "core" }, { "from": "react", "to": "core" }, { "from": "r3", "to": "core" }
+    ]
+  },
+  "modules": [
+    { "id": "core", "kind": "core", "depends_on": [], "core_api_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 } },
+    { "id": "collections", "kind": "module", "depends_on": ["core"], "core_api_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 } },
+    { "id": "statecharts", "kind": "module", "depends_on": ["core"], "core_api_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 } },
+    { "id": "synchronization", "kind": "module", "depends_on": ["core"], "core_api_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 } },
+    { "id": "durable", "kind": "module", "depends_on": ["core"], "core_api_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 } },
+    { "id": "distributed", "kind": "module", "depends_on": ["core", "synchronization", "transport", "codecs"], "core_api_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 } },
+    { "id": "transport", "kind": "module", "depends_on": ["core"], "core_api_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 } },
+    { "id": "codecs", "kind": "module", "depends_on": ["core"], "core_api_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 } },
+    { "id": "ffi", "kind": "module", "depends_on": ["core"], "core_api_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 } },
+    { "id": "react", "kind": "adapter", "depends_on": ["core"], "core_api_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 } },
+    { "id": "r3", "kind": "adapter", "depends_on": ["core"], "core_api_range": { "minimum_core_api_generation": 1, "maximum_core_api_generation": 1 } }
+  ],
+  "core_build": { "module_id": "core", "optional_modules_enabled": [] }
+}
