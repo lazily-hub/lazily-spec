@@ -58,7 +58,7 @@ matrix with per-cell notes and platform carve-outs lives in
 
 | Family | Rust | Python | Kotlin | JS | Dart | Zig | Go | C++ | C# | GDScript |
 | --------- | :----: | :------: | :------: | :--: | :----: | :---: | :--: | :---: | :--: | :--------: |
-| Reactive graph | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ~ |
+| Reactive graph | ✅ | ~ | ~ | ~ | ✅ | ✅ | ✅ | ✅ | ✅ | ~ |
 | Materialization | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Family sync | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Statecharts | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -185,6 +185,40 @@ The `conformance/` directory contains canonical test fixtures that all IPC-capab
   "wire": { "…canonical protocol JSON…" }
 }
 ```
+
+**Core qualification evidence:** Candidate bindings declare intentional runtime
+skips, a report command, and fixtureless proof commands in
+`scripts/core-conformance.json`. The aggregate check executes each report command
+without a shell from its binding root; the command must create
+`LAZILY_CORE_REPORT_PATH`. Validate the closed profile with:
+
+```bash
+make core-evidence-check \
+  CORE_BINDINGS_ROOT=/path/to/binding-checkouts \
+  CORE_EVIDENCE_REPORTS=/path/to/fresh/reports
+```
+
+The verifier executes every fixtureless proof command without a shell from the
+binding root. It exposes `LAZILY_CORE_EVIDENCE_PATH` and requires the command to
+recreate that regular file beneath the report directory. Assertion evidence must
+be generated beneath the binding-id report subdirectory (or be a canonical
+`audits/` artifact) and include a resolving `#/...` pointer; missing, escaping,
+symlinked, empty, or explicitly `untested` evidence is rejected. The report
+directory for that binding is cleared before its report command runs, so run-local
+assertion evidence cannot be inherited from an older qualification. Each pointer
+must resolve to a structured record whose status is `mutation-killed` (an active
+per-route negative control) or `consumed-with-family-negative-controls` (exact
+route consumption plus active expectation-family negative controls); successful
+replay by itself is not discriminability evidence.
+
+Runtime skips close exactly in both directions. `scenario: "*"` means every
+scenario; an optional `execution_flavor` narrows the skip to the canonical
+`single_threaded`, `thread_safe`, or `async` profile flavor. Fixture reports use
+`status: "passed"`, `"partial"`, or `"skipped"`; skipped fixtures cannot claim
+consumed assertion blocks, while partial fixtures may name only canonical blocks
+that the run actually consumed. Generated fixtureless evidence must also stay
+beneath the binding-id subdirectory. `--require-all` rejects every missing
+declaration or report.
 
 **Current fixtures:**
 

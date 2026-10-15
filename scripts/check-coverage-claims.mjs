@@ -321,7 +321,41 @@ let rowsWithFixtures = 0;
 
 for (const row of data.rows) {
   const fixtures = row.fixtures;
-  if (!Array.isArray(fixtures) || fixtures.length === 0) continue;
+  const fixtureless = !Array.isArray(fixtures) || fixtures.length === 0;
+  const knownLanguages = new Set(data.languages);
+  for (const language of Object.keys(row.partial_reasons ?? {})) {
+    if (!knownLanguages.has(language)) {
+      violations.push(
+        `row "${row.id}" declares partial_reasons.${language}, but ${language} is not a coverage language`,
+      );
+    }
+  }
+  data.languages.forEach((language, column) => {
+    const mark = row.marks[column];
+    const declaredReason = row.partial_reasons?.[language];
+    if (declaredReason !== undefined && (typeof declaredReason !== "string" || declaredReason.trim() === "")) {
+      violations.push(
+        `row "${row.id}" declares an empty partial_reasons.${language}; a qualification must explain the actual shortfall`,
+      );
+    } else if (declaredReason !== undefined && mark !== PARTIAL) {
+      // Stale in the other direction: a reason explaining a `~` that is no
+      // longer `~`. Left alone it would keep vouching for a mark nobody holds.
+      violations.push(
+        `row "${row.id}" declares partial_reasons.${language}, but ${language} is marked ` +
+          `${mark} there, not ${PARTIAL}. The reason is stale and now explains nothing — drop it ` +
+          `(#lzpartialmarkadjudicate)`,
+      );
+    } else if (fixtureless && mark === PARTIAL && declaredReason === undefined) {
+      // A fixtureless row has no replay ledger that can make its qualification
+      // visible later. Requiring the reason is the minimum fail-closed record;
+      // Core profile evidence adds executable proof for shipped claims.
+      violations.push(
+        `${language} is ${PARTIAL} on fixtureless row "${row.id}" without ` +
+          `partial_reasons.${language}; record the unproven part explicitly`,
+      );
+    }
+  });
+  if (fixtureless) continue;
   rowsWithFixtures += 1;
   for (const fixture of fixtures) {
     if (!existsSync(join(ROOT, "conformance", fixture))) {
@@ -372,14 +406,6 @@ for (const row of data.rows) {
           );
         }
       }
-    } else if (typeof declaredReason === "string") {
-      // Stale in the other direction: a reason explaining a `~` that is no
-      // longer `~`. Left alone it would keep vouching for a mark nobody holds.
-      violations.push(
-        `row "${row.id}" declares partial_reasons.${language}, but ${language} is marked ` +
-          `${mark} there, not ${PARTIAL}. The reason is stale and now explains nothing — drop it ` +
-          `(#lzpartialmarkadjudicate)`,
-      );
     }
     if (mark !== SHIPPED) return;
     claims += 1;

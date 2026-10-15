@@ -43,6 +43,8 @@ _SCHEMA_NAMES = [
     "durable-envelope",
     "durable-client-conformance",
     "durable-tiers",
+    "core-conformance-declaration.schema",
+    "core-conformance-report.schema",
     "stdlib-fixture.schema",
     "core-profile.schema",
 ]

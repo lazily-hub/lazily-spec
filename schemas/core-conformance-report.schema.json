@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/core-conformance-report.schema.json",
+  "title": "Lazily Core observed conformance report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_id",
+    "binding_id",
+    "fixture_corpus_digest",
+    "fixtures",
+    "runtime_skips",
+    "fixtureless_claims"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "profile_id": { "type": "string", "minLength": 1 },
+    "binding_id": { "type": "string", "minLength": 1 },
+    "fixture_corpus_digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "fixtures": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/fixture" }
+    },
+    "runtime_skips": {
+      "type": "array",
+      "items": { "$ref": "core-conformance-declaration.schema.json#/$defs/runtime_skip" }
+    },
+    "fixtureless_claims": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/fixtureless_claim" }
+    }
+  },
+  "$defs": {
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "scenario_ids", "proof_classes", "assertion_blocks", "status"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "scenario_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "proof_classes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "assertion_blocks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/assertion_block" }
+        },
+        "status": { "enum": ["passed", "partial", "skipped"] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "skipped" } } },
+          "then": { "properties": { "assertion_blocks": { "maxItems": 0 } } }
+        }
+      ]
+    },
+    "assertion_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "consumed", "discriminability_evidence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "consumed": { "const": true },
+        "discriminability_evidence": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^#]+#/.*$",
+          "description": "Generated report-root evidence beneath the binding-id subdirectory, or a canonical audits/ artifact, plus a resolving JSON Pointer."
+        }
+      }
+    },
+    "fixtureless_claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "proof_classes", "passed", "evidence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "proof_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "passed": { "const": true },
+        "evidence": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^#]+$",
+          "description": "Report-directory-relative regular file beneath the binding-id subdirectory, recreated by the declared proof command during verification."
+        }
+      }
+    }
+  }
+}

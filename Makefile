@@ -2,6 +2,10 @@
 
 LAKE ?= lake
 LEAN_DIR ?= formal/lean
+CORE_PROFILE ?= profiles/core-v1.json
+CORE_BINDINGS_ROOT ?= ..
+CORE_EVIDENCE_REPORTS ?=
+CORE_EVIDENCE_TIMEOUT_MS ?= 600000
 
 .PHONY: \
 check \
@@ -9,6 +13,8 @@ test-schemas \
 test-lean-formal \
 coverage-check \
 coverage-claims-check \
+core-evidence-check \
+core-evidence-self-test \
 coverage-sync \
 fixture-copies-check \
 fixture-copies-check-all \
@@ -28,7 +34,22 @@ wire-codegen \
 wire-codegen-check \
 core-profile-check
 
-check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check core-profile-check
+check: assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check core-evidence-self-test fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check core-profile-check
+
+# Core evidence verifier self-test (#lzcoreclaims). Real qualification passes
+# binding-produced reports explicitly and uses --require-all; the repository's
+# ordinary check proves the fail-closed comparison logic without pretending that
+# static source files are runtime evidence.
+core-evidence-self-test:
+>node scripts/check-core-evidence.mjs --self-test
+
+# Real qualification is intentionally separate from the repository-local self
+# test: binding runners must first place fresh reports and proof artifacts in an
+# explicit directory. CI invokes this target only after all candidate runners
+# have completed; --require-all makes a missing declaration/report fail closed.
+core-evidence-check:
+>test -n "$(CORE_EVIDENCE_REPORTS)" || { echo "CORE_EVIDENCE_REPORTS is required" >&2; exit 2; }
+>node scripts/check-core-evidence.mjs --profile "$(CORE_PROFILE)" --bindings-root "$(CORE_BINDINGS_ROOT)" --reports "$(CORE_EVIDENCE_REPORTS)" --command-timeout-ms "$(CORE_EVIDENCE_TIMEOUT_MS)" --generate-reports --require-all
 
 # Canonical candidate Core profile. The semantic checker enforces closed symbol,
 # fixture, coverage, proof, and dependency boundaries; --self-test proves each

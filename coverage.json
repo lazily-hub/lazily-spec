@@ -761,16 +761,21 @@
       ],
       "marks": [
         "✅",
-        "✅",
-        "✅",
-        "✅",
+        "~",
+        "~",
+        "~",
         "✅",
         "✅",
         "✅",
         "✅",
         "✅",
         "~"
-      ]
+      ],
+      "partial_reasons": {
+        "Python": "The canonical mergecell_algebra fixture exercises KeepLatest, Sum, and Max only; it does not yet replay SetUnion and RawFifo, so the full five-policy row is not fixture-backed.",
+        "Kotlin": "The canonical mergecell_algebra fixture exercises KeepLatest, Sum, and Max only; it does not yet replay SetUnion and RawFifo, so the full five-policy row is not fixture-backed.",
+        "JS": "The canonical mergecell_algebra fixture exercises KeepLatest, Sum, and Max only; it does not yet replay SetUnion and RawFifo, so the full five-policy row is not fixture-backed."
+      }
     },
     {
       "id": "replay-equivalence-proof",
@@ -1530,16 +1535,22 @@
       "feature": "C-ABI FFI boundary",
       "marks": [
         "✅",
-        "—",
-        "—",
-        "—",
-        "—",
+        "~",
+        "~",
+        "~",
+        "~",
         "✅",
         "✅",
         "✅",
         "✅",
         "—"
-      ]
+      ],
+      "partial_reasons": {
+        "Python": "The ctypes LazilyFfiBytes, status/kind enums, and encode/decode helpers model the boundary, but the wheel ships no compiled shared library exporting lazily_ffi_*; no self-contained native-artifact consumer proof exists.",
+        "Kotlin": "The JVM/JNA boundary and shipped header are exercised, but CI does not build a native export and invoke that exported C symbol; a native C-ABI claim remains unproven.",
+        "JS": "FfiChannel models the ABI and the Node Koffi adapter can consume lazily_ffi_channel_* from an external library, but the npm package ships no native shared library; its proof is not self-contained.",
+        "Dart": "The Dart value types and LazilyFfiChannel mirror C boundary concepts and behavior, but the package uses no dart:ffi, builds no native library or header, and invokes no out-of-language consumer."
+      }
     },
     {
       "id": "permission-boundary",
