@@ -14,9 +14,21 @@
     "Core profile contract": "make core-profile-check",
     "Core support contract": "make core-support-check"
   },
-  "reusable": {
-    "workflow": ".github/workflows/core-cohort-publish-gate.yml",
+  "qualification": {
+    "workflow": ".github/workflows/core-cohort-qualification.yml",
     "job": "aggregate-core-gates",
+    "dispatch_inputs": [
+      "manifest_path",
+      "rust_pin",
+      "javascript_pin",
+      "python_pin",
+      "go_pin",
+      "kotlin_pin",
+      "cpp_pin",
+      "csharp_pin",
+      "dart_pin",
+      "zig_pin"
+    ],
     "activation": {
       "continue-on-error": "",
       "if": "",

@@ -89,7 +89,7 @@ core-cohort-check: test-schemas
 
 # CI reachability pins (#lzcoreciactivationfixes): every Core make gate must be
 # reached by exactly one unconditional step in ci.yml's core job and in the
-# reusable cohort publish gate; --self-test proves each mutation turns red.
+# spec-side cohort qualification job; --self-test proves each mutation turns red.
 core-ci-reach:
 >node scripts/check-core-ci-reach.mjs --self-test
 >node scripts/check-core-ci-reach.mjs

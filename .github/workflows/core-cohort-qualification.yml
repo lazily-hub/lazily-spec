@@ -1,0 +1,266 @@
+name: Qualify a pinned Core cohort
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifest_path:
+        description: Candidate manifest path at the selected Lazily Spec tag
+        required: true
+        type: string
+      rust_pin:
+        description: Exact lazily-rs pin as vVERSION@40-hex-commit
+        required: true
+        type: string
+      javascript_pin:
+        description: Exact lazily-js pin as vVERSION@40-hex-commit
+        required: true
+        type: string
+      python_pin:
+        description: Exact lazily-py pin as vVERSION@40-hex-commit
+        required: true
+        type: string
+      go_pin:
+        description: Exact lazily-go pin as vVERSION@40-hex-commit
+        required: true
+        type: string
+      kotlin_pin:
+        description: Exact lazily-kt pin as vVERSION@40-hex-commit
+        required: true
+        type: string
+      cpp_pin:
+        description: Exact lazily-cpp pin as vVERSION@40-hex-commit
+        required: true
+        type: string
+      csharp_pin:
+        description: Exact lazily-cs pin as vVERSION@40-hex-commit
+        required: true
+        type: string
+      dart_pin:
+        description: Exact lazily-dart pin as vVERSION@40-hex-commit
+        required: true
+        type: string
+      zig_pin:
+        description: Exact lazily-zig pin as vVERSION@40-hex-commit
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  aggregate-core-gates:
+    name: Qualify exact Spec and binding revisions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out dispatched Lazily Spec revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: lazily-spec
+          persist-credentials: false
+
+      - name: Reject floating or mismatched cohort pins
+        shell: bash
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+          SPEC_REF_TYPE: ${{ github.ref_type }}
+          SPEC_TAG: ${{ github.ref_name }}
+          SPEC_COMMIT: ${{ github.sha }}
+          RUST_PIN: ${{ inputs.rust_pin }}
+          JAVASCRIPT_PIN: ${{ inputs.javascript_pin }}
+          PYTHON_PIN: ${{ inputs.python_pin }}
+          GO_PIN: ${{ inputs.go_pin }}
+          KOTLIN_PIN: ${{ inputs.kotlin_pin }}
+          CPP_PIN: ${{ inputs.cpp_pin }}
+          CSHARP_PIN: ${{ inputs.csharp_pin }}
+          DART_PIN: ${{ inputs.dart_pin }}
+          ZIG_PIN: ${{ inputs.zig_pin }}
+        run: |
+          set -euo pipefail
+          test "$SPEC_REF_TYPE" = tag || {
+            echo "::error::dispatch this workflow at an immutable Lazily Spec tag"
+            exit 1
+          }
+          [[ "$SPEC_COMMIT" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::the dispatched Spec ref did not resolve to a lowercase 40-hex commit"
+            exit 1
+          }
+          case "$MANIFEST_PATH" in
+            /*|../*|*/../*)
+              echo "::error::manifest_path must stay inside lazily-spec"
+              exit 1
+              ;;
+          esac
+          test -f "lazily-spec/$MANIFEST_PATH" || {
+            echo "::error::candidate manifest is absent from the dispatched Spec revision"
+            exit 1
+          }
+
+          jq -en \
+            --arg rust "$RUST_PIN" \
+            --arg javascript "$JAVASCRIPT_PIN" \
+            --arg python "$PYTHON_PIN" \
+            --arg go "$GO_PIN" \
+            --arg kotlin "$KOTLIN_PIN" \
+            --arg cpp "$CPP_PIN" \
+            --arg csharp "$CSHARP_PIN" \
+            --arg dart "$DART_PIN" \
+            --arg zig "$ZIG_PIN" '
+              def pin:
+                capture("^(?<tag>v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?)@(?<commit>[0-9a-f]{40})$");
+              {
+                rust: ($rust | pin),
+                javascript: ($javascript | pin),
+                python: ($python | pin),
+                go: ($go | pin),
+                kotlin: ($kotlin | pin),
+                cpp: ($cpp | pin),
+                csharp: ($csharp | pin),
+                dart: ($dart | pin),
+                zig: ($zig | pin)
+              }
+            ' >dispatch-pins.json || {
+            echo "::error::every binding pin must be vVERSION@lowercase-40-hex-commit"
+            exit 1
+          }
+
+          jq -e \
+            --arg spec_commit "$SPEC_COMMIT" \
+            --arg spec_tag "$SPEC_TAG" \
+            --slurpfile expected dispatch-pins.json '
+              ($expected[0]) as $pins |
+              .spec.commit == $spec_commit and
+              .spec.tag == $spec_tag and
+              ([.bindings[].id] | sort) == ($pins | keys | sort) and
+              all(.bindings[];
+                .source.commit == $pins[.id].commit and
+                .source.tag == $pins[.id].tag)
+            ' "lazily-spec/$MANIFEST_PATH" >/dev/null || {
+              echo "::error::manifest pins do not exactly equal the dispatched Spec and binding pins"
+              exit 1
+            }
+
+      - name: Check out all nine exact binding revisions
+        shell: bash
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: |
+          set -euo pipefail
+          jq -r '.bindings[] | [.id, .source.repository, .source.tag, .source.commit] | @tsv' \
+            "lazily-spec/$MANIFEST_PATH" |
+          while IFS=$'\t' read -r binding repository tag commit; do
+            directory="${repository##*/}"
+            directory="${directory%.git}"
+            test ! -e "$directory" || {
+              echo "::error::duplicate binding checkout $directory"
+              exit 1
+            }
+            git init -q "$directory"
+            git -C "$directory" remote add origin "$repository"
+            git -C "$directory" fetch -q --depth 1 origin "$commit"
+            git -C "$directory" checkout -q --detach FETCH_HEAD
+            git -C "$directory" fetch -q --depth 1 origin "refs/tags/$tag:refs/tags/$tag"
+            test "$(git -C "$directory" rev-parse HEAD)" = "$commit" || {
+              echo "::error::$binding checkout did not resolve to $commit"
+              exit 1
+            }
+            test "$(git -C "$directory" rev-parse "refs/tags/$tag^{}")" = "$commit" || {
+              echo "::error::$binding tag $tag does not peel to $commit"
+              exit 1
+            }
+          done
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@caf0cab7a618c569241d31dcd442f54681755d39 # v3
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: "3.10.0"
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: "0.16.0"
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Verify candidate manifest and source pins
+        working-directory: lazily-spec
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: |
+          uv run python scripts/verify_core_cohort.py "$MANIFEST_PATH" \
+            --repo-root .. \
+            --spec-root . \
+            --require-publish-ready \
+            --expected-spec-commit "$GITHUB_SHA"
+
+      - name: Generate fresh Core evidence
+        working-directory: lazily-spec
+        run: |
+          mkdir -p ../cohort-evidence
+          node scripts/check-core-evidence.mjs \
+            --profile profiles/core-v1.json \
+            --bindings-root .. \
+            --reports ../cohort-evidence \
+            --generate-reports \
+            --require-all
+
+      - name: Core profile aggregate
+        working-directory: lazily-spec
+        run: make core-profile-check
+
+      - name: Core evidence aggregate
+        working-directory: lazily-spec
+        env:
+          CORE_EVIDENCE_REPORTS: ../cohort-evidence
+        run: make core-evidence-check
+
+      - name: Core support aggregate
+        working-directory: lazily-spec
+        run: make core-support-check
+
+      - name: Core artifact consumers aggregate
+        working-directory: lazily-spec
+        run: make core-artifact-consumers-check-all
+
+      - name: Core cohort aggregate
+        working-directory: lazily-spec
+        run: make core-cohort-check
+
+      - name: Bundle manifest, pins, and generated evidence
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: |
+          cp "lazily-spec/$MANIFEST_PATH" cohort-evidence/cohort-manifest.json
+          cp dispatch-pins.json cohort-evidence/dispatch-pins.json
+
+      - name: Upload immutable qualification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: lazily-core-${{ github.ref_name }}-${{ github.run_id }}
+          path: cohort-evidence
+          if-no-files-found: error
+          retention-days: 90

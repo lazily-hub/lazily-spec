@@ -67,25 +67,25 @@ missing or yanked) registry status for every artifact, and all six gates to pass
 With `--repo-root`, every source tag must exist locally, peel to the manifest
 commit, and match the checked-out `HEAD`.
 
-## Reusable release gate
+## Spec-side cohort qualification
 
-`.github/workflows/core-cohort-publish-gate.yml` is a reusable, non-publishing
-workflow. A binding's release workflow calls it with:
+`.github/workflows/core-cohort-qualification.yml` is a manually dispatched,
+non-publishing workflow in Lazily Spec. Dispatch it at the exact Spec version tag
+named by the candidate manifest and provide the manifest path plus one
+`vVERSION@40-hex-commit` pin for each of the nine bindings. The ten total inputs
+stay within GitHub's `workflow_dispatch` limit.
 
-- a 40-hex `spec_commit` (never `main` or another floating ref);
-- the candidate manifest path at that commit;
-- the calling binding id, exact commit, and version tag; and
-- the name of an artifact containing the candidate packages and evidence.
+The workflow rejects a branch dispatch, a floating or malformed pin, a pin that
+differs from the manifest, and a source tag that does not peel to the supplied
+commit. It checks out all ten repositories at those immutable revisions,
+generates fresh binding runtime evidence, re-runs the aggregate Core gates, and
+uploads the manifest, dispatch pins, reports, and proof files as one retained
+artifact. The workflow has read-only repository permissions and contains no
+registry credentials or publish step.
 
-The publish job then declares `needs: cohort-gate`. The reusable workflow checks
-that the caller's commit and tag equal the manifest entry before it returns
-green, and that the manifest's Spec commit equals the revision the workflow
-checked out. It has read-only permissions and contains no registry credentials
-or publish step.
-
-Once the pending release-pin work has established the final manifest location
-and evidence artifact name, each publishing repository must adopt this gate and
-pin the reusable workflow itself by commit. Rust adoption additionally waits for
-the Rust publication path to be green. Those cross-repository edits are part of
-the release-pin integration, not something this scaffold can truthfully mark
-complete in advance.
+Qualification intentionally runs after the binding tags exist. A binding-side
+reusable-workflow call cannot pin the later Spec commit that records that
+binding's release, so release workflows do not call this gate and repositories
+without a release workflow do not need a placeholder caller. Publication remains
+separate; a successful qualification run proves the pinned cohort rather than
+publishing it.

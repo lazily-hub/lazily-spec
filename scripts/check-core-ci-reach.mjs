@@ -62,7 +62,24 @@ function parseWorkflow(text) {
   return jobs;
 }
 
+function workflowDispatchInputs(text) {
+  const permissions = text.indexOf("\npermissions:");
+  assert.notEqual(permissions, -1, "workflow must declare explicit permissions");
+  const trigger = text.slice(0, permissions);
+  const events = [...trigger.matchAll(/^  ([A-Za-z0-9_-]+):\s*$/gm)].map((match) => match[1]);
+  assert.deepEqual(events, ["workflow_dispatch"], "qualification must be dispatch-only");
+  assert.match(trigger, /^    inputs:\s*$/m, "workflow_dispatch must declare explicit inputs");
+  return [...trigger.matchAll(/^      ([A-Za-z0-9_-]+):\s*$/gm)].map((match) => match[1]);
+}
+
 export function check(text, pins) {
+  if (pins.dispatch_inputs) {
+    assert.deepEqual(
+      workflowDispatchInputs(text).sort(),
+      [...pins.dispatch_inputs].sort(),
+      "workflow_dispatch inputs must exactly pin the manifest and nine bindings",
+    );
+  }
   const jobs = parseWorkflow(text);
   const job = jobs.get(pins.job);
   assert(job, `missing pinned job ${pins.job}`);
@@ -102,6 +119,12 @@ function selfTest(text, pins) {
     text.replace(`      - name: ${first[0]}\n`, `      - name: ${first[0]}\n        continue-on-error: true\n`),
     text.replace(`      - name: ${first[0]}\n`, `      - if: false\n        name: ${first[0]}\n`)
   ];
+  if (pins.dispatch_inputs) {
+    mutations.push(
+      text.replace("  workflow_dispatch:\n", "  workflow_call:\n"),
+      text.replace(`      ${pins.dispatch_inputs[0]}:\n`, ""),
+    );
+  }
   for (const [index, mutation] of mutations.entries()) {
     assert.notEqual(mutation, text, `mutation ${index + 1} did not alter the workflow`);
     assert.throws(() => check(mutation, pins), `mutation ${index + 1} must fail closed`);
@@ -111,7 +134,7 @@ function selfTest(text, pins) {
 
 const checks = [
   config,
-  { ...config.reusable, workflow: config.reusable.workflow }
+  { ...config.qualification, workflow: config.qualification.workflow }
 ];
 if (process.argv.includes("--self-test")) {
   for (const pins of checks) selfTest(readFileSync(pins.workflow, "utf8"), pins);
