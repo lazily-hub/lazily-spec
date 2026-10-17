@@ -123,10 +123,8 @@ MUST fall back to **I/O channels accessing the memory** — large payloads are c
 Any omitted `MUST` row MUST be advertised rather than fail silently.
 
 Python, Dart, Rust, and Go vendor selected fixture subsets so their suites can
-run without a sibling checkout. From this canonical repository,
-`make fixture-copies-check-all` verifies every tracked copy byte-for-byte and
-`make fixture-copies-sync` refreshes the present mirrors. The ordinary
-`make check` verifies every sibling mirror that is currently checked out.
+run without a sibling checkout. See [CONTRIBUTING.md](CONTRIBUTING.md) for the
+fixture-mirror maintenance and verification commands.
 
 ## Protocol Layers
 
@@ -161,11 +159,7 @@ kernel, and the full Harel/SCXML state chart — lives in its own repo,
 formal home every binding depends on equally. It is the executable reference
 behind the state-chart conformance fixtures (see below).
 
-Verify it with the local check target:
-
-```bash
-make check
-```
+Local verification instructions are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Relationship to lazily-rs SPEC.md
 
