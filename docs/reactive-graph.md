@@ -257,7 +257,23 @@ pins are `Reactive.readShared_eq_readCell`,
   share the allocator slot/raw node id while any generation token differs. A
   binding without observable reusable node ids **MUST** record an explicit
   capability exclusion; its runner **MUST NOT** invent ids or claim a vacuous
-  replay.
+  replay. The binding-side ledger is named exactly
+  `UNSUPPORTED_CAPABILITIES`, with `recycled_node_ids` as its entry (for
+  example, `UNSUPPORTED_CAPABILITIES=("recycled_node_ids")`). A broad
+  `reactive-graph` exclusion does not satisfy this requirement: capability
+  exclusion is scenario-specific and leaves the rest of the reactive-graph
+  corpus in scope.
+
+  **Release and implementation pin (`#lzstalehandlegenpin`).** This
+  generation-aware disposal contract first appears in the immutable
+  `lazily-spec` release `v0.43.0`, commit
+  `4b34879b26566a0616b97cf661ac4f1a23762af6`. A binding that claims this
+  contract **MUST** run its CI and release conformance against `v0.43.0` or a
+  later immutable tag whose history contains that commit. The binding's CI or
+  release metadata **MUST** record both the tag and its resolved 40-hex commit,
+  and the checkout **MUST** match both. A mutable `main` checkout, an unpinned
+  shallow clone, or a sibling working tree is useful for development but is
+  not release evidence for this contract.
 
   **Garbage collection does not substitute for this.** The reverse edge set is a
   *strong* reference to each dependent, so a long-lived source retains every node
