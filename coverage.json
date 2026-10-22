@@ -1,5 +1,5 @@
 {
-  "$comment": "Canonical cross-language feature coverage — the single source of truth. Only the Core surface defined in cell-model.md § \"Core surface vs. binding extensions\" is scored; Extended methods (entry/entry_with, is_empty, len_untracked, reconcile, insert, Try* variants) are non-normative and MUST NOT be scored here. Edit THIS file, then run `node scripts/sync-coverage.mjs` to regenerate the table in docs/coverage.md and every sibling binding README (between the coverage-table markers). CI runs `--check` to fail on drift. Each row carries `id` (a stable snake_case footnote key), `label` (the short text rendered in the table cell), and `feature` (the 80–200 char normative prose, rendered as a footnote below the table so the row width scales with the language axis, not the prose). The four marks are `✅` shipped, `~` partial, `—` absent (not yet implemented), and `⊘` not applicable (structurally cannot support the feature). A `⊘` cell MUST carry a recorded reason: the row carries an optional `na` object mapping the language name to a short reason string, and sync-coverage.mjs refuses a `⊘` mark whose language has no `na` entry (and vice versa) so 'cannot' is never confused with 'has not'. A row MAY also carry `fixtures`: the canonical conformance fixtures that back it. `node scripts/check-coverage-claims.mjs` then refuses a shipped mark on that row unless the binding actually replays every cited fixture, read from that binding's own KNOWN_UNCOVERED gap ledger plus every scoping ledger it declares (REQUIRED_AREAS, IMPLEMENTED_FAMILY_PREFIXES); a scoping ledger the parser does not read silently turns every fixture it excludes into a replayed one, so an unclassified one is a hard failure. Scoring having the TYPES rather than speaking the WIRE is what let two lazily-cpp codec gaps survive a family-wide audit (#coveragejsonscores). A row may set `optional: true` when the spec marks it MAY rather than MUST; the roll-up excludes optional rows so an unimplemented optional feature does not drag its family to partial, while the detail table still scores it.",
+  "$comment": "Canonical cross-language feature coverage — the single source of truth. Only the Core surface defined in cell-model.md § \"Core surface vs. binding extensions\" is scored; Extended methods (entry/entry_with, is_empty, len_untracked, reconcile, insert, Try* variants) are non-normative and MUST NOT be scored here. Edit THIS file, then run `node scripts/sync-coverage.mjs` to regenerate the table in docs/coverage.md and every sibling binding README (between the coverage-table markers). CI runs `--check` to fail on drift. Each row carries `id` (a stable snake_case footnote key), `label` (the short text rendered in the table cell), and `feature` (the 80–200 char normative prose, rendered as a footnote below the table so the row width scales with the language axis, not the prose). The four marks are `✅` shipped, `~` partial, `—` absent (not yet implemented), and `⊘` not applicable (structurally cannot support the feature). A `⊘` cell MUST carry a recorded reason: the row carries an optional `na` object mapping the language name to a short reason string, and sync-coverage.mjs refuses a `⊘` mark whose language has no `na` entry (and vice versa) so 'cannot' is never confused with 'has not'. A row MAY also carry `fixtures`: the canonical conformance fixtures that back it. `node scripts/check-coverage-claims.mjs` then refuses a shipped mark on that row unless the binding actually replays every cited fixture, read from that binding's own KNOWN_UNCOVERED gap ledger plus every scoping ledger it declares (REQUIRED_AREAS, IMPLEMENTED_FAMILY_PREFIXES); a scoping ledger the parser does not read silently turns every fixture it excludes into a replayed one, so an unclassified one is a hard failure. Scoring having the TYPES rather than speaking the WIRE is what let two lazily-cpp codec gaps survive a family-wide audit (#coveragejsonscores). A row may set `optional: true` when the spec marks it MAY rather than MUST; the roll-up excludes optional rows so an unimplemented optional feature does not drag its family to partial, while the detail table still scores it. An optional capability row also carries a `requires` array. Every fixture it cites must require exactly those capabilities at the fixture root or on every scenario, and a binding's exact `UNSUPPORTED_CAPABILITIES` ledger conflicts with a shipped mark only on the matching capability row, never on the broad family row.",
   "legend": "`✅` shipped · `~` partial · `—` absent · `⊘` not applicable (see notes). Roll-up: a family cell is `✅` only when EVERY required row in that family is `✅`; `~` when mixed; `—` when no required row is shipped or partial; `⊘` only when every required row in the family is not applicable. Rows flagged `optional: true` (RFC-2119 MAY) are excluded from the roll-up so declining an optional feature never reads as a gap.",
   "languages": [
     "Rust",
@@ -163,9 +163,7 @@
         "reactive-graph/signal_materializes_without_a_read.json",
         "reactive-graph/signal_materializes_once_per_batch.json",
         "reactive-graph/dispose_signal_reverts_to_lazy.json",
-        "reactive-graph/churn_returns_to_baseline.json",
-        "reactive-graph/recycled_id_inherits_nothing.json",
-        "reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json"
+        "reactive-graph/churn_returns_to_baseline.json"
       ],
       "marks": [
         "✅",
@@ -178,6 +176,32 @@
         "✅",
         "✅",
         "✅"
+      ]
+    },
+    {
+      "id": "recycled-node-id-stale-handle-fencing",
+      "label": "Recycled-node-id stale-handle fencing",
+      "family": "reactive-graph",
+      "optional": true,
+      "requires": [
+        "recycled_node_ids"
+      ],
+      "feature": "Recycled-node-id stale-handle fencing — generation/identity + kind validation before disposal, preserving the live successor and its dependency edges/cleanup ownership (**MAY**, `#lzstalehandlespec`)",
+      "fixtures": [
+        "reactive-graph/recycled_id_inherits_nothing.json",
+        "reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json"
+      ],
+      "marks": [
+        "✅",
+        "—",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "—"
       ]
     },
     {

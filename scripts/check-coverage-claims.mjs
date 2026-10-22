@@ -25,6 +25,15 @@
 //       unqualified one, so that is the one that has to be backed.
 //   —   nothing is required
 //
+// An optional capability row also carries `"requires": ["capability_id"]`.
+// Every fixture on that row must require exactly those capabilities at the
+// fixture root or on every scenario. A capability-gated fixture on an ordinary
+// row is a hard failure: otherwise a binding that truthfully declares
+// a multiline `UNSUPPORTED_CAPABILITIES` ledger naming `capability_id` would
+// lose its broad feature mark
+// for declining an optional proof surface. A shipped capability mark additionally
+// conflicts with the binding's exact capability-exclusion ledger.
+//
 // "Replayed" is read from the binding's OWN committed ledger, not from a claim
 // in this repo: `scripts/check-conformance-coverage.sh` names every canonical
 // fixture the binding does not replay in `KNOWN_UNCOVERED`, and a binding may
@@ -104,7 +113,11 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(HERE, "..");
+// The override exists for the CLI regression suite: it builds an isolated
+// miniature corpus plus sibling binding ledger and exercises this exact script.
+const ROOT = process.env.LAZILY_COVERAGE_CLAIMS_ROOT ?? join(HERE, "..");
+const BINDINGS_ROOT =
+  process.env.LAZILY_COVERAGE_BINDINGS_ROOT ?? join(ROOT, "..");
 
 // coverage.json column label -> sibling checkout directory.
 const BINDING_DIRS = {
@@ -138,6 +151,11 @@ const SCOPING_ARRAYS = new Set([
   "IMPLEMENTED_FAMILY_PREFIXES",
   "EXCUSED_AREAS",
 ]);
+
+// Capability exclusions narrow evidence inside a fixture rather than the set
+// of fixture files a binding opens. Keep them separate from both fixture-scope
+// arrays and bookkeeping arrays so shipped capability claims can consult them.
+const CAPABILITY_ARRAYS = new Set(["UNSUPPORTED_CAPABILITIES"]);
 
 // Arrays that exist in these guards for reasons unrelated to WHICH canonical
 // fixture files the binding replays: gap ledgers at a finer grain than the
@@ -205,11 +223,13 @@ function declaredArrays(source) {
 }
 
 function loadBinding(dir) {
-  const guard = join(ROOT, "..", dir, "scripts", "check-conformance-coverage.sh");
+  const guard = join(BINDINGS_ROOT, dir, "scripts", "check-conformance-coverage.sh");
   if (!existsSync(guard)) return null;
   const source = readFileSync(guard, "utf8");
+  const arrays = declaredArrays(source);
   const requiredLines = bashArray(source, "REQUIRED_AREAS");
   const familyLines = bashArray(source, "IMPLEMENTED_FAMILY_PREFIXES");
+  const unsupportedCapabilityLines = bashArray(source, "UNSUPPORTED_CAPABILITIES");
   // Finer-grained gap ledgers: a scenario or assertion block excused INSIDE a
   // fixture the binding does replay. Any entry here is a standing reason for a
   // `~`, so it removes that row from the review report below. Declared empty in
@@ -227,6 +247,9 @@ function loadBinding(dir) {
     dir,
     uncovered: quotedEntries(bashArray(source, "KNOWN_UNCOVERED")),
     finerGaps,
+    unsupportedCapabilities: quotedEntries(unsupportedCapabilityLines),
+    unreadableCapabilityLedger:
+      arrays.has("UNSUPPORTED_CAPABILITIES") && unsupportedCapabilityLines === null,
     // `null` means the binding audits the whole corpus rather than a set of
     // required areas — a strictly stronger invariant, so nothing to check.
     requiredAreas: requiredLines === null ? null : bareEntries(requiredLines),
@@ -234,10 +257,47 @@ function loadBinding(dir) {
     // `null` = claims the whole corpus.
     implementedFamilies:
       familyLines === null ? null : [...quotedEntries(familyLines)],
-    unknownArrays: [...declaredArrays(source)].filter(
-      (name) => !SCOPING_ARRAYS.has(name) && !NON_SCOPING_ARRAYS.has(name),
+    unknownArrays: [...arrays].filter(
+      (name) =>
+        !SCOPING_ARRAYS.has(name) &&
+        !CAPABILITY_ARRAYS.has(name) &&
+        !NON_SCOPING_ARRAYS.has(name),
     ),
   };
+}
+
+/// Capabilities that gate the entire fixture.
+///
+/// A root `requires` applies to every shape. For scenario fixtures, a requirement
+/// repeated on every scenario also gates the whole fixture. Scenario-specific
+/// requirements that are not common to every scenario deliberately stay below
+/// fixture granularity and cannot back a whole-row capability claim.
+function fixtureRequirements(document) {
+  const required = new Set(
+    Array.isArray(document?.requires)
+      ? document.requires.filter((value) => typeof value === "string")
+      : [],
+  );
+  const scenarios = Array.isArray(document?.scenarios) ? document.scenarios : [];
+  if (scenarios.length === 0) return required;
+
+  let common = null;
+  for (const scenario of scenarios) {
+    const current = new Set(
+      Array.isArray(scenario?.requires)
+        ? scenario.requires.filter((value) => typeof value === "string")
+        : [],
+    );
+    common = common === null
+      ? current
+      : new Set([...common].filter((capability) => current.has(capability)));
+  }
+  for (const capability of common ?? []) required.add(capability);
+  return required;
+}
+
+function sameSet(left, right) {
+  return left.size === right.size && [...left].every((value) => right.has(value));
 }
 
 function fixtureArea(fixture) {
@@ -304,13 +364,34 @@ const reviewCandidates = [];
 // weaken the audit visibly — it inverts it for that binding, which is how
 // lazily-gd's 128 family-excused fixtures would have read as replayed.
 for (const [language, binding] of bindings) {
+  if (binding.unreadableCapabilityLedger) {
+    violations.push(
+      `${binding.dir} declares UNSUPPORTED_CAPABILITIES (${language} column), but the ledger is not ` +
+        `a multiline bash array ending with a standalone ')'; its exclusions cannot be audited`,
+    );
+  }
   for (const name of binding.unknownArrays) {
     violations.push(
       `${binding.dir} declares an unrecognized ledger array \`${name}\` (${language} column). ` +
         `Classify it in check-coverage-claims.mjs: SCOPING_ARRAYS if it narrows which canonical ` +
-        `fixtures the guard audits, NON_SCOPING_ARRAYS otherwise. An unread scoping ledger makes ` +
+        `fixtures the guard audits, CAPABILITY_ARRAYS if it excludes optional fixture capabilities, ` +
+        `NON_SCOPING_ARRAYS otherwise. An unread scoping ledger makes ` +
         `every fixture it excludes count as replayed`,
     );
+  }
+}
+
+const knownCapabilities = new Set(
+  data.rows.flatMap((row) => Array.isArray(row.requires) ? row.requires : []),
+);
+for (const [language, binding] of bindings) {
+  for (const capability of binding.unsupportedCapabilities) {
+    if (!knownCapabilities.has(capability)) {
+      violations.push(
+        `${binding.dir} excludes unknown capability \`${capability}\` (${language} column); ` +
+          `declare an optional coverage row requiring it or remove the stale exclusion`,
+      );
+    }
   }
 }
 
@@ -322,6 +403,27 @@ let rowsWithFixtures = 0;
 for (const row of data.rows) {
   const fixtures = row.fixtures;
   const fixtureless = !Array.isArray(fixtures) || fixtures.length === 0;
+  const capabilities = Array.isArray(row.requires) ? row.requires : [];
+  const capabilitySet = new Set(capabilities);
+  if (row.requires !== undefined && !Array.isArray(row.requires)) {
+    violations.push(`row "${row.id}" has non-array requires; use an array of capability ids`);
+  }
+  if (capabilities.length !== capabilitySet.size) {
+    violations.push(`row "${row.id}" repeats a capability in requires`);
+  }
+  for (const capability of capabilities) {
+    if (typeof capability !== "string" || !/^[a-z][a-z0-9_]*$/.test(capability)) {
+      violations.push(
+        `row "${row.id}" has invalid capability ${JSON.stringify(capability)}; use snake_case`,
+      );
+    }
+  }
+  if (capabilitySet.size > 0 && row.optional !== true) {
+    violations.push(
+      `row "${row.id}" requires ${capabilities.join(", ")} but is not optional; ` +
+        `capability-gated coverage must not lower the required family roll-up`,
+    );
+  }
   const knownLanguages = new Set(data.languages);
   for (const language of Object.keys(row.partial_reasons ?? {})) {
     if (!knownLanguages.has(language)) {
@@ -358,9 +460,26 @@ for (const row of data.rows) {
   if (fixtureless) continue;
   rowsWithFixtures += 1;
   for (const fixture of fixtures) {
-    if (!existsSync(join(ROOT, "conformance", fixture))) {
+    const fixturePath = join(ROOT, "conformance", fixture);
+    if (!existsSync(fixturePath)) {
       violations.push(
         `row "${row.feature.slice(0, 60)}…" cites ${fixture}, which is not in the canonical corpus`,
+      );
+      continue;
+    }
+    const fixtureCapabilitySet = fixtureRequirements(
+      JSON.parse(readFileSync(fixturePath, "utf8")),
+    );
+    if (!sameSet(capabilitySet, fixtureCapabilitySet)) {
+      const rowText = capabilitySet.size === 0
+        ? "no capability"
+        : `requires ${[...capabilitySet].sort().join(", ")}`;
+      const fixtureText = fixtureCapabilitySet.size === 0
+        ? "requires no whole-fixture capability"
+        : `requires ${[...fixtureCapabilitySet].sort().join(", ")}`;
+      violations.push(
+        `row "${row.id}" declares ${rowText}, but ${fixture} ${fixtureText}. ` +
+          `Capability-gated fixtures belong only on the exact optional capability row`,
       );
     }
   }
@@ -369,6 +488,9 @@ for (const row of data.rows) {
     if (binding === undefined) return; // not checked out, or not a binding column
     const mark = row.marks[column];
     const declaredReason = row.partial_reasons?.[language];
+    const excludedCapabilities = capabilities.filter((capability) =>
+      binding.unsupportedCapabilities.has(capability)
+    );
     if (mark === PARTIAL) {
       qualified += 1;
       // Indistinguishable from shipped on ledger evidence: every cited fixture
@@ -391,7 +513,8 @@ for (const row of data.rows) {
       // reason attached to a mark that is not `~` fails as stale below.
       if (
         fixtures.every((fixture) => replays(binding, fixture)) &&
-        !fixtures.some((fixture) => binding.finerGaps.has(fixture))
+        !fixtures.some((fixture) => binding.finerGaps.has(fixture)) &&
+        excludedCapabilities.length === 0
       ) {
         if (typeof declaredReason === "string" && declaredReason.trim() !== "") {
           declaredPartials += 1;
@@ -410,10 +533,21 @@ for (const row of data.rows) {
     if (mark !== SHIPPED) return;
     claims += 1;
     const missing = fixtures.filter((fixture) => !replays(binding, fixture));
-    if (missing.length > 0) {
+    if (missing.length > 0 || excludedCapabilities.length > 0) {
+      const reasons = [];
+      if (missing.length > 0) {
+        reasons.push(
+          `does not replay ${missing.map((f) => `${f} [${whyNotReplayed(binding, f)}]`).join(", ")}`,
+        );
+      }
+      if (excludedCapabilities.length > 0) {
+        reasons.push(
+          `declares ${excludedCapabilities.join(", ")} in UNSUPPORTED_CAPABILITIES`,
+        );
+      }
       violations.push(
-        `${language} is marked ${SHIPPED} on "${row.feature.slice(0, 60)}…" but ${binding.dir} does ` +
-          `not replay ${missing.map((f) => `${f} [${whyNotReplayed(binding, f)}]`).join(", ")}`,
+        `${language} is marked ${SHIPPED} on "${row.feature.slice(0, 60)}…" but ${binding.dir} ` +
+          reasons.join(" and "),
       );
     }
   });

@@ -8,6 +8,14 @@ what every binding *must* eventually provide.
 
 Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see notes).
 
+Optional fixture capabilities are scored in their own rows. Such a row carries
+`requires: ["capability_id"]` in `coverage.json`, and every cited fixture must
+require that exact capability at its root or on every scenario. A binding that
+cannot expose the capability records it in the multiline
+`UNSUPPORTED_CAPABILITIES` array in its conformance-coverage guard. That exact
+exclusion applies only to rows requiring the named capability; it never weakens
+the binding's broader family row.
+
 > The table below is **generated** from [`coverage.json`](../coverage.json) by
 > [`scripts/sync-coverage.mjs`](../scripts/sync-coverage.mjs). Edit `coverage.json`
 > and run `make coverage-sync` (or `node scripts/sync-coverage.mjs`) to update this
@@ -57,6 +65,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Feature | Rust | Python | Kotlin | JS | Dart | Zig | Go | C++ | C# | GDScript |
 | --------- | :----: | :------: | :------: | :--: | :----: | :---: | :--: | :---: | :--: | :--------: |
 | Reactive graph [^reactive-graph] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Recycled-node-id stale-handle fencing *(opt)* [^recycled-node-id-stale-handle-fencing] | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Thread-safe context [^thread-safe-context] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Async reactive context [^async-reactive-context] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Merge algebra [^merge-algebra] | ✅ | ~ | ~ | ~ | ✅ | ✅ | ✅ | ✅ | ✅ | ~ |
@@ -291,6 +300,7 @@ Legend: ✅ shipped · `~` partial · `—` absent · `⊘` not applicable (see 
 | Instrumentation / benchmarks [^instrumentation-benchmarks] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 
 [^reactive-graph]: Reactive graph — `Source` / `Computed` cells + `Effect` sink; guarded/eager computation; batch; generation/identity + kind-fenced disposal (`#lzstalehandlespec`)
+[^recycled-node-id-stale-handle-fencing]: Recycled-node-id stale-handle fencing — generation/identity + kind validation before disposal, preserving the live successor and its dependency edges/cleanup ownership (**MAY**, `#lzstalehandlespec`)
 [^keyed-map-materialization]: Keyed-map materialization (`ComputedMap`) — mint-on-access derived slots: transparency + deferral (`#lzmatmode`)
 [^thread-safe-keyed-map]: Thread-safe keyed map (`ThreadSafeComputedMap`) — `Send + Sync` + materialization confluence (`#lzmatmode`)
 [^async-keyed-map]: Async keyed map (`AsyncComputedMap`) — eventual transparency (`#lzmatmode`)

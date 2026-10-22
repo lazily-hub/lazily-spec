@@ -169,6 +169,7 @@ coverage-check:
 # has nothing to say about whether coverage.json is TRUE. Sibling checkouts are
 # reported when absent rather than silently skipped.
 coverage-claims-check:
+>node --test tests/test_coverage_claims.mjs
 >node scripts/check-coverage-claims.mjs --check
 
 coverage-sync:
