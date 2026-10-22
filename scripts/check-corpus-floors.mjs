@@ -100,6 +100,7 @@ const BINDINGS = ["rs", "py", "kt", "js", "dart", "zig", "go", "cpp", "cs", "gd"
 // narrowing ledger this guard failed to read, and an unread narrowing ledger
 // does not weaken the audit visibly — it inverts it for one binding.
 const SCOPING_ARRAYS = new Set(["REQUIRED_AREAS", "IMPLEMENTED_FAMILY_PREFIXES", "EXCUSED_AREAS"]);
+const CAPABILITY_ARRAYS = new Set(["UNSUPPORTED_CAPABILITIES"]);
 
 /// Every spelling the corpus uses for an executable output claim, as the UNION
 /// of what the bindings track — not the narrower set `gen_assertion_block_schema.py`
@@ -289,6 +290,30 @@ function floorValue(files, name) {
   return { value: [...found.keys()][0] };
 }
 
+function fixtureRequirements(document) {
+  const required = new Set(
+    Array.isArray(document?.requires)
+      ? document.requires.filter((value) => typeof value === "string")
+      : [],
+  );
+  const fixtureScenarios = Array.isArray(document?.scenarios) ? document.scenarios : [];
+  if (fixtureScenarios.length === 0) return required;
+
+  let common = null;
+  for (const scenario of fixtureScenarios) {
+    const current = new Set(
+      Array.isArray(scenario?.requires)
+        ? scenario.requires.filter((value) => typeof value === "string")
+        : [],
+    );
+    common = common === null
+      ? current
+      : new Set([...common].filter((capability) => current.has(capability)));
+  }
+  for (const capability of common ?? []) required.add(capability);
+  return required;
+}
+
 function fixtureArea(fixture) {
   if (fixture.includes("/")) return fixture.slice(0, fixture.indexOf("/"));
   if (fixture === "arena_blob.json" || /^(snapshot|delta)_.*\.json$/.test(fixture)) return "ipc";
@@ -311,6 +336,7 @@ function loadBinding(dir) {
   }
   const requiredLines = bashArray(source, "REQUIRED_AREAS");
   const familyLines = bashArray(source, "IMPLEMENTED_FAMILY_PREFIXES");
+  const unsupportedCapabilityLines = bashArray(source, "UNSUPPORTED_CAPABILITIES");
   const excusedScenarios = new Set();
   for (const name of ["KNOWN_UNREPLAYED_SCENARIOS", "SCENARIO_EXCUSES"]) {
     for (const entry of quotedEntries(bashArray(source, name))) {
@@ -333,16 +359,27 @@ function loadBinding(dir) {
     // rather than state a wrong one.
     areaScopeIsPartition: requiredLines === null || bashArray(source, "EXCUSED_AREAS") !== null,
     implementedFamilies: familyLines === null ? null : [...quotedEntries(familyLines)],
+    unsupportedCapabilities: quotedEntries(unsupportedCapabilityLines),
     minFixtures: floorValue(files, "MIN_FIXTURES"),
     minScenarios: floorValue(files, "MIN_SCENARIOS"),
     unknownArrays: [...declaredArrays(source)].filter(
-      (name) => !SCOPING_ARRAYS.has(name) && !NON_SCOPING_ARRAYS.has(name),
+      (name) =>
+        !SCOPING_ARRAYS.has(name) &&
+        !CAPABILITY_ARRAYS.has(name) &&
+        !NON_SCOPING_ARRAYS.has(name),
     ),
   };
 }
 
 function opens(binding, fixture) {
   if (binding.uncovered.has(fixture)) return false;
+  if (
+    [...(requirements[fixture] ?? [])].some((capability) =>
+      binding.unsupportedCapabilities.has(capability)
+    )
+  ) {
+    return false;
+  }
   if (
     binding.implementedFamilies !== null &&
     !binding.implementedFamilies.some((prefix) => fixture.startsWith(prefix))
@@ -363,6 +400,7 @@ const steps = {};
 const scenarios = {};
 const arrays = {};
 const blocks = {};
+const requirements = {};
 /// fixture -> [canonical block bytes], for the per-binding derivation below.
 const blockBytes = {};
 let problems = 0;
@@ -377,6 +415,7 @@ for (const rel of fixtures) {
     continue;
   }
   if (doc === null || typeof doc !== "object") continue;
+  requirements[rel] = fixtureRequirements(doc);
   // EVERY top-level array, not an enumerated subset. `steps` and `scenarios`
   // are the two a runner floor usually counted, but lazily-dart's stdlib runner
   // counts `mutations`, and the corpus also carries `frames`, `reads`,
