@@ -259,6 +259,17 @@ pins are `Reactive.readShared_eq_readCell`,
   capability exclusion; its runner **MUST NOT** invent ids or claim a vacuous
   replay.
 
+  **Release and implementation pin (`#lzstalehandlegenpin`).** This
+  generation-aware disposal contract first appears in the immutable
+  `lazily-spec` release `v0.43.0`, commit
+  `4b34879b26566a0616b97cf661ac4f1a23762af6`. A binding that claims this
+  contract **MUST** run its CI and release conformance against `v0.43.0` or a
+  later immutable tag whose history contains that commit. The binding's CI or
+  release metadata **MUST** record both the tag and its resolved 40-hex commit,
+  and the checkout **MUST** match both. A mutable `main` checkout, an unpinned
+  shallow clone, or a sibling working tree is useful for development but is
+  not release evidence for this contract.
+
   **Garbage collection does not substitute for this.** The reverse edge set is a
   *strong* reference to each dependent, so a long-lived source retains every node
   that ever read it — the same unbounded growth a manual binding has, arrived at

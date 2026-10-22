@@ -867,6 +867,15 @@ depends entirely on one capability declares `requires` at the fixture root.
 | `reactive-graph/cross_scope_teardown_hazard.json` | ending a scope tears down its nodes even when a node outside still reads them (**required** failure — a binding that keeps them alive is non-conforming); the mirror case is symmetric |
 | `reactive-graph/churn_returns_to_baseline.json` | a subscribe/unsubscribe cycle that disposes what it creates leaves the source's dependent set at its starting size, under both individual disposal and one scope per cycle |
 
+The canonical stale-handle matrix and its `recycled_node_ids` exclusion first
+ship in `lazily-spec` `v0.43.0`, commit
+`4b34879b26566a0616b97cf661ac4f1a23762af6`. A binding claiming this matrix
+**MUST** pin `v0.43.0` or a later immutable tag containing that commit and
+record the tag plus its resolved 40-hex commit in CI or release metadata. CI
+**MUST** verify both values before replay. Cloning mutable `main` or relying on
+a sibling checkout does not establish which contract a published binding
+passed (`#lzstalehandlegenpin`).
+
 ### Cell observer conformance (`#lzdartobservercow`)
 
 The same directory pins
