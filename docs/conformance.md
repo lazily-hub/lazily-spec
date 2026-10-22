@@ -833,24 +833,33 @@ Op vocabulary (all ids are fixture-local labels, never a binding's internal id):
 | `computed {id, reads[], offset, scope?}` | Create a derived, guarded `Computed` whose value is `sum(reads) + offset`; owned by `scope` when named |
 | `effect {id, reads[], scope?}` | Register an effect over `reads`; runs on creation and on each flush after a tracked invalidation |
 | `read {id}` | Read a node — `expect.value`, or `expect.error` for a disposed one |
-| `set {id, value}` | Publish; `expect.observed_by` names the effects that ran, `expect.observed_count` their number |
+| `set_cell {id, value}` | Publish; `expect.observed_by` names the effects that ran, `expect.observed_count` their number |
 | `dispose {id}` | Dispose one node, dispatching on its own kind |
 | `fanout {id_prefix, reads[], count, read_each}` / `dispose_fanout {id_prefix, count}` | Create / dispose `count` sibling readers, for widths a literal step list would bloat |
 | `churn {source, id_prefix, live_width, cycles, mode, read_each}` | Run `cycles` subscribe/unsubscribe cycles holding `live_width` subscribers live (`mode`: `dispose_then_create` or `scope_per_cycle`) |
 | `begin_scope {scope}` / `end_scope {scope}` | Open / end a teardown scope |
 | `disarm {scope}` | Cancel the scope's teardown — ending it then disposes nothing |
-| `dispose_stale_handle {handle_of, handle_kind}` | Dispose through a handle whose id may have been recycled; a no-op unless the id still names a node of `handle_kind` |
+| `dispose_stale_handle {handle_of, handle_kind, successor, successor_kind}` | Dispose through the recorded stale handle only after proving that it and the named live successor use the same allocator slot/raw id, that any generation differs, and that both declared kinds (`cell`, `computed`, or `effect`) match. A runner that cannot prove reuse must record the scenario's `recycled_node_ids` capability exclusion; it must not synthesize a runner-only id or claim replay. |
 | `subscribe {id, cell, callback?, on_notify?, on_notify_once?}` | Register a `Cell` observer labelled `id` on `cell`. `callback` names a *shared* callable, so two registrations naming the same `callback` subscribe the same function (default: the callback is unique to `id`). `on_notify` is a list of `subscribe`/`unsubscribe` ops the callback performs reentrantly when it runs; `on_notify_once` restricts them to the first invocation. A reentrant `subscribe` may use `id_prefix` instead of `id`, minting `<prefix>_0`, `<prefix>_1`, … per invocation |
 | `unsubscribe {id, times?}` | Invoke the disposer returned by `subscribe {id}`, `times` times (default 1) — repeat calls exercise idempotency |
 
-A fixture uses top-level `steps`, or `scenarios` plus `expected` when the claim is that
-two differently-built runs agree (`expected.observationally_equal`).
+Stale-handle replay adds three observable assertions: `recycled_id_confirmed`
+means the runner proved equal allocator slots/raw ids and distinct occupants before
+calling the stale handle; `writable` is a non-mutating capability projection (true
+only for a live cell); and `cleanups_of` is the cumulative cleanup count for a named
+effect. A cell successor is also written and read back, so `writable` cannot be
+satisfied by a declaration alone.
+
+A fixture uses top-level `steps`, or `scenarios`. Comparative scenarios carry
+`expected.observationally_equal`; capability matrices instead declare `requires`
+on each independently asserted scenario.
 
 | Fixture | Covers |
 |---------|--------|
 | `reactive-graph/dispose_detaches_edges_both_directions.json` | disposal detaches upstream *and* downstream edges; a publish to a former source does not reach the disposed node; the surviving source is unaffected |
 | `reactive-graph/read_after_dispose_is_an_error.json` | reading a disposed `Computed`, a disposed source cell, or through a live reader that names one is an error — never a stale or default value; double-dispose is an idempotent no-op |
-| `reactive-graph/recycled_id_inherits_nothing.json` | a node minted on a recycled id starts with an empty edge set in both directions — the owner-keyed-side-table aliasing hazard; a stale cross-kind handle disposes nothing |
+| `reactive-graph/recycled_id_inherits_nothing.json` | a node minted on a recycled id starts with an empty edge set in both directions — the owner-keyed-side-table aliasing hazard; stale disposal proves the named successor really occupies the recycled slot |
+| `reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json` | the stale cell/computed/effect handle × cell/computed/effect successor matrix. Every row proves raw-id reuse before stale disposal and pins successor readability, writability, edges, and effect cleanup counts; `stale_effect_to_cell` reproduces btakita/agent-doc#354's `set_cell on non-cell id` corruption. |
 | `reactive-graph/scope_teardown_equals_fold_of_disposals.json` | ending a scope is observationally equal to disposing each member individually (`disposeScope_eq_disposeAll`), including reverse-creation-order cleanup |
 | `reactive-graph/scoping_bounds_teardown_not_visibility.json` | a scope's nodes read parent- and sibling-owned nodes freely in every direction; propagation crosses scope boundaries unchanged |
 | `reactive-graph/disarm_disposes_nothing.json` | `disarm()` leaves node state untouched — the nodes stay readable, keep propagating, and stay individually disposable; ending the scope disposes nothing |

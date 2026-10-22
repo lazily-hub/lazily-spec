@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from runpy import run_path
 
 import pytest
 import jsonschema
@@ -24,6 +25,9 @@ from referencing.jsonschema import DRAFT202012
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_DIR = ROOT / "schemas"
 FIXTURE_DIR = ROOT / "conformance"
+_STALE_HANDLE_GENERATOR = run_path(str(ROOT / "scripts" / "gen_stale_handle_disposal_fixture.py"))
+_STALE_HANDLE_KINDS = _STALE_HANDLE_GENERATOR["KINDS"]
+_build_stale_handle_fixture = _STALE_HANDLE_GENERATOR["build"]
 
 _SCHEMA_NAMES = [
     "defs",
@@ -1364,6 +1368,7 @@ _REACTIVE_GRAPH_EXPECT_KEYS = {
     "read",
     "error",
     "readable",
+    "writable",
     "dependents_of",
     "dependencies_of",
     "observed_by",
@@ -1374,6 +1379,8 @@ _REACTIVE_GRAPH_EXPECT_KEYS = {
     "observed_order",
     "observed_counts",
     "cleanup_order",
+    "cleanups_of",
+    "recycled_id_confirmed",
     "scope_owned_count",
     # Cumulative compute-invocation count per node, from scenario start
     # (#lzsignaleager). The only caller-observable difference between an eager
@@ -1411,12 +1418,26 @@ def _check_reactive_graph_steps(name: str, steps: object, where: str) -> None:
         assert isinstance(op, dict), f"{name}: {where} step {i} missing 'op' object"
         op_type = op.get("type")
         assert op_type in _REACTIVE_GRAPH_OPS, f"{name}: {where} step {i} unknown op {op_type!r}"
+        if op_type == "dispose_stale_handle":
+            assert set(op) == {
+                "type",
+                "handle_of",
+                "handle_kind",
+                "successor",
+                "successor_kind",
+            }, f"{name}: {where} step {i} stale-disposal schema drift: {sorted(op)}"
+            assert op["handle_kind"] in _STALE_HANDLE_KINDS
+            assert op["successor_kind"] in _STALE_HANDLE_KINDS
         expect = step.get("expect")
         if expect is None:
             continue
         assert isinstance(expect, dict), f"{name}: {where} step {i} 'expect' must be an object"
         unknown = set(expect) - _REACTIVE_GRAPH_EXPECT_KEYS
         assert not unknown, f"{name}: {where} step {i} unknown expect keys {sorted(unknown)}"
+        if op_type == "dispose_stale_handle":
+            assert expect.get("recycled_id_confirmed") is True, (
+                f"{name}: {where} step {i} can pass vacuously without a confirmed recycled id"
+            )
 
 
 @pytest.mark.parametrize("name", _reactive_graph_fixtures())
@@ -1464,11 +1485,17 @@ def test_reactive_graph_fixture_is_well_formed(name: str) -> None:
             names.append(sc["name"])
             _check_reactive_graph_steps(name, sc.get("steps"), f"scenario {sc['name']!r}")
         assert len(set(names)) == len(names), f"{name}: duplicate scenario names"
-        equal = obj.get("expected", {}).get("observationally_equal")
-        assert isinstance(equal, list) and len(equal) >= 2, (
-            f"{name}: a multi-scenario fixture must name the scenarios that must agree"
-        )
-        assert set(equal) <= set(names), f"{name}: observationally_equal names an unknown scenario"
+        expected = obj.get("expected")
+        if expected is not None:
+            equal = expected.get("observationally_equal")
+            assert isinstance(equal, list) and len(equal) >= 2, (
+                f"{name}: a comparative scenario fixture must name the scenarios that must agree"
+            )
+            assert set(equal) <= set(names), f"{name}: observationally_equal names an unknown scenario"
+        else:
+            assert name == "stale_effect_handle_cannot_remove_recycled_source.json", (
+                f"{name}: only the stale-handle capability matrix may omit comparative expected"
+            )
         return
 
     _check_reactive_graph_steps(name, obj.get("steps"), "fixture")
@@ -1484,6 +1511,7 @@ def test_reactive_graph_fixtures_cover_the_disposal_contract() -> None:
         "dispose_detaches_edges_both_directions.json",
         "read_after_dispose_is_an_error.json",
         "recycled_id_inherits_nothing.json",
+        "stale_effect_handle_cannot_remove_recycled_source.json",
         "scope_teardown_equals_fold_of_disposals.json",
         "scoping_bounds_teardown_not_visibility.json",
         "disarm_disposes_nothing.json",
@@ -1492,6 +1520,56 @@ def test_reactive_graph_fixtures_cover_the_disposal_contract() -> None:
     }
     present = set(_reactive_graph_fixtures())
     assert required <= present, f"missing disposal fixtures: {sorted(required - present)}"
+
+
+def test_stale_handle_disposal_fixture_is_generated_and_discriminating() -> None:
+    """Pin all nine identity/kind rows and the GH #354 survival witness."""
+
+    path = _REACTIVE_GRAPH_DIR / "stale_effect_handle_cannot_remove_recycled_source.json"
+    obj = json.loads(path.read_text())
+    assert obj == _build_stale_handle_fixture(), "stale-handle fixture drifted from its generator"
+
+    scenarios = {scenario["id"]: scenario for scenario in obj["scenarios"]}
+    expected_ids = {
+        f"stale_{stale_kind}_to_{successor_kind}"
+        for stale_kind in _STALE_HANDLE_KINDS
+        for successor_kind in _STALE_HANDLE_KINDS
+    }
+    assert set(scenarios) == expected_ids
+
+    for scenario_id, scenario in scenarios.items():
+        assert scenario["requires"] == ["recycled_node_ids"]
+        stale_kind, successor_kind = scenario_id.removeprefix("stale_").split("_to_")
+        disposals = [
+            step
+            for step in scenario["steps"]
+            if step["op"]["type"] == "dispose_stale_handle"
+        ]
+        assert len(disposals) == 1
+        disposal = disposals[0]
+        assert disposal["op"] == {
+            "type": "dispose_stale_handle",
+            "handle_of": "stale",
+            "handle_kind": stale_kind,
+            "successor": "successor",
+            "successor_kind": successor_kind,
+        }
+        expect = disposal["expect"]
+        assert expect["recycled_id_confirmed"] is True
+        assert expect["readable"]["successor"] is True
+        assert expect["writable"]["successor"] is (successor_kind == "cell")
+        assert "dependents_of" in expect and "dependencies_of" in expect
+
+    gh354 = scenarios["stale_effect_to_cell"]
+    assert any(
+        step["op"] == {"type": "set_cell", "id": "successor", "value": 21}
+        and step["expect"]["read"] == {"successor": 21}
+        for step in gh354["steps"]
+    ), "GH #354 row must actively write/read the recycled Source after stale Effect disposal"
+    stale_dispose = next(
+        step for step in gh354["steps"] if step["op"]["type"] == "dispose_stale_handle"
+    )
+    assert stale_dispose["expect"]["cleanups_of"] == {"stale": 1}
 
 
 def test_reactive_graph_has_no_observer_fixtures() -> None:

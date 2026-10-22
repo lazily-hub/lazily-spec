@@ -171,6 +171,7 @@ function writeInitialLedger(singleValueBooleans) {
 }
 
 function signalingWitness(document, witness) {
+  if (!witness.startsWith("signaling-")) return false;
   if (!document || !Array.isArray(document.steps)) return false;
   const registry = new Map();
   let rosterOrder = false;
@@ -907,6 +908,69 @@ function ipcConformanceWitness(document, witness) {
   return false;
 }
 
+function staleHandleWitness(document, witness) {
+  if (witness !== "reactive-graph-stale-handle-recycled-successor") return false;
+  if (document?.kind !== "ReactiveGraph") return false;
+  if (document.shape === "steps") {
+    const disposals = document.steps?.filter(
+      (step) => step?.op?.type === "dispose_stale_handle",
+    );
+    if (disposals?.length !== 1) return false;
+    const disposal = disposals[0];
+    return (
+      disposal.op.handle_of === "sentinel" &&
+      disposal.op.handle_kind === "cell" &&
+      disposal.op.successor === "successor" &&
+      disposal.op.successor_kind === "computed" &&
+      disposal.expect?.recycled_id_confirmed === true &&
+      disposal.expect?.readable?.successor === true &&
+      disposal.expect?.writable?.successor === false &&
+      disposal.expect?.read?.successor === 1
+    );
+  }
+  if (document.shape !== "scenarios") return false;
+  const kinds = ["cell", "computed", "effect"];
+  const expected = new Set(
+    kinds.flatMap((stale) => kinds.map((successor) => `stale_${stale}_to_${successor}`)),
+  );
+  const scenarios = Array.isArray(document.scenarios) ? document.scenarios : [];
+  if (scenarios.length !== expected.size) return false;
+
+  let gh354 = false;
+  for (const scenario of scenarios) {
+    if (!expected.delete(scenario.id)) return false;
+    if (JSON.stringify(scenario.requires) !== JSON.stringify(["recycled_node_ids"])) return false;
+    const match = /^stale_(cell|computed|effect)_to_(cell|computed|effect)$/.exec(scenario.id);
+    if (!match || !Array.isArray(scenario.steps)) return false;
+    const [, staleKind, successorKind] = match;
+    const disposals = scenario.steps.filter(
+      (step) => step?.op?.type === "dispose_stale_handle",
+    );
+    if (disposals.length !== 1) return false;
+    const disposal = disposals[0];
+    if (
+      disposal.op.handle_of !== "stale" ||
+      disposal.op.handle_kind !== staleKind ||
+      disposal.op.successor !== "successor" ||
+      disposal.op.successor_kind !== successorKind ||
+      disposal.expect?.recycled_id_confirmed !== true
+    ) {
+      return false;
+    }
+    if (scenario.id === "stale_effect_to_cell") {
+      gh354 =
+        disposal.expect?.cleanups_of?.stale === 1 &&
+        scenario.steps.some(
+          (step) =>
+            step?.op?.type === "set_cell" &&
+            step.op.id === "successor" &&
+            step.expect?.read?.successor === step.op.value,
+        );
+    }
+  }
+  return expected.size === 0 && gh354;
+}
+
 function executableWitness(document, witness) {
   return (
     signalingWitness(document, witness) ||
@@ -918,7 +982,8 @@ function executableWitness(document, witness) {
     crdtTreeAlgebraWitness(document, witness) ||
     distributedWitness(document, witness) ||
     materializationAndConflictWitness(document, witness) ||
-    ipcConformanceWitness(document, witness)
+    ipcConformanceWitness(document, witness) ||
+    staleHandleWitness(document, witness)
   );
 }
 
@@ -1005,6 +1070,6 @@ try {
       `${killed} library mutant(s) killed, ${untested} explicitly untested; OK`,
   );
 } catch (error) {
-  console.error(`fixture discriminability check failed:\n${error.message}`);
+  console.error(`fixture discriminability check failed:\n${error.stack ?? error.message}`);
   process.exitCode = 1;
 }
