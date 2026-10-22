@@ -1523,7 +1523,7 @@ def test_reactive_graph_fixtures_cover_the_disposal_contract() -> None:
 
 
 def test_stale_handle_disposal_fixture_is_generated_and_discriminating() -> None:
-    """Pin all nine identity/kind rows and the GH #354 survival witness."""
+    """Pin the 3x3 generation fence, reuse proof, and successor invariants."""
 
     path = _REACTIVE_GRAPH_DIR / "stale_effect_handle_cannot_remove_recycled_source.json"
     obj = json.loads(path.read_text())
@@ -1554,11 +1554,83 @@ def test_stale_handle_disposal_fixture_is_generated_and_discriminating() -> None
             "successor": "successor",
             "successor_kind": successor_kind,
         }
-        expect = disposal["expect"]
-        assert expect["recycled_id_confirmed"] is True
-        assert expect["readable"]["successor"] is True
-        assert expect["writable"]["successor"] is (successor_kind == "cell")
-        assert "dependents_of" in expect and "dependencies_of" in expect
+        create_stale = next(
+            index
+            for index, step in enumerate(scenario["steps"])
+            if step["op"]["type"] == stale_kind and step["op"]["id"] == "stale"
+        )
+        dispose_stale = next(
+            index
+            for index, step in enumerate(scenario["steps"])
+            if step["op"] == {"type": "dispose", "id": "stale"}
+        )
+        create_successor = next(
+            index
+            for index, step in enumerate(scenario["steps"])
+            if step["op"]["type"] == successor_kind and step["op"]["id"] == "successor"
+        )
+        dispose_handle = scenario["steps"].index(disposal)
+        assert create_stale < dispose_stale < create_successor < dispose_handle
+
+        expected_disposal = {
+            "recycled_id_confirmed": True,
+            "readable": {"successor": True},
+            "writable": {"successor": successor_kind == "cell"},
+            "dependents_of": {"successor": 0},
+            "dependencies_of": {"successor": 0 if successor_kind == "cell" else 1},
+        }
+        cleanups = {}
+        if stale_kind == "effect":
+            cleanups["stale"] = 1
+        if successor_kind == "effect":
+            cleanups["successor"] = 0
+        if cleanups:
+            expected_disposal["cleanups_of"] = cleanups
+        assert disposal["expect"] == expected_disposal
+
+        if successor_kind == "cell":
+            survival = {
+                "op": {"type": "set_cell", "id": "successor", "value": 21},
+                "expect": {
+                    "read": {"successor": 21},
+                    "readable": {"successor": True},
+                    "writable": {"successor": True},
+                    "dependents_of": {"successor": 0},
+                    "dependencies_of": {"successor": 0},
+                },
+            }
+            assert survival in scenario["steps"]
+        elif successor_kind == "computed":
+            assert {"op": {"type": "set_cell", "id": "driver", "value": 2}} in scenario["steps"]
+            survival = {
+                "op": {"type": "read", "id": "successor"},
+                "expect": {
+                    "value": 22,
+                    "readable": {"successor": True},
+                    "writable": {"successor": False},
+                    "dependents_of": {"successor": 0},
+                    "dependencies_of": {"successor": 1},
+                },
+            }
+            assert survival in scenario["steps"]
+        else:
+            survival = {
+                "op": {"type": "set_cell", "id": "driver", "value": 2},
+                "expect": {
+                    "observed_by": ["successor"],
+                    "observed_count": 1,
+                    "readable": {"successor": True},
+                    "writable": {"successor": False},
+                    "dependents_of": {"successor": 0},
+                    "dependencies_of": {"successor": 1},
+                    "cleanups_of": {"successor": 1},
+                },
+            }
+            assert survival in scenario["steps"]
+            assert {
+                "op": {"type": "dispose", "id": "successor"},
+                "expect": {"cleanups_of": {"successor": 2}},
+            } in scenario["steps"]
 
     gh354 = scenarios["stale_effect_to_cell"]
     assert any(

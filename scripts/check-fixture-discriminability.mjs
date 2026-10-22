@@ -18,6 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FIXTURE_ROOT = path.join(ROOT, "conformance");
@@ -937,39 +938,136 @@ function staleHandleWitness(document, witness) {
   const scenarios = Array.isArray(document.scenarios) ? document.scenarios : [];
   if (scenarios.length !== expected.size) return false;
 
-  let gh354 = false;
+  const same = (actual, wanted) => isDeepStrictEqual(actual, wanted);
   for (const scenario of scenarios) {
     if (!expected.delete(scenario.id)) return false;
+    if (scenario.name !== scenario.id) return false;
     if (JSON.stringify(scenario.requires) !== JSON.stringify(["recycled_node_ids"])) return false;
     const match = /^stale_(cell|computed|effect)_to_(cell|computed|effect)$/.exec(scenario.id);
     if (!match || !Array.isArray(scenario.steps)) return false;
     const [, staleKind, successorKind] = match;
+    const createStale = scenario.steps.findIndex(
+      (step) => step?.op?.type === staleKind && step.op.id === "stale",
+    );
+    const disposeStale = scenario.steps.findIndex(
+      (step) => step?.op?.type === "dispose" && step.op.id === "stale",
+    );
+    const createSuccessor = scenario.steps.findIndex(
+      (step) => step?.op?.type === successorKind && step.op.id === "successor",
+    );
     const disposals = scenario.steps.filter(
       (step) => step?.op?.type === "dispose_stale_handle",
     );
     if (disposals.length !== 1) return false;
     const disposal = disposals[0];
-    if (
-      disposal.op.handle_of !== "stale" ||
-      disposal.op.handle_kind !== staleKind ||
-      disposal.op.successor !== "successor" ||
-      disposal.op.successor_kind !== successorKind ||
-      disposal.expect?.recycled_id_confirmed !== true
-    ) {
+    const disposeHandle = scenario.steps.indexOf(disposal);
+    if (!(createStale < disposeStale && disposeStale < createSuccessor && createSuccessor < disposeHandle)) {
       return false;
     }
-    if (scenario.id === "stale_effect_to_cell") {
-      gh354 =
-        disposal.expect?.cleanups_of?.stale === 1 &&
-        scenario.steps.some(
-          (step) =>
-            step?.op?.type === "set_cell" &&
-            step.op.id === "successor" &&
-            step.expect?.read?.successor === step.op.value,
-        );
+
+    if (!same(disposal.op, {
+      type: "dispose_stale_handle",
+      handle_of: "stale",
+      handle_kind: staleKind,
+      successor: "successor",
+      successor_kind: successorKind,
+    })) return false;
+
+    const disposeExpect = {
+      recycled_id_confirmed: true,
+      readable: { successor: true },
+      writable: { successor: successorKind === "cell" },
+      dependents_of: { successor: 0 },
+      dependencies_of: { successor: successorKind === "cell" ? 0 : 1 },
+    };
+    const cleanups = {};
+    if (staleKind === "effect") cleanups.stale = 1;
+    if (successorKind === "effect") cleanups.successor = 0;
+    if (Object.keys(cleanups).length) disposeExpect.cleanups_of = cleanups;
+    if (!same(disposal.expect, disposeExpect)) return false;
+
+    if (successorKind === "cell") {
+      if (!scenario.steps.some((step) => same(step, {
+        op: { type: "set_cell", id: "successor", value: 21 },
+        expect: {
+          read: { successor: 21 },
+          readable: { successor: true },
+          writable: { successor: true },
+          dependents_of: { successor: 0 },
+          dependencies_of: { successor: 0 },
+        },
+      }))) return false;
+    } else if (successorKind === "computed") {
+      if (!scenario.steps.some((step) => same(step, {
+        op: { type: "read", id: "successor" },
+        expect: {
+          value: 22,
+          readable: { successor: true },
+          writable: { successor: false },
+          dependents_of: { successor: 0 },
+          dependencies_of: { successor: 1 },
+        },
+      }))) return false;
+    } else {
+      if (!scenario.steps.some((step) => same(step, {
+        op: { type: "set_cell", id: "driver", value: 2 },
+        expect: {
+          observed_by: ["successor"],
+          observed_count: 1,
+          readable: { successor: true },
+          writable: { successor: false },
+          dependents_of: { successor: 0 },
+          dependencies_of: { successor: 1 },
+          cleanups_of: { successor: 1 },
+        },
+      }))) return false;
+      if (!scenario.steps.some((step) => same(step, {
+        op: { type: "dispose", id: "successor" },
+        expect: { cleanups_of: { successor: 2 } },
+      }))) return false;
     }
   }
-  return expected.size === 0 && gh354;
+  return expected.size === 0;
+}
+
+function staleHandleWitnessSelfTest(document) {
+  const witness = "reactive-graph-stale-handle-recycled-successor";
+  if (!staleHandleWitness(document, witness)) {
+    throw new Error("canonical stale-handle fixture does not satisfy its executable witness");
+  }
+  const clone = () => JSON.parse(JSON.stringify(document));
+  const disposal = (candidate, id) => candidate.scenarios
+    .find((scenario) => scenario.id === id)
+    .steps.find((step) => step.op.type === "dispose_stale_handle");
+  const mutations = [
+    ["3x3 matrix", (candidate) => candidate.scenarios.pop()],
+    ["recycled-slot proof", (candidate) => {
+      disposal(candidate, "stale_cell_to_cell").expect.recycled_id_confirmed = false;
+    }],
+    ["successor readability", (candidate) => {
+      disposal(candidate, "stale_cell_to_cell").expect.readable.successor = false;
+    }],
+    ["successor writability", (candidate) => {
+      disposal(candidate, "stale_cell_to_cell").expect.writable.successor = false;
+    }],
+    ["successor edge counts", (candidate) => {
+      disposal(candidate, "stale_cell_to_computed").expect.dependencies_of.successor = 0;
+    }],
+    ["stale cleanup count", (candidate) => {
+      disposal(candidate, "stale_effect_to_cell").expect.cleanups_of.stale = 0;
+    }],
+    ["post-disposal successor survival", (candidate) => {
+      const scenario = candidate.scenarios.find((entry) => entry.id === "stale_cell_to_cell");
+      scenario.steps.find((step) => step.op.type === "set_cell").expect.read.successor = 20;
+    }],
+  ];
+  for (const [name, mutate] of mutations) {
+    const candidate = clone();
+    mutate(candidate);
+    if (staleHandleWitness(candidate, witness)) {
+      throw new Error(`stale-handle witness mutation survived: ${name}`);
+    }
+  }
 }
 
 function executableWitness(document, witness) {
@@ -1064,6 +1162,9 @@ try {
     }
   }
   if (INIT) writeInitialLedger(singleValueBooleans);
+  staleHandleWitnessSelfTest(
+    documents.get("reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json"),
+  );
   const { killed, untested } = validateLedger(singleValueBooleans, documents);
   console.log(
     `fixture discriminability: ${exactRoutes} exact-value route(s), ` +

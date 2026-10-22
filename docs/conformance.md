@@ -60,6 +60,32 @@ The initializer preserves existing evidence and creates new entries as explicit 
 claims. Replace that status only after running the cited library-source mutant and confirming
 that a canonical fixture—not merely an independent unit test—reddens.
 
+### Generation-aware stale-handle disposal (`#lzstalehandlegenconformance`)
+
+`reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json` is the canonical
+generation-fence contract for reactive node handles. It contains the full 3×3 product of stale
+and successor node kinds (`cell`, `computed`, and `effect`). Every row must create the stale
+occupant, dispose it, create the successor, and only then attempt disposal through the stale
+handle. `recycled_id_confirmed: true` is executable proof that the allocator slot was actually
+reused; a test that merely creates two unrelated nodes does not exercise the ABA hazard.
+
+The stale disposal observation pins the successor's readability, writability, incoming and
+outgoing edge counts, and cleanup counts. A later step then uses the successor according to its
+kind: write/read a cell, invalidate/read a computed, or trigger and dispose an effect. This
+second observation prevents runner bookkeeping from satisfying the disposal step while the live
+successor was already corrupted.
+
+The generator test pins the fixture byte-for-byte and checks every matrix row. The fixture
+discriminability gate independently validates the same semantic obligations and mutates the
+matrix, reuse proof, successor capability, edge, cleanup, and survival observations; every
+mutation must turn the gate red. The ledger records the Rust library-source mutant that originally
+exposed the stale Effect → recycled Source failure.
+
+Bindings that claim this fixture must run all nine scenario ids and pin a lazily-spec release
+containing them (`v0.43.0` or newer) in CI. A floating branch or an unpinned sibling checkout is
+development input, not release evidence; the candidate Core profile's fixture-corpus digest is
+the final cohort-wide pin.
+
 ## Custom assertion callback consumption (`#lzassertwithseam`)
 
 Every binding exposes a custom assertion helper for relations that plain equality cannot
