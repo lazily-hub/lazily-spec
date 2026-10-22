@@ -3,6 +3,7 @@
   "kind": "ReactiveGraph",
   "model": "Context",
   "shape": "steps",
+  "requires": ["recycled_node_ids"],
   "notes": {
     "id_reuse": "The stale-disposal step names both occupants of one recycled allocator slot. A runner MUST fail rather than claim replay when it cannot confirm that reuse; object-backed bindings without reusable node ids record an explicit capability exclusion.",
     "fanout_width": "`fanout_width` is a scale hint for the generator, not a threshold. The spec's implementation note forbids fixing a promotion threshold, a hash strategy, or an index layout in the contract; a binding may satisfy this fixture with a linear scan at any width."

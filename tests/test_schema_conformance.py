@@ -1572,6 +1572,14 @@ def test_stale_handle_disposal_fixture_is_generated_and_discriminating() -> None
     assert stale_dispose["expect"]["cleanups_of"] == {"stale": 1}
 
 
+def test_steps_stale_handle_fixture_requires_recycled_node_ids() -> None:
+    """A runner may only replay the legacy steps fixture when it can prove reuse."""
+
+    path = _REACTIVE_GRAPH_DIR / "recycled_id_inherits_nothing.json"
+    obj = json.loads(path.read_text())
+    assert obj["requires"] == ["recycled_node_ids"]
+
+
 def test_reactive_graph_has_no_observer_fixtures() -> None:
     """The observer contract was removed, so its fixtures must stay removed.
 
