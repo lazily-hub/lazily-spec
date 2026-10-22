@@ -20,6 +20,24 @@ bindings:
   projection is fold-equivalent; and an RPC `call` cannot resolve before a
   terminal receipt. This mirrors the standalone `lazily-formal` model.
 
+The standalone
+[`LazilyFormal.Reactive`](https://github.com/lazily-hub/lazily-formal/blob/main/LazilyFormal/Reactive.lean)
+model owns the compute-graph disposal proofs. Its public `Handle` identity is
+`(slot, generation, kind)`, and `disposeHandle` validates all three before it
+can call the raw graph-mutation primitive. The model proves:
+
+- `disposeHandle_stale_noop`: every rejected handle preserves the complete
+  arena, including graph, generations, and cleanup history;
+- `disposeHandle_generation_mismatch_noop` and
+  `disposeHandle_kind_mismatch_noop`: same-kind ABA and cross-kind recycling
+  are independently fenced;
+- `disposeHandle_matching_effect_runs_cleanup` and
+  `disposeHandle_stale_runs_no_cleanup`: only a matching live effect can append
+  a cleanup event; and
+- `disposeHandle_recycled_old_handle_noop`: after a slot is disposed and
+  recycled, the old handle cannot delete the successor, even when the successor
+  has the same node kind.
+
 Run it through the local check target:
 
 ```bash

@@ -157,14 +157,15 @@
       "id": "reactive-graph",
       "label": "Reactive graph",
       "family": "reactive-graph",
-      "feature": "Reactive graph — two cell kinds (nodes `SourceCell` / `ComputedCell`; handles `Source<T, M>` / `Computed<T>`) + `Effect` sink + eager `Computed` (`computed().eager()`) / all cells guarded / batch",
+      "feature": "Reactive graph — `Source` / `Computed` cells + `Effect` sink; guarded/eager computation; batch; generation/identity + kind-fenced disposal (`#lzstalehandlespec`)",
       "fixtures": [
         "reactive-graph/transitive_invalidation_reaches_depth.json",
         "reactive-graph/signal_materializes_without_a_read.json",
         "reactive-graph/signal_materializes_once_per_batch.json",
         "reactive-graph/dispose_signal_reverts_to_lazy.json",
         "reactive-graph/churn_returns_to_baseline.json",
-        "reactive-graph/recycled_id_inherits_nothing.json"
+        "reactive-graph/recycled_id_inherits_nothing.json",
+        "reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json"
       ],
       "marks": [
         "✅",
