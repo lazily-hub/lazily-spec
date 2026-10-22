@@ -28,6 +28,8 @@ FIXTURE_DIR = ROOT / "conformance"
 _STALE_HANDLE_GENERATOR = run_path(str(ROOT / "scripts" / "gen_stale_handle_disposal_fixture.py"))
 _STALE_HANDLE_KINDS = _STALE_HANDLE_GENERATOR["KINDS"]
 _build_stale_handle_fixture = _STALE_HANDLE_GENERATOR["build"]
+_STALE_HANDLE_MINIMUM_SPEC_TAG = "v0.43.0"
+_STALE_HANDLE_INTRODUCED_COMMIT = "4b34879b26566a0616b97cf661ac4f1a23762af6"
 
 _SCHEMA_NAMES = [
     "defs",
@@ -1570,6 +1572,18 @@ def test_stale_handle_disposal_fixture_is_generated_and_discriminating() -> None
         step for step in gh354["steps"] if step["op"]["type"] == "dispose_stale_handle"
     )
     assert stale_dispose["expect"]["cleanups_of"] == {"stale": 1}
+
+
+def test_stale_handle_contract_pins_its_minimum_immutable_spec_release() -> None:
+    """A binding release must identify the exact generation-aware contract."""
+
+    for relative_path in ("docs/reactive-graph.md", "docs/conformance.md"):
+        contract = (ROOT / relative_path).read_text()
+        assert "#lzstalehandlegenpin" in contract
+        assert f"`{_STALE_HANDLE_MINIMUM_SPEC_TAG}`" in contract
+        assert f"`{_STALE_HANDLE_INTRODUCED_COMMIT}`" in contract
+        assert "immutable tag" in contract
+        assert "40-hex commit" in contract
 
 
 def test_steps_stale_handle_fixture_requires_recycled_node_ids() -> None:
