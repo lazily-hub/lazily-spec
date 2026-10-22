@@ -63,9 +63,10 @@ itself a requirement.
 
 Values are **lazy by default**; call `.eager()` on a `Computed` when eager push
 semantics are required. Handles are the two concrete types —
-`Source<T, M>`, `Computed<T>` — plus `EffectHandle`: lightweight, copyable ids
-over a shared node table (arena slots; see *Handles and identity*), usable only
-with the owning context.
+`Source<T, M>`, `Computed<T>` — plus `EffectHandle`: lightweight, copyable
+occupant identities over a shared node table (arena slot + generation/identity
+token + node kind; see *Handles and identity*), usable only with the owning
+context.
 
 **Read is on every cell; write is on the source kind.** Both handles expose
 `get` (auto-subscribing) — and *only* `get`; there is no `subscribe`, because
@@ -105,8 +106,8 @@ is gone: `memo` is removed and `computed` **is** the guarded derivation.
 | `is_eager(handle)` | Predicate: whether a `Computed` currently has a puller attached |
 | `merge(handle, op)` | Fold `op` into a `Source` under its policy (`⊕`; routes through `set`, so the `==` guard + store-without-cascade apply) — a compile error on a `Computed` |
 | `effect(run)` | Register a side-effecting computation (a sink); `run` may return a cleanup closure |
-| `dispose_effect(handle)` | Deschedule, drop edges, run cleanup |
-| `dispose(handle)` | Tear down any node kind: detach edges in both directions, clear the node, recycle its slot id. Disposing an **eager** `Computed` also tears down its puller (§9.3.4) |
+| `dispose_effect(handle)` | If `handle` still matches the live effect occupant, deschedule it, drop its edges, and run its cleanup; a stale/recycled handle is an idempotent no-op |
+| `dispose(handle)` | Validate the handle's generation/identity **and** node kind, then tear down only that matching live occupant: detach edges in both directions, clear the node, and make its slot reusable. A stale or cross-kind-recycled handle is an idempotent no-op and cannot run cleanup. Disposing an **eager** `Computed` also tears down its matching puller (§9.3.4) |
 | `scope()` | Open a **teardown scope**: `scope.source`, `scope.computed`, and `scope.effect` create nodes disposed together when the scope ends |
 | `scope.disarm()` | Disarm a scope — ending it disposes nothing; its nodes revert to context ownership |
 | `batch(run)` | Coalesce several source updates into one invalidation + effect flush |
@@ -230,15 +231,33 @@ pins are `Reactive.readShared_eq_readCell`,
   disposed node afterwards is an error, the same contract as disposing an
   effect (`#lzspecedgeindex`).
 
-  **Detection of a stale handle is bounded, deliberately.** A binding that
-  recycles ids and checks only the node's *kind* catches a handle naming a
-  disposed node of a different kind, but cannot catch one whose id has been
-  reused by a new node of the *same* kind — the classic ABA case. Closing that
-  requires generational ids or reference-counted handles, and this spec does
-  **not** require either: both cost either handle size or the copyability that
-  fan-out depends on. Conforming bindings therefore reject the cross-kind case
-  and **MAY** admit the same-kind one. Callers must not rely on read-after-
-  dispose failing.
+  **Disposal is fenced by occupant identity (`#lzstalehandlespec`).** Before any
+  graph mutation, scheduling change, or cleanup, a binding **MUST** validate
+  both (1) the handle's generation or equivalent occupant identity and (2) the
+  current node kind. A handle for a disposed occupant is stale even when its
+  arena slot has been reused by a node of the same kind (the ABA case). A stale
+  handle, a cross-kind-recycled handle, and a repeated disposal are all
+  idempotent no-ops: they **MUST NOT** detach any edge, clear or deschedule the
+  current occupant, or run either the old occupant's cleanup or the successor's
+  cleanup. Only a handle matching the live occupant in identity **and** kind may
+  mutate the graph; only a matching live `Effect` may run cleanup.
+
+  A monotonically advanced generation in the handle is the portable arena
+  representation. A binding whose object/reference identity cannot alias a new
+  occupant may use that identity directly; the required property is the same:
+  recycling can never make an old handle compare as the new occupant. Kind is a
+  separate fence, not a substitute for generation/identity. Only the matching
+  live occupant may detach its edges; if that occupant is an `Effect`, it alone
+  may run cleanup.
+
+  The executable `stale_effect_handle_cannot_remove_recycled_source.json`
+  fixture exercises the full stale-handle-kind × successor-kind matrix. Every
+  scenario requires the `recycled_node_ids` capability, and
+  `recycled_id_confirmed: true` means the old handle and successor demonstrably
+  share the allocator slot/raw node id while any generation token differs. A
+  binding without observable reusable node ids **MUST** record an explicit
+  capability exclusion; its runner **MUST NOT** invent ids or claim a vacuous
+  replay.
 
   **Garbage collection does not substitute for this.** The reverse edge set is a
   *strong* reference to each dependent, so a long-lived source retains every node
@@ -259,6 +278,10 @@ pins are `Reactive.readShared_eq_readCell`,
   `LazilyFormal.Reactive` module. A binding is therefore free to implement the
   scope as a bulk sweep rather than a loop, and **SHOULD**, since reading each
   node's kind from the arena at teardown is cheaper than a per-node dispatch.
+  The recorded membership therefore retains each member's occupant identity,
+  not merely its recyclable slot. A member disposed earlier and replaced before
+  scope teardown is stale at teardown and is skipped under the same
+  generation/identity + kind validation as an individual `dispose`.
 
   The resulting *graph state* depends only on the set of members, not on their
   order or multiplicity (`disposeAll_order_independent`). Effect **cleanups**
@@ -302,8 +325,9 @@ pins are `Reactive.readShared_eq_readCell`,
 - **Effects are scheduled, not inline.** An effect rerun is scheduled when a
   tracked dependency invalidates and runs in the subsequent flush (which may be
   the same tick, at batch exit). A rerun does not start until the previous
-  cleanup completes. Disposal removes pending reruns, runs the current cleanup,
-  and unsubscribes all dependency edges.
+  cleanup completes. Disposal of a matching live effect removes pending reruns,
+  runs the current cleanup, and unsubscribes all dependency edges. Stale-handle
+  disposal does none of those things and cannot run a recycled effect's cleanup.
 - **Eager computed cells (`.eager()`).** Eagerness is not a kind — it is a
   `Computed` with a puller `Effect` attached, produced by `computed(compute).eager()`:
   the effect reads it on creation and after every invalidation, forcing it
@@ -1248,23 +1272,24 @@ dirty-mark **once** (dirty-marking is idempotent and monotonic — an already-di
 
 ## Handles and identity
 
-A handle is a `Source<T, M>` or `Computed<T>` (or `EffectHandle`) carrying a
-**`SlotId`** — and here `Slot` is the storage concept, not a reactive value: a
-slot is the arena position that holds a node, and it holds *any* kind
+A handle is a `Source<T, M>` or `Computed<T>` (or `EffectHandle`) carrying an
+occupant identity **`(SlotId, Generation, NodeKind)`** (or an equivalent
+non-aliasing identity token). Here `Slot` is the storage concept, not a reactive
+value: a slot is the arena position that holds a node, and it holds *any* kind
 (`SourceCell`, `ComputedCell`, or `Effect`). `SlotId`, `SlotValue`, and the slab
 vocabulary are accurate under this storage meaning and are **unchanged** by the
 kernel rename; the reactive-value node the arena holds is a `SourceCell` or a
 `ComputedCell`. The slot persists across recycling; its occupant does
 not (`recycled_id_inherits_nothing`).
 
-Slot ids are minted monotonically and recycled on dispose. A disposed handle is
-inert: reads on a disposed `Computed` return its last cached value if any;
-reads on a disposed `Source`, or on a `Computed` whose eager puller was
-disposed, are undefined (the caller MUST NOT retain a handle past disposal).
-Re-entrancy of a disposed effect is prevented by removing it from the schedule
-before running cleanup. Detection of a stale handle is bounded (see *Disposal is
-explicit*): a binding that recycles slot ids MAY admit a same-kind ABA read unless
-its `SlotId` carries a generation tag.
+Slot ids may be minted monotonically and recycled on dispose; the occupant
+generation/identity **MUST** change before that slot can name a successor. A
+disposed handle is inert for disposal: applying it again or after either same-
+kind or cross-kind recycling is a no-op. Re-entrancy of a correctly matched
+disposed effect is prevented by removing it from the schedule before running
+its cleanup. Reads after dispose remain errors under the disposal contract; an
+implementation may report that error by rejecting the stale identity before it
+ever consults the successor occupant.
 
 ## Context layers
 
@@ -1311,9 +1336,12 @@ A reactive context conforms when:
 6. `batch` coalesces into one propagation + effect flush at the outermost exit.
 7. Effects fire scheduled (not inline), cleanup runs before each rerun and on
    dispose, and disposal unsubscribes edges.
-8. An eager `Computed` is materialized by the time the invalidating `set`/`batch`
+8. Disposal validates generation/occupant identity and node kind before any
+   mutation. Stale, repeated, same-kind-ABA, and cross-kind-recycled disposal is
+   an idempotent no-op; only a matching live effect may run cleanup.
+9. An eager `Computed` is materialized by the time the invalidating `set`/`batch`
    returns (eager push).
-9. **Read on every cell, write on the source kind.** Reads (`get`) are on every
+10. **Read on every cell, write on the source kind.** Reads (`get`) are on every
 cell — `Source` and `Computed` alike. Any generic alternate read surface (for
 example the optional `get_shared` / Rust `Context::get_rc`) MUST cover the same
 two kinds and preserve ordinary-read value, refresh, and dependency-tracking
@@ -1321,7 +1349,7 @@ semantics. Writes (`set`/`merge`) are on `Source<T, M>` alone — a compile erro
 on a `Computed`, enforced by the type rather than a trait (a read-only interface
 in Go, §4 of the design). There is no `subscribe` — see *Reactives have no
 observers*.
-10. **The merge algebra (`#relaycell`).** `merge(handle, op)` folds under
+11. **The merge algebra (`#relaycell`).** `merge(handle, op)` folds under
     an associative `MergePolicy` and routes through the `==`-guarded `set`
     (so an idempotent policy's no-op merge fires no cascade). `Cell ≡
     Source<KeepLatest>`. Every policy is associative; the `COMMUTATIVE` and
