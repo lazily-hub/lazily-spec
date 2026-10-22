@@ -234,6 +234,22 @@
       "expected_failure": "canonical terminal-conflict replay reports conflict false, expected true",
       "witness": "terminal-conflict-sequence"
     },
+    "reactive-graph/recycled_id_inherits_nothing.json#/steps/*/expect/recycled_id_confirmed": {
+      "status": "mutation-killed",
+      "binding": "lazily-rs",
+      "command": "cargo test --test reactive_graph_conformance recycled_id_inherits_nothing",
+      "mutation": "The replay accepted a stale-handle step without proving that the named successor occupied the stale handle's allocator slot",
+      "expected_failure": "the fixture fails before stale disposal because recycled_id_confirmed cannot be established",
+      "witness": "reactive-graph-stale-handle-recycled-successor"
+    },
+    "reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json#/scenarios/*/steps/*/expect/recycled_id_confirmed": {
+      "status": "mutation-killed",
+      "binding": "lazily-rs",
+      "command": "cargo test --test reactive_graph_conformance stale_effect_handle_cannot_remove_recycled_source",
+      "mutation": "ThreadSafeContext::dispose_effect removed the node at the stale handle's slot before validating kind/generation, corrupting a recycled Source",
+      "expected_failure": "stale_effect_to_cell fails its post-disposal set_cell/read survival assertion with `set_cell on non-cell id`",
+      "witness": "reactive-graph-stale-handle-recycled-successor"
+    },
     "reliable-sync/coalesce_bounds_outbox.json#/scenarios/*/expect/dequeue_is_fifo_front": {
       "status": "mutation-killed",
       "binding": "lazily-cs",

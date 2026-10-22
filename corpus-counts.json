@@ -1,5 +1,5 @@
 {
-  "fixtures": 162,
+  "fixtures": 163,
   "arrays": {
     "codec/blob_backend_discriminator.json": {
       "scenarios": 14
@@ -323,6 +323,9 @@
     },
     "reactive-graph/signal_materializes_without_a_read.json": {
       "steps": 6
+    },
+    "reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json": {
+      "scenarios": 9
     },
     "reactive-graph/teardown_runs_members_in_reverse_creation_order.json": {
       "steps": 8
@@ -817,6 +820,9 @@
     },
     "reactive-graph/signal_materializes_without_a_read.json": {
       "expect": 5
+    },
+    "reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json": {
+      "expect": 27
     },
     "reactive-graph/teardown_runs_members_in_reverse_creation_order.json": {
       "expect": 3

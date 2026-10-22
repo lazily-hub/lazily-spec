@@ -658,7 +658,7 @@
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/reactive-graph/recycled_id_inherits_nothing.json",
-      "sha256": "23f7733dd94bde592df4af0582c176f35106f2778285d81881ebe533e29868a2"
+      "sha256": "4e1af90504f4f436a6a5c971e0244aaac8b29107b86654d2c380c54400de27be"
     },
     {
       "license": "Apache-2.0",
@@ -683,6 +683,12 @@
       "origin": "first-party-lazily-spec",
       "path": "conformance/reactive-graph/signal_materializes_without_a_read.json",
       "sha256": "fa2773789dcbf496e0ea275e2865a0108738c9ff74fd460f5ca716e7cf05729a"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json",
+      "sha256": "9be1efc246589e6327ef2badbbac025d984305b5efb434735cbd5a927c0cb3d3"
     },
     {
       "license": "Apache-2.0",

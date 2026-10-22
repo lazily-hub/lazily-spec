@@ -1,0 +1,922 @@
+{
+  "description": "A stale handle is identified by allocator slot, generation, and node kind; disposing it MUST NOT remove the live occupant of a recycled slot (#lzspecedgeindex, btakita/agent-doc#354).",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "scenarios",
+  "generator": "scripts/gen_stale_handle_disposal_fixture.py",
+  "scenarios": [
+    {
+      "id": "stale_cell_to_cell",
+      "name": "stale_cell_to_cell",
+      "requires": [
+        "recycled_node_ids"
+      ],
+      "steps": [
+        {
+          "op": {
+            "type": "cell",
+            "id": "driver",
+            "value": 1
+          }
+        },
+        {
+          "op": {
+            "type": "cell",
+            "id": "stale",
+            "value": 20
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "stale"
+          }
+        },
+        {
+          "op": {
+            "type": "cell",
+            "id": "successor",
+            "value": 20
+          }
+        },
+        {
+          "op": {
+            "type": "dispose_stale_handle",
+            "handle_of": "stale",
+            "handle_kind": "cell",
+            "successor": "successor",
+            "successor_kind": "cell"
+          },
+          "expect": {
+            "recycled_id_confirmed": true,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": true
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 0
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "set_cell",
+            "id": "successor",
+            "value": 21
+          },
+          "expect": {
+            "read": {
+              "successor": 21
+            },
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": true
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale_cell_to_computed",
+      "name": "stale_cell_to_computed",
+      "requires": [
+        "recycled_node_ids"
+      ],
+      "steps": [
+        {
+          "op": {
+            "type": "cell",
+            "id": "driver",
+            "value": 1
+          }
+        },
+        {
+          "op": {
+            "type": "cell",
+            "id": "stale",
+            "value": 20
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "stale"
+          }
+        },
+        {
+          "op": {
+            "type": "computed",
+            "id": "successor",
+            "reads": [
+              "driver"
+            ],
+            "offset": 20
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "successor"
+          },
+          "expect": {
+            "value": 21
+          }
+        },
+        {
+          "op": {
+            "type": "dispose_stale_handle",
+            "handle_of": "stale",
+            "handle_kind": "cell",
+            "successor": "successor",
+            "successor_kind": "computed"
+          },
+          "expect": {
+            "recycled_id_confirmed": true,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "set_cell",
+            "id": "driver",
+            "value": 2
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "successor"
+          },
+          "expect": {
+            "value": 22,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale_cell_to_effect",
+      "name": "stale_cell_to_effect",
+      "requires": [
+        "recycled_node_ids"
+      ],
+      "steps": [
+        {
+          "op": {
+            "type": "cell",
+            "id": "driver",
+            "value": 1
+          }
+        },
+        {
+          "op": {
+            "type": "cell",
+            "id": "stale",
+            "value": 20
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "stale"
+          }
+        },
+        {
+          "op": {
+            "type": "effect",
+            "id": "successor",
+            "reads": [
+              "driver"
+            ]
+          }
+        },
+        {
+          "op": {
+            "type": "dispose_stale_handle",
+            "handle_of": "stale",
+            "handle_kind": "cell",
+            "successor": "successor",
+            "successor_kind": "effect"
+          },
+          "expect": {
+            "recycled_id_confirmed": true,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            },
+            "cleanups_of": {
+              "successor": 0
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "set_cell",
+            "id": "driver",
+            "value": 2
+          },
+          "expect": {
+            "observed_by": [
+              "successor"
+            ],
+            "observed_count": 1,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            },
+            "cleanups_of": {
+              "successor": 1
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "successor"
+          },
+          "expect": {
+            "cleanups_of": {
+              "successor": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale_computed_to_cell",
+      "name": "stale_computed_to_cell",
+      "requires": [
+        "recycled_node_ids"
+      ],
+      "steps": [
+        {
+          "op": {
+            "type": "cell",
+            "id": "driver",
+            "value": 1
+          }
+        },
+        {
+          "op": {
+            "type": "computed",
+            "id": "stale",
+            "reads": [
+              "driver"
+            ],
+            "offset": 20
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "stale"
+          },
+          "expect": {
+            "value": 21
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "stale"
+          }
+        },
+        {
+          "op": {
+            "type": "cell",
+            "id": "successor",
+            "value": 20
+          }
+        },
+        {
+          "op": {
+            "type": "dispose_stale_handle",
+            "handle_of": "stale",
+            "handle_kind": "computed",
+            "successor": "successor",
+            "successor_kind": "cell"
+          },
+          "expect": {
+            "recycled_id_confirmed": true,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": true
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 0
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "set_cell",
+            "id": "successor",
+            "value": 21
+          },
+          "expect": {
+            "read": {
+              "successor": 21
+            },
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": true
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale_computed_to_computed",
+      "name": "stale_computed_to_computed",
+      "requires": [
+        "recycled_node_ids"
+      ],
+      "steps": [
+        {
+          "op": {
+            "type": "cell",
+            "id": "driver",
+            "value": 1
+          }
+        },
+        {
+          "op": {
+            "type": "computed",
+            "id": "stale",
+            "reads": [
+              "driver"
+            ],
+            "offset": 20
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "stale"
+          },
+          "expect": {
+            "value": 21
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "stale"
+          }
+        },
+        {
+          "op": {
+            "type": "computed",
+            "id": "successor",
+            "reads": [
+              "driver"
+            ],
+            "offset": 20
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "successor"
+          },
+          "expect": {
+            "value": 21
+          }
+        },
+        {
+          "op": {
+            "type": "dispose_stale_handle",
+            "handle_of": "stale",
+            "handle_kind": "computed",
+            "successor": "successor",
+            "successor_kind": "computed"
+          },
+          "expect": {
+            "recycled_id_confirmed": true,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "set_cell",
+            "id": "driver",
+            "value": 2
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "successor"
+          },
+          "expect": {
+            "value": 22,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale_computed_to_effect",
+      "name": "stale_computed_to_effect",
+      "requires": [
+        "recycled_node_ids"
+      ],
+      "steps": [
+        {
+          "op": {
+            "type": "cell",
+            "id": "driver",
+            "value": 1
+          }
+        },
+        {
+          "op": {
+            "type": "computed",
+            "id": "stale",
+            "reads": [
+              "driver"
+            ],
+            "offset": 20
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "stale"
+          },
+          "expect": {
+            "value": 21
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "stale"
+          }
+        },
+        {
+          "op": {
+            "type": "effect",
+            "id": "successor",
+            "reads": [
+              "driver"
+            ]
+          }
+        },
+        {
+          "op": {
+            "type": "dispose_stale_handle",
+            "handle_of": "stale",
+            "handle_kind": "computed",
+            "successor": "successor",
+            "successor_kind": "effect"
+          },
+          "expect": {
+            "recycled_id_confirmed": true,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            },
+            "cleanups_of": {
+              "successor": 0
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "set_cell",
+            "id": "driver",
+            "value": 2
+          },
+          "expect": {
+            "observed_by": [
+              "successor"
+            ],
+            "observed_count": 1,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            },
+            "cleanups_of": {
+              "successor": 1
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "successor"
+          },
+          "expect": {
+            "cleanups_of": {
+              "successor": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale_effect_to_cell",
+      "name": "stale_effect_to_cell",
+      "requires": [
+        "recycled_node_ids"
+      ],
+      "steps": [
+        {
+          "op": {
+            "type": "cell",
+            "id": "driver",
+            "value": 1
+          }
+        },
+        {
+          "op": {
+            "type": "effect",
+            "id": "stale",
+            "reads": [
+              "driver"
+            ]
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "stale"
+          }
+        },
+        {
+          "op": {
+            "type": "cell",
+            "id": "successor",
+            "value": 20
+          }
+        },
+        {
+          "op": {
+            "type": "dispose_stale_handle",
+            "handle_of": "stale",
+            "handle_kind": "effect",
+            "successor": "successor",
+            "successor_kind": "cell"
+          },
+          "expect": {
+            "recycled_id_confirmed": true,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": true
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 0
+            },
+            "cleanups_of": {
+              "stale": 1
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "set_cell",
+            "id": "successor",
+            "value": 21
+          },
+          "expect": {
+            "read": {
+              "successor": 21
+            },
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": true
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale_effect_to_computed",
+      "name": "stale_effect_to_computed",
+      "requires": [
+        "recycled_node_ids"
+      ],
+      "steps": [
+        {
+          "op": {
+            "type": "cell",
+            "id": "driver",
+            "value": 1
+          }
+        },
+        {
+          "op": {
+            "type": "effect",
+            "id": "stale",
+            "reads": [
+              "driver"
+            ]
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "stale"
+          }
+        },
+        {
+          "op": {
+            "type": "computed",
+            "id": "successor",
+            "reads": [
+              "driver"
+            ],
+            "offset": 20
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "successor"
+          },
+          "expect": {
+            "value": 21
+          }
+        },
+        {
+          "op": {
+            "type": "dispose_stale_handle",
+            "handle_of": "stale",
+            "handle_kind": "effect",
+            "successor": "successor",
+            "successor_kind": "computed"
+          },
+          "expect": {
+            "recycled_id_confirmed": true,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            },
+            "cleanups_of": {
+              "stale": 1
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "set_cell",
+            "id": "driver",
+            "value": 2
+          }
+        },
+        {
+          "op": {
+            "type": "read",
+            "id": "successor"
+          },
+          "expect": {
+            "value": 22,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale_effect_to_effect",
+      "name": "stale_effect_to_effect",
+      "requires": [
+        "recycled_node_ids"
+      ],
+      "steps": [
+        {
+          "op": {
+            "type": "cell",
+            "id": "driver",
+            "value": 1
+          }
+        },
+        {
+          "op": {
+            "type": "effect",
+            "id": "stale",
+            "reads": [
+              "driver"
+            ]
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "stale"
+          }
+        },
+        {
+          "op": {
+            "type": "effect",
+            "id": "successor",
+            "reads": [
+              "driver"
+            ]
+          }
+        },
+        {
+          "op": {
+            "type": "dispose_stale_handle",
+            "handle_of": "stale",
+            "handle_kind": "effect",
+            "successor": "successor",
+            "successor_kind": "effect"
+          },
+          "expect": {
+            "recycled_id_confirmed": true,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            },
+            "cleanups_of": {
+              "stale": 1,
+              "successor": 0
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "set_cell",
+            "id": "driver",
+            "value": 2
+          },
+          "expect": {
+            "observed_by": [
+              "successor"
+            ],
+            "observed_count": 1,
+            "readable": {
+              "successor": true
+            },
+            "writable": {
+              "successor": false
+            },
+            "dependents_of": {
+              "successor": 0
+            },
+            "dependencies_of": {
+              "successor": 1
+            },
+            "cleanups_of": {
+              "successor": 1
+            }
+          }
+        },
+        {
+          "op": {
+            "type": "dispose",
+            "id": "successor"
+          },
+          "expect": {
+            "cleanups_of": {
+              "successor": 2
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
