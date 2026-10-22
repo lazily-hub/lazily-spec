@@ -912,6 +912,7 @@ function staleHandleWitness(document, witness) {
   if (witness !== "reactive-graph-stale-handle-recycled-successor") return false;
   if (document?.kind !== "ReactiveGraph") return false;
   if (document.shape === "steps") {
+    if (JSON.stringify(document.requires) !== JSON.stringify(["recycled_node_ids"])) return false;
     const disposals = document.steps?.filter(
       (step) => step?.op?.type === "dispose_stale_handle",
     );

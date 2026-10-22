@@ -852,7 +852,8 @@ satisfied by a declaration alone.
 
 A fixture uses top-level `steps`, or `scenarios`. Comparative scenarios carry
 `expected.observationally_equal`; capability matrices instead declare `requires`
-on each independently asserted scenario.
+on each independently asserted scenario. A steps-shaped fixture whose replay
+depends entirely on one capability declares `requires` at the fixture root.
 
 | Fixture | Covers |
 |---------|--------|

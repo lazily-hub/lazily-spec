@@ -658,7 +658,7 @@
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/reactive-graph/recycled_id_inherits_nothing.json",
-      "sha256": "4e1af90504f4f436a6a5c971e0244aaac8b29107b86654d2c380c54400de27be"
+      "sha256": "bcb7f6c2d464057c94a9de9510db926365de93237161272b8de5f8ba1241edb6"
     },
     {
       "license": "Apache-2.0",

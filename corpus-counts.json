@@ -310,6 +310,7 @@
       "steps": 10
     },
     "reactive-graph/recycled_id_inherits_nothing.json": {
+      "requires": 1,
       "steps": 13
     },
     "reactive-graph/scope_teardown_equals_fold_of_disposals.json": {
