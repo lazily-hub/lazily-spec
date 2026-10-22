@@ -1,0 +1,35 @@
+{
+  "binding": "python",
+  "recorded_at": "2026-10-22T22:55:48Z",
+  "release": {
+    "tag": "v0.45.0",
+    "commit": "1a04b59bef8fb8b28fea280907c61dafc6b69873"
+  },
+  "qualification_commit": "62a6728f86ab216068c8d7d2bf363992c01d3c49",
+  "gates": {
+    "profile": {
+      "status": "passed",
+      "command": "make core-profile-check"
+    },
+    "api": {
+      "status": "passed",
+      "command": "make core-api-check"
+    },
+    "fixture": {
+      "status": "passed",
+      "command": "node scripts/check-core-evidence.mjs --generate-reports --require-all"
+    },
+    "package": {
+      "status": "passed",
+      "command": "make check"
+    },
+    "pre_publish_consumer": {
+      "status": "passed",
+      "command": "make core-artifact-consumers-check-all"
+    },
+    "published_consumer": {
+      "status": "passed",
+      "command": "make core-published-consumers-check"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "artifact": "lazily-cpp-v0.33.0.tar.gz",
+  "available": true,
+  "coordinate": "lazily-hub/lazily-cpp",
+  "ecosystem": "cmake",
+  "provenance": "unsigned-github-source-archive",
+  "sha256": "cd11743b35384025564623a149632fd589ce2a43244847295689bdb0d6f7b2ae",
+  "source": "https://api.github.com/repos/lazily-hub/lazily-cpp/releases/tags/v0.33.0",
+  "tag_verified": false,
+  "version": "0.33.0"
+}

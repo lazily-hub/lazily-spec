@@ -1,0 +1,35 @@
+{
+  "binding": "cpp",
+  "recorded_at": "2026-10-22T22:55:48Z",
+  "release": {
+    "tag": "v0.33.0",
+    "commit": "d6f8873fc7895cb167fabadc6edc8bcc6e60326a"
+  },
+  "qualification_commit": "244122a84bfee287a144f5702822d32073f0adea",
+  "gates": {
+    "profile": {
+      "status": "passed",
+      "command": "make core-profile-check"
+    },
+    "api": {
+      "status": "passed",
+      "command": "make core-api-check"
+    },
+    "fixture": {
+      "status": "passed",
+      "command": "node scripts/check-core-evidence.mjs --generate-reports --require-all"
+    },
+    "package": {
+      "status": "passed",
+      "command": "make check"
+    },
+    "pre_publish_consumer": {
+      "status": "passed",
+      "command": "make core-artifact-consumers-check-all"
+    },
+    "published_consumer": {
+      "status": "passed",
+      "command": "make core-published-consumers-check"
+    }
+  }
+}

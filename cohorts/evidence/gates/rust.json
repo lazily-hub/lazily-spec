@@ -1,0 +1,35 @@
+{
+  "binding": "rust",
+  "recorded_at": "2026-10-22T22:55:48Z",
+  "release": {
+    "tag": "v0.61.0",
+    "commit": "81fb1e7cc01d8b9f7f83b313a2e7867ea75b68c7"
+  },
+  "qualification_commit": "2c70f22fa5750c025fd93d7c20d3689d8ac8d887",
+  "gates": {
+    "profile": {
+      "status": "passed",
+      "command": "make core-profile-check"
+    },
+    "api": {
+      "status": "passed",
+      "command": "make core-api-check"
+    },
+    "fixture": {
+      "status": "passed",
+      "command": "node scripts/check-core-evidence.mjs --generate-reports --require-all"
+    },
+    "package": {
+      "status": "passed",
+      "command": "make check"
+    },
+    "pre_publish_consumer": {
+      "status": "passed",
+      "command": "make core-artifact-consumers-check-all"
+    },
+    "published_consumer": {
+      "status": "passed",
+      "command": "make core-published-consumers-check"
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "binding": "javascript",
+  "recorded_at": "2026-10-22T22:55:48Z",
+  "release": {
+    "tag": "v0.37.0",
+    "commit": "0e51f1157cd200f083ec28f814e3c2a79d557fa8"
+  },
+  "qualification_commit": "c0970b2fc309c67d2b71b34706941e4bc16606ce",
+  "gates": {
+    "profile": {
+      "status": "passed",
+      "command": "make core-profile-check"
+    },
+    "api": {
+      "status": "passed",
+      "command": "make core-api-check"
+    },
+    "fixture": {
+      "status": "passed",
+      "command": "node scripts/check-core-evidence.mjs --generate-reports --require-all"
+    },
+    "package": {
+      "status": "passed",
+      "command": "make check"
+    },
+    "pre_publish_consumer": {
+      "status": "passed",
+      "command": "make core-artifact-consumers-check-all"
+    },
+    "published_consumer": {
+      "status": "passed",
+      "command": "make core-published-consumers-check"
+    }
+  }
+}

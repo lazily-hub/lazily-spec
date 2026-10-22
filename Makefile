@@ -15,6 +15,7 @@ core-support-check \
 core-support-sync \
 core-artifact-consumers-check \
 core-artifact-consumers-check-all \
+core-published-consumers-check \
 test-schemas \
 test-lean-formal \
 coverage-check \
@@ -81,11 +82,15 @@ core-artifact-consumers-check:
 core-artifact-consumers-check-all:
 >node scripts/core-support.mjs --check --run-consumers --bindings-root "$(CORE_BINDINGS_ROOT)" --require-all
 
+core-published-consumers-check:
+>test -n "$(CORE_COHORT_MANIFEST)" || { echo "CORE_COHORT_MANIFEST is required" >&2; exit 2; }
+>python3 scripts/run_core_published_consumers.py "$(CORE_COHORT_MANIFEST)" --bindings-root "$(CORE_BINDINGS_ROOT)"
+
 # Immutable Core cohort/BOM schema and semantic verifier (#lzcorecohort). This
-# proves the verifier and its negative cases through the schema test suite; a
-# real candidate manifest lands only after the profile, API, packaged-consumer,
-# and release-pin prerequisites are green.
+# proves the verifier and its negative cases through the schema test suite and
+# validates the checked-in candidate when present.
 core-cohort-check: test-schemas
+>test ! -f cohorts/2026-10-22.core-candidate.json || uv run python scripts/verify_core_cohort.py cohorts/2026-10-22.core-candidate.json --spec-root . --require-publish-ready
 
 # CI reachability pins (#lzcoreciactivationfixes): every Core make gate must be
 # reached by exactly one unconditional step in ci.yml's core job and in the

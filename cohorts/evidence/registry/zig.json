@@ -1,0 +1,11 @@
+{
+  "artifact": "lazily-zig-v0.39.0.tar.gz",
+  "available": true,
+  "coordinate": "lazily-hub/lazily-zig",
+  "ecosystem": "zig",
+  "provenance": "unsigned-github-source-archive",
+  "sha256": "fcf73cab1980e35bed7b5bd4d6143fc46f5ae067b0f6e2cb8664107f2bf373be",
+  "source": "https://api.github.com/repos/lazily-hub/lazily-zig/releases/tags/v0.39.0",
+  "tag_verified": false,
+  "version": "0.39.0"
+}

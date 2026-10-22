@@ -1,0 +1,10 @@
+{
+  "artifact": "lazily-js-0.37.0.tgz",
+  "available": true,
+  "coordinate": "@lazily-hub/lazily-js",
+  "ecosystem": "npm",
+  "integrity": "sha512-R5v+zfMZlH90GT5iotn0it7dV7gUdXYGUsdpxBdWP2pUTv9DqK5fuKeI8j9rNa7/R6seAl0L4Fl6OiQmlkZ6Ag==",
+  "sha256": "236076ec06a894930251960de2dface3d9f23bd9c419469b5743daaa0571456c",
+  "source": "https://registry.npmjs.org/@lazily-hub/lazily-js/0.37.0",
+  "version": "0.37.0"
+}

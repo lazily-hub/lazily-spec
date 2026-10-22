@@ -17,7 +17,7 @@
     "bindings"
   ],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "cohort_id": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9._-]*$"
@@ -107,7 +107,14 @@
       "required": ["kind", "uri", "file", "sha256"],
       "properties": {
         "kind": {
-          "enum": ["github-attestation", "sigstore", "slsa", "signed-source-archive"]
+          "enum": [
+            "github-attestation",
+            "sigstore",
+            "slsa",
+            "signed-source-archive",
+            "registry-integrity",
+            "immutable-source-archive"
+          ]
         },
         "uri": { "type": "string", "format": "uri" },
         "file": { "$ref": "#/$defs/relativePath" },
@@ -129,8 +136,9 @@
     "artifact": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["file", "sha256", "provenance", "registry"],
+      "required": ["uri", "file", "sha256", "provenance", "registry"],
       "properties": {
+        "uri": { "type": "string", "format": "uri" },
         "file": { "$ref": "#/$defs/relativePath" },
         "sha256": { "$ref": "#/$defs/sha256" },
         "provenance": { "$ref": "#/$defs/provenance" },
@@ -193,6 +201,7 @@
         "id",
         "profile",
         "source",
+        "qualification_commit",
         "spec_revision",
         "fixture_revision",
         "core_api_generation",
@@ -209,6 +218,7 @@
         },
         "profile": { "enum": ["core-candidate", "core-beta", "preview"] },
         "source": { "$ref": "#/$defs/sourcePin" },
+        "qualification_commit": { "$ref": "#/$defs/commit" },
         "spec_revision": { "$ref": "#/$defs/commit" },
         "fixture_revision": { "$ref": "#/$defs/commit" },
         "core_api_generation": { "type": "integer", "minimum": 1 },

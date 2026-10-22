@@ -1,0 +1,10 @@
+{
+  "artifact": "lazily-0.45.0.tar.gz",
+  "available": true,
+  "coordinate": "lazily",
+  "ecosystem": "pypi",
+  "sha256": "a5f39dc3af213d5bdf4c7103cd88d4b1e8ed39ec2e9fc9b5a3e1c1c631a65b5c",
+  "source": "https://pypi.org/pypi/lazily/0.45.0/json",
+  "version": "0.45.0",
+  "yanked": false
+}

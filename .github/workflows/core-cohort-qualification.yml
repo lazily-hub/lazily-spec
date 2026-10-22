@@ -46,6 +46,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   aggregate-core-gates:
@@ -124,20 +125,24 @@ jobs:
           }
 
           jq -e \
-            --arg spec_commit "$SPEC_COMMIT" \
-            --arg spec_tag "$SPEC_TAG" \
             --slurpfile expected dispatch-pins.json '
               ($expected[0]) as $pins |
-              .spec.commit == $spec_commit and
-              .spec.tag == $spec_tag and
               ([.bindings[].id] | sort) == ($pins | keys | sort) and
               all(.bindings[];
                 .source.commit == $pins[.id].commit and
                 .source.tag == $pins[.id].tag)
             ' "lazily-spec/$MANIFEST_PATH" >/dev/null || {
-              echo "::error::manifest pins do not exactly equal the dispatched Spec and binding pins"
+              echo "::error::manifest binding source pins do not exactly equal the dispatch pins"
               exit 1
             }
+
+          spec_tag="$(jq -r '.spec.tag' "lazily-spec/$MANIFEST_PATH")"
+          spec_commit="$(jq -r '.spec.commit' "lazily-spec/$MANIFEST_PATH")"
+          git -C lazily-spec fetch -q --depth 1 origin "refs/tags/$spec_tag:refs/tags/$spec_tag"
+          test "$(git -C lazily-spec rev-parse "refs/tags/$spec_tag^{}")" = "$spec_commit" || {
+            echo "::error::manifest Spec tag $spec_tag does not peel to $spec_commit"
+            exit 1
+          }
 
       - name: Check out all nine exact binding revisions
         shell: bash
@@ -145,9 +150,9 @@ jobs:
           MANIFEST_PATH: ${{ inputs.manifest_path }}
         run: |
           set -euo pipefail
-          jq -r '.bindings[] | [.id, .source.repository, .source.tag, .source.commit] | @tsv' \
+          jq -r '.bindings[] | [.id, .source.repository, .source.tag, .source.commit, .qualification_commit] | @tsv' \
             "lazily-spec/$MANIFEST_PATH" |
-          while IFS=$'\t' read -r binding repository tag commit; do
+          while IFS=$'\t' read -r binding repository tag source_commit qualification_commit; do
             directory="${repository##*/}"
             directory="${directory%.git}"
             test ! -e "$directory" || {
@@ -156,15 +161,15 @@ jobs:
             }
             git init -q "$directory"
             git -C "$directory" remote add origin "$repository"
-            git -C "$directory" fetch -q --depth 1 origin "$commit"
+            git -C "$directory" fetch -q --depth 1 origin "$qualification_commit"
             git -C "$directory" checkout -q --detach FETCH_HEAD
             git -C "$directory" fetch -q --depth 1 origin "refs/tags/$tag:refs/tags/$tag"
-            test "$(git -C "$directory" rev-parse HEAD)" = "$commit" || {
-              echo "::error::$binding checkout did not resolve to $commit"
+            test "$(git -C "$directory" rev-parse HEAD)" = "$qualification_commit" || {
+              echo "::error::$binding checkout did not resolve to qualification commit $qualification_commit"
               exit 1
             }
-            test "$(git -C "$directory" rev-parse "refs/tags/$tag^{}")" = "$commit" || {
-              echo "::error::$binding tag $tag does not peel to $commit"
+            test "$(git -C "$directory" rev-parse "refs/tags/$tag^{}")" = "$source_commit" || {
+              echo "::error::$binding tag $tag does not peel to source commit $source_commit"
               exit 1
             }
           done
@@ -214,8 +219,22 @@ jobs:
           uv run python scripts/verify_core_cohort.py "$MANIFEST_PATH" \
             --repo-root .. \
             --spec-root . \
-            --require-publish-ready \
-            --expected-spec-commit "$GITHUB_SHA"
+            --require-publish-ready
+
+      - name: Reproduce immutable cohort evidence
+        working-directory: lazily-spec
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          uv run python scripts/materialize_core_cohort.py \
+            "$MANIFEST_PATH" ../materialized-cohort --seed-root .
+          uv run python scripts/verify_core_cohort.py "$MANIFEST_PATH" \
+            --artifact-root ../materialized-cohort \
+            --repo-root .. \
+            --spec-root . \
+            --require-publish-ready
 
       - name: Generate fresh Core evidence
         working-directory: lazily-spec
@@ -245,6 +264,14 @@ jobs:
       - name: Core artifact consumers aggregate
         working-directory: lazily-spec
         run: make core-artifact-consumers-check-all
+
+      - name: Published Core artifact consumers aggregate
+        working-directory: lazily-spec
+        env:
+          CORE_COHORT_MANIFEST: ${{ inputs.manifest_path }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make core-published-consumers-check
 
       - name: Core cohort aggregate
         working-directory: lazily-spec

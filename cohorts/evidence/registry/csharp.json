@@ -1,0 +1,10 @@
+{
+  "artifact": "lazily.0.9.0.nupkg",
+  "available": true,
+  "coordinate": "Lazily",
+  "ecosystem": "nuget",
+  "sha256": "4bffd965e14051c8320807de94c67925fdd570fdf1bb409220b4f4283babc586",
+  "source": "https://api.nuget.org/v3/registration5-semver1/lazily/0.9.0.json",
+  "version": "0.9.0",
+  "yanked": false
+}

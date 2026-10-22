@@ -130,20 +130,27 @@ def git_output(repo: Path, *args: str) -> tuple[int, str]:
 
 
 def verify_source_pin(
-    source: dict[str, Any], repo_root: Path, label: str, errors: list[str]
+    source: dict[str, Any],
+    repo_root: Path,
+    label: str,
+    errors: list[str],
+    *,
+    checkout_commit: str | None = None,
 ) -> None:
     repo = repo_root / repository_name(source["repository"])
     if not (repo / ".git").exists() and not (repo / ".git").is_file():
         errors.append(f"{label}: missing source checkout {repo}")
         return
 
-    code, head = git_output(repo, "rev-parse", "HEAD")
-    if code != 0:
-        errors.append(f"{label}: cannot read HEAD for {repo}: {head}")
-    elif head != source["commit"]:
-        errors.append(
-            f"{label}: checkout commit mismatch: expected {source['commit']}, got {head}"
-        )
+    if checkout_commit is not None:
+        code, head = git_output(repo, "rev-parse", "HEAD")
+        if code != 0:
+            errors.append(f"{label}: cannot read HEAD for {repo}: {head}")
+        elif head != checkout_commit:
+            errors.append(
+                f"{label}: qualification checkout mismatch: "
+                f"expected {checkout_commit}, got {head}"
+            )
 
     code, peeled = git_output(repo, "rev-parse", f"refs/tags/{source['tag']}^{{}}")
     if code != 0:
@@ -180,6 +187,7 @@ def validate_semantics(
     expected_binding: str | None = None,
     expected_commit: str | None = None,
     expected_tag: str | None = None,
+    expected_qualification_commit: str | None = None,
 ) -> list[str]:
     errors: list[str] = []
     spec = manifest["spec"]
@@ -346,7 +354,13 @@ def validate_semantics(
                 )
 
         if repo_root is not None:
-            verify_source_pin(source, repo_root, label, errors)
+            verify_source_pin(
+                source,
+                repo_root,
+                label,
+                errors,
+                checkout_commit=binding["qualification_commit"],
+            )
 
         if expected_binding == binding["id"]:
             matched_expected_binding = True
@@ -359,6 +373,15 @@ def validate_semantics(
                 errors.append(
                     f"{label}.source.tag {source['tag']} does not match "
                     f"--expected-tag {expected_tag}"
+                )
+            if (
+                expected_qualification_commit is not None
+                and binding["qualification_commit"] != expected_qualification_commit
+            ):
+                errors.append(
+                    f"{label}.qualification_commit {binding['qualification_commit']} "
+                    "does not match --expected-qualification-commit "
+                    f"{expected_qualification_commit}"
                 )
 
     if expected_binding is not None and not matched_expected_binding:
@@ -486,6 +509,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--expected-binding", choices=sorted(EXPECTED_BINDINGS))
     parser.add_argument("--expected-commit")
     parser.add_argument("--expected-tag")
+    parser.add_argument("--expected-qualification-commit")
     parser.add_argument("--report-json", type=Path)
     parser.add_argument("--report-markdown", type=Path)
     return parser.parse_args(argv)
@@ -514,6 +538,7 @@ def main(argv: list[str] | None = None) -> int:
                 expected_binding=args.expected_binding,
                 expected_commit=args.expected_commit,
                 expected_tag=args.expected_tag,
+                expected_qualification_commit=args.expected_qualification_commit,
             )
         )
 

@@ -1,0 +1,11 @@
+{
+  "artifact": "lazily-0.46.0.jar",
+  "available": true,
+  "coordinate": "io.github.lazily:lazily",
+  "ecosystem": "maven",
+  "package_version_id": 69656152,
+  "registry": "https://maven.pkg.github.com/lazily-hub/lazily-kt",
+  "sha256": "fb1929990bbec3a51833ccc6101a8b0195190816feaedb45ca3c0f053a4210e3",
+  "source": "https://api.github.com/orgs/lazily-hub/packages/maven/io.github.lazily.lazily/versions/69656152",
+  "version": "0.46.0"
+}

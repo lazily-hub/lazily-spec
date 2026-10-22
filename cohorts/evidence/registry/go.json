@@ -1,0 +1,9 @@
+{
+  "artifact": "v0.31.0.zip",
+  "available": true,
+  "coordinate": "github.com/lazily-hub/lazily-go",
+  "ecosystem": "go",
+  "sha256": "8e380a839925d2fe76424ebb81179d6af6bd752c0309db3211bf425c5159b341",
+  "source": "https://proxy.golang.org/github.com/lazily-hub/lazily-go/@v/v0.31.0.info",
+  "version": "0.31.0"
+}

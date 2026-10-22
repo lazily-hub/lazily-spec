@@ -1,0 +1,10 @@
+{
+  "artifact": "lazily-0.61.0.crate",
+  "available": true,
+  "checksum_sha256": "dea0e947b3766b88f327012f0d8392fb5a5c702050933cbb19467dedd3273c12",
+  "coordinate": "lazily",
+  "ecosystem": "cargo",
+  "source": "https://crates.io/api/v1/crates/lazily/0.61.0",
+  "version": "0.61.0",
+  "yanked": false
+}

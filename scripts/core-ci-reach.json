@@ -40,6 +40,7 @@
       "Core cohort aggregate": "make core-cohort-check",
       "Core evidence aggregate": "make core-evidence-check",
       "Core profile aggregate": "make core-profile-check",
+      "Published Core artifact consumers aggregate": "make core-published-consumers-check",
       "Core support aggregate": "make core-support-check"
     }
   }

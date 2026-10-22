@@ -1,0 +1,9 @@
+{
+  "artifact": "lazily-0.35.0.tar.gz",
+  "available": true,
+  "coordinate": "lazily",
+  "ecosystem": "pub",
+  "sha256": "0823ee7736c3f3923e0acca338b99b95db0f7f1c75740aab58673a720b17c7b0",
+  "source": "https://pub.dev/api/packages/lazily",
+  "version": "0.35.0"
+}

@@ -59,6 +59,7 @@ def make_binding(binding_id: str, evidence: dict[str, str]) -> dict:
             "commit": commit,
             "tag": "v1.2.3",
         },
+        "qualification_commit": "c" * 40,
         "spec_revision": "a" * 40,
         "fixture_revision": "a" * 40,
         "core_api_generation": 1,
@@ -83,6 +84,7 @@ def make_binding(binding_id: str, evidence: dict[str, str]) -> dict:
                 "artifacts": [
                     {
                         "file": evidence["artifact_file"],
+                        "uri": f"https://example.invalid/{binding_id}/artifact",
                         "sha256": evidence["artifact_sha256"],
                         "provenance": {
                             "kind": "slsa",
@@ -111,7 +113,7 @@ def make_manifest(tmp_path: Path, binding_ids: tuple[str, ...] = ("rust",)) -> d
     profile_path.parent.mkdir(parents=True)
     profile_path.write_bytes(profile)
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "cohort_id": "2026-10-12.rc1",
         "state": "candidate",
         "created_at": "2026-10-12T10:00:00Z",
@@ -152,6 +154,7 @@ def test_candidate_manifest_is_publish_ready_and_reportable(tmp_path: Path) -> N
         expected_binding="rust",
         expected_commit="b" * 40,
         expected_tag="v1.2.3",
+        expected_qualification_commit="c" * 40,
     ) == []
 
     report = VERIFIER.build_report(manifest, [])
@@ -269,7 +272,9 @@ def test_schema_rejects_evidence_path_traversal(tmp_path: Path) -> None:
     assert any("does not match" in error for error in schema_errors(manifest))
 
 
-def test_source_verification_requires_tag_to_peel_to_checkout(tmp_path: Path) -> None:
+def test_source_verification_separates_release_tag_from_qualification_checkout(
+    tmp_path: Path,
+) -> None:
     repo_root = tmp_path / "repos"
     repo = repo_root / "lazily-rust"
     repo.mkdir(parents=True)
@@ -303,7 +308,24 @@ def test_source_verification_requires_tag_to_peel_to_checkout(tmp_path: Path) ->
     (repo / "payload").write_text("second\n")
     git("add", "payload")
     git("commit", "-q", "-m", "second")
-    source["commit"] = git("rev-parse", "HEAD")
+    qualification_commit = git("rev-parse", "HEAD")
     errors = []
-    VERIFIER.verify_source_pin(source, repo_root, "binding", errors)
+    VERIFIER.verify_source_pin(
+        source,
+        repo_root,
+        "binding",
+        errors,
+        checkout_commit=qualification_commit,
+    )
+    assert errors == []
+
+    source["commit"] = qualification_commit
+    errors = []
+    VERIFIER.verify_source_pin(
+        source,
+        repo_root,
+        "binding",
+        errors,
+        checkout_commit=qualification_commit,
+    )
     assert any("peeled tag v1.2.3" in error for error in errors)

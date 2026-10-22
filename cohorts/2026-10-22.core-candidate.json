@@ -1,0 +1,916 @@
+{
+  "schema_version": 2,
+  "cohort_id": "2026-10-22.core-candidate.1",
+  "state": "candidate",
+  "created_at": "2026-10-22T22:55:48Z",
+  "profile": {
+    "status": "candidate",
+    "registry_path": "profiles/core-v1.json",
+    "sha256": "b7e599c810aeda7cbedddccf342988205a54d1d5a96044c377baab6bc39143c2"
+  },
+  "spec": {
+    "repository": "https://github.com/lazily-hub/lazily-spec",
+    "commit": "b706c72201826678df53735e1501e179f63707b9",
+    "tag": "v0.44.1"
+  },
+  "conformance_revision": "b706c72201826678df53735e1501e179f63707b9",
+  "core_api_generation": 1,
+  "wire_version": "1",
+  "bindings": [
+    {
+      "id": "rust",
+      "profile": "core-candidate",
+      "source": {
+        "repository": "https://github.com/lazily-hub/lazily-rs",
+        "commit": "81fb1e7cc01d8b9f7f83b313a2e7867ea75b68c7",
+        "tag": "v0.61.0"
+      },
+      "qualification_commit": "2c70f22fa5750c025fd93d7c20d3689d8ac8d887",
+      "spec_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "fixture_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "core_api_generation": 1,
+      "wire_version": "1",
+      "core_imports": [
+        "lazily"
+      ],
+      "toolchains": [
+        {
+          "name": "rust",
+          "minimum": "1.88",
+          "current": "1.97.0"
+        }
+      ],
+      "compatibility": {
+        "core_api": {
+          "minimum": 1,
+          "maximum": 1
+        },
+        "modules": []
+      },
+      "packages": [
+        {
+          "ecosystem": "cargo",
+          "coordinate": "lazily",
+          "version": "0.61.0",
+          "artifacts": [
+            {
+              "uri": "https://crates.io/api/v1/crates/lazily/0.61.0/download",
+              "file": "cohorts/artifacts/lazily-0.61.0.crate",
+              "sha256": "dea0e947b3766b88f327012f0d8392fb5a5c702050933cbb19467dedd3273c12",
+              "provenance": {
+                "kind": "registry-integrity",
+                "uri": "https://crates.io/api/v1/crates/lazily/0.61.0",
+                "file": "cohorts/evidence/registry/rust.json",
+                "sha256": "663282e75aba441169ecbe1c246c1c9c2abb3971b1436bc2fb95f0a50f01c723"
+              },
+              "registry": {
+                "url": "https://crates.io/api/v1/crates/lazily/0.61.0",
+                "status": "available",
+                "checked_at": "2026-10-22T22:38:00Z",
+                "metadata_file": "cohorts/evidence/registry/rust.json",
+                "metadata_sha256": "663282e75aba441169ecbe1c246c1c9c2abb3971b1436bc2fb95f0a50f01c723"
+              }
+            }
+          ]
+        }
+      ],
+      "gates": [
+        {
+          "name": "profile",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/rust.json",
+          "evidence_sha256": "4c77c0436758384976b917d1ecb6b43ada1601982a6f23fc1ff0e6f5bbfcd2b0"
+        },
+        {
+          "name": "api",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/rust.json",
+          "evidence_sha256": "4c77c0436758384976b917d1ecb6b43ada1601982a6f23fc1ff0e6f5bbfcd2b0"
+        },
+        {
+          "name": "fixture",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/rust.json",
+          "evidence_sha256": "4c77c0436758384976b917d1ecb6b43ada1601982a6f23fc1ff0e6f5bbfcd2b0"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/rust.json",
+          "evidence_sha256": "4c77c0436758384976b917d1ecb6b43ada1601982a6f23fc1ff0e6f5bbfcd2b0"
+        },
+        {
+          "name": "pre_publish_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/rust.json",
+          "evidence_sha256": "4c77c0436758384976b917d1ecb6b43ada1601982a6f23fc1ff0e6f5bbfcd2b0"
+        },
+        {
+          "name": "published_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/rust.json",
+          "evidence_sha256": "4c77c0436758384976b917d1ecb6b43ada1601982a6f23fc1ff0e6f5bbfcd2b0"
+        }
+      ]
+    },
+    {
+      "id": "javascript",
+      "profile": "core-candidate",
+      "source": {
+        "repository": "https://github.com/lazily-hub/lazily-js",
+        "commit": "0e51f1157cd200f083ec28f814e3c2a79d557fa8",
+        "tag": "v0.37.0"
+      },
+      "qualification_commit": "c0970b2fc309c67d2b71b34706941e4bc16606ce",
+      "spec_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "fixture_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "core_api_generation": 1,
+      "wire_version": "1",
+      "core_imports": [
+        "@lazily-hub/lazily-js/reactive"
+      ],
+      "toolchains": [
+        {
+          "name": "node",
+          "minimum": "24",
+          "current": "24"
+        }
+      ],
+      "compatibility": {
+        "core_api": {
+          "minimum": 1,
+          "maximum": 1
+        },
+        "modules": []
+      },
+      "packages": [
+        {
+          "ecosystem": "npm",
+          "coordinate": "@lazily-hub/lazily-js",
+          "version": "0.37.0",
+          "artifacts": [
+            {
+              "uri": "https://registry.npmjs.org/@lazily-hub/lazily-js/-/lazily-js-0.37.0.tgz",
+              "file": "cohorts/artifacts/lazily-js-0.37.0.tgz",
+              "sha256": "236076ec06a894930251960de2dface3d9f23bd9c419469b5743daaa0571456c",
+              "provenance": {
+                "kind": "registry-integrity",
+                "uri": "https://registry.npmjs.org/@lazily-hub/lazily-js/0.37.0",
+                "file": "cohorts/evidence/registry/javascript.json",
+                "sha256": "170dd500c4e419b56dee819957c9064fb61ea4fbee2fdc19e0785c38b21bef39"
+              },
+              "registry": {
+                "url": "https://registry.npmjs.org/@lazily-hub/lazily-js/0.37.0",
+                "status": "available",
+                "checked_at": "2026-10-22T22:38:00Z",
+                "metadata_file": "cohorts/evidence/registry/javascript.json",
+                "metadata_sha256": "170dd500c4e419b56dee819957c9064fb61ea4fbee2fdc19e0785c38b21bef39"
+              }
+            }
+          ]
+        }
+      ],
+      "gates": [
+        {
+          "name": "profile",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/javascript.json",
+          "evidence_sha256": "2d0bf5f12dd7c7d50c0762ceacd1a55de0682a01b7226eb32d7b333f1d19a84d"
+        },
+        {
+          "name": "api",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/javascript.json",
+          "evidence_sha256": "2d0bf5f12dd7c7d50c0762ceacd1a55de0682a01b7226eb32d7b333f1d19a84d"
+        },
+        {
+          "name": "fixture",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/javascript.json",
+          "evidence_sha256": "2d0bf5f12dd7c7d50c0762ceacd1a55de0682a01b7226eb32d7b333f1d19a84d"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/javascript.json",
+          "evidence_sha256": "2d0bf5f12dd7c7d50c0762ceacd1a55de0682a01b7226eb32d7b333f1d19a84d"
+        },
+        {
+          "name": "pre_publish_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/javascript.json",
+          "evidence_sha256": "2d0bf5f12dd7c7d50c0762ceacd1a55de0682a01b7226eb32d7b333f1d19a84d"
+        },
+        {
+          "name": "published_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/javascript.json",
+          "evidence_sha256": "2d0bf5f12dd7c7d50c0762ceacd1a55de0682a01b7226eb32d7b333f1d19a84d"
+        }
+      ]
+    },
+    {
+      "id": "python",
+      "profile": "core-candidate",
+      "source": {
+        "repository": "https://github.com/lazily-hub/lazily-py",
+        "commit": "1a04b59bef8fb8b28fea280907c61dafc6b69873",
+        "tag": "v0.45.0"
+      },
+      "qualification_commit": "62a6728f86ab216068c8d7d2bf363992c01d3c49",
+      "spec_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "fixture_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "core_api_generation": 1,
+      "wire_version": "1",
+      "core_imports": [
+        "lazily"
+      ],
+      "toolchains": [
+        {
+          "name": "python",
+          "minimum": "3.12",
+          "current": "3.14"
+        }
+      ],
+      "compatibility": {
+        "core_api": {
+          "minimum": 1,
+          "maximum": 1
+        },
+        "modules": []
+      },
+      "packages": [
+        {
+          "ecosystem": "pypi",
+          "coordinate": "lazily",
+          "version": "0.45.0",
+          "artifacts": [
+            {
+              "uri": "https://files.pythonhosted.org/packages/8a/31/8330a247818fc69938d2e2c01e10bc4836cb65f7096e2e36d8b77774bad9/lazily-0.45.0.tar.gz",
+              "file": "cohorts/artifacts/lazily-0.45.0.tar.gz",
+              "sha256": "a5f39dc3af213d5bdf4c7103cd88d4b1e8ed39ec2e9fc9b5a3e1c1c631a65b5c",
+              "provenance": {
+                "kind": "registry-integrity",
+                "uri": "https://pypi.org/pypi/lazily/0.45.0/json",
+                "file": "cohorts/evidence/registry/python.json",
+                "sha256": "72bc1ac0aedec52b5cef75fd05efed78e816215db29498bf5fe894f6aab1f9cc"
+              },
+              "registry": {
+                "url": "https://pypi.org/pypi/lazily/0.45.0/json",
+                "status": "available",
+                "checked_at": "2026-10-22T22:38:00Z",
+                "metadata_file": "cohorts/evidence/registry/python.json",
+                "metadata_sha256": "72bc1ac0aedec52b5cef75fd05efed78e816215db29498bf5fe894f6aab1f9cc"
+              }
+            }
+          ]
+        }
+      ],
+      "gates": [
+        {
+          "name": "profile",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/python.json",
+          "evidence_sha256": "cd54699f20e8cd20b72c78131405dc3d2bd54072f5d7445b7d890cb667920747"
+        },
+        {
+          "name": "api",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/python.json",
+          "evidence_sha256": "cd54699f20e8cd20b72c78131405dc3d2bd54072f5d7445b7d890cb667920747"
+        },
+        {
+          "name": "fixture",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/python.json",
+          "evidence_sha256": "cd54699f20e8cd20b72c78131405dc3d2bd54072f5d7445b7d890cb667920747"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/python.json",
+          "evidence_sha256": "cd54699f20e8cd20b72c78131405dc3d2bd54072f5d7445b7d890cb667920747"
+        },
+        {
+          "name": "pre_publish_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/python.json",
+          "evidence_sha256": "cd54699f20e8cd20b72c78131405dc3d2bd54072f5d7445b7d890cb667920747"
+        },
+        {
+          "name": "published_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/python.json",
+          "evidence_sha256": "cd54699f20e8cd20b72c78131405dc3d2bd54072f5d7445b7d890cb667920747"
+        }
+      ]
+    },
+    {
+      "id": "go",
+      "profile": "core-candidate",
+      "source": {
+        "repository": "https://github.com/lazily-hub/lazily-go",
+        "commit": "d393322217a534cf35ceedfa7ebd145a025c495a",
+        "tag": "v0.31.0"
+      },
+      "qualification_commit": "7885f8d16ed470cd9f21c466008b448b9b9729f8",
+      "spec_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "fixture_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "core_api_generation": 1,
+      "wire_version": "1",
+      "core_imports": [
+        "github.com/lazily-hub/lazily-go"
+      ],
+      "toolchains": [
+        {
+          "name": "go",
+          "minimum": "1.24",
+          "current": "1.25"
+        }
+      ],
+      "compatibility": {
+        "core_api": {
+          "minimum": 1,
+          "maximum": 1
+        },
+        "modules": []
+      },
+      "packages": [
+        {
+          "ecosystem": "go",
+          "coordinate": "github.com/lazily-hub/lazily-go",
+          "version": "0.31.0",
+          "artifacts": [
+            {
+              "uri": "https://proxy.golang.org/github.com/lazily-hub/lazily-go/@v/v0.31.0.zip",
+              "file": "cohorts/artifacts/v0.31.0.zip",
+              "sha256": "8e380a839925d2fe76424ebb81179d6af6bd752c0309db3211bf425c5159b341",
+              "provenance": {
+                "kind": "registry-integrity",
+                "uri": "https://proxy.golang.org/github.com/lazily-hub/lazily-go/@v/v0.31.0.info",
+                "file": "cohorts/evidence/registry/go.json",
+                "sha256": "b93b8f959c237ddafcff52bdb48e879b2bd66bb395602010493213043d5d2929"
+              },
+              "registry": {
+                "url": "https://proxy.golang.org/github.com/lazily-hub/lazily-go/@v/v0.31.0.info",
+                "status": "available",
+                "checked_at": "2026-10-22T22:38:00Z",
+                "metadata_file": "cohorts/evidence/registry/go.json",
+                "metadata_sha256": "b93b8f959c237ddafcff52bdb48e879b2bd66bb395602010493213043d5d2929"
+              }
+            }
+          ]
+        }
+      ],
+      "gates": [
+        {
+          "name": "profile",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/go.json",
+          "evidence_sha256": "3523f6fbc5ce901f9ad63ec3876e0f837165e7bed5d3bcee32fb689710a1b609"
+        },
+        {
+          "name": "api",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/go.json",
+          "evidence_sha256": "3523f6fbc5ce901f9ad63ec3876e0f837165e7bed5d3bcee32fb689710a1b609"
+        },
+        {
+          "name": "fixture",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/go.json",
+          "evidence_sha256": "3523f6fbc5ce901f9ad63ec3876e0f837165e7bed5d3bcee32fb689710a1b609"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/go.json",
+          "evidence_sha256": "3523f6fbc5ce901f9ad63ec3876e0f837165e7bed5d3bcee32fb689710a1b609"
+        },
+        {
+          "name": "pre_publish_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/go.json",
+          "evidence_sha256": "3523f6fbc5ce901f9ad63ec3876e0f837165e7bed5d3bcee32fb689710a1b609"
+        },
+        {
+          "name": "published_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/go.json",
+          "evidence_sha256": "3523f6fbc5ce901f9ad63ec3876e0f837165e7bed5d3bcee32fb689710a1b609"
+        }
+      ]
+    },
+    {
+      "id": "kotlin",
+      "profile": "core-candidate",
+      "source": {
+        "repository": "https://github.com/lazily-hub/lazily-kt",
+        "commit": "6da80cf2c2b5d335893ef4d6f0e75afcd08d2495",
+        "tag": "v0.46.0"
+      },
+      "qualification_commit": "c35f5834d48f3e7cf4cc554e10a9b000cda92631",
+      "spec_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "fixture_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "core_api_generation": 1,
+      "wire_version": "1",
+      "core_imports": [
+        "io.github.lazily"
+      ],
+      "toolchains": [
+        {
+          "name": "jdk",
+          "minimum": "21",
+          "current": "21"
+        }
+      ],
+      "compatibility": {
+        "core_api": {
+          "minimum": 1,
+          "maximum": 1
+        },
+        "modules": []
+      },
+      "packages": [
+        {
+          "ecosystem": "maven",
+          "coordinate": "io.github.lazily:lazily",
+          "version": "0.46.0",
+          "artifacts": [
+            {
+              "uri": "https://maven.pkg.github.com/lazily-hub/lazily-kt/io/github/lazily/lazily/0.46.0/lazily-0.46.0.jar",
+              "file": "cohorts/artifacts/lazily-0.46.0.jar",
+              "sha256": "fb1929990bbec3a51833ccc6101a8b0195190816feaedb45ca3c0f053a4210e3",
+              "provenance": {
+                "kind": "registry-integrity",
+                "uri": "https://api.github.com/orgs/lazily-hub/packages/maven/io.github.lazily.lazily/versions/69656152",
+                "file": "cohorts/evidence/registry/kotlin.json",
+                "sha256": "6153d5b9a8105d6835f4e111707e5484e94040ed46f3ced1ad3845091616f305"
+              },
+              "registry": {
+                "url": "https://api.github.com/orgs/lazily-hub/packages/maven/io.github.lazily.lazily/versions/69656152",
+                "status": "available",
+                "checked_at": "2026-10-22T22:38:00Z",
+                "metadata_file": "cohorts/evidence/registry/kotlin.json",
+                "metadata_sha256": "6153d5b9a8105d6835f4e111707e5484e94040ed46f3ced1ad3845091616f305"
+              }
+            }
+          ]
+        }
+      ],
+      "gates": [
+        {
+          "name": "profile",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/kotlin.json",
+          "evidence_sha256": "6c34242df48b93a58e2a50ac624ced45990ea16f6a11af0fc233307fec60e658"
+        },
+        {
+          "name": "api",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/kotlin.json",
+          "evidence_sha256": "6c34242df48b93a58e2a50ac624ced45990ea16f6a11af0fc233307fec60e658"
+        },
+        {
+          "name": "fixture",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/kotlin.json",
+          "evidence_sha256": "6c34242df48b93a58e2a50ac624ced45990ea16f6a11af0fc233307fec60e658"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/kotlin.json",
+          "evidence_sha256": "6c34242df48b93a58e2a50ac624ced45990ea16f6a11af0fc233307fec60e658"
+        },
+        {
+          "name": "pre_publish_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/kotlin.json",
+          "evidence_sha256": "6c34242df48b93a58e2a50ac624ced45990ea16f6a11af0fc233307fec60e658"
+        },
+        {
+          "name": "published_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/kotlin.json",
+          "evidence_sha256": "6c34242df48b93a58e2a50ac624ced45990ea16f6a11af0fc233307fec60e658"
+        }
+      ]
+    },
+    {
+      "id": "cpp",
+      "profile": "core-candidate",
+      "source": {
+        "repository": "https://github.com/lazily-hub/lazily-cpp",
+        "commit": "d6f8873fc7895cb167fabadc6edc8bcc6e60326a",
+        "tag": "v0.33.0"
+      },
+      "qualification_commit": "244122a84bfee287a144f5702822d32073f0adea",
+      "spec_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "fixture_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "core_api_generation": 1,
+      "wire_version": "1",
+      "core_imports": [
+        "lazily/core.hpp"
+      ],
+      "toolchains": [
+        {
+          "name": "c++",
+          "minimum": "17",
+          "current": "23"
+        }
+      ],
+      "compatibility": {
+        "core_api": {
+          "minimum": 1,
+          "maximum": 1
+        },
+        "modules": []
+      },
+      "packages": [
+        {
+          "ecosystem": "cmake",
+          "coordinate": "lazily-hub/lazily-cpp",
+          "version": "0.33.0",
+          "artifacts": [
+            {
+              "uri": "https://github.com/lazily-hub/lazily-cpp/archive/refs/tags/v0.33.0.tar.gz",
+              "file": "cohorts/artifacts/lazily-cpp-v0.33.0.tar.gz",
+              "sha256": "cd11743b35384025564623a149632fd589ce2a43244847295689bdb0d6f7b2ae",
+              "provenance": {
+                "kind": "immutable-source-archive",
+                "uri": "https://api.github.com/repos/lazily-hub/lazily-cpp/releases/tags/v0.33.0",
+                "file": "cohorts/evidence/registry/cpp.json",
+                "sha256": "cf3ba6f8ff08053498a347fd3cde6829da24a57b36f8624576e10cab500a8e7d"
+              },
+              "registry": {
+                "url": "https://api.github.com/repos/lazily-hub/lazily-cpp/releases/tags/v0.33.0",
+                "status": "available",
+                "checked_at": "2026-10-22T22:38:00Z",
+                "metadata_file": "cohorts/evidence/registry/cpp.json",
+                "metadata_sha256": "cf3ba6f8ff08053498a347fd3cde6829da24a57b36f8624576e10cab500a8e7d"
+              }
+            }
+          ]
+        }
+      ],
+      "gates": [
+        {
+          "name": "profile",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/cpp.json",
+          "evidence_sha256": "243dd8a7c850f1874d1e8e53485cfa6e6664677519585dbf606b5fbc28850412"
+        },
+        {
+          "name": "api",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/cpp.json",
+          "evidence_sha256": "243dd8a7c850f1874d1e8e53485cfa6e6664677519585dbf606b5fbc28850412"
+        },
+        {
+          "name": "fixture",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/cpp.json",
+          "evidence_sha256": "243dd8a7c850f1874d1e8e53485cfa6e6664677519585dbf606b5fbc28850412"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/cpp.json",
+          "evidence_sha256": "243dd8a7c850f1874d1e8e53485cfa6e6664677519585dbf606b5fbc28850412"
+        },
+        {
+          "name": "pre_publish_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/cpp.json",
+          "evidence_sha256": "243dd8a7c850f1874d1e8e53485cfa6e6664677519585dbf606b5fbc28850412"
+        },
+        {
+          "name": "published_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/cpp.json",
+          "evidence_sha256": "243dd8a7c850f1874d1e8e53485cfa6e6664677519585dbf606b5fbc28850412"
+        }
+      ]
+    },
+    {
+      "id": "csharp",
+      "profile": "core-candidate",
+      "source": {
+        "repository": "https://github.com/lazily-hub/lazily-cs",
+        "commit": "42437ba85391bf3c2f5daeeb6940e6212b32a2dd",
+        "tag": "v0.9.0"
+      },
+      "qualification_commit": "cb23d7dcaa9d9196e4c906102a1a228f17f5b6b5",
+      "spec_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "fixture_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "core_api_generation": 1,
+      "wire_version": "1",
+      "core_imports": [
+        "Lazily"
+      ],
+      "toolchains": [
+        {
+          "name": "dotnet",
+          "minimum": "8.0",
+          "current": "10.0"
+        }
+      ],
+      "compatibility": {
+        "core_api": {
+          "minimum": 1,
+          "maximum": 1
+        },
+        "modules": [
+          {
+            "coordinate": "Lazily.R3",
+            "minimum_core_api": 1,
+            "maximum_core_api": 1
+          }
+        ]
+      },
+      "packages": [
+        {
+          "ecosystem": "nuget",
+          "coordinate": "Lazily",
+          "version": "0.9.0",
+          "artifacts": [
+            {
+              "uri": "https://api.nuget.org/v3-flatcontainer/lazily/0.9.0/lazily.0.9.0.nupkg",
+              "file": "cohorts/artifacts/lazily.0.9.0.nupkg",
+              "sha256": "4bffd965e14051c8320807de94c67925fdd570fdf1bb409220b4f4283babc586",
+              "provenance": {
+                "kind": "registry-integrity",
+                "uri": "https://api.nuget.org/v3/registration5-semver1/lazily/0.9.0.json",
+                "file": "cohorts/evidence/registry/csharp.json",
+                "sha256": "66aec94137a8143aba57941c28509dbc28321cf675b04fec33a3e7808d6144df"
+              },
+              "registry": {
+                "url": "https://api.nuget.org/v3/registration5-semver1/lazily/0.9.0.json",
+                "status": "available",
+                "checked_at": "2026-10-22T22:38:00Z",
+                "metadata_file": "cohorts/evidence/registry/csharp.json",
+                "metadata_sha256": "66aec94137a8143aba57941c28509dbc28321cf675b04fec33a3e7808d6144df"
+              }
+            }
+          ]
+        },
+        {
+          "ecosystem": "nuget",
+          "coordinate": "Lazily.R3",
+          "version": "0.9.0",
+          "artifacts": [
+            {
+              "uri": "https://api.nuget.org/v3-flatcontainer/lazily.r3/0.9.0/lazily.r3.0.9.0.nupkg",
+              "file": "cohorts/artifacts/lazily.r3.0.9.0.nupkg",
+              "sha256": "54846e36f67ae54cea48045effa7050374e038abd9e96110a78c68d0c4153403",
+              "provenance": {
+                "kind": "registry-integrity",
+                "uri": "https://api.nuget.org/v3/registration5-semver1/lazily.r3/0.9.0.json",
+                "file": "cohorts/evidence/registry/csharp-r3.json",
+                "sha256": "1ba6228a8aecdbae38cef707b24396fbfec60fce4677c00fc5f596af4d60ba32"
+              },
+              "registry": {
+                "url": "https://api.nuget.org/v3/registration5-semver1/lazily.r3/0.9.0.json",
+                "status": "available",
+                "checked_at": "2026-10-22T22:38:00Z",
+                "metadata_file": "cohorts/evidence/registry/csharp-r3.json",
+                "metadata_sha256": "1ba6228a8aecdbae38cef707b24396fbfec60fce4677c00fc5f596af4d60ba32"
+              }
+            }
+          ]
+        }
+      ],
+      "gates": [
+        {
+          "name": "profile",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/csharp.json",
+          "evidence_sha256": "ad6be08a5eced52f4d253566c0f9d555b26544a3b934371c54efc5a008f36e10"
+        },
+        {
+          "name": "api",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/csharp.json",
+          "evidence_sha256": "ad6be08a5eced52f4d253566c0f9d555b26544a3b934371c54efc5a008f36e10"
+        },
+        {
+          "name": "fixture",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/csharp.json",
+          "evidence_sha256": "ad6be08a5eced52f4d253566c0f9d555b26544a3b934371c54efc5a008f36e10"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/csharp.json",
+          "evidence_sha256": "ad6be08a5eced52f4d253566c0f9d555b26544a3b934371c54efc5a008f36e10"
+        },
+        {
+          "name": "pre_publish_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/csharp.json",
+          "evidence_sha256": "ad6be08a5eced52f4d253566c0f9d555b26544a3b934371c54efc5a008f36e10"
+        },
+        {
+          "name": "published_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/csharp.json",
+          "evidence_sha256": "ad6be08a5eced52f4d253566c0f9d555b26544a3b934371c54efc5a008f36e10"
+        }
+      ]
+    },
+    {
+      "id": "dart",
+      "profile": "core-candidate",
+      "source": {
+        "repository": "https://github.com/lazily-hub/lazily-dart",
+        "commit": "0ba2c12a825d608a2fdd2ada23da89432e6be09e",
+        "tag": "v0.35.0"
+      },
+      "qualification_commit": "e85ddfa7dc612c2452c4b6a185ba55c3a2ae9e0b",
+      "spec_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "fixture_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "core_api_generation": 1,
+      "wire_version": "1",
+      "core_imports": [
+        "package:lazily/lazily.dart"
+      ],
+      "toolchains": [
+        {
+          "name": "dart",
+          "minimum": "3.5",
+          "current": "3.10.0"
+        }
+      ],
+      "compatibility": {
+        "core_api": {
+          "minimum": 1,
+          "maximum": 1
+        },
+        "modules": []
+      },
+      "packages": [
+        {
+          "ecosystem": "pub",
+          "coordinate": "lazily",
+          "version": "0.35.0",
+          "artifacts": [
+            {
+              "uri": "https://pub.dev/api/archives/lazily-0.35.0.tar.gz",
+              "file": "cohorts/artifacts/lazily-0.35.0.tar.gz",
+              "sha256": "0823ee7736c3f3923e0acca338b99b95db0f7f1c75740aab58673a720b17c7b0",
+              "provenance": {
+                "kind": "registry-integrity",
+                "uri": "https://pub.dev/api/packages/lazily",
+                "file": "cohorts/evidence/registry/dart.json",
+                "sha256": "e6492e20d4bf7dc18f7b63f6b39ff31c9539108709543bdfe8aa200680b64245"
+              },
+              "registry": {
+                "url": "https://pub.dev/api/packages/lazily",
+                "status": "available",
+                "checked_at": "2026-10-22T22:38:00Z",
+                "metadata_file": "cohorts/evidence/registry/dart.json",
+                "metadata_sha256": "e6492e20d4bf7dc18f7b63f6b39ff31c9539108709543bdfe8aa200680b64245"
+              }
+            }
+          ]
+        }
+      ],
+      "gates": [
+        {
+          "name": "profile",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/dart.json",
+          "evidence_sha256": "e296146fbacace60ffaf9d7477eee43522eea535e43a4d32c2cbf0a8259f15d7"
+        },
+        {
+          "name": "api",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/dart.json",
+          "evidence_sha256": "e296146fbacace60ffaf9d7477eee43522eea535e43a4d32c2cbf0a8259f15d7"
+        },
+        {
+          "name": "fixture",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/dart.json",
+          "evidence_sha256": "e296146fbacace60ffaf9d7477eee43522eea535e43a4d32c2cbf0a8259f15d7"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/dart.json",
+          "evidence_sha256": "e296146fbacace60ffaf9d7477eee43522eea535e43a4d32c2cbf0a8259f15d7"
+        },
+        {
+          "name": "pre_publish_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/dart.json",
+          "evidence_sha256": "e296146fbacace60ffaf9d7477eee43522eea535e43a4d32c2cbf0a8259f15d7"
+        },
+        {
+          "name": "published_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/dart.json",
+          "evidence_sha256": "e296146fbacace60ffaf9d7477eee43522eea535e43a4d32c2cbf0a8259f15d7"
+        }
+      ]
+    },
+    {
+      "id": "zig",
+      "profile": "core-candidate",
+      "source": {
+        "repository": "https://github.com/lazily-hub/lazily-zig",
+        "commit": "cf99cf5cd21fa18382758bb22b68f810bd52dadc",
+        "tag": "v0.39.0"
+      },
+      "qualification_commit": "c1f0b848e3b93595da68ab3ef61929eddf8638ea",
+      "spec_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "fixture_revision": "b706c72201826678df53735e1501e179f63707b9",
+      "core_api_generation": 1,
+      "wire_version": "1",
+      "core_imports": [
+        "@import(\"lazily\")"
+      ],
+      "toolchains": [
+        {
+          "name": "zig",
+          "minimum": "0.16.0",
+          "current": "0.16.0"
+        }
+      ],
+      "compatibility": {
+        "core_api": {
+          "minimum": 1,
+          "maximum": 1
+        },
+        "modules": []
+      },
+      "packages": [
+        {
+          "ecosystem": "zig",
+          "coordinate": "lazily-hub/lazily-zig",
+          "version": "0.39.0",
+          "artifacts": [
+            {
+              "uri": "https://github.com/lazily-hub/lazily-zig/archive/refs/tags/v0.39.0.tar.gz",
+              "file": "cohorts/artifacts/lazily-zig-v0.39.0.tar.gz",
+              "sha256": "fcf73cab1980e35bed7b5bd4d6143fc46f5ae067b0f6e2cb8664107f2bf373be",
+              "provenance": {
+                "kind": "immutable-source-archive",
+                "uri": "https://api.github.com/repos/lazily-hub/lazily-zig/releases/tags/v0.39.0",
+                "file": "cohorts/evidence/registry/zig.json",
+                "sha256": "451d6aad41eb9398c751c5488ae1b76cd07c2bda971680a30d8659a23b44e409"
+              },
+              "registry": {
+                "url": "https://api.github.com/repos/lazily-hub/lazily-zig/releases/tags/v0.39.0",
+                "status": "available",
+                "checked_at": "2026-10-22T22:38:00Z",
+                "metadata_file": "cohorts/evidence/registry/zig.json",
+                "metadata_sha256": "451d6aad41eb9398c751c5488ae1b76cd07c2bda971680a30d8659a23b44e409"
+              }
+            }
+          ]
+        }
+      ],
+      "gates": [
+        {
+          "name": "profile",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/zig.json",
+          "evidence_sha256": "5bb711be8379bd28cb435021db32a34a38212e9f6c407e1aea91f4536b91f8da"
+        },
+        {
+          "name": "api",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/zig.json",
+          "evidence_sha256": "5bb711be8379bd28cb435021db32a34a38212e9f6c407e1aea91f4536b91f8da"
+        },
+        {
+          "name": "fixture",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/zig.json",
+          "evidence_sha256": "5bb711be8379bd28cb435021db32a34a38212e9f6c407e1aea91f4536b91f8da"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/zig.json",
+          "evidence_sha256": "5bb711be8379bd28cb435021db32a34a38212e9f6c407e1aea91f4536b91f8da"
+        },
+        {
+          "name": "pre_publish_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/zig.json",
+          "evidence_sha256": "5bb711be8379bd28cb435021db32a34a38212e9f6c407e1aea91f4536b91f8da"
+        },
+        {
+          "name": "published_consumer",
+          "status": "passed",
+          "evidence_file": "cohorts/evidence/gates/zig.json",
+          "evidence_sha256": "5bb711be8379bd28cb435021db32a34a38212e9f6c407e1aea91f4536b91f8da"
+        }
+      ]
+    }
+  ]
+}
