@@ -232,6 +232,22 @@ that the run actually consumed. Generated fixtureless evidence must also stay
 beneath the binding-id subdirectory. `--require-all` rejects every missing
 declaration or report.
 
+**Per-binding push gate:** the aggregate above runs only when a cohort is
+qualified, so each of the nine Core bindings also runs the verifier for itself
+on every push, against the lazily-spec revision its CI already clones as
+`../lazily-spec` (`make core-evidence-check` in the binding):
+
+```bash
+node ../lazily-spec/scripts/check-core-evidence.mjs --bindings-root .. \
+  --binding <id> --reports build/core-evidence --generate-reports --require-all
+```
+
+The binding checkout must be named `lazily-<suffix>` beside `lazily-spec`, as
+the qualification workflow lays it out. `--binding` with `--require-all` fails
+on an absent checkout, an unknown id, or a report that was never generated;
+`--self-test` runs those shapes through the real CLI, so the gate cannot go
+green by examining nothing.
+
 **Current fixtures:**
 
 | Fixture | Kind | Description |

@@ -707,6 +707,68 @@ function loadAssertionRoutes(path, fixtureDefinitions) {
   return routes;
 }
 
+// Each binding's own CI runs this verifier for that binding alone on every push
+// (#lzbindingevidenceci):
+//
+//   node ../lazily-spec/scripts/check-core-evidence.mjs --bindings-root .. \
+//     --binding <id> --reports build/core-evidence --generate-reports --require-all
+//
+// That gate is only worth having if it cannot pass vacuously. Run the real CLI
+// (the real profile, an empty bindings root) and require the shapes a broken
+// checkout layout or a typo produces to exit non-zero, naming the cause: a
+// binding whose declaration is not where the verifier looks, an id the profile
+// does not know, and a report that was never generated.
+function selfTestSingleBindingGate(sandbox) {
+  const emptyRoot = join(sandbox, "empty-bindings-root");
+  const reports = join(sandbox, "single-binding-reports");
+  mkdirSync(emptyRoot, { recursive: true });
+  const declaredRoot = join(sandbox, "declared-bindings-root");
+  const declaredBinding = join(declaredRoot, bindingDirectory("rust"), "scripts");
+  mkdirSync(declaredBinding, { recursive: true });
+  writeFileSync(
+    join(declaredBinding, "core-conformance.json"),
+    `${JSON.stringify({
+      binding_id: "rust",
+      profile_id: readJson(join(ROOT, "profiles", "core-v1.json")).profile_id,
+      report_command: [process.execPath, "-e", "0"],
+    })}\n`,
+  );
+  const cases = [
+    {
+      name: "absent binding checkout",
+      args: ["--bindings-root", emptyRoot, "--binding", "rust", "--require-all", "--generate-reports"],
+      expect: "missing declaration/report for: rust",
+    },
+    {
+      name: "unknown binding id",
+      args: ["--bindings-root", emptyRoot, "--binding", "rust-typo", "--require-all", "--generate-reports"],
+      expect: "unknown binding id(s): rust-typo",
+    },
+    {
+      name: "declared binding with no report and no generation",
+      args: ["--bindings-root", declaredRoot, "--binding", "rust", "--require-all"],
+      expect: "missing declaration/report for: rust",
+    },
+    {
+      name: "report command that writes no report",
+      args: ["--bindings-root", declaredRoot, "--binding", "rust", "--require-all", "--generate-reports"],
+      expect: "report_command produced no report",
+    },
+  ];
+  for (const { name, args, expect } of cases) {
+    rmSync(reports, { force: true, recursive: true });
+    const result = spawnSync(process.execPath, [fileURLToPath(import.meta.url), ...args, "--reports", reports], {
+      encoding: "utf8",
+      shell: false,
+    });
+    if (result.status === 0) fail(`self-test: single-binding gate passed for ${name}`);
+    if (!`${result.stderr}`.includes(expect)) {
+      fail(`self-test: single-binding gate for ${name} did not report "${expect}": ${result.stderr.trim()}`);
+    }
+  }
+  return cases.length;
+}
+
 function selfTest() {
   const sandbox = mkdtempSync(join(tmpdir(), "lazily-core-evidence-"));
   // A failed command must surface its trailing cause, not a progress prefix.
@@ -1056,7 +1118,10 @@ function selfTest() {
       }
       if (!rejected) fail(`self-test did not reject ${name}`);
     }
-    console.log(`core evidence self-test OK (${probes.length + 2} negative probes)`);
+    const cliProbes = selfTestSingleBindingGate(sandbox);
+    console.log(
+      `core evidence self-test OK (${probes.length + 2} negative probes, ${cliProbes} single-binding gate probes)`,
+    );
   } finally {
     rmSync(sandbox, { force: true, recursive: true });
   }
