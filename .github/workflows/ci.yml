@@ -33,9 +33,9 @@ jobs:
         with:
           node-version: 20
 
-      # docs/coverage.md must match the canonical coverage.json. (Sibling binding
-      # READMEs are not checked out here, so they are skipped; run
-      # `make coverage-sync` locally with siblings present to update them.)
+      # docs/coverage.md must match the canonical coverage.json. No sibling is
+      # checked out yet, so this compares lazily-spec's own two targets; the
+      # sibling READMEs are gated with --require-all once they are cloned below.
       - name: Check coverage table is generated from coverage.json
         run: make coverage-check
 
@@ -70,6 +70,19 @@ jobs:
           git -C ../lazily-py sparse-checkout add src/lazily
           git -C ../lazily-kt sparse-checkout add src/main/kotlin/io/github/lazily
           python3 scripts/wire_codegen.py --check --require-all
+
+      # Every sibling README renders a roll-up of coverage.json (#lzspecreadmeci).
+      # The sparse clones above already carry each repo's root files, README.md
+      # included; lazily-formal has a README table but no ledger, so it is
+      # cloned root-only here. `--require-all` makes a missing README red: the
+      # old skip-when-absent check compared no README at all, which is how all
+      # eleven drifted a row behind coverage.json with CI green (#lzcoverageresync).
+      - name: Check every sibling README's coverage table matches coverage.json
+        run: |
+          set -e
+          git clone --depth 1 --filter=blob:none --sparse \
+            "https://github.com/lazily-hub/lazily-formal.git" ../lazily-formal
+          make coverage-check-all
 
       - name: Check every shipped mark is backed by a replayed fixture
         run: node scripts/check-coverage-claims.mjs --check --require-all

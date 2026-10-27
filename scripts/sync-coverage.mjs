@@ -12,11 +12,19 @@
 // README (`../lazily-{rs,py,kt,js,dart,zig,go,cpp,cs,gd,formal}/README.md`). Edit coverage.json,
 // then run `node scripts/sync-coverage.mjs` to update every table in one shot.
 //
-//   node scripts/sync-coverage.mjs          # write/update all present targets
-//   node scripts/sync-coverage.mjs --check  # exit 1 if any present target is stale
+//   node scripts/sync-coverage.mjs                        # write/update all present targets
+//   node scripts/sync-coverage.mjs --check                # exit 1 if any present target is stale
+//   node scripts/sync-coverage.mjs --check --require-all  # ...or if any sibling is missing
 //
-// In `--check` mode, missing sibling repos are skipped (so lazily-spec CI, which
-// has no siblings checked out, still enforces docs/coverage.md ↔ coverage.json).
+// Without `--require-all`, a missing sibling checkout is skipped, so a lone
+// lazily-spec checkout still enforces docs/coverage.md ↔ coverage.json. That
+// skip is exactly how all eleven sibling READMEs once drifted a row behind
+// coverage.json with spec CI green (#lzcoverageresync): CI ran the check with no
+// sibling present, so every README target was skipped and the run passed having
+// compared two files. Spec CI therefore clones every sibling and passes
+// `--require-all` (`make coverage-check-all`, #lzspecreadmeci), which turns a
+// missing sibling README into a failure instead of a silent skip. A summary line
+// names how many targets were actually compared, so a vacuous pass is visible.
 //
 // Two renderings, one source (#lzcoveragereadmerollup). `docs/coverage.md` is the
 // ONLY place the 74-row detail lives; every README carries the family × language
@@ -254,13 +262,23 @@ if (detailTargets.length !== 1) {
 }
 
 const check = process.argv.includes("--check");
+const requireAll = process.argv.includes("--require-all");
 let stale = 0;
 let wrote = 0;
+let compared = 0;
+const missing = [];
 
 for (const { path, detail } of TARGETS) {
   if (!existsSync(path)) {
-    continue; // sibling not checked out — skip
+    // Sibling not checked out. Skipped by default; under --require-all a
+    // missing target is a failure, never a pass that compared nothing.
+    missing.push(path);
+    if (requireAll) {
+      console.error(`✗ ${path}: missing (--require-all needs every target checked out)`);
+    }
+    continue;
   }
+  compared += 1;
   const source = readFileSync(path, "utf8");
   const next = inject(source, RENDERED[detail]);
   if (next === null) {
@@ -281,10 +299,19 @@ for (const { path, detail } of TARGETS) {
   }
 }
 
+if (requireAll && missing.length > 0) {
+  console.error(
+    `\n${missing.length} of ${TARGETS.length} target(s) missing. --require-all refuses to pass without comparing every README; check out each sibling next to lazily-spec.`,
+  );
+  process.exit(1);
+}
 if (check && stale > 0) {
   console.error(`\n${stale} target(s) stale. Run: node scripts/sync-coverage.mjs`);
   process.exit(1);
 }
-if (!check) {
+if (check) {
+  const skipped = missing.length > 0 ? `; ${missing.length} absent target(s) skipped` : "";
+  console.log(`✓ ${compared} of ${TARGETS.length} coverage table target(s) in sync${skipped}.`);
+} else {
   console.log(`Done — ${wrote} file(s) updated.`);
 }

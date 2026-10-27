@@ -18,6 +18,7 @@ core-artifact-consumers-check-all \
 test-schemas \
 test-lean-formal \
 coverage-check \
+coverage-check-all \
 coverage-claims-check \
 core-evidence-check \
 core-evidence-self-test \
@@ -163,9 +164,18 @@ async-v2-names-check:
 
 # Feature-matrix single-source guard: docs/coverage.md (and every sibling binding
 # README, when checked out) must match the canonical coverage.json. Edit
-# coverage.json, then run `make coverage-sync`.
+# coverage.json, then run `make coverage-sync`. The node suite proves the
+# stale/missing-sibling outcomes the CI gate below depends on.
 coverage-check:
+>node --test tests/test_sync_coverage.mjs
 >node scripts/sync-coverage.mjs --check
+
+# Spec CI's README gate (#lzspecreadmeci): every sibling README must be present
+# AND in sync. Without --require-all a missing sibling is skipped, which is how
+# all eleven READMEs drifted with CI green (#lzcoverageresync). CI clones the
+# siblings first; locally this needs every ../lazily-<x> checkout.
+coverage-check-all:
+>node scripts/sync-coverage.mjs --check --require-all
 
 # Coverage-CLAIM guard: a shipped mark on a fixture-bearing row must be backed by
 # a fixture the binding actually replays, read from that binding's own ledger.
