@@ -83,6 +83,15 @@ uploads the manifest, dispatch pins, reports, and proof files as one retained
 artifact. The workflow has read-only repository permissions and contains no
 registry credentials or publish step.
 
+`make core-ci-reach` keeps those claims executable. `scripts/core-ci-reach.json`
+pins the job's named steps in order, the fragments that make the pin-rejection,
+checkout, manifest-verification, evidence-generation, and upload steps do what
+this section says, the `contents: read` permissions with no `secrets.`
+reference, and each aggregate gate's exact `make -n` recipe. Deleting or
+conditioning any step, dropping `--require-publish-ready` or `--require-all`,
+or hollowing a gate recipe turns the check red; its `--self-test` proves each of
+those mutations still does.
+
 Qualification intentionally runs after the binding tags exist. A binding-side
 reusable-workflow call cannot pin the later Spec commit that records that
 binding's release, so release workflows do not call this gate and repositories

@@ -1,12 +1,23 @@
 {
   "workflow": ".github/workflows/ci.yml",
   "job": "core",
+  "check_root": "check",
   "activation": {
     "continue-on-error": "",
     "if": "",
     "needs": "",
     "strategy": ""
   },
+  "step_order": [
+    "Checkout",
+    "Set up Node",
+    "Install uv",
+    "Core profile contract",
+    "Core evidence contract and negative probes",
+    "Core support contract",
+    "Core cohort schema and negative probes",
+    "Core CI reachability pins"
+  ],
   "steps": {
     "Core CI reachability pins": "make core-ci-reach",
     "Core cohort schema and negative probes": "make core-cohort-check",
@@ -29,11 +40,77 @@
       "dart_pin",
       "zig_pin"
     ],
+    "permissions": "  contents: read\n",
     "activation": {
       "continue-on-error": "",
       "if": "",
       "needs": "",
       "strategy": ""
+    },
+    "step_order": [
+      "Check out dispatched Lazily Spec revision",
+      "Reject floating or mismatched cohort pins",
+      "Check out all nine exact binding revisions",
+      "Set up Node",
+      "Install uv",
+      "Set up Rust",
+      "Set up Go",
+      "Set up Java",
+      "Set up Dart",
+      "Set up Zig",
+      "Set up .NET",
+      "Verify candidate manifest and source pins",
+      "Generate fresh Core evidence",
+      "Core profile aggregate",
+      "Core evidence aggregate",
+      "Core support aggregate",
+      "Core artifact consumers aggregate",
+      "Core cohort aggregate",
+      "Bundle manifest, pins, and generated evidence",
+      "Upload immutable qualification evidence"
+    ],
+    "step_fragments": {
+      "Reject floating or mismatched cohort pins": [
+        "test \"$SPEC_REF_TYPE\" = tag",
+        ".spec.commit == $spec_commit and",
+        ".source.commit == $pins[.id].commit and",
+        ".source.tag == $pins[.id].tag)"
+      ],
+      "Check out all nine exact binding revisions": [
+        "git -C \"$directory\" fetch -q --depth 1 origin \"$commit\"",
+        "test \"$(git -C \"$directory\" rev-parse HEAD)\" = \"$commit\"",
+        "test \"$(git -C \"$directory\" rev-parse \"refs/tags/$tag^{}\")\" = \"$commit\""
+      ],
+      "Verify candidate manifest and source pins": [
+        "uv run python scripts/verify_core_cohort.py \"$MANIFEST_PATH\"",
+        "--require-publish-ready",
+        "--expected-spec-commit \"$GITHUB_SHA\""
+      ],
+      "Generate fresh Core evidence": [
+        "node scripts/check-core-evidence.mjs",
+        "--generate-reports",
+        "--require-all"
+      ],
+      "Upload immutable qualification evidence": [
+        "path: cohort-evidence",
+        "if-no-files-found: error"
+      ],
+      "Core profile aggregate": [
+        "working-directory: lazily-spec"
+      ],
+      "Core support aggregate": [
+        "working-directory: lazily-spec"
+      ],
+      "Core artifact consumers aggregate": [
+        "working-directory: lazily-spec"
+      ],
+      "Core cohort aggregate": [
+        "working-directory: lazily-spec"
+      ],
+      "Core evidence aggregate": [
+        "working-directory: lazily-spec",
+        "CORE_EVIDENCE_REPORTS: ../cohort-evidence"
+      ]
     },
     "steps": {
       "Core artifact consumers aggregate": "make core-artifact-consumers-check-all",
@@ -42,5 +119,31 @@
       "Core profile aggregate": "make core-profile-check",
       "Core support aggregate": "make core-support-check"
     }
+  },
+  "recipes": {
+    "core-ci-reach": [
+      "node scripts/check-core-ci-reach.mjs --self-test",
+      "node scripts/check-core-ci-reach.mjs"
+    ],
+    "core-cohort-check": [
+      "uv run --group dev pytest tests/ -q"
+    ],
+    "core-evidence-self-test": [
+      "node scripts/check-core-evidence.mjs --self-test"
+    ],
+    "core-profile-check": [
+      "node scripts/check-core-profile.mjs --self-test"
+    ],
+    "core-support-check": [
+      "node --test tests/test_core_support.mjs",
+      "node scripts/core-support.mjs --check"
+    ],
+    "core-artifact-consumers-check-all": [
+      "node scripts/core-support.mjs --check --run-consumers --bindings-root \"..\" --require-all"
+    ],
+    "core-evidence-check": [
+      "test -n \"\" || { echo \"CORE_EVIDENCE_REPORTS is required\" >&2; exit 2; }",
+      "node scripts/check-core-evidence.mjs --profile \"profiles/core-v1.json\" --bindings-root \"..\" --reports \"\" --command-timeout-ms \"600000\" --generate-reports --require-all"
+    ]
   }
 }
