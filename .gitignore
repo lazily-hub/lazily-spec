@@ -2,3 +2,6 @@
 /book
 __pycache__
 .tsift/
+
+# agent-doc runtime state (state.db, logs, locks) is per-checkout, never tracked
+.agent-doc/
