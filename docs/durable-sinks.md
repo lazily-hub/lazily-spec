@@ -29,7 +29,12 @@ is durable, nor that durable storage is always eventually consistent. Lazily is
 not a database framework: applications continue to own serialization,
 transactions, schema migration, storage selection, and startup recovery. Lazily
 ships no SQLite, filesystem, or cloud-store adapter as part of this decision —
-the sink is an application-owned trait (see examples below).
+the sink is an application-owned trait (see examples below). An application
+sink that writes to SQLite, and the bindings' own SQLite outbox stores, follow
+the [SQLite store contract](durable-outbox.md#sqlite-stores-busy-timeout-and-write-lock-acquisition-lazilysqlitestoreopen)
+(`#lazilysqlitestoreopen`): an explicit 30-second busy timeout, and no deferred
+read-then-write transaction, so a write contended by another writer waits for
+the lock instead of failing with `database is locked`.
 
 ## Authority rule
 

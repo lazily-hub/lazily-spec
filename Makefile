@@ -39,9 +39,10 @@ corpus-counts-sync \
 corpus-blocks-report \
 wire-codegen \
 wire-codegen-check \
-core-profile-check
+core-profile-check \
+sqlite-stores-check
 
-check: core-profile-check core-evidence-self-test core-support-check core-cohort-check core-ci-reach assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check
+check: core-profile-check core-evidence-self-test core-support-check core-cohort-check core-ci-reach assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check sqlite-stores-check
 
 # Core evidence verifier self-test (#lzcoreclaims). Real qualification passes
 # binding-produced reports explicitly and uses --require-all; the repository's
@@ -204,6 +205,12 @@ fixture-copies-sync:
 # schema, and the stale (slot_id / base64 / "type"-discriminant) form is rejected.
 test-schemas:
 >uv run --group dev pytest tests/ -q
+
+# SQLite store contract (#lazilysqlitestoreopen): verify every binding's
+# sqlite-stores.json declaration against its sibling checkout. A missing sibling
+# is skipped here; spec CI clones all of them and passes --require-all.
+sqlite-stores-check:
+>python3 scripts/check-sqlite-stores.py --bindings-root ..
 
 test-lean-formal:
 >cd "$(LEAN_DIR)" && $(LAKE) build

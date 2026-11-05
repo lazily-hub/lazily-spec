@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "contract": {
+    "id": "lazilysqlitestoreopen",
+    "busy_timeout_ms": 30000,
+    "write_lock_acquisition": "autocommit_or_begin_immediate",
+    "forbidden": ["deferred_read_then_write_transaction"],
+    "doc": "docs/durable-outbox.md#sqlite-stores-busy-timeout-and-write-lock-acquisition-lazilysqlitestoreopen"
+  },
+  "drivers": [
+    {"id": "rusqlite", "pattern": "\\brusqlite\\b"},
+    {"id": "python_sqlite3", "pattern": "^\\s*(?:import|from)\\s+sqlite3\\b"},
+    {"id": "python_apsw", "pattern": "^\\s*(?:import|from)\\s+apsw\\b"},
+    {"id": "go_sqlite", "pattern": "mattn/go-sqlite3|modernc\\.org/sqlite|ncruces/go-sqlite3|zombiezen\\.com/go/sqlite|crawshaw\\.io/sqlite"},
+    {"id": "jvm_sqlite", "pattern": "\\borg\\.sqlite\\b|\\bandroidx\\.(?:sqlite|room)\\b|\\bandroid\\.database\\.sqlite\\b|\\bjava\\.sql\\b"},
+    {"id": "js_sqlite", "pattern": "better-sqlite3|['\"]node:sqlite['\"]|['\"]sql\\.js['\"]|wa-sqlite|@sqlite\\.org/sqlite-wasm"},
+    {"id": "c_sqlite", "pattern": "sqlite3\\.h|\\bsqlite3_open"},
+    {"id": "dotnet_sqlite", "pattern": "Microsoft\\.Data\\.Sqlite|System\\.Data\\.SQLite"},
+    {"id": "dart_sqlite", "pattern": "package:(?:sqlite3|sqflite|drift)/"},
+    {"id": "godot_sqlite", "pattern": "\\bSQLite\\.new\\("}
+  ],
+  "bindings": [
+    {
+      "binding": "rs",
+      "repo": "lazily-rs",
+      "scan_roots": ["src"],
+      "sqlite": {
+        "connection": "owned",
+        "store": "SqliteStore",
+        "driver_files": ["src/outbox.rs"],
+        "busy_timeout": {
+          "ms": 30000,
+          "file": "src/outbox.rs",
+          "declaration": "pub const SQLITE_STORE_BUSY_TIMEOUT: Duration = Duration::from_secs(30);",
+          "test": "open_installs_the_busy_timeout"
+        },
+        "two_writer_tests": {
+          "file": "src/outbox.rs",
+          "names": [
+            "an_append_waits_for_a_concurrent_writer_rollback_journal",
+            "an_append_waits_for_a_concurrent_writer_wal"
+          ]
+        },
+        "deferred_transaction_guard": {
+          "file": "clippy.toml",
+          "tokens": [
+            "path = \"rusqlite::Connection::transaction\"",
+            "path = \"rusqlite::Connection::unchecked_transaction\""
+          ]
+        }
+      }
+    },
+    {
+      "binding": "py",
+      "repo": "lazily-py",
+      "scan_roots": ["src/lazily"],
+      "sqlite": {
+        "connection": "owned",
+        "store": "SqliteStore",
+        "driver_files": ["src/lazily/reliable_sync.py"],
+        "busy_timeout": {
+          "ms": 30000,
+          "file": "src/lazily/reliable_sync.py",
+          "declaration": "SQLITE_STORE_BUSY_TIMEOUT: float = 30.0",
+          "test": "test_store_installs_the_busy_timeout"
+        },
+        "two_writer_tests": {
+          "file": "tests/test_sqlite_store_busy.py",
+          "names": [
+            "test_an_append_waits_for_a_concurrent_writer_rollback_journal",
+            "test_an_append_waits_for_a_concurrent_writer_wal"
+          ]
+        },
+        "deferred_transaction_guard": {
+          "file": "tests/test_sqlite_store_busy.py",
+          "tokens": [
+            "def test_sqlite_connections_never_open_deferred_transactions",
+            "def test_the_deferred_transaction_guard_bites"
+          ]
+        }
+      }
+    },
+    {
+      "binding": "kt",
+      "repo": "lazily-kt",
+      "scan_roots": ["src/main"],
+      "sqlite": {
+        "connection": "host",
+        "store": "RoomStore",
+        "obligation": {
+          "file": "src/main/kotlin/io/github/lazily/Outbox.kt",
+          "marker": "#lazilysqlitestoreopen"
+        }
+      }
+    },
+    {"binding": "js", "repo": "lazily-js", "scan_roots": ["src"], "sqlite": "none"},
+    {"binding": "dart", "repo": "lazily-dart", "scan_roots": ["lib"], "sqlite": "none"},
+    {"binding": "zig", "repo": "lazily-zig", "scan_roots": ["src"], "sqlite": "none"},
+    {"binding": "go", "repo": "lazily-go", "scan_roots": [".", "cmd", "internal", "integration"], "sqlite": "none"},
+    {"binding": "cpp", "repo": "lazily-cpp", "scan_roots": ["include", "src"], "sqlite": "none"},
+    {"binding": "cs", "repo": "lazily-cs", "scan_roots": ["src"], "sqlite": "none"},
+    {"binding": "gd", "repo": "lazily-gd", "scan_roots": ["addons"], "sqlite": "none"}
+  ]
+}
