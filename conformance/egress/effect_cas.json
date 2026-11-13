@@ -1,0 +1,137 @@
+{
+  "$schema": "../../schemas/effect-cas.json",
+  "description": "Generic effect CAS owns exact identities, authority comparisons, keyed single-flight, retry/reconnect, terminal receipts, and ordered plan cursors.",
+  "kind": "EffectCas",
+  "model": "EffectCasCore",
+  "scenarios": [
+    {
+      "id": "exact_apply_and_duplicate_receipt",
+      "generation": 1,
+      "steps": [
+        { "op": { "type": "upsert", "identity": "exact", "key": "doc", "epoch": 1, "expected": 0, "plan": ["write"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "claim", "key": "doc", "generation": 1, "now": 0 }, "save": "exact_attempt", "returns": { "claim": "claimed", "identity": "exact", "step": 0, "attempt": 1, "expected": 0, "payload": "write" } },
+        { "op": { "type": "applied", "key": "doc", "attempt": "exact_attempt", "receipt": "receipt-1", "authority": 1 }, "returns": { "applied": "completed", "applied_through": 1 } },
+        { "op": { "type": "applied", "key": "doc", "attempt": "exact_attempt", "receipt": "receipt-1", "authority": 1 }, "returns": { "applied": "duplicate" } }
+      ],
+      "final": {
+        "doc": { "pending_identity": null, "inflight_identity": null, "applied_through": 1, "terminal": "applied", "receipt_count": 1, "retry_at": null }
+      }
+    },
+    {
+      "id": "authority_mismatch_has_zero_mutation",
+      "generation": 1,
+      "steps": [
+        { "op": { "type": "upsert", "identity": "mismatch", "key": "doc", "epoch": 1, "expected": 4, "plan": ["write"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "claim", "key": "doc", "generation": 1, "now": 0 }, "save": "mismatch_attempt", "returns": { "claim": "claimed", "identity": "mismatch", "step": 0, "attempt": 1, "expected": 4, "payload": "write" } },
+        { "op": { "type": "superseded", "key": "doc", "attempt": "mismatch_attempt", "observed": 5, "backend_before": 5, "backend_after": 5 }, "returns": { "failure": "superseded" } }
+      ],
+      "final": {
+        "doc": { "pending_identity": null, "inflight_identity": null, "applied_through": null, "terminal": "superseded", "receipt_count": 0, "retry_at": null }
+      }
+    },
+    {
+      "id": "newer_desired_supersedes_inflight_retry",
+      "generation": 2,
+      "steps": [
+        { "op": { "type": "upsert", "identity": "old", "key": "doc", "epoch": 1, "expected": 0, "plan": ["old"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "claim", "key": "doc", "generation": 2, "now": 0 }, "save": "old_attempt", "returns": { "claim": "claimed", "identity": "old", "step": 0, "attempt": 1, "expected": 0, "payload": "old" } },
+        { "op": { "type": "upsert", "identity": "new", "key": "doc", "epoch": 2, "expected": 0, "plan": ["new"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "retryable", "key": "doc", "attempt": "old_attempt", "error": "busy", "retry_at": 9 }, "returns": { "failure": "superseded" } },
+        { "op": { "type": "claim", "key": "doc", "generation": 2, "now": 0 }, "save": "new_attempt", "returns": { "claim": "claimed", "identity": "new", "step": 0, "attempt": 1, "expected": 0, "payload": "new" } },
+        { "op": { "type": "applied", "key": "doc", "attempt": "new_attempt", "receipt": "new-receipt", "authority": 2 }, "returns": { "applied": "completed", "applied_through": 2 } }
+      ],
+      "final": {
+        "doc": { "pending_identity": null, "inflight_identity": null, "applied_through": 2, "terminal": "applied", "receipt_count": 1, "retry_at": null }
+      }
+    },
+    {
+      "id": "stale_generation_receipt_changes_no_state",
+      "generation": 3,
+      "steps": [
+        { "op": { "type": "upsert", "identity": "stale", "key": "doc", "epoch": 1, "expected": 0, "plan": ["write"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "claim", "key": "doc", "generation": 3, "now": 0 }, "save": "stale_attempt", "returns": { "claim": "claimed", "identity": "stale", "step": 0, "attempt": 1, "expected": 0, "payload": "write" } },
+        { "op": { "type": "reconnect", "generation": 4 }, "returns": { "reconnect": "advanced", "generation": 4, "requeued": 1, "superseded": 0 } },
+        { "op": { "type": "applied", "key": "doc", "attempt": "stale_attempt", "receipt": "late", "authority": 1 }, "returns": { "applied": "stale_generation", "current": 4 } }
+      ],
+      "final": {
+        "doc": { "pending_identity": "stale", "inflight_identity": null, "applied_through": null, "terminal": null, "receipt_count": 0, "retry_at": null }
+      }
+    },
+    {
+      "id": "independent_keys_progress_concurrently",
+      "generation": 1,
+      "steps": [
+        { "op": { "type": "upsert", "identity": "effect-a", "key": "a", "epoch": 1, "expected": 0, "plan": ["a"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "upsert", "identity": "effect-b", "key": "b", "epoch": 1, "expected": 0, "plan": ["b"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "claim", "key": "a", "generation": 1, "now": 0 }, "save": "a_attempt", "returns": { "claim": "claimed", "identity": "effect-a", "step": 0, "attempt": 1, "expected": 0, "payload": "a" } },
+        { "op": { "type": "claim", "key": "b", "generation": 1, "now": 0 }, "save": "b_attempt", "returns": { "claim": "claimed", "identity": "effect-b", "step": 0, "attempt": 1, "expected": 0, "payload": "b" } },
+        { "op": { "type": "claim", "key": "a", "generation": 1, "now": 0 }, "returns": { "claim": "busy" } },
+        { "op": { "type": "applied", "key": "b", "attempt": "b_attempt", "receipt": "rb", "authority": 1 }, "returns": { "applied": "completed", "applied_through": 1 } }
+      ],
+      "final": {
+        "a": { "pending_identity": null, "inflight_identity": "effect-a", "applied_through": null, "terminal": null, "receipt_count": 0, "retry_at": null },
+        "b": { "pending_identity": null, "inflight_identity": null, "applied_through": 1, "terminal": "applied", "receipt_count": 1, "retry_at": null }
+      }
+    },
+    {
+      "id": "reconnect_replays_same_effect_identity",
+      "generation": 7,
+      "steps": [
+        { "op": { "type": "upsert", "identity": "replay", "key": "doc", "epoch": 1, "expected": 0, "plan": ["write"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "claim", "key": "doc", "generation": 7, "now": 0 }, "save": "before_crash", "returns": { "claim": "claimed", "identity": "replay", "step": 0, "attempt": 1, "expected": 0, "payload": "write" } },
+        { "op": { "type": "reconnect", "generation": 8 }, "returns": { "reconnect": "advanced", "generation": 8, "requeued": 1, "superseded": 0 } },
+        { "op": { "type": "claim", "key": "doc", "generation": 8, "now": 0 }, "save": "after_crash", "returns": { "claim": "claimed", "identity": "replay", "step": 0, "attempt": 2, "expected": 0, "payload": "write" } },
+        { "op": { "type": "applied", "key": "doc", "attempt": "after_crash", "receipt": "replayed", "authority": 1 }, "returns": { "applied": "completed", "applied_through": 1 } }
+      ],
+      "final": {
+        "doc": { "pending_identity": null, "inflight_identity": null, "applied_through": 1, "terminal": "applied", "receipt_count": 1, "retry_at": null }
+      }
+    },
+    {
+      "id": "ordered_plan_resumes_after_partial_success",
+      "generation": 10,
+      "steps": [
+        { "op": { "type": "upsert", "identity": "plan", "key": "doc", "epoch": 1, "expected": 10, "plan": ["canonical", "snapshot"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "claim", "key": "doc", "generation": 10, "now": 0 }, "save": "canonical", "returns": { "claim": "claimed", "identity": "plan", "step": 0, "attempt": 1, "expected": 10, "payload": "canonical" } },
+        { "op": { "type": "applied", "key": "doc", "attempt": "canonical", "receipt": "canonical-r", "authority": 11 }, "returns": { "applied": "step_applied", "next_step": 1 } },
+        { "op": { "type": "reconnect", "generation": 11 }, "returns": { "reconnect": "advanced", "generation": 11, "requeued": 0, "superseded": 0 } },
+        { "op": { "type": "claim", "key": "doc", "generation": 11, "now": 0 }, "save": "snapshot", "returns": { "claim": "claimed", "identity": "plan", "step": 1, "attempt": 1, "expected": 11, "payload": "snapshot" } },
+        { "op": { "type": "applied", "key": "doc", "attempt": "snapshot", "receipt": "snapshot-r", "authority": 12 }, "returns": { "applied": "completed", "applied_through": 1 } }
+      ],
+      "final": {
+        "doc": { "pending_identity": null, "inflight_identity": null, "applied_through": 1, "terminal": "applied", "receipt_count": 2, "retry_at": null }
+      }
+    },
+    {
+      "id": "supersession_between_plan_steps",
+      "generation": 1,
+      "steps": [
+        { "op": { "type": "upsert", "identity": "three-step", "key": "doc", "epoch": 1, "expected": 0, "plan": ["canonical", "ledger", "snapshot"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "claim", "key": "doc", "generation": 1, "now": 0 }, "save": "step-0", "returns": { "claim": "claimed", "identity": "three-step", "step": 0, "attempt": 1, "expected": 0, "payload": "canonical" } },
+        { "op": { "type": "applied", "key": "doc", "attempt": "step-0", "receipt": "r0", "authority": 1 }, "returns": { "applied": "step_applied", "next_step": 1 } },
+        { "op": { "type": "claim", "key": "doc", "generation": 1, "now": 0 }, "save": "step-1", "returns": { "claim": "claimed", "identity": "three-step", "step": 1, "attempt": 1, "expected": 1, "payload": "ledger" } },
+        { "op": { "type": "applied", "key": "doc", "attempt": "step-1", "receipt": "r1", "authority": 2 }, "returns": { "applied": "step_applied", "next_step": 2 } },
+        { "op": { "type": "upsert", "identity": "replacement", "key": "doc", "epoch": 2, "expected": 2, "plan": ["replacement"] }, "returns": { "upsert": "accepted" } }
+      ],
+      "final": {
+        "doc": { "pending_identity": "replacement", "inflight_identity": null, "applied_through": null, "terminal": "superseded", "receipt_count": 2, "retry_at": null }
+      }
+    },
+    {
+      "id": "permanent_rejection_is_distinct_from_retry",
+      "generation": 1,
+      "steps": [
+        { "op": { "type": "upsert", "identity": "retry", "key": "retry", "epoch": 1, "expected": 0, "plan": ["write"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "upsert", "identity": "reject", "key": "reject", "epoch": 1, "expected": 0, "plan": ["write"] }, "returns": { "upsert": "accepted" } },
+        { "op": { "type": "claim", "key": "retry", "generation": 1, "now": 0 }, "save": "retry_attempt", "returns": { "claim": "claimed", "identity": "retry", "step": 0, "attempt": 1, "expected": 0, "payload": "write" } },
+        { "op": { "type": "claim", "key": "reject", "generation": 1, "now": 0 }, "save": "reject_attempt", "returns": { "claim": "claimed", "identity": "reject", "step": 0, "attempt": 1, "expected": 0, "payload": "write" } },
+        { "op": { "type": "retryable", "key": "retry", "attempt": "retry_attempt", "error": "busy", "retry_at": 20 }, "returns": { "failure": "retrying", "retry_at": 20 } },
+        { "op": { "type": "rejected", "key": "reject", "attempt": "reject_attempt", "error": "invalid" }, "returns": { "failure": "rejected" } }
+      ],
+      "final": {
+        "retry": { "pending_identity": "retry", "inflight_identity": null, "applied_through": null, "terminal": null, "receipt_count": 0, "retry_at": 20 },
+        "reject": { "pending_identity": null, "inflight_identity": null, "applied_through": null, "terminal": "rejected", "receipt_count": 0, "retry_at": null }
+      }
+    }
+  ]
+}

@@ -291,6 +291,12 @@
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
+      "path": "conformance/egress/effect_cas.json",
+      "sha256": "0fbb4d6a7d4a308b592c76dac6684539efa11865dc1baed65f12a56240844447"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
       "path": "conformance/egress/egress_generation_fence.json",
       "sha256": "3516b23426319cfa5e84b63ae2acad45be096ec15885a3cde0127111018cf254"
     },

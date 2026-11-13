@@ -154,6 +154,7 @@ the binding's broader family row.
 | --------- | :----: | :------: | :------: | :--: | :----: | :---: | :--: | :---: | :--: | :--------: |
 | Reactive egress [^reactive-egress] | ✅ | — | — | — | — | — | — | — | — | — |
 | Latest durable projection [^latest-durable-projection] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Generic effect CAS [^effect-cas] | ✅ | — | — | — | — | — | — | — | — | — |
 | Egress — thread-safe [^egress-thread-safe] | ✅ | — | — | — | — | — | — | — | — | — |
 | Egress — async [^egress-async] | ✅ | — | — | — | — | — | — | — | — | — |
 | RelayCell [^relaycell] | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -331,6 +332,7 @@ the binding's broader family row.
 [^consumer-simulation-testkit]: Consumer simulation testkit — one materialized generated history through a deterministic in-memory baseline and explicitly selected real or external-process adapters, with per-action observation, history-prefix, and world-execution proof (**MAY**, `#lzconsumerstestkit`)
 [^reactive-egress]: Transport-agnostic reactive egress (`EgressCore`) — monotone sequence assignment, bounded unacknowledged window, cumulative ACK watermark, bounded retry/backoff/exhaustion, producer-generation fence (`#lzegress`)
 [^latest-durable-projection]: Keyed latest durable projection (`LatestDurableProjectionCore`) — monotone caller epochs, one in-flight effect per key, pending-value supersession without false acknowledgement, monotone `durable_through`, retryable failure, and sink-generation fencing (`#lzlatestdurableprojection`)
+[^effect-cas]: Generic keyed effect compare-and-swap (`EffectCasCore`) — stable identity, opaque expected authority, keyed single-flight, latest-wins supersession, logical-clock retry, reconnect, exact terminal receipts, and resumable ordered plans (`#lzeffectcas`)
 [^egress-thread-safe]: Egress family — `Send + Sync` flavor (`ThreadSafeEgressCell`): delivery authority stays in the shared core, one attached transport Effect per incarnation (`#lzegress`)
 [^egress-async]: Egress family — async flavor (`AsyncEgressCell`): the delivery-state readers stay synchronous Computeds; only the transport attachment is async-coloured (`#lzegress`)
 [^relaycell]: RelayCell — conflating relay + `BackpressurePolicy` + `SpillStore` + `Transport` + Inbox/Outbox + Rate/Window/Expiry/Priority/keyed policies (`#relaycell`)

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/effect-cas.json",
+  "title": "Lazily generic effect-CAS conformance trace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["description", "kind", "model", "scenarios"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "description": { "type": "string", "minLength": 1 },
+    "kind": { "const": "EffectCas" },
+    "model": { "const": "EffectCasCore" },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/scenario" }
+    }
+  },
+  "$defs": {
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "generation", "steps", "final"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "generation": { "type": "integer", "minimum": 0 },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/step" }
+        },
+        "final": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/finalKeyState" }
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "returns"],
+      "properties": {
+        "op": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "enum": ["upsert", "claim", "applied", "superseded", "retryable", "rejected", "reconnect"]
+            }
+          },
+          "additionalProperties": true
+        },
+        "save": { "type": "string", "minLength": 1 },
+        "returns": { "type": "object", "minProperties": 1 }
+      }
+    },
+    "finalKeyState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pending_identity", "inflight_identity", "applied_through", "terminal", "receipt_count", "retry_at"],
+      "properties": {
+        "pending_identity": { "type": ["string", "null"] },
+        "inflight_identity": { "type": ["string", "null"] },
+        "applied_through": { "type": ["integer", "null"], "minimum": 0 },
+        "terminal": { "enum": ["applied", "superseded", "rejected", null] },
+        "receipt_count": { "type": "integer", "minimum": 0 },
+        "retry_at": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    }
+  }
+}

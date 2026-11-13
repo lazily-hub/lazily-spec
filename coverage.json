@@ -894,6 +894,27 @@
       ]
     },
     {
+      "id": "effect-cas",
+      "label": "Generic effect CAS",
+      "family": "egress",
+      "feature": "Generic keyed effect compare-and-swap (`EffectCasCore`) — stable identity, opaque expected authority, keyed single-flight, latest-wins supersession, logical-clock retry, reconnect, exact terminal receipts, and resumable ordered plans (`#lzeffectcas`)",
+      "fixtures": [
+        "egress/effect_cas.json"
+      ],
+      "marks": [
+        "✅",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—"
+      ]
+    },
+    {
       "id": "egress-thread-safe",
       "label": "Egress — thread-safe",
       "family": "egress",

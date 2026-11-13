@@ -158,6 +158,101 @@ This core is for latest recoverable state only. It MUST NOT be used when every
 accepted intermediate value is a fact that must survive; that remains the
 `TopicCell` / `DurableOutbox` contract.
 
+## Generic effect compare-and-swap (`#lzeffectcas`)
+
+`LatestDurableProjectionCore` covers a latest-value write whose success is a
+single durable frontier. A live application often needs the same ownership
+algebra around an opaque authority token: apply a Git ref update only at one
+parent, mutate an editor document only at one authority hash, or update a
+controller row only at one lineage/version. `EffectCasCore<K, A, P, R>` is the
+generic protocol for those effects. It composes the latest-projection rules; it
+does not create an application-local queue or retry loop.
+
+### Authority split
+
+Lazily owns:
+
+- stable effect identity and immutable epoch/plan identity;
+- the authority token observed for the exact attempt;
+- one in-flight attempt per key and actor-generation fencing;
+- latest-wins pending intent, explicit supersession, retry eligibility, and
+  deterministic logical-clock retry times;
+- exact attempt/receipt matching and a monotone applied frontier; and
+- the cursor and receipt lineage of an ordered multi-step effect plan.
+
+The application adapter owns:
+
+- `observe(key)`, a side-effect-free read of the backend's opaque authority;
+- one atomic `compare_and_apply(attempt)` boundary;
+- backend durability and idempotency; and
+- mapping the backend result to exactly one of `Applied { receipt, authority }`,
+  `Superseded { observed }`, `Retryable(error)`, or `Rejected(error)`.
+
+The earlier rule that no read/CAS surface reaches a runtime effect means that an
+application callback MUST NOT reload storage and arbitrate transition policy.
+It does not forbid the Lazily-owned adapter from observing the token needed by
+its atomic comparator. The adapter MUST NOT retry, choose a newer desired
+intent, clear retained work, or advance a frontier. A failed comparison returns
+`Superseded` with zero backend mutation; Lazily decides whether a newer desired
+intent remains eligible.
+
+### State and operations
+
+For each key the core retains at most one `pending` intent and one `inflight`
+attempt, plus retry evidence, the monotone `applied_through` epoch, and the most
+recent terminal receipt. An immutable intent contains `EffectIdentity`, `epoch`,
+`key`, initial `expected` authority, and a non-empty ordered plan. An exact
+attempt identity contains effect identity, actor generation, epoch, plan-step
+cursor, and retry-attempt number.
+
+| Operation | Required behavior |
+| --- | --- |
+| `upsert_desired(intent)` | Accept only a strictly newer epoch; equal immutable intent is idempotent, equal epoch with different identity/authority/plan is a conflict, and an epoch at or below `applied_through` is already applied. Replacing pending work records explicit supersession and retains any completed-step receipts. |
+| `claim(key, generation, now)` | With the current generation and an eligible logical clock, move pending work into the sole in-flight slot. Return `Busy`, `Empty`, `Waiting { retry_at }`, or `StaleGeneration` without mutation otherwise. |
+| `record_applied(attempt, receipt, authority)` | Match the exact attempt. Retain the receipt; either advance the plan cursor using the returned authority as the next step's expected token, or complete and monotonically advance `applied_through`. A duplicate terminal receipt is idempotent. A newer desired intent stops the old plan immediately. |
+| `record_superseded(attempt, observed)` | Match and terminally supersede the attempt without advancing `applied_through`; the adapter has mutated nothing. |
+| `record_retryable(attempt, error, retry_at)` | Match and restore the same effect identity/cursor with an incremented attempt number and caller-supplied logical retry time, unless a newer desired epoch already supersedes it. |
+| `record_rejected(attempt, error)` | Match and terminally reject the intent. Rejection is permanent and never aliases retry. |
+| `reconnect(new_generation)` | Fence older receipts. Requeue each in-flight cursor with the same effect identity and completed-step lineage unless a newer desired intent supersedes it. |
+
+The pure core owns no thread, executor, timer, or I/O. A reactive shell projects
+pending, in-flight, retry, receipt, and terminal state and invalidates readers
+only after releasing the core lock. Scheduling observes `pending_keys(now)` and
+invokes an adapter outside the lock.
+
+### Invariants and restart
+
+1. At most one adapter call is in flight per key; independent keys may progress
+   concurrently.
+2. A stale generation, unknown attempt, or non-matching receipt changes no
+   state and no reader version.
+3. `applied_through` is monotone and advances only from an exact terminal apply.
+4. A compare mismatch mutates no backend state and never advances the frontier.
+5. Retry and reconnect preserve effect identity, plan cursor, and completed-step
+   receipts; a newer epoch is the only intent allowed to replace them.
+6. `Rejected` is terminal and remains observably distinct from `Retryable`.
+
+Crash recovery hydrates the retained intent, generation, cursor, logical retry
+time, and receipts before the runtime becomes live. Reconnect then advances the
+actor generation and replays the same effect identity. A crash MUST NOT mint a
+new identity for already-retained work.
+
+### Heterogeneous effect plans are ordered, not atomic
+
+CAS is atomic only inside one adapter boundary. Lazily cannot make Git, editor
+state, SQLite, and filesystem cleanup one physical transaction. A heterogeneous
+plan therefore applies canonical authority first, derives each later step from
+the prior applied receipt/authority, validates that lineage before every step,
+and stops on supersession while retaining only unapplied work. Later steps MUST
+be idempotent and resumable. This is receipted sequencing, never cross-backend
+atomicity.
+
+The language-neutral corpus at
+`conformance/egress/effect_cas.json` pins exact apply and duplicate receipt,
+zero-mutation mismatch, pending/in-flight supersession, stale receipt fencing,
+independent keys, reconnect replay, partial-plan resume, between-step
+supersession, and rejection-versus-retry.
+
 ## Application-owned sink trait
 
 The sink is a narrow, write-only trait owned by the application. The reactive
@@ -181,7 +276,7 @@ exact envelope it writes. Acknowledgement advances `durable_through`; a sink
 failure returns the latest desired value to pending without reloading storage.
 
 ```rust
-// Application-owned, write-only. No read/CAS surface reaches the runtime effect.
+// Application-owned latest-projection sink. It has no authority comparator.
 trait ProjectionSink {
     fn upsert_latest(&mut self, epoch: u64, state: &ActorState) -> Result<(), SinkErr>;
 }

@@ -1,5 +1,5 @@
 {
-  "fixtures": 163,
+  "fixtures": 164,
   "arrays": {
     "codec/blob_backend_discriminator.json": {
       "scenarios": 14
@@ -125,6 +125,9 @@
     },
     "durable-owner/projection_fingerprint.json": {
       "scenarios": 2
+    },
+    "egress/effect_cas.json": {
+      "scenarios": 9
     },
     "egress/egress_generation_fence.json": {
       "steps": 8
