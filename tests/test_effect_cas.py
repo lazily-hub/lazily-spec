@@ -34,8 +34,20 @@ class EffectCasReference:
         )
 
     @staticmethod
-    def pending(op: dict[str, Any]) -> dict[str, Any]:
+    def intent(op: dict[str, Any]) -> dict[str, Any]:
+        """The immutable intent as submitted; plan steps never rewrite it."""
         return {
+            "identity": op["identity"],
+            "key": op["key"],
+            "epoch": op["epoch"],
+            "expected": op["expected"],
+            "plan": copy.deepcopy(op["plan"]),
+        }
+
+    @classmethod
+    def pending(cls, op: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "intent": cls.intent(op),
             "identity": op["identity"],
             "key": op["key"],
             "epoch": op["epoch"],
@@ -51,6 +63,7 @@ class EffectCasReference:
     def terminal(kind: str, pending: dict[str, Any]) -> dict[str, Any]:
         return {
             "kind": kind,
+            "intent": copy.deepcopy(pending["intent"]),
             "identity": pending["identity"],
             "epoch": pending["epoch"],
             "receipts": copy.deepcopy(pending["receipts"]),
@@ -75,12 +88,11 @@ class EffectCasReference:
         if current is not None and op["epoch"] < current:
             return {"upsert": "stale_epoch", "current": current}
         if current == op["epoch"]:
-            same = any(
-                value.get("identity") == op["identity"]
-                and value.get("expected") in (None, op["expected"])
-                and value.get("plan") in (None, op["plan"])
-                for value in retained
-            )
+            # Compare the ORIGINAL immutable intent. A completed plan step
+            # advances the retained work's next expected authority, but a
+            # re-send of the same intent at the same epoch is still idempotent.
+            intent = self.intent(op)
+            same = any(value["intent"] == intent for value in retained)
             return {"upsert": "unchanged" if same else "epoch_conflict"}
         if entry["pending"] is not None:
             entry["terminal"] = self.terminal("superseded", entry["pending"])
@@ -291,4 +303,35 @@ def test_effect_cas_corpus_covers_required_outcomes() -> None:
         for scenario in fixture["scenarios"]
         for step in scenario["steps"]
     }
-    assert {"completed", "duplicate", "superseded", "retrying", "rejected", "stale_generation"} <= outcomes
+    assert {
+        "completed",
+        "duplicate",
+        "superseded",
+        "retrying",
+        "rejected",
+        "stale_generation",
+        "unchanged",
+    } <= outcomes
+
+
+def test_effect_cas_resend_after_plan_step_compares_original_intent() -> None:
+    """A re-sent intent is idempotent even after a plan step advanced the
+    retained work's expected authority (the comparison is against the original
+    immutable intent, never the advanced cursor state)."""
+    fixture = load_fixture()
+    scenario = next(
+        s for s in fixture["scenarios"] if s["id"] == "ordered_plan_resumes_after_partial_success"
+    )
+    upserts = [step for step in scenario["steps"] if step["op"]["type"] == "upsert"]
+    first, *resends = upserts
+    assert len(resends) >= 2
+    for resend in resends:
+        assert resend["op"] == first["op"]
+        assert resend["returns"] == {"upsert": "unchanged"}
+    core = EffectCasReference(scenario["generation"])
+    for step in scenario["steps"]:
+        if step["op"]["type"] == "upsert" and step is not first:
+            # Same epoch, advanced expected authority: still a conflict.
+            changed = {**step["op"], "expected": step["op"]["expected"] + 1}
+            assert core.upsert(changed) == {"upsert": "epoch_conflict"}
+        assert core.apply(step) == step["returns"]

@@ -130,13 +130,13 @@
       "scenarios": 9
     },
     "egress/egress_generation_fence.json": {
-      "steps": 8
+      "steps": 10
     },
     "egress/egress_inflight_window.json": {
       "steps": 6
     },
     "egress/egress_ordered_ack.json": {
-      "steps": 7
+      "steps": 10
     },
     "egress/egress_retry_budget.json": {
       "steps": 7
@@ -627,13 +627,13 @@
       "expected": 4
     },
     "egress/egress_generation_fence.json": {
-      "expected": 8
+      "expected": 10
     },
     "egress/egress_inflight_window.json": {
       "expected": 6
     },
     "egress/egress_ordered_ack.json": {
-      "expected": 7
+      "expected": 10
     },
     "egress/egress_retry_budget.json": {
       "expected": 7

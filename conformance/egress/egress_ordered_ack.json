@@ -1,5 +1,5 @@
 {
-  "description": "Sequence assignment, ordered claims, cumulative acknowledgement, and no-op acknowledgement invalidation.",
+  "description": "Sequence assignment, ordered claims, cumulative acknowledgement, no-op acknowledgement invalidation, and refusal of an acknowledgement beyond the assigned sequence space (which would otherwise strand the next enqueued record under the watermark).",
   "kind": "Egress",
   "model": "EgressCore",
   "generation": 1,
@@ -153,6 +153,62 @@
         "invalidates": {
           "pending": false,
           "inflight": true,
+          "acked_through": true,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "ack", "generation": 1, "through": 2 },
+      "returns": { "ack": "beyond_sent", "next_sequence": 2 },
+      "expected": {
+        "generation": 1,
+        "next_sequence": 2,
+        "pending": [],
+        "inflight": [],
+        "acked_through": 1,
+        "retry": null,
+        "invalidates": {
+          "pending": false,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "enqueue", "payload": 30 },
+      "returns": { "sequence": 2 },
+      "expected": {
+        "generation": 1,
+        "next_sequence": 3,
+        "pending": [
+          { "generation": 1, "sequence": 2, "attempt": 0, "payload": 30 }
+        ],
+        "inflight": [],
+        "acked_through": 1,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "ack", "generation": 1, "through": 2 },
+      "returns": { "ack": "advanced", "through": 2 },
+      "expected": {
+        "generation": 1,
+        "next_sequence": 3,
+        "pending": [],
+        "inflight": [],
+        "acked_through": 2,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": false,
           "acked_through": true,
           "retry": false
         }

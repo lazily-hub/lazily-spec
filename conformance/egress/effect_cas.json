@@ -1,6 +1,6 @@
 {
   "$schema": "../../schemas/effect-cas.json",
-  "description": "Generic effect CAS owns exact identities, authority comparisons, keyed single-flight, retry/reconnect, terminal receipts, and ordered plan cursors.",
+  "description": "Generic effect CAS owns exact identities, authority comparisons, keyed single-flight, retry/reconnect, terminal receipts, and ordered plan cursors. A re-sent intent is compared with the ORIGINAL immutable intent, never with the expected authority a completed plan step advanced.",
   "kind": "EffectCas",
   "model": "EffectCasCore",
   "scenarios": [
@@ -94,8 +94,10 @@
         { "op": { "type": "upsert", "identity": "plan", "key": "doc", "epoch": 1, "expected": 10, "plan": ["canonical", "snapshot"] }, "returns": { "upsert": "accepted" } },
         { "op": { "type": "claim", "key": "doc", "generation": 10, "now": 0 }, "save": "canonical", "returns": { "claim": "claimed", "identity": "plan", "step": 0, "attempt": 1, "expected": 10, "payload": "canonical" } },
         { "op": { "type": "applied", "key": "doc", "attempt": "canonical", "receipt": "canonical-r", "authority": 11 }, "returns": { "applied": "step_applied", "next_step": 1 } },
+        { "op": { "type": "upsert", "identity": "plan", "key": "doc", "epoch": 1, "expected": 10, "plan": ["canonical", "snapshot"] }, "returns": { "upsert": "unchanged" } },
         { "op": { "type": "reconnect", "generation": 11 }, "returns": { "reconnect": "advanced", "generation": 11, "requeued": 0, "superseded": 0 } },
         { "op": { "type": "claim", "key": "doc", "generation": 11, "now": 0 }, "save": "snapshot", "returns": { "claim": "claimed", "identity": "plan", "step": 1, "attempt": 1, "expected": 11, "payload": "snapshot" } },
+        { "op": { "type": "upsert", "identity": "plan", "key": "doc", "epoch": 1, "expected": 10, "plan": ["canonical", "snapshot"] }, "returns": { "upsert": "unchanged" } },
         { "op": { "type": "applied", "key": "doc", "attempt": "snapshot", "receipt": "snapshot-r", "authority": 12 }, "returns": { "applied": "completed", "applied_through": 1 } }
       ],
       "final": {

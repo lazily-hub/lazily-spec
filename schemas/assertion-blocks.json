@@ -5926,7 +5926,14 @@
       "additionalProperties": false,
       "properties": {
         "acked_through": {
-          "type": "null"
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer"
+            }
+          ]
         },
         "generation": {
           "type": "integer"

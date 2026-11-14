@@ -292,13 +292,13 @@
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/egress/effect_cas.json",
-      "sha256": "0fbb4d6a7d4a308b592c76dac6684539efa11865dc1baed65f12a56240844447"
+      "sha256": "731f5f03c6199eaf43f49efd5cdc64add0e85b9ce41bd4759ba2f27eebb6f774"
     },
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/egress/egress_generation_fence.json",
-      "sha256": "3516b23426319cfa5e84b63ae2acad45be096ec15885a3cde0127111018cf254"
+      "sha256": "aef8f6a5613ca641c60188ad9c4bc9b38b0edffeee2f6bd2dcb8c24fba64bd63"
     },
     {
       "license": "Apache-2.0",
@@ -310,7 +310,7 @@
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/egress/egress_ordered_ack.json",
-      "sha256": "bd95b5edb4adf3f150b126c3bc301b9fe2a5cf0ff82f91838d5c66578f4a4f67"
+      "sha256": "3c59d4fef23bdc07c32e29cb5c1ba7365a9838218120fb3a51a8ea1e832f905e"
     },
     {
       "license": "Apache-2.0",

@@ -52,6 +52,29 @@ An acknowledgement is cumulative. `ack(generation, through)` advances
 `acked_through` only when `through` is greater than the current watermark, and
 removes all pending, in-flight, or retry-parked records at or below it.
 
+An acknowledgement may only cover sequences the core has assigned. An
+`ack(generation, through)` with `through >= next_sequence` acknowledges data
+that was never enqueued, so never sent: it is a peer protocol error. The core
+refuses it with `BeyondSent { next_sequence }` (`"ack": "beyond_sent"` in the
+corpus), changes no state, and invalidates no reader. Accepting it would lift
+the watermark over a sequence not yet assigned; the next enqueue would then
+retain a record at or below the watermark, and the receiver's genuine ACK for
+that record would return `Unchanged`, stranding it. The refusal keeps the
+watermark-integrity invariant unconditional: `acked_through < next_sequence`
+whenever it is set, and every retained record lies strictly above it.
+
+| Operation | Outcomes (`returns` spelling) |
+|---|---|
+| `enqueue(payload)` | `{ "sequence": n }` |
+| `claim(generation)` | `claimed` + envelope, `empty`, `window_full`, `stale_generation` + `current` |
+| `ack(generation, through)` | `advanced` + `through`, `unchanged` + `through`, `beyond_sent` + `next_sequence`, `stale_generation` + `current` |
+| `fail(generation, sequence)` | `retrying` + retry, `exhausted` + retry, `unknown_sequence`, `stale_generation` + `current` |
+| `retry_now(generation, sequence)` | `scheduled` + `sequence`, `unknown_sequence`, `stale_generation` + `current` |
+| `reconnect(generation)` | `advanced` + `generation` + `replayed`, `unchanged` + `generation`, `stale_generation` + `current` |
+
+`ack` checks the generation fence first, then the sequence boundary, then the
+watermark: a stale attachment's beyond-boundary ACK reports `stale_generation`.
+
 ## Send-side generation fence
 
 Every transport Effect captures the generation current when it attaches. Every
@@ -69,6 +92,13 @@ generation is rejected without changing state or invalidating a reader.
 The old Effect remains attached but inert. The replacement transport receives
 one new Effect, which replays the retained pending projection under the new
 incarnation.
+
+Step 4 changes the `pending` projection whenever any record is retained, not
+only when an in-flight or parked record is replayed: a never-claimed pending
+envelope still carries the old generation until it is rewritten. A legitimate
+reconnect therefore invalidates `pending` whenever `replayed > 0` or the pending
+queue is non-empty. `replayed` counts only the in-flight and retry-parked
+records moved back to pending.
 
 ## Retry
 
@@ -89,12 +119,13 @@ to spin in an immediate reactive retry loop.
 
 | Reader | Type | Invalidated by |
 |---|---|---|
-| `pending` | `Vec<EgressEnvelope<T>>` | enqueue, claim, retry scheduling, replay, cumulative ACK pruning |
+| `pending` | `Vec<EgressEnvelope<T>>` | enqueue, claim, retry scheduling, reconnect retaining any record (replay or generation rewrite), cumulative ACK pruning |
 | `inflight` | `Vec<EgressEnvelope<T>>` | claim, failure, replay, cumulative ACK pruning |
 | `acked_through` | `Option<u64>` | advancing ACK only |
 | `retry` | `Option<EgressRetry>` | failure, retry claim/scheduling, replay, ACK pruning |
 
-No-op and stale-generation transitions invalidate nothing. The async shell uses
+No-op, stale-generation, and refused (`beyond_sent`) transitions invalidate
+nothing. The async shell uses
 synchronous Computeds for the delivery state; only the transport attachment is
 async-coloured.
 
@@ -117,14 +148,20 @@ Effect.
 ## Conformance and formal obligations
 
 The canonical corpus in `conformance/egress/` covers ordered cumulative ACK,
-window reopening, bounded retry, and reconnect fencing. Binding runners must
+the beyond-boundary ACK refusal, window reopening, bounded retry, reconnect
+fencing, and the pending invalidation of a reconnect that replays nothing. Binding runners must
 assert both returned outcomes and the full projected state after every step.
 
 The Lean model proves:
 
 - sequence assignment is monotone;
 - acknowledgement progress is monotone;
+- an ACK at or beyond `next_sequence` is refused without changing state or
+  invalidating a reader, so the watermark-integrity invariant (watermark inside
+  the assigned sequence space, every retained record above it) holds for every
+  operation;
 - stale-generation send-side transitions preserve state;
 - reconnect strictly advances generation while preserving the ACK watermark;
-  and
+- every reader whose projection a step changes is reported invalidated
+  (including `pending` on a reconnect that only rewrites generations); and
 - permitted retry attempts are bounded by the configured budget.

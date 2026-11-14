@@ -84,6 +84,17 @@ jobs:
             "https://github.com/lazily-hub/lazily-formal.git" ../lazily-formal
           make coverage-check-all
 
+      # lazily-formal replays the egress and effect-CAS fixtures inside the Lean
+      # kernel from a generated snapshot. This catches a corpus edit the formal
+      # model has not replayed yet. Like the binding checks above, it reads the
+      # sibling's published main, so a corpus change stays red here until
+      # lazily-formal regenerates its bridge (push this repo first).
+      - name: Check lazily-formal's conformance bridge matches the corpus
+        run: |
+          set -e
+          git -C ../lazily-formal sparse-checkout set scripts LazilyFormal/Conformance
+          make formal-bridge-check FORMAL_BRIDGE_REQUIRE=1
+
       - name: Check every shipped mark is backed by a replayed fixture
         run: node scripts/check-coverage-claims.mjs --check --require-all
 

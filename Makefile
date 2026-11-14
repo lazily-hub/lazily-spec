@@ -40,9 +40,10 @@ corpus-blocks-report \
 wire-codegen \
 wire-codegen-check \
 core-profile-check \
-sqlite-stores-check
+sqlite-stores-check \
+formal-bridge-check
 
-check: core-profile-check core-evidence-self-test core-support-check core-cohort-check core-ci-reach assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check sqlite-stores-check
+check: core-profile-check core-evidence-self-test core-support-check core-cohort-check core-ci-reach assertion-block-schema-check test-schemas test-lean-formal coverage-check coverage-claims-check fixture-copies-check async-v2-names-check scenario-identity-check prose-keys-check assertion-ordering-check fixture-discriminability-check license-inventory-check corpus-floors-check corpus-published-check wire-codegen-check sqlite-stores-check formal-bridge-check
 
 # Core evidence verifier self-test (#lzcoreclaims). Real qualification passes
 # binding-produced reports explicitly and uses --require-all; the repository's
@@ -214,6 +215,22 @@ sqlite-stores-check:
 
 test-lean-formal:
 >cd "$(LEAN_DIR)" && $(LAKE) build
+
+# lazily-formal conformance bridge: lazily-formal transcribes the egress and
+# effect-CAS fixtures into kernel-checked Lean replays. This fails when that
+# snapshot no longer matches this working tree's corpus, i.e. a fixture edit the
+# formal model has not replayed yet. A missing sibling is skipped here; spec CI
+# clones lazily-formal and sets FORMAL_BRIDGE_REQUIRE=1.
+LAZILY_FORMAL_DIR ?= ../lazily-formal
+FORMAL_BRIDGE_REQUIRE ?=
+formal-bridge-check:
+>@if [ -f "$(LAZILY_FORMAL_DIR)/scripts/gen-conformance-bridge.py" ]; then \
+>  python3 "$(LAZILY_FORMAL_DIR)/scripts/gen-conformance-bridge.py" --spec-dir . --check; \
+>elif [ -n "$(FORMAL_BRIDGE_REQUIRE)" ]; then \
+>  echo "error: no lazily-formal checkout at $(LAZILY_FORMAL_DIR)" >&2; exit 1; \
+>else \
+>  echo "- lazily-formal absent at $(LAZILY_FORMAL_DIR); conformance bridge check skipped"; \
+>fi
 
 # Corpus-publication advisory (#lzspecpushbeforebindings). Bindings verify against
 # this working tree; their CI clones published main. This fires at the moment the

@@ -1,5 +1,5 @@
 {
-  "description": "Reconnect fences the old send attachment, preserves sequence and acknowledgement state, and replays unacknowledged records under the new generation.",
+  "description": "Reconnect fences the old send attachment, preserves sequence and acknowledgement state, and replays unacknowledged records under the new generation. A reconnect that replays nothing still rewrites every retained never-claimed envelope to the new generation, so it invalidates `pending`.",
   "kind": "Egress",
   "model": "EgressCore",
   "generation": 3,
@@ -178,6 +178,48 @@
           { "generation": 4, "sequence": 0, "attempt": 2, "payload": 11 }
         ],
         "acked_through": null,
+        "retry": null,
+        "invalidates": {
+          "pending": true,
+          "inflight": false,
+          "acked_through": false,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "ack", "generation": 4, "through": 0 },
+      "returns": { "ack": "advanced", "through": 0 },
+      "expected": {
+        "generation": 4,
+        "next_sequence": 3,
+        "pending": [
+          { "generation": 4, "sequence": 1, "attempt": 0, "payload": 12 },
+          { "generation": 4, "sequence": 2, "attempt": 0, "payload": 13 }
+        ],
+        "inflight": [],
+        "acked_through": 0,
+        "retry": null,
+        "invalidates": {
+          "pending": false,
+          "inflight": true,
+          "acked_through": true,
+          "retry": false
+        }
+      }
+    },
+    {
+      "op": { "type": "reconnect", "generation": 5 },
+      "returns": { "reconnect": "advanced", "generation": 5, "replayed": 0 },
+      "expected": {
+        "generation": 5,
+        "next_sequence": 3,
+        "pending": [
+          { "generation": 5, "sequence": 1, "attempt": 0, "payload": 12 },
+          { "generation": 5, "sequence": 2, "attempt": 0, "payload": 13 }
+        ],
+        "inflight": [],
+        "acked_through": 0,
         "retry": null,
         "invalidates": {
           "pending": true,

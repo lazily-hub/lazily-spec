@@ -207,7 +207,7 @@ cursor, and retry-attempt number.
 
 | Operation | Required behavior |
 | --- | --- |
-| `upsert_desired(intent)` | Accept only a strictly newer epoch; equal immutable intent is idempotent, equal epoch with different identity/authority/plan is a conflict, and an epoch at or below `applied_through` is already applied. Replacing pending work records explicit supersession and retains any completed-step receipts. |
+| `upsert_desired(intent)` | Accept only a strictly newer epoch; equal immutable intent is idempotent (`Unchanged`), equal epoch with different identity/authority/plan is a conflict (`EpochConflict`), and an epoch at or below `applied_through` is already applied. The equality is against the ORIGINAL submitted intent (identity, epoch, key, initial `expected`, plan) retained as pending, in flight, or as the last terminal intent — never against the next step's expected authority that a completed plan step advanced. Re-sending the same intent mid-plan is therefore `Unchanged`. Replacing pending work records explicit supersession and retains any completed-step receipts. |
 | `claim(key, generation, now)` | With the current generation and an eligible logical clock, move pending work into the sole in-flight slot. Return `Busy`, `Empty`, `Waiting { retry_at }`, or `StaleGeneration` without mutation otherwise. |
 | `record_applied(attempt, receipt, authority)` | Match the exact attempt. Retain the receipt; either advance the plan cursor using the returned authority as the next step's expected token, or complete and monotonically advance `applied_through`. A duplicate terminal receipt is idempotent. A newer desired intent stops the old plan immediately. |
 | `record_superseded(attempt, observed)` | Match and terminally supersede the attempt without advancing `applied_through`; the adapter has mutated nothing. |
@@ -250,8 +250,10 @@ atomicity.
 The language-neutral corpus at
 `conformance/egress/effect_cas.json` pins exact apply and duplicate receipt,
 zero-mutation mismatch, pending/in-flight supersession, stale receipt fencing,
-independent keys, reconnect replay, partial-plan resume, between-step
-supersession, and rejection-versus-retry.
+independent keys, reconnect replay, partial-plan resume (including a same-epoch
+re-send of the original intent while the advanced cursor is pending and while it
+is in flight, both `unchanged`), between-step supersession, and
+rejection-versus-retry.
 
 ## Application-owned sink trait
 
