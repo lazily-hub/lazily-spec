@@ -33,7 +33,6 @@ def submit(
     generation: int,
     payload_type: str,
     idempotency_key: str,
-    source: str = "vscode-plugin",
     supersede: bool = False,
     deadline_ms: int = 120000,
     payload_override: dict | None = None,
@@ -48,9 +47,9 @@ def submit(
         "CommandSubmit": {
             "command_id": command_id,
             "causation_id": command_id,
-            "source": source,
-            "target": "project-controller",
-            "namespace": "agent-doc",
+            "source": "workflow-client",
+            "target": "workflow-worker",
+            "namespace": "workflow",
             "name": name,
             "authority_generation": generation,
             "idempotency_key": idempotency_key,
@@ -86,7 +85,7 @@ def receipt(receipt_id, causation_id, generation, outcome, reason=None, payload_
     return {
         "receipt_id": receipt_id,
         "causation_id": causation_id,
-        "observer": "project-controller",
+        "observer": "workflow-worker",
         "generation": generation,
         "outcome": outcome,
         "reason": reason,
@@ -130,32 +129,26 @@ def write(name: str, obj: dict) -> None:
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
 
-    # 1. editor_route_submit — full agent-doc Run payload over CommandSubmit.
-    editor_payload = {
-        "file": "/home/user/project/plan.md",
-        "relative_path": "plan.md",
-        "dispatch_only": False,
-        "plain_trigger": False,
-        "wait_budget_ms": 120000,
-        "layout_args": {"columns": 2, "focus": True},
-        "route_key": "project-root:plan.md:run",
-        "editor_attempt_id": "attempt-7",
+    # 1. Submit a workflow command with an inline JSON payload.
+    run_payload = {
+        "workflow_id": "example-workflow",
+        "inputs": {"parallelism": 2},
     }
     write(
         "editor_route_submit.json",
         {
             "model": "CommandSubmit",
-            "description": "Full agent-doc Run Agent Doc payload carried over CommandSubmit. A bare submit is non-terminal: the projection lists it as submitted with terminal=false.",
+            "description": "An inline workflow command is admitted as submitted with terminal=false.",
             "frames": [
                 frame(
                     "message-passing",
                     submit(
                         "cmd-run-1",
-                        "editor_route",
-                        editor_payload,
+                        "run_workflow",
+                        run_payload,
                         generation=42,
-                        payload_type="agent-doc.editor_route.v1",
-                        idempotency_key="project-root:plan.md:run",
+                        payload_type="workflow.run_workflow.v1",
+                        idempotency_key="example-workflow:run",
                     ),
                 )
             ],
@@ -170,23 +163,22 @@ def main() -> None:
         },
     )
 
-    # 2. sync_tmux_layout_submit — shared-blob capable payload fixture.
+    # 2. Submit a layout update with a shared-blob payload.
     write(
         "sync_tmux_layout_submit.json",
         {
             "model": "CommandSubmit",
-            "description": "Sync Tmux Layout submit using a shared-memory blob payload (SharedBlob) rather than inline bytes; proves the envelope carries either IpcValue arm.",
+            "description": "A layout update carries a shared-memory blob payload through the same command envelope.",
             "frames": [
                 frame(
                     "message-passing",
                     submit(
                         "cmd-sync-1",
-                        "sync_tmux_layout",
+                        "update_layout",
                         {},
                         generation=42,
-                        payload_type="agent-doc.sync_tmux_layout.v1",
-                        idempotency_key="project-root:sync",
-                        source="jetbrains-plugin",
+                        payload_type="workflow.update_layout.v1",
+                        idempotency_key="example-workflow:layout",
                         payload_override={
                             "SharedBlob": {
                                 "offset": 0,
@@ -212,7 +204,7 @@ def main() -> None:
     )
 
     # 3. accepted_then_applied_receipt — nonterminal progress then terminal applied.
-    _, applied_hash = inline(editor_payload)
+    _, applied_hash = inline(run_payload)
     write(
         "accepted_then_applied_receipt.json",
         {
@@ -223,11 +215,11 @@ def main() -> None:
                     "message-passing",
                     submit(
                         "cmd-run-1",
-                        "editor_route",
-                        editor_payload,
+                        "run_workflow",
+                        run_payload,
                         generation=42,
-                        payload_type="agent-doc.editor_route.v1",
-                        idempotency_key="project-root:plan.md:run",
+                        payload_type="workflow.run_workflow.v1",
+                        idempotency_key="example-workflow:run",
                     ),
                 ),
                 frame(
@@ -275,11 +267,11 @@ def main() -> None:
                     "message-passing",
                     submit(
                         "cmd-run-1",
-                        "editor_route",
-                        editor_payload,
+                        "run_workflow",
+                        run_payload,
                         generation=42,
-                        payload_type="agent-doc.editor_route.v1",
-                        idempotency_key="project-root:plan.md:run",
+                        payload_type="workflow.run_workflow.v1",
+                        idempotency_key="example-workflow:run",
                     ),
                 ),
                 frame(
@@ -322,11 +314,11 @@ def main() -> None:
                     "message-passing",
                     submit(
                         "cmd-run-1",
-                        "editor_route",
-                        editor_payload,
+                        "run_workflow",
+                        run_payload,
                         generation=42,
-                        payload_type="agent-doc.editor_route.v1",
-                        idempotency_key="project-root:plan.md:run",
+                        payload_type="workflow.run_workflow.v1",
+                        idempotency_key="example-workflow:run",
                     ),
                 ),
                 frame(
@@ -374,17 +366,18 @@ def main() -> None:
             "description": "CommandCancel terminally rejects a still-non-terminal command (rejected receipt with reason 'cancelled'). A cancel arriving after applied is ignored — it never rewrites applied into rejected.",
             "scenarios": [
                 {
+                    "id": "cancel_before_terminal",
                     "name": "cancel_before_terminal",
                     "frames": [
                         frame(
                             "message-passing",
                             submit(
                                 "cmd-run-1",
-                                "editor_route",
-                                editor_payload,
+                                "run_workflow",
+                                run_payload,
                                 generation=42,
-                                payload_type="agent-doc.editor_route.v1",
-                                idempotency_key="project-root:plan.md:run",
+                                payload_type="workflow.run_workflow.v1",
+                                idempotency_key="example-workflow:run",
                             ),
                         ),
                         frame(
@@ -397,7 +390,7 @@ def main() -> None:
                                 "CommandCancel": {
                                     "command_id": "cmd-run-1",
                                     "causation_id": "cancel-1",
-                                    "source": "vscode-plugin",
+                                    "source": "workflow-client",
                                     "authority_generation": 42,
                                     "reason": "operator cleared run",
                                 }
@@ -438,17 +431,18 @@ def main() -> None:
                     },
                 },
                 {
+                    "id": "cancel_after_applied_ignored",
                     "name": "cancel_after_applied_ignored",
                     "frames": [
                         frame(
                             "message-passing",
                             submit(
                                 "cmd-run-1",
-                                "editor_route",
-                                editor_payload,
+                                "run_workflow",
+                                run_payload,
                                 generation=42,
-                                payload_type="agent-doc.editor_route.v1",
-                                idempotency_key="project-root:plan.md:run",
+                                payload_type="workflow.run_workflow.v1",
+                                idempotency_key="example-workflow:run",
                             ),
                         ),
                         frame(
@@ -461,7 +455,7 @@ def main() -> None:
                                 "CommandCancel": {
                                     "command_id": "cmd-run-1",
                                     "causation_id": "cancel-late",
-                                    "source": "vscode-plugin",
+                                    "source": "workflow-client",
                                     "authority_generation": 42,
                                     "reason": "too late",
                                 }
@@ -545,11 +539,11 @@ def main() -> None:
                     "message-passing",
                     submit(
                         "cmd-run-1",
-                        "editor_route",
-                        editor_payload,
+                        "run_workflow",
+                        run_payload,
                         generation=42,
-                        payload_type="agent-doc.editor_route.v1",
-                        idempotency_key="project-root:plan.md:run",
+                        payload_type="workflow.run_workflow.v1",
+                        idempotency_key="example-workflow:run",
                     ),
                 ),
                 frame(

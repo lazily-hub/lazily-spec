@@ -23,6 +23,10 @@ import { isDeepStrictEqual } from "node:util";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FIXTURE_ROOT = path.join(ROOT, "conformance");
 const LEDGER_PATH = path.join(ROOT, "audits", "fixture-discriminability.json");
+const workflowTags = new Set(
+  JSON.parse(fs.readFileSync(path.join(ROOT, "schemas", "workflow-state.json"), "utf8"))
+    .$defs.TypeTag.enum,
+);
 const BLOCK_NAMES = new Set(["assertions", "expect", "expected"]);
 const INIT = process.argv.includes("--write-initial-ledger");
 
@@ -878,22 +882,16 @@ function ipcConformanceWitness(document, witness) {
     );
   }
 
-  const agentDocTags = new Set([
-    "agent_doc.document.baseline",
-    "agent_doc.closeout.cycle",
-    "agent_doc.queue.head",
-    "agent_doc.transport.patch",
-  ]);
-  if (witness === "ipc-agent-doc-snapshot-vocabulary") {
+  if (witness === "ipc-workflow-snapshot-vocabulary") {
     const wireTags = snapshot?.nodes?.map((node) => node.type_tag) ?? [];
     return (
       document.assertions?.all_type_tags_in_vocabulary === true &&
       JSON.stringify(wireTags) ===
         JSON.stringify(document.assertions?.type_tags) &&
-      wireTags.every((tag) => agentDocTags.has(tag))
+      wireTags.every((tag) => workflowTags.has(tag))
     );
   }
-  if (witness === "ipc-agent-doc-delta-vocabulary") {
+  if (witness === "ipc-workflow-delta-vocabulary") {
     const wireTags =
       delta?.ops
         ?.map((op) => op.NodeAdd?.type_tag)
@@ -902,7 +900,7 @@ function ipcConformanceWitness(document, witness) {
       document.assertions?.all_type_tags_in_vocabulary === true &&
       JSON.stringify(wireTags) ===
         JSON.stringify(document.assertions?.added_type_tags) &&
-      wireTags.every((tag) => agentDocTags.has(tag))
+      wireTags.every((tag) => workflowTags.has(tag))
     );
   }
 

@@ -78,12 +78,12 @@
         "namespace": {
           "type": "string",
           "minLength": 1,
-          "description": "Domain namespace that owns the payload schema (e.g. 'agent-doc'). Lazily owns the envelope, not the namespace."
+          "description": "Domain namespace that owns the payload schema (e.g. 'workflow'). Lazily owns the envelope, not the namespace."
         },
         "name": {
           "type": "string",
           "minLength": 1,
-          "description": "Command name within the namespace (e.g. 'editor_route')."
+          "description": "Command name within the namespace (e.g. 'run_workflow')."
         },
         "authority_generation": {
           "type": "integer",
@@ -104,7 +104,7 @@
         "payload_type": {
           "type": "string",
           "minLength": 1,
-          "description": "Fully-qualified domain payload type (e.g. 'agent-doc.editor_route.v1')."
+          "description": "Fully-qualified domain payload type (e.g. 'workflow.run_workflow.v1')."
         },
         "payload_hash": {
           "type": "string",

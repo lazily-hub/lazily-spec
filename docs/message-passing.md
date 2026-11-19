@@ -1,7 +1,7 @@
 # Command / RPC Message Plane
 
-Editor and runtime integrations need to *issue commands* — `Run Agent Doc`,
-sync, focus, save, session operations — with a single reusable admission,
+Editor and runtime integrations need to *issue commands* — run,
+sync, focus, save, and session operations — with a single reusable admission,
 dedupe, cancellation, generation-guard, progress, and reconnect story. Without
 one, every caller reinvents in-flight/dedupe/supersede/retry/timeout logic, and
 `accepted` / `queued` feedback gets mistaken for terminal success.
@@ -21,9 +21,8 @@ graph, but they carry command traffic, not cell state.
 | `CommandProjection` | Folded, queryable command state; also the reconnect resync image |
 
 lazily owns the envelope; the **namespace owns the payload**. lazily never
-decodes `payload`. Agent-doc publishes its own payload schemas
-(`agent-doc.editor_route.v1`, `agent-doc.sync_tmux_layout.v1`, …) and only
-references lazily's envelope.
+decodes `payload`. For example, the workflow namespace defines
+`workflow.run_workflow.v1` and `workflow.update_layout.v1` in this corpus.
 
 ## Progress is not proof
 
@@ -44,9 +43,9 @@ through receipts and domain facts.
 over the four frames:
 
 ```ts
-await client.call("agent-doc.editor_route", payload, {
+await client.call("workflow.run_workflow", payload, {
   commandId,
-  idempotencyKey: "project-root:plan.md:run",
+  idempotencyKey: "example-workflow:run",
   authorityGeneration: 42,
   deadlineMs: 120000,
   policy: { dedupe: "same_idempotency_key", supersede: false, cancelOnPreempt: true }

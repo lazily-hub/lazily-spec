@@ -2,7 +2,7 @@
   "protocol_version": 1,
   "kind": "Command",
   "model": "CommandSubmit",
-  "description": "Sync Tmux Layout submit using a shared-memory blob payload (SharedBlob) rather than inline bytes; proves the envelope carries either IpcValue arm.",
+  "description": "A layout update carries a shared-memory blob payload through the same command envelope.",
   "frames": [
     {
       "schema": "message-passing",
@@ -10,19 +10,19 @@
         "CommandSubmit": {
           "command_id": "cmd-sync-1",
           "causation_id": "cmd-sync-1",
-          "source": "jetbrains-plugin",
-          "target": "project-controller",
-          "namespace": "agent-doc",
-          "name": "sync_tmux_layout",
+          "source": "workflow-client",
+          "target": "workflow-worker",
+          "namespace": "workflow",
+          "name": "update_layout",
           "authority_generation": 42,
-          "idempotency_key": "project-root:sync",
+          "idempotency_key": "example-workflow:layout",
           "deadline_ms": 120000,
           "policy": {
             "dedupe": "same_idempotency_key",
             "supersede": false,
             "cancel_on_preempt": true
           },
-          "payload_type": "agent-doc.sync_tmux_layout.v1",
+          "payload_type": "workflow.update_layout.v1",
           "payload_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
           "payload": {
             "SharedBlob": {

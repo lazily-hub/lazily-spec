@@ -4,13 +4,13 @@
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/agent-doc/delta_agent_doc_state.json",
-      "sha256": "6b28a4546a93a2e80b0a2a788b6c4927ddf19bcccf240b9c8424872a04487042"
+      "sha256": "ee27576c118644a1dcad89ab1274d9c66168090c0282c8c67f2c36286b4d1416"
     },
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/agent-doc/snapshot_agent_doc_state.json",
-      "sha256": "5a3c0f4f8d3be154ccb249c3945526caa6911b266fcdb570c59b7803e18457df"
+      "sha256": "615044d8aa9e708192937e5c94384365a6afe258c5f524d58166829cb6d91183"
     },
     {
       "license": "Apache-2.0",
@@ -472,19 +472,19 @@
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/message-passing/accepted_then_applied_receipt.json",
-      "sha256": "6ec92bf5186765af7c7ad097d36df66d48a8a5a454fb55b8c58bb856036f5039"
+      "sha256": "808432914c5219be93aff1898a1f48421dfcd2fd9f09f0033aee2a5d683f5107"
     },
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/message-passing/cancel_preempts_nonterminal.json",
-      "sha256": "eff6e926c904d7dee998ef7e9d023cb2fb5df68fcd7911a25012971348df09fb"
+      "sha256": "bd220abadf48fdbb0ab55fec4d801e435b2520f288ced24324e1727438d693e5"
     },
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/message-passing/editor_route_submit.json",
-      "sha256": "5c6c8e9a370dc3b0aee84bdfdffab66c4513b1c56e4ff20d8a3fcb66b3c98968"
+      "sha256": "222de4649dc03534e6338e3baa7de8cc36a651c7904e3038ece9d81088d1755b"
     },
     {
       "license": "Apache-2.0",
@@ -496,25 +496,25 @@
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/message-passing/rpc_call_waits_for_terminal.json",
-      "sha256": "1c11dcbc27065a0a7690ef6a0ca692487d991288d2230ccf7b6caf9e79bf0589"
+      "sha256": "d094776a37467ee8994aac9b2d560faef07ae8234c5b927e147e011a570fc6f3"
     },
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/message-passing/stale_generation_ignored.json",
-      "sha256": "847f429aadfcf94f0b3b328f7083751e1dadad855353779a918f482e9081b3ff"
+      "sha256": "c0ddfaf51c212581e022ec3eec1cc5d51922f138f118cbeca7ee2c953fc5c39f"
     },
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/message-passing/sync_tmux_layout_submit.json",
-      "sha256": "d8ae7c1ea0d73bd7ddb1bfa39f3d0d3b7efe79de594851acbc1963e7c4499b01"
+      "sha256": "193f95fee895a1a98a5ea6e6aabb3fb77cbdc3b49a0f5caf0f407bfff8806cf4"
     },
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/message-passing/terminal_conflict_fail_closed.json",
-      "sha256": "2fcc081b4b04dad592352904bddb302f0e5a97729366da887c5b8ea7d75f54d9"
+      "sha256": "9fb39ee0582fe511df39f9765fb2d7cddab0b8812a2a972b303434afede5f34b"
     },
     {
       "license": "Apache-2.0",

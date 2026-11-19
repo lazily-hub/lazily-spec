@@ -15,6 +15,7 @@ the wire format is normative; binary codecs encode the same shapes.
 | `distributed.json` | Distributed — CrdtSync message (`{"CrdtSync": …}`) + CRDT/cell-model types |
 | `receipts.json` | Causal receipts (`{"CausalReceipts": …}`) + terminal outcome projection |
 | `message-passing.json` | Command / RPC message plane (`CommandSubmit` / `CommandCancel` / `CommandEvents` / `CommandProjection`) |
+| `workflow-state.json` | Node tags for the sample workflow graph conformance fixtures |
 | `statechart.json` | Compute (Harel/SCXML chart form — not a wire message) |
 | `stdlib-fixture.schema.json` | Deterministic `Timer`, `Timeout`, and `RevisionBarrier` conformance scenarios |
 | `assertion-blocks.json` | Routed, fail-closed schemas for every canonical `assertions` / `expect` / `expected` object |

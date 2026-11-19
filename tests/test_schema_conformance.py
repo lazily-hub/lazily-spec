@@ -44,6 +44,7 @@ _SCHEMA_NAMES = [
     "lossless-tree-delta",
     "lossless-tree-fixture",
     "message-passing",
+    "workflow-state",
     "reliable-sync",
     "durable-owner",
     "durable-envelope",
@@ -105,6 +106,8 @@ _FIXTURE_TO_SCHEMA = [
     ("delta_non_sequential.json", "delta"),
     ("delta_shared_blob.json", "delta"),
     ("delta_zero_copy_arrow.json", "delta"),
+    ("agent-doc/snapshot_agent_doc_state.json", "snapshot"),
+    ("agent-doc/delta_agent_doc_state.json", "delta"),
 ]
 
 
@@ -118,6 +121,20 @@ def test_fixture_wire_validates_schema(fixture: str, schema: str) -> None:
         f"{fixture} wire does not validate against {schema}.json:\n"
         + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
     )
+
+
+def test_workflow_state_fixtures_match_their_vocabulary() -> None:
+    schema = _load_schema("workflow-state")
+    directory = FIXTURE_DIR / "agent-doc"
+    snapshot = json.loads((directory / "snapshot_agent_doc_state.json").read_text())
+    delta = json.loads((directory / "delta_agent_doc_state.json").read_text())
+    assert snapshot["schema_version"] == delta["schema_version"] == schema["schema_version"]
+
+    snapshot_tags = [node["type_tag"] for node in snapshot["wire"]["Snapshot"]["nodes"]]
+    added_tags = [op["NodeAdd"]["type_tag"] for op in delta["wire"]["Delta"]["ops"] if "NodeAdd" in op]
+    assert snapshot_tags == snapshot["assertions"]["type_tags"]
+    assert added_tags == delta["assertions"]["added_type_tags"]
+    assert set(snapshot_tags + added_tags) == set(schema["$defs"]["TypeTag"]["enum"])
 
 
 # ---------------------------------------------------------------------------
@@ -1976,15 +1993,15 @@ def test_message_passing_submit_requires_payload_hash() -> None:
         "CommandSubmit": {
             "command_id": "cmd-1",
             "causation_id": "cmd-1",
-            "source": "vscode-plugin",
-            "target": "project-controller",
-            "namespace": "agent-doc",
-            "name": "editor_route",
+            "source": "workflow-client",
+            "target": "workflow-worker",
+            "namespace": "workflow",
+            "name": "run_workflow",
             "authority_generation": 1,
             "idempotency_key": "k",
             "deadline_ms": 0,
             "policy": {"dedupe": "none", "supersede": False, "cancel_on_preempt": False},
-            "payload_type": "agent-doc.editor_route.v1",
+            "payload_type": "workflow.run_workflow.v1",
             "payload": {"Inline": [1, 2, 3]},
             "required_features": [],
         }

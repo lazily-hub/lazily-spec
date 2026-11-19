@@ -5,18 +5,18 @@
     "agent-doc/delta_agent_doc_state.json#/assertions/all_type_tags_in_vocabulary": {
       "status": "mutation-killed",
       "binding": "lazily-js",
-      "command": "node --test --test-name-pattern='conformance agent-doc delta' test/ipc.test.js",
+      "command": "node --test --test-name-pattern='conformance workflow delta' test/ipc.test.js",
       "mutation": "DeltaOpNodeAdd decoded every type_tag as the valid but unknown `mutant.unknown` tag",
-      "expected_failure": "canonical agent-doc delta replay reports the decoded NodeAdd tag outside the agent-doc vocabulary",
-      "witness": "ipc-agent-doc-delta-vocabulary"
+      "expected_failure": "canonical workflow delta replay reports the decoded NodeAdd tag outside the workflow vocabulary",
+      "witness": "ipc-workflow-delta-vocabulary"
     },
     "agent-doc/snapshot_agent_doc_state.json#/assertions/all_type_tags_in_vocabulary": {
       "status": "mutation-killed",
       "binding": "lazily-js",
-      "command": "node --test --test-name-pattern='conformance agent-doc snapshot' test/ipc.test.js",
+      "command": "node --test --test-name-pattern='conformance workflow snapshot' test/ipc.test.js",
       "mutation": "NodeSnapshot decoded every type_tag as the valid but unknown `mutant.unknown` tag",
-      "expected_failure": "canonical agent-doc snapshot replay reports all decoded node tags outside the agent-doc vocabulary",
-      "witness": "ipc-agent-doc-snapshot-vocabulary"
+      "expected_failure": "canonical workflow snapshot replay reports all decoded node tags outside the workflow vocabulary",
+      "witness": "ipc-workflow-snapshot-vocabulary"
     },
     "codec/blob_backend_discriminator.json#/scenarios/*/expect/rejected": {
       "status": "mutation-killed",
