@@ -1377,6 +1377,10 @@ _REACTIVE_GRAPH_TAGS = (
     # A failed compute is never cached: the next read re-runs the body rather
     # than replaying the stored error (`Error -> Computing` on the async plane).
     "#lzasyncerrfixture",
+    # An effect body MAY return a cleanup; returning none is a first-class
+    # shape whose observable behaviour must not depend on how a binding spells
+    # "no cleanup" (nothing, or an explicit null/nil/nullptr).
+    "#lzeffectvoid",
 )
 
 # Assertion keys are observable effects only. Deliberately absent: anything

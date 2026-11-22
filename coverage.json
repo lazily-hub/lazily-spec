@@ -163,7 +163,8 @@
         "reactive-graph/signal_materializes_without_a_read.json",
         "reactive-graph/signal_materializes_once_per_batch.json",
         "reactive-graph/dispose_signal_reverts_to_lazy.json",
-        "reactive-graph/churn_returns_to_baseline.json"
+        "reactive-graph/churn_returns_to_baseline.json",
+        "reactive-graph/effect_cleanup_is_optional.json"
       ],
       "marks": [
         "✅",

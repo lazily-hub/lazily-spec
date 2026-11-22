@@ -857,7 +857,7 @@ Op vocabulary (all ids are fixture-local labels, never a binding's internal id):
 |---|---|
 | `cell {id, value}` | Create a source cell |
 | `computed {id, reads[], offset, scope?}` | Create a derived, guarded `Computed` whose value is `sum(reads) + offset`; owned by `scope` when named |
-| `effect {id, reads[], scope?}` | Register an effect over `reads`; runs on creation and on each flush after a tracked invalidation |
+| `effect {id, reads[], scope?, cleanup?}` | Register an effect over `reads`; runs on creation and on each flush after a tracked invalidation. `cleanup` selects what the body returns (`#lzeffectvoid`): `every_run` (default when absent) returns a cleanup closure from every run; `none` returns the binding's idiomatic no-cleanup form (nothing, or an explicit `null`/`nil`/`nullptr` where the signature requires one) from every run; `alternate` returns a cleanup from odd-numbered runs and none from even-numbered ones, counting the run at creation as run 1. A cleanup appends the effect's id to `cleanup_order` |
 | `read {id}` | Read a node — `expect.value`, or `expect.error` for a disposed one |
 | `set_cell {id, value}` | Publish; `expect.observed_by` names the effects that ran, `expect.observed_count` their number |
 | `dispose {id}` | Dispose one node, dispatching on its own kind |
@@ -891,6 +891,7 @@ entry is not a capability exclusion and does not excuse these scenarios.
 | `reactive-graph/read_after_dispose_is_an_error.json` | reading a disposed `Computed`, a disposed source cell, or through a live reader that names one is an error — never a stale or default value; double-dispose is an idempotent no-op |
 | `reactive-graph/recycled_id_inherits_nothing.json` | a node minted on a recycled id starts with an empty edge set in both directions — the owner-keyed-side-table aliasing hazard; stale disposal proves the named successor really occupies the recycled slot |
 | `reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json` | the stale cell/computed/effect handle × cell/computed/effect successor matrix. Every row proves raw-id reuse before stale disposal and pins successor readability, writability, edges, and effect cleanup counts; `stale_effect_to_cell` reproduces btakita/agent-doc#354's `set_cell on non-cell id` corruption. |
+| `reactive-graph/effect_cleanup_is_optional.json` | an effect body may return a cleanup or none (`#lzeffectvoid`): a cleanup-less effect still reruns on every invalidation and nothing is called on rerun or dispose; a returned cleanup is called exactly once before the next rerun and once on dispose; switching between returning a cleanup and none across runs never re-calls an already-called cleanup |
 | `reactive-graph/scope_teardown_equals_fold_of_disposals.json` | ending a scope is observationally equal to disposing each member individually (`disposeScope_eq_disposeAll`), including reverse-creation-order cleanup |
 | `reactive-graph/scoping_bounds_teardown_not_visibility.json` | a scope's nodes read parent- and sibling-owned nodes freely in every direction; propagation crosses scope boundaries unchanged |
 | `reactive-graph/disarm_disposes_nothing.json` | `disarm()` leaves node state untouched — the nodes stay readable, keep propagating, and stay individually disposable; ending the scope disposes nothing |

@@ -1578,6 +1578,20 @@
       }
     },
     {
+      "title": "reactive-graph/effect_cleanup_is_optional.json#/steps/*/expect",
+      "properties": {
+        "fixture": {
+          "const": "reactive-graph/effect_cleanup_is_optional.json"
+        },
+        "pointer": {
+          "const": "/steps/*/expect"
+        },
+        "value": {
+          "$ref": "#/$defs/route_0112"
+        }
+      }
+    },
+    {
       "title": "reactive-graph/exact_fold_paths_stay_exact.json#/steps/*/expect",
       "properties": {
         "fixture": {
@@ -1587,7 +1601,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0112"
+          "$ref": "#/$defs/route_0113"
         }
       }
     },
@@ -1601,7 +1615,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0113"
+          "$ref": "#/$defs/route_0114"
         }
       }
     },
@@ -1615,7 +1629,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0114"
+          "$ref": "#/$defs/route_0115"
         }
       }
     },
@@ -1629,7 +1643,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0115"
+          "$ref": "#/$defs/route_0116"
         }
       }
     },
@@ -1643,7 +1657,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0116"
+          "$ref": "#/$defs/route_0117"
         }
       }
     },
@@ -1657,7 +1671,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0117"
+          "$ref": "#/$defs/route_0118"
         }
       }
     },
@@ -1671,7 +1685,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0118"
+          "$ref": "#/$defs/route_0119"
         }
       }
     },
@@ -1685,7 +1699,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0119"
+          "$ref": "#/$defs/route_0120"
         }
       }
     },
@@ -1699,7 +1713,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0120"
+          "$ref": "#/$defs/route_0121"
         }
       }
     },
@@ -1713,7 +1727,7 @@
           "const": "/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0121"
+          "$ref": "#/$defs/route_0122"
         }
       }
     },
@@ -1727,7 +1741,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0122"
+          "$ref": "#/$defs/route_0123"
         }
       }
     },
@@ -1741,7 +1755,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0123"
+          "$ref": "#/$defs/route_0124"
         }
       }
     },
@@ -1755,7 +1769,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0124"
+          "$ref": "#/$defs/route_0125"
         }
       }
     },
@@ -1769,7 +1783,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0125"
+          "$ref": "#/$defs/route_0126"
         }
       }
     },
@@ -1783,7 +1797,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0126"
+          "$ref": "#/$defs/route_0127"
         }
       }
     },
@@ -1797,7 +1811,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0127"
+          "$ref": "#/$defs/route_0128"
         }
       }
     },
@@ -1811,7 +1825,7 @@
           "const": "/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0128"
+          "$ref": "#/$defs/route_0129"
         }
       }
     },
@@ -1825,7 +1839,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0129"
+          "$ref": "#/$defs/route_0130"
         }
       }
     },
@@ -1839,7 +1853,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0130"
+          "$ref": "#/$defs/route_0131"
         }
       }
     },
@@ -1853,7 +1867,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0131"
+          "$ref": "#/$defs/route_0132"
         }
       }
     },
@@ -1867,7 +1881,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0132"
+          "$ref": "#/$defs/route_0133"
         }
       }
     },
@@ -1881,7 +1895,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0133"
+          "$ref": "#/$defs/route_0134"
         }
       }
     },
@@ -1895,7 +1909,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0134"
+          "$ref": "#/$defs/route_0135"
         }
       }
     },
@@ -1909,7 +1923,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0135"
+          "$ref": "#/$defs/route_0136"
         }
       }
     },
@@ -1923,7 +1937,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0136"
+          "$ref": "#/$defs/route_0137"
         }
       }
     },
@@ -1937,7 +1951,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0137"
+          "$ref": "#/$defs/route_0138"
         }
       }
     },
@@ -1951,7 +1965,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0138"
+          "$ref": "#/$defs/route_0139"
         }
       }
     },
@@ -1965,7 +1979,7 @@
           "const": "/scenarios/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0139"
+          "$ref": "#/$defs/route_0140"
         }
       }
     },
@@ -1979,7 +1993,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0140"
+          "$ref": "#/$defs/route_0141"
         }
       }
     },
@@ -1993,7 +2007,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0141"
+          "$ref": "#/$defs/route_0142"
         }
       }
     },
@@ -2007,7 +2021,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0142"
+          "$ref": "#/$defs/route_0143"
         }
       }
     },
@@ -2021,7 +2035,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0143"
+          "$ref": "#/$defs/route_0144"
         }
       }
     },
@@ -2035,7 +2049,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0144"
+          "$ref": "#/$defs/route_0145"
         }
       }
     },
@@ -2049,7 +2063,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0145"
+          "$ref": "#/$defs/route_0146"
         }
       }
     },
@@ -2063,7 +2077,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0146"
+          "$ref": "#/$defs/route_0147"
         }
       }
     },
@@ -2077,7 +2091,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0147"
+          "$ref": "#/$defs/route_0148"
         }
       }
     },
@@ -2091,7 +2105,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0148"
+          "$ref": "#/$defs/route_0149"
         }
       }
     },
@@ -2105,7 +2119,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0149"
+          "$ref": "#/$defs/route_0150"
         }
       }
     },
@@ -2119,7 +2133,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0150"
+          "$ref": "#/$defs/route_0151"
         }
       }
     },
@@ -2133,7 +2147,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0151"
+          "$ref": "#/$defs/route_0152"
         }
       }
     },
@@ -2147,7 +2161,7 @@
           "const": "/steps/*/expect/*"
         },
         "value": {
-          "$ref": "#/$defs/route_0152"
+          "$ref": "#/$defs/route_0153"
         }
       }
     },
@@ -2161,7 +2175,7 @@
           "const": "/frames/*/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0153"
+          "$ref": "#/$defs/route_0154"
         }
       }
     },
@@ -2175,7 +2189,7 @@
           "const": "/scenarios/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0154"
+          "$ref": "#/$defs/route_0155"
         }
       }
     },
@@ -2189,7 +2203,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0155"
+          "$ref": "#/$defs/route_0156"
         }
       }
     },
@@ -2203,7 +2217,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0156"
+          "$ref": "#/$defs/route_0157"
         }
       }
     },
@@ -2217,7 +2231,7 @@
           "const": "/assertions"
         },
         "value": {
-          "$ref": "#/$defs/route_0157"
+          "$ref": "#/$defs/route_0158"
         }
       }
     },
@@ -2231,7 +2245,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0158"
+          "$ref": "#/$defs/route_0159"
         }
       }
     },
@@ -2245,7 +2259,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0159"
+          "$ref": "#/$defs/route_0160"
         }
       }
     },
@@ -2259,7 +2273,7 @@
           "const": "/scenarios/*/steps/*/expect"
         },
         "value": {
-          "$ref": "#/$defs/route_0160"
+          "$ref": "#/$defs/route_0161"
         }
       }
     },
@@ -2273,7 +2287,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0161"
+          "$ref": "#/$defs/route_0162"
         }
       }
     },
@@ -2287,7 +2301,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0162"
+          "$ref": "#/$defs/route_0163"
         }
       }
     },
@@ -2301,7 +2315,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0163"
+          "$ref": "#/$defs/route_0164"
         }
       }
     },
@@ -2315,7 +2329,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0164"
+          "$ref": "#/$defs/route_0165"
         }
       }
     },
@@ -2329,7 +2343,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0165"
+          "$ref": "#/$defs/route_0166"
         }
       }
     },
@@ -2343,7 +2357,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0166"
+          "$ref": "#/$defs/route_0167"
         }
       }
     },
@@ -2357,7 +2371,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0167"
+          "$ref": "#/$defs/route_0168"
         }
       }
     },
@@ -2371,7 +2385,7 @@
           "const": "/steps/*/expected"
         },
         "value": {
-          "$ref": "#/$defs/route_0168"
+          "$ref": "#/$defs/route_0169"
         }
       }
     }
@@ -9725,6 +9739,31 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "cleanup_order": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "type": "string"
+        },
+        "observed_by": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "cleanup_order",
+        "observed_by"
+      ]
+    },
+    "route_0113": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
         "merges_of": {
           "type": "object",
           "additionalProperties": false,
@@ -9749,7 +9788,7 @@
         "note"
       ]
     },
-    "route_0113": {
+    "route_0114": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9780,7 +9819,7 @@
         "note"
       ]
     },
-    "route_0114": {
+    "route_0115": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9795,7 +9834,7 @@
         "note"
       ]
     },
-    "route_0115": {
+    "route_0116": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9837,7 +9876,7 @@
         "note"
       ]
     },
-    "route_0116": {
+    "route_0117": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9888,7 +9927,7 @@
         "note"
       ]
     },
-    "route_0117": {
+    "route_0118": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9927,7 +9966,7 @@
         "note"
       ]
     },
-    "route_0118": {
+    "route_0119": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9954,7 +9993,7 @@
         "note"
       ]
     },
-    "route_0119": {
+    "route_0120": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -9991,7 +10030,7 @@
         }
       }
     },
-    "route_0120": {
+    "route_0121": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10072,7 +10111,7 @@
         }
       }
     },
-    "route_0121": {
+    "route_0122": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10211,7 +10250,7 @@
         "observationally_equal"
       ]
     },
-    "route_0122": {
+    "route_0123": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10246,7 +10285,7 @@
         }
       }
     },
-    "route_0123": {
+    "route_0124": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10335,34 +10374,6 @@
         }
       }
     },
-    "route_0124": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "computes_of": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "sig": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "sig"
-          ]
-        },
-        "note": {
-          "type": "string"
-        },
-        "value": {
-          "type": "integer"
-        }
-      },
-      "required": [
-        "computes_of",
-        "note"
-      ]
-    },
     "route_0125": {
       "type": "object",
       "additionalProperties": false,
@@ -10392,6 +10403,34 @@
       ]
     },
     "route_0126": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "computes_of": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "sig": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "sig"
+          ]
+        },
+        "note": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "computes_of",
+        "note"
+      ]
+    },
+    "route_0127": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10484,7 +10523,7 @@
         }
       }
     },
-    "route_0127": {
+    "route_0128": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10520,7 +10559,7 @@
         "note"
       ]
     },
-    "route_0128": {
+    "route_0129": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10553,7 +10592,7 @@
         "note"
       ]
     },
-    "route_0129": {
+    "route_0130": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10591,7 +10630,7 @@
         "terminal_outcome"
       ]
     },
-    "route_0130": {
+    "route_0131": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10636,7 +10675,7 @@
         }
       }
     },
-    "route_0131": {
+    "route_0132": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10668,7 +10707,7 @@
         "state_after"
       ]
     },
-    "route_0132": {
+    "route_0133": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10728,7 +10767,7 @@
         }
       }
     },
-    "route_0133": {
+    "route_0134": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10779,7 +10818,7 @@
         }
       }
     },
-    "route_0134": {
+    "route_0135": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10807,7 +10846,7 @@
         "span"
       ]
     },
-    "route_0135": {
+    "route_0136": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10836,7 +10875,7 @@
         "receiver_last_epoch_after"
       ]
     },
-    "route_0136": {
+    "route_0137": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10863,7 +10902,7 @@
         "outcome"
       ]
     },
-    "route_0137": {
+    "route_0138": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10923,7 +10962,7 @@
         }
       }
     },
-    "route_0138": {
+    "route_0139": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -10959,7 +10998,7 @@
         }
       }
     },
-    "route_0139": {
+    "route_0140": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11007,7 +11046,7 @@
         "resync_requests_emitted"
       ]
     },
-    "route_0140": {
+    "route_0141": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11022,7 +11061,7 @@
         "note"
       ]
     },
-    "route_0141": {
+    "route_0142": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11061,7 +11100,7 @@
         "outcome"
       ]
     },
-    "route_0142": {
+    "route_0143": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11088,7 +11127,7 @@
         }
       }
     },
-    "route_0143": {
+    "route_0144": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11113,7 +11152,7 @@
         "invalidates"
       ]
     },
-    "route_0144": {
+    "route_0145": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11138,7 +11177,7 @@
         "state"
       ]
     },
-    "route_0145": {
+    "route_0146": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11163,7 +11202,7 @@
         "invalidates"
       ]
     },
-    "route_0146": {
+    "route_0147": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11188,7 +11227,7 @@
         "is_timed_out"
       ]
     },
-    "route_0147": {
+    "route_0148": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11222,7 +11261,7 @@
         "invalidates"
       ]
     },
-    "route_0148": {
+    "route_0149": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11247,7 +11286,7 @@
         "invalidates"
       ]
     },
-    "route_0149": {
+    "route_0150": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11272,7 +11311,7 @@
         "ready"
       ]
     },
-    "route_0150": {
+    "route_0151": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11309,7 +11348,7 @@
         "projection"
       ]
     },
-    "route_0151": {
+    "route_0152": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11329,7 +11368,7 @@
         "roster_sorted_ascending"
       ]
     },
-    "route_0152": {
+    "route_0153": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11378,7 +11417,7 @@
         "to"
       ]
     },
-    "route_0153": {
+    "route_0154": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11417,7 +11456,7 @@
         }
       }
     },
-    "route_0154": {
+    "route_0155": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11495,7 +11534,7 @@
         "outcome"
       ]
     },
-    "route_0155": {
+    "route_0156": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11523,7 +11562,7 @@
         "root_count"
       ]
     },
-    "route_0156": {
+    "route_0157": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11555,7 +11594,7 @@
         "root_count"
       ]
     },
-    "route_0157": {
+    "route_0158": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11595,7 +11634,7 @@
         "root_count"
       ]
     },
-    "route_0158": {
+    "route_0159": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11621,7 +11660,7 @@
         "revision"
       ]
     },
-    "route_0159": {
+    "route_0160": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11648,7 +11687,7 @@
         "outcome"
       ]
     },
-    "route_0160": {
+    "route_0161": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11669,7 +11708,7 @@
         "outcome"
       ]
     },
-    "route_0161": {
+    "route_0162": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11698,7 +11737,7 @@
         "next_fire"
       ]
     },
-    "route_0162": {
+    "route_0163": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11727,7 +11766,7 @@
         "value"
       ]
     },
-    "route_0163": {
+    "route_0164": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11756,7 +11795,7 @@
         "next_fire"
       ]
     },
-    "route_0164": {
+    "route_0165": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11803,7 +11842,7 @@
         "value"
       ]
     },
-    "route_0165": {
+    "route_0166": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -11828,31 +11867,6 @@
               "type": "integer"
             }
           ]
-        }
-      },
-      "required": [
-        "invalidates",
-        "output"
-      ]
-    },
-    "route_0166": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "invalidates": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "output": {
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "output"
-          ]
-        },
-        "output": {
-          "type": "integer"
         }
       },
       "required": [
@@ -11877,6 +11891,31 @@
           ]
         },
         "output": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "invalidates",
+        "output"
+      ]
+    },
+    "route_0168": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalidates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "output": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "output"
+          ]
+        },
+        "output": {
           "anyOf": [
             {
               "type": "null"
@@ -11892,7 +11931,7 @@
         "output"
       ]
     },
-    "route_0168": {
+    "route_0169": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -12489,289 +12528,294 @@
       "schema": "route_0111"
     },
     {
-      "fixture": "reactive-graph/exact_fold_paths_stay_exact.json",
+      "fixture": "reactive-graph/effect_cleanup_is_optional.json",
       "pointer": "/steps/*/expect",
       "schema": "route_0112"
     },
     {
-      "fixture": "reactive-graph/failed_compute_is_never_cached.json",
+      "fixture": "reactive-graph/exact_fold_paths_stay_exact.json",
       "pointer": "/steps/*/expect",
       "schema": "route_0113"
     },
     {
-      "fixture": "reactive-graph/feedback_drain_bound_reports_exhaustion.json",
+      "fixture": "reactive-graph/failed_compute_is_never_cached.json",
       "pointer": "/steps/*/expect",
       "schema": "route_0114"
     },
     {
-      "fixture": "reactive-graph/merge_cell_acquires_no_dependency_edge.json",
+      "fixture": "reactive-graph/feedback_drain_bound_reports_exhaustion.json",
       "pointer": "/steps/*/expect",
       "schema": "route_0115"
     },
     {
-      "fixture": "reactive-graph/merge_feed_through_a_formula_coalesces.json",
+      "fixture": "reactive-graph/merge_cell_acquires_no_dependency_edge.json",
       "pointer": "/steps/*/expect",
       "schema": "route_0116"
     },
     {
-      "fixture": "reactive-graph/merge_folds_synchronously_in_batch.json",
+      "fixture": "reactive-graph/merge_feed_through_a_formula_coalesces.json",
       "pointer": "/steps/*/expect",
       "schema": "route_0117"
     },
     {
-      "fixture": "reactive-graph/merge_per_settled_cone_not_per_write.json",
+      "fixture": "reactive-graph/merge_folds_synchronously_in_batch.json",
       "pointer": "/steps/*/expect",
       "schema": "route_0118"
     },
     {
-      "fixture": "reactive-graph/read_after_dispose_is_an_error.json",
+      "fixture": "reactive-graph/merge_per_settled_cone_not_per_write.json",
       "pointer": "/steps/*/expect",
       "schema": "route_0119"
     },
     {
-      "fixture": "reactive-graph/recycled_id_inherits_nothing.json",
+      "fixture": "reactive-graph/read_after_dispose_is_an_error.json",
       "pointer": "/steps/*/expect",
       "schema": "route_0120"
     },
     {
-      "fixture": "reactive-graph/scope_teardown_equals_fold_of_disposals.json",
-      "pointer": "/expected",
+      "fixture": "reactive-graph/recycled_id_inherits_nothing.json",
+      "pointer": "/steps/*/expect",
       "schema": "route_0121"
     },
     {
       "fixture": "reactive-graph/scope_teardown_equals_fold_of_disposals.json",
-      "pointer": "/scenarios/*/steps/*/expect",
+      "pointer": "/expected",
       "schema": "route_0122"
+    },
+    {
+      "fixture": "reactive-graph/scope_teardown_equals_fold_of_disposals.json",
+      "pointer": "/scenarios/*/steps/*/expect",
+      "schema": "route_0123"
     },
     {
       "fixture": "reactive-graph/scoping_bounds_teardown_not_visibility.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0123"
+      "schema": "route_0124"
     },
     {
       "fixture": "reactive-graph/signal_materializes_once_per_batch.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0124"
+      "schema": "route_0125"
     },
     {
       "fixture": "reactive-graph/signal_materializes_without_a_read.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0125"
+      "schema": "route_0126"
     },
     {
       "fixture": "reactive-graph/stale_effect_handle_cannot_remove_recycled_source.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0126"
+      "schema": "route_0127"
     },
     {
       "fixture": "reactive-graph/teardown_runs_members_in_reverse_creation_order.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0127"
+      "schema": "route_0128"
     },
     {
       "fixture": "reactive-graph/transitive_invalidation_reaches_depth.json",
       "pointer": "/steps/*/expect",
-      "schema": "route_0128"
+      "schema": "route_0129"
     },
     {
       "fixture": "receipts/causal_receipts.json",
       "pointer": "/assertions",
-      "schema": "route_0129"
+      "schema": "route_0130"
     },
     {
       "fixture": "reliable-sync/coalesce_bounds_outbox.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0130"
+      "schema": "route_0131"
     },
     {
       "fixture": "reliable-sync/idempotent_redelivery.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0131"
+      "schema": "route_0132"
     },
     {
       "fixture": "reliable-sync/liveness_lease_eviction.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0132"
+      "schema": "route_0133"
     },
     {
       "fixture": "reliable-sync/liveness_orset_lww.json",
       "pointer": "/scenarios/*/expect",
-      "schema": "route_0133"
-    },
-    {
-      "fixture": "reliable-sync/multi_epoch_delta.json",
-      "pointer": "/assertions",
       "schema": "route_0134"
     },
     {
       "fixture": "reliable-sync/multi_epoch_delta.json",
-      "pointer": "/scenarios/*/expect",
+      "pointer": "/assertions",
       "schema": "route_0135"
     },
     {
-      "fixture": "reliable-sync/outbox_journal_decode.json",
+      "fixture": "reliable-sync/multi_epoch_delta.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0136"
     },
     {
-      "fixture": "reliable-sync/outbox_replay_after_crash.json",
+      "fixture": "reliable-sync/outbox_journal_decode.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0137"
     },
     {
-      "fixture": "reliable-sync/outbox_store_protocol.json",
+      "fixture": "reliable-sync/outbox_replay_after_crash.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0138"
     },
     {
-      "fixture": "reliable-sync/resync_gap_converge.json",
+      "fixture": "reliable-sync/outbox_store_protocol.json",
       "pointer": "/scenarios/*/expect",
       "schema": "route_0139"
     },
     {
-      "fixture": "replay/canonical_encoding_equality.json",
-      "pointer": "/steps/*/expected",
+      "fixture": "reliable-sync/resync_gap_converge.json",
+      "pointer": "/scenarios/*/expect",
       "schema": "route_0140"
     },
     {
-      "fixture": "replay/divergence_localization.json",
+      "fixture": "replay/canonical_encoding_equality.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0141"
     },
     {
-      "fixture": "replay/fingerprint_log_binding.json",
+      "fixture": "replay/divergence_localization.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0142"
     },
     {
-      "fixture": "resilience/bulkhead.json",
+      "fixture": "replay/fingerprint_log_binding.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0143"
     },
     {
-      "fixture": "resilience/circuit_breaker.json",
+      "fixture": "resilience/bulkhead.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0144"
     },
     {
-      "fixture": "resilience/retry.json",
+      "fixture": "resilience/circuit_breaker.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0145"
     },
     {
-      "fixture": "resilience/timeout.json",
+      "fixture": "resilience/retry.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0146"
     },
     {
-      "fixture": "service/discovery.json",
+      "fixture": "resilience/timeout.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0147"
     },
     {
-      "fixture": "service/health.json",
+      "fixture": "service/discovery.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0148"
     },
     {
-      "fixture": "service/readiness.json",
+      "fixture": "service/health.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0149"
     },
     {
-      "fixture": "service/service_registry.json",
+      "fixture": "service/readiness.json",
       "pointer": "/steps/*/expected",
       "schema": "route_0150"
     },
     {
-      "fixture": "signaling/anti_spoof_session.json",
-      "pointer": "/assertions",
+      "fixture": "service/service_registry.json",
+      "pointer": "/steps/*/expected",
       "schema": "route_0151"
     },
     {
       "fixture": "signaling/anti_spoof_session.json",
-      "pointer": "/steps/*/expect/*",
+      "pointer": "/assertions",
       "schema": "route_0152"
+    },
+    {
+      "fixture": "signaling/anti_spoof_session.json",
+      "pointer": "/steps/*/expect/*",
+      "schema": "route_0153"
     },
     {
       "fixture": "signaling/frames.json",
       "pointer": "/frames/*/assertions",
-      "schema": "route_0153"
+      "schema": "route_0154"
     },
     {
       "fixture": "simulation/consumer_testkit.json",
       "pointer": "/scenarios/*/expected",
-      "schema": "route_0154"
+      "schema": "route_0155"
     },
     {
       "fixture": "snapshot_minimal.json",
       "pointer": "/assertions",
-      "schema": "route_0155"
+      "schema": "route_0156"
     },
     {
       "fixture": "snapshot_multi_node.json",
       "pointer": "/assertions",
-      "schema": "route_0156"
+      "schema": "route_0157"
     },
     {
       "fixture": "snapshot_shared_blob.json",
       "pointer": "/assertions",
-      "schema": "route_0157"
+      "schema": "route_0158"
     },
     {
       "fixture": "stdlib/revision_barrier.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0158"
+      "schema": "route_0159"
     },
     {
       "fixture": "stdlib/timeout.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0159"
+      "schema": "route_0160"
     },
     {
       "fixture": "stdlib/timer.json",
       "pointer": "/scenarios/*/steps/*/expect",
-      "schema": "route_0160"
+      "schema": "route_0161"
     },
     {
       "fixture": "temporal/cron_pattern.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0161"
+      "schema": "route_0162"
     },
     {
       "fixture": "temporal/deadline_expiry.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0162"
+      "schema": "route_0163"
     },
     {
       "fixture": "temporal/interval_periodic.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0163"
+      "schema": "route_0164"
     },
     {
       "fixture": "temporal/timer_single_shot.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0164"
+      "schema": "route_0165"
     },
     {
       "fixture": "windowing/session.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0165"
+      "schema": "route_0166"
     },
     {
       "fixture": "windowing/sliding_count.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0166"
+      "schema": "route_0167"
     },
     {
       "fixture": "windowing/tumbling_count.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0167"
+      "schema": "route_0168"
     },
     {
       "fixture": "windowing/tumbling_time.json",
       "pointer": "/steps/*/expected",
-      "schema": "route_0168"
+      "schema": "route_0169"
     }
   ]
 }

@@ -1,0 +1,275 @@
+{
+  "description": "An effect body MAY return a cleanup closure, and returning none is a first-class shape, not a degenerate one (#lzeffectvoid). docs/reactive-graph.md says `run` *may* return a cleanup that runs before each rerun and on dispose; this fixture pins what that means observably for all three body shapes, because bindings spell 'no cleanup' differently -- returning nothing in lazily-js/-rs/-py/-dart/-zig, an explicit null/nil/nullptr in lazily-cs/-kt/-go/-cpp -- and the spelling must never change the behaviour. The `effect` op's `cleanup` field selects the body: `every_run` (the default when absent) returns a cleanup from every run; `none` returns the binding's idiomatic no-cleanup form from every run; `alternate` returns a cleanup from odd-numbered runs (1st, 3rd, ...) and no cleanup from even-numbered ones, counting the run at creation as the first. Each effect reads its own cell, so every publish reruns exactly one effect and no assertion depends on the order a binding flushes sibling effects in. `cleanup_order` is cumulative from the start of the fixture. What each block catches: `bare` (none) must still rerun on every publish while nothing is ever called -- on rerun or on dispose -- which a binding that drops a cleanup-less effect's subscription, or that calls a null cleanup, fails. `tidy` (every_run) pins exactly one cleanup per rerun plus one on dispose, never more. `toggle` (alternate) is the discriminating case: a binding that only overwrites its stored cleanup when the new run returned one, without clearing the slot after calling it, re-invokes run 1's cleanup at run 3 and shows an extra `toggle` at steps[11]; a binding that keeps a stale cleanup across a none-returning run calls it again on dispose at steps[15]. The final batch proves disposal detached all three effects whatever cleanup shape they had.",
+  "kind": "ReactiveGraph",
+  "model": "Context",
+  "shape": "steps",
+  "steps": [
+    {
+      "op": {
+        "type": "cell",
+        "id": "a",
+        "value": 1
+      }
+    },
+    {
+      "op": {
+        "type": "cell",
+        "id": "b",
+        "value": 1
+      }
+    },
+    {
+      "op": {
+        "type": "cell",
+        "id": "c",
+        "value": 1
+      }
+    },
+    {
+      "op": {
+        "type": "effect",
+        "id": "bare",
+        "reads": [
+          "a"
+        ],
+        "cleanup": "none"
+      },
+      "expect": {
+        "observed_by": [
+          "bare"
+        ],
+        "cleanup_order": [],
+        "note": "an effect whose body returns no cleanup still runs on creation"
+      }
+    },
+    {
+      "op": {
+        "type": "effect",
+        "id": "tidy",
+        "reads": [
+          "b"
+        ],
+        "cleanup": "every_run"
+      },
+      "expect": {
+        "observed_by": [
+          "tidy"
+        ],
+        "cleanup_order": []
+      }
+    },
+    {
+      "op": {
+        "type": "effect",
+        "id": "toggle",
+        "reads": [
+          "c"
+        ],
+        "cleanup": "alternate"
+      },
+      "expect": {
+        "observed_by": [
+          "toggle"
+        ],
+        "cleanup_order": [],
+        "note": "run 1 of toggle returns a cleanup; nothing has been cleaned up yet"
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "a",
+        "value": 2
+      },
+      "expect": {
+        "observed_by": [
+          "bare"
+        ],
+        "cleanup_order": [],
+        "note": "(a) a cleanup-less effect reruns when its dependency changes, and nothing is called on the rerun"
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "a",
+        "value": 3
+      },
+      "expect": {
+        "observed_by": [
+          "bare"
+        ],
+        "cleanup_order": [],
+        "note": "and keeps rerunning: returning no cleanup did not unsubscribe it"
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "b",
+        "value": 2
+      },
+      "expect": {
+        "observed_by": [
+          "tidy"
+        ],
+        "cleanup_order": [
+          "tidy"
+        ],
+        "note": "(b) run 1's cleanup is called exactly once, before run 2"
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "b",
+        "value": 3
+      },
+      "expect": {
+        "observed_by": [
+          "tidy"
+        ],
+        "cleanup_order": [
+          "tidy",
+          "tidy"
+        ],
+        "note": "one cleanup per rerun, never a second call of an already-called cleanup"
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "c",
+        "value": 2
+      },
+      "expect": {
+        "observed_by": [
+          "toggle"
+        ],
+        "cleanup_order": [
+          "tidy",
+          "tidy",
+          "toggle"
+        ],
+        "note": "(c) cleanup -> none: run 1's cleanup is called before run 2, and run 2 returns no cleanup"
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "c",
+        "value": 3
+      },
+      "expect": {
+        "observed_by": [
+          "toggle"
+        ],
+        "cleanup_order": [
+          "tidy",
+          "tidy",
+          "toggle"
+        ],
+        "note": "none -> cleanup: run 2 returned no cleanup, so nothing is called before run 3 -- a binding that kept run 1's already-called cleanup calls it again here"
+      }
+    },
+    {
+      "op": {
+        "type": "set_cell",
+        "id": "c",
+        "value": 4
+      },
+      "expect": {
+        "observed_by": [
+          "toggle"
+        ],
+        "cleanup_order": [
+          "tidy",
+          "tidy",
+          "toggle",
+          "toggle"
+        ],
+        "note": "run 3's cleanup is called before run 4, which returns no cleanup"
+      }
+    },
+    {
+      "op": {
+        "type": "dispose",
+        "id": "bare"
+      },
+      "expect": {
+        "observed_by": [],
+        "cleanup_order": [
+          "tidy",
+          "tidy",
+          "toggle",
+          "toggle"
+        ],
+        "note": "(a) disposing an effect whose last run returned no cleanup calls nothing"
+      }
+    },
+    {
+      "op": {
+        "type": "dispose",
+        "id": "tidy"
+      },
+      "expect": {
+        "observed_by": [],
+        "cleanup_order": [
+          "tidy",
+          "tidy",
+          "toggle",
+          "toggle",
+          "tidy"
+        ],
+        "note": "(b) the outstanding cleanup is called exactly once on dispose"
+      }
+    },
+    {
+      "op": {
+        "type": "dispose",
+        "id": "toggle"
+      },
+      "expect": {
+        "observed_by": [],
+        "cleanup_order": [
+          "tidy",
+          "tidy",
+          "toggle",
+          "toggle",
+          "tidy"
+        ],
+        "note": "(c) toggle's last run (run 4) returned no cleanup, so dispose calls nothing -- not run 3's cleanup a second time"
+      }
+    },
+    {
+      "op": {
+        "type": "batch",
+        "writes": [
+          {
+            "id": "a",
+            "value": 10
+          },
+          {
+            "id": "b",
+            "value": 10
+          },
+          {
+            "id": "c",
+            "value": 10
+          }
+        ]
+      },
+      "expect": {
+        "observed_by": [],
+        "cleanup_order": [
+          "tidy",
+          "tidy",
+          "toggle",
+          "toggle",
+          "tidy"
+        ],
+        "note": "disposal detached every effect whatever its cleanup shape: no rerun, no further cleanup"
+      }
+    }
+  ]
+}

@@ -615,6 +615,12 @@
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
+      "path": "conformance/reactive-graph/effect_cleanup_is_optional.json",
+      "sha256": "d116ae30328993046bbda6e40fa4767524c10814e8e5173ede061dd8ac967ecc"
+    },
+    {
+      "license": "Apache-2.0",
+      "origin": "first-party-lazily-spec",
       "path": "conformance/reactive-graph/exact_fold_paths_stay_exact.json",
       "sha256": "700c6c84687cc751746d4cd93f750b9e5b616e51e8c3ac125030c483a6a35af9"
     },

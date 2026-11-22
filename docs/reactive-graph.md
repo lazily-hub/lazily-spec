@@ -344,6 +344,14 @@ pins are `Reactive.readShared_eq_readCell`,
   cleanup completes. Disposal of a matching live effect removes pending reruns,
   runs the current cleanup, and unsubscribes all dependency edges. Stale-handle
   disposal does none of those things and cannot run a recycled effect's cleanup.
+  Each run decides afresh whether it returns a cleanup (`#lzeffectvoid`): the
+  *current* cleanup is the one the most recent run returned, so a run that
+  returns none leaves nothing outstanding, and each returned cleanup is called
+  at most once. Returning no cleanup never changes scheduling — the effect still
+  reruns on every tracked invalidation — and how a binding spells "no cleanup"
+  (returning nothing, or an explicit `null`/`nil`/`nullptr` where its signature
+  requires a value) is not observable. Pinned by
+  `conformance/reactive-graph/effect_cleanup_is_optional.json`.
 - **Eager computed cells (`.eager()`).** Eagerness is not a kind — it is a
   `Computed` with a puller `Effect` attached, produced by `computed(compute).eager()`:
   the effect reads it on creation and after every invalidation, forcing it

@@ -1,5 +1,5 @@
 {
-  "fixtures": 164,
+  "fixtures": 165,
   "arrays": {
     "codec/blob_backend_discriminator.json": {
       "scenarios": 14
@@ -287,6 +287,9 @@
     },
     "reactive-graph/dispose_signal_reverts_to_lazy.json": {
       "steps": 6
+    },
+    "reactive-graph/effect_cleanup_is_optional.json": {
+      "steps": 17
     },
     "reactive-graph/exact_fold_paths_stay_exact.json": {
       "steps": 5
@@ -784,6 +787,9 @@
     },
     "reactive-graph/dispose_signal_reverts_to_lazy.json": {
       "expect": 5
+    },
+    "reactive-graph/effect_cleanup_is_optional.json": {
+      "expect": 14
     },
     "reactive-graph/exact_fold_paths_stay_exact.json": {
       "expect": 3

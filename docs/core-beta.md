@@ -142,7 +142,7 @@ Only the allow-listed symbols and imports below are in the Core compatibility pr
 
 ## Required evidence
 
-Fixture closure: **17** files; digest `sha256-path-nul-bytes-v1:db3eb69f96061a8bd49a4f8018baf823bac0edca3f44c0fb1c0dba54e4f846e9`.
+Fixture closure: **18** files; digest `sha256-path-nul-bytes-v1:7fe79ff9c316910903229437e0d57befe935d60c058c10fb43929b0ac3189fb7`.
 
 Every candidate binding must replay the complete closure. Fixtureless claims name their proof class explicitly; C-ABI is a module claim and does not enter Core by being shipped in an umbrella package.
 
