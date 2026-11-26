@@ -106,6 +106,10 @@ test("renders toolchains, Core imports, package coordinates, and Preview disclai
   assert.match(rendered, /cargo:`lazily`/);
   assert.match(rendered, /Non-Core exports remain Preview/);
   assert.match(rendered, /GDScript \(`gdscript`\) remains \*\*Preview\*\*/);
+  assert.match(rendered, /profiles\/interface-stability\.json/);
+  assert.match(rendered, /does not promote the profile/);
+  assert.match(rendered, /beta contract/);
+  assert.match(rendered, /unstable_modules/);
 });
 
 test("consumer runner is fail-closed in require-all mode", () => {

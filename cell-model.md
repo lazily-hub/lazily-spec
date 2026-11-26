@@ -520,7 +520,7 @@ move live transition authority outside the graph.
 ### Core surface vs. binding extensions
 
 This heading is the collection method list. It is not the product beta contract.
-The beta contract is the allow-list in [Interface stability](docs/interface-stability.md).
+The beta contract is the allow-list in [`profiles/interface-stability.json`](profiles/interface-stability.json), rendered in [Interface stability](docs/interface-stability.md).
 A method that a collection implementation must expose can still be an unstable module surface.
 
 The clauses above are *laws*. This section says which **methods** a binding must

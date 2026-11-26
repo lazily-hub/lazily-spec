@@ -20,6 +20,7 @@
 - [Durable Effect Sinks](durable-sinks.md)
 - [Reactive Egress](transport-egress.md)
 - [Cross-Language Coverage](coverage.md)
+- [Core Beta profile](core-beta.md)
 - [Core Support and Artifact Consumers](core-support.md)
 - [Interface Stability](interface-stability.md)
 - [Wire Protocol](protocol.md)

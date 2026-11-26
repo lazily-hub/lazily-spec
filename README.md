@@ -9,9 +9,30 @@ and the conformance corpus. Each binding declares the subset it actually replays
 coverage and Core-profile gates reject claims that outrun that executable evidence.
 
 Start here: the [wire protocol](protocol.md), the [cell model](cell-model.md), the
+[Core Beta profile](docs/core-beta.md), the
 [Core support contract](docs/core-support.md), the
 [interface stability classification](docs/interface-stability.md), the **Feature Set** matrix below, and
 the **Conformance Fixtures** each binding declares and must pass.
+
+<!-- beta-stability:start -->
+## Beta stability
+
+Profile `core-v1` is a **candidate**. This page does not promote it.
+
+What is stable enough for the beta is the beta contract, and only that contract.
+The list is [`profiles/interface-stability.json`](profiles/interface-stability.json).
+[Interface stability](docs/interface-stability.md) renders that registry.
+[Core Beta](docs/core-beta.md) renders the per-binding names.
+[Core support](docs/core-support.md) renders support ranges and the deprecation window.
+
+The contract is the registry's `beta_contract`: the allow-listed abstract symbols, the execution flavors every candidate binding declares, the reactive-graph fixture closure, and the installed-consumer scenarios.
+Do not copy those names into another document.
+A beta-contract edit changes `profiles/core-v1.json`, the fixture digest, and the registry together.
+
+What is unstable is the rest of that same registry: `unstable_modules`, `not_candidate_bindings`, `reactive_graph_outside_core_closure`, and `rust_core_facade` re-exports that are not `beta_contract_reexports`.
+A check in the feature matrix below, a MUST in the binding matrix, and an always-compiled Rust module are implementation facts.
+They are not a compatibility promise.
+<!-- beta-stability:end -->
 Concurrency-bearing APIs use the machine-readable
 [`concurrency-scopes.json`](concurrency-scopes.json) taxonomy documented in
 [Concurrency Scopes](docs/concurrency-scopes.md).

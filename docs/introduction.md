@@ -5,6 +5,21 @@ Language-agnostic wire protocol specification for the **lazily** reactive signal
 This site is the rendered companion to the [lazily-spec](https://github.com/lazily-hub/lazily-spec)
 repository. It defines the canonical message schemas shared across every lazily implementation:
 
+<!-- beta-stability:start -->
+## Beta stability
+
+Profile `core-v1` is a **candidate**. This book does not promote it.
+
+What is stable enough for the beta is the beta contract.
+The list is [`profiles/interface-stability.json`](../profiles/interface-stability.json).
+[Interface stability](interface-stability.md) renders that registry.
+[Core Beta](core-beta.md) renders the per-binding names.
+[Core support](core-support.md) renders support ranges and the deprecation window.
+
+What is unstable is the rest of that registry: `unstable_modules`, `not_candidate_bindings`, `reactive_graph_outside_core_closure`, and `rust_core_facade` re-exports that are not `beta_contract_reexports`.
+A requirement in the binding matrix is not a compatibility promise.
+<!-- beta-stability:end -->
+
 - **lazily-rs** (Rust)
 - **lazily-py** (Python)
 - **lazily-zig** (Zig)

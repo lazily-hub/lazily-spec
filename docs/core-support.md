@@ -5,6 +5,11 @@
 
 Profile: `core-v1` (candidate), Core API generation 1.
 
+What is stable for the beta is the beta contract. Support ranges on this page apply to that contract.
+What stays unstable is the rest of [`../profiles/interface-stability.json`](../profiles/interface-stability.json): `unstable_modules`, `not_candidate_bindings`, `reactive_graph_outside_core_closure`, and `rust_core_facade` re-exports that are not `beta_contract_reexports`.
+This page does not promote the profile and does not repeat that list.
+The rendered split is [Interface stability](interface-stability.md).
+
 ## Compatibility policy
 
 Core remains pre-1.0, but a released Core symbol is kept compatible throughout its declared deprecation window; accidental breaks are defects.

@@ -3,7 +3,10 @@
 
 Profile `core-v1` is **candidate** at Core API generation **1**.
 Only the allow-listed symbols and imports below are in the Core compatibility promise; other umbrella exports remain Preview or independently maturing modules.
-The stable-versus-unstable split is [Interface stability](interface-stability.md).
+What is stable for the beta is this allow-list, which is the beta contract.
+What stays unstable is not copied here. It lives only in [`../profiles/interface-stability.json`](../profiles/interface-stability.json): `unstable_modules`, `not_candidate_bindings`, `reactive_graph_outside_core_closure`, and `rust_core_facade` re-exports that are not `beta_contract_reexports`.
+The rendered split is [Interface stability](interface-stability.md).
+This page does not promote the profile.
 
 ## Abstract Core surface
 
