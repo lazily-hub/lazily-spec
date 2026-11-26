@@ -2,8 +2,14 @@
 
 Schemas are provided as **JSON Schema (Draft 2020-12)**. A binding validates the
 wire and conformance schemas for the surfaces it declares; it does not receive
-credit merely because another binding consumes them. The JSON representation of
-the wire format is normative; binary codecs encode the same shapes.
+credit merely because another binding consumes them. The normative `IpcMessage`
+envelope is externally-tagged (`{"Snapshot": …}` / `{"Delta": …}` /
+`{"CrdtSync": …}`), not a `"type"` discriminant. `json` is the reference codec
+(**MUST**) and the form these schemas and the conformance fixtures describe.
+`msgpack` (**MUST**) encodes the same named fields; `postcard` (**MAY**) is the
+positional Rust fast path. See [Frame codecs](protocol.md#frame-codecs).
+Protobuf is an optional graph-boundary family, not an `IpcMessage` codec
+([Protobuf graph-boundary interoperability](protobuf-interop.md)).
 
 | Schema | Layer |
 |--------|-------|

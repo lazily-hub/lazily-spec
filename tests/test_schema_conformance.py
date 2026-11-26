@@ -2428,3 +2428,49 @@ def test_backend_accept_scenarios_pin_the_encoder_half() -> None:
         assert expect["reencoded_backend_field_present"] is (expect["decoded_backend"] != "shm")
         checked += 1
     assert checked == 10, f"expected 10 accept scenarios, checked {checked}"
+
+
+# ---------------------------------------------------------------------------
+# Reader-facing wire-format prose must match the frame-codec contract
+# ---------------------------------------------------------------------------
+
+
+def _section(path: Path, heading: str) -> str:
+    text = path.read_text()
+    start = text.find(heading)
+    assert start >= 0, f"{path.name} is missing {heading!r}"
+    rest = text[start + len(heading) :]
+    nxt = rest.find("\n## ")
+    return rest if nxt < 0 else rest[:nxt]
+
+
+@pytest.mark.parametrize(
+    "rel",
+    ["README.md", "docs/introduction.md", "docs/schemas.md"],
+)
+def test_reader_facing_docs_match_frame_codecs(rel: str) -> None:
+    """The landing page, introduction, and schema intro once described a future
+    `"type"`-discriminant JSON codec and called postcard, bincode, and protobuf
+    future binary codecs. protocol.md § Frame codecs is the contract: externally
+    tagged envelopes, `json` and `msgpack` MUST, `postcard` MAY.
+    """
+    path = ROOT / rel
+    if rel == "docs/schemas.md":
+        body = path.read_text().split("\n| Schema |", 1)[0]
+    elif rel == "docs/introduction.md":
+        body = _section(path, "## Wire Format")
+        layers = _section(path, "## Protocol Layers")
+        assert "Every layer in this matrix is **required of every binding**." not in layers
+        assert "**Signaling (WebSocket)** is **MAY**" in layers
+    else:
+        body = _section(path, "## Wire Format")
+    assert "externally-tagged" in body
+    assert "serde-compatible tagging" not in body
+    assert "Future binary" not in body
+    assert "bincode, postcard" not in body
+    assert "reference codec" in body.lower()
+    assert "`json`" in body and "`msgpack`" in body and "`postcard`" in body
+    assert body.count("**MUST**") >= 2
+    assert "**MAY**" in body
+    if rel != "docs/schemas.md":
+        assert "`bincode` is not a frame codec." in body

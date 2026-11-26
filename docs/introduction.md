@@ -29,24 +29,37 @@ below carry cells classified by this model.
 | Distributed (CRDT) | [Wire Protocol § Distributed](protocol.md) | [distributed.json](schemas.md) |
 | Capability negotiation | [Wire Protocol § Capability Negotiation](protocol.md) | inline |
 
-Every layer in this matrix is **required of every binding**. The **Distributed CRDT**
-row and the required [keyed cell collections](cell-model.md#keyed-cell-collections) layer
-are unconditional. The **C-ABI FFI** row is required by default with a narrow platform
-carve-out (a binding whose runtime cannot host a native in-process C ABI — e.g.
-browser/Worker JS — declares `ffi = none` and interops over the wire instead). The
-**thread-safe** and **async** reactive contexts are required where the platform supports
-them (a platform that structurally lacks threading or suspendable async declares
-`thread_safe = none` / `async = none`); the **shared-memory payload path** is required
-where the platform supports it, with an **I/O-channel fallback** (`Inline` payloads over
-IPC/WebSocket/WebRTC) when it does not. See the
+**IPC**, **Distributed CRDT**, and **capability negotiation** are required of every
+binding. **Signaling (WebSocket)** is **MAY** — only a binding that bridges browser
+or runtime peers implements it. The required
+[keyed cell collections](cell-model.md#keyed-cell-collections) layer is unconditional
+even though it is not a row above. The **C-ABI FFI** row is required by default with
+a narrow platform carve-out (a binding whose runtime cannot host a native in-process
+C ABI — e.g. browser/Worker JS — declares `ffi = none` and interops over the wire
+instead). The **thread-safe** and **async** reactive contexts are required where the
+platform supports them (a platform that structurally lacks threading or suspendable
+async declares `thread_safe = none` / `async = none`); the **shared-memory payload
+path** is required where the platform supports it, with an **I/O-channel fallback**
+(`Inline` payloads over IPC/WebSocket/WebRTC) when it does not. See the
 [Binding Conformance Matrix](protocol.md#binding-conformance-matrix) for the full
 MUST/MAY breakdown and the carve-out terms.
 
 ## Wire Format
 
-All messages use **JSON** with `serde`-compatible tagging (`"type"` discriminant). Future
-binary codecs (bincode, postcard, protobuf) encode the same schemas — the JSON representation
-is normative.
+An `IpcMessage` (`Snapshot`, `Delta`, `CrdtSync`) is an **externally-tagged**
+envelope — `{"Snapshot": …}`, `{"Delta": …}`, `{"CrdtSync": …}` — not a
+`"type"` discriminant. Three codecs encode that one logical schema
+([Frame codecs](protocol.md#frame-codecs)):
+
+| Codec | Role | Required |
+|-------|------|----------|
+| `json` | Reference codec. Byte-canonical. Fixtures, logs, receipts, and the FFI baseline use this form. | **MUST** |
+| `msgpack` | Cross-language binary default. Named-field maps with the same omit-when-absent rule. Round-trip is semantic, not byte-identical. | **MUST** |
+| `postcard` | Positional Rust/same-schema fast path. Not cross-language. | **MAY** |
+
+`bincode` is not a frame codec. Protobuf is not an `IpcMessage` codec either:
+`protobuf-graph-boundary-v1` is an optional graph-boundary family
+([Protobuf graph-boundary interoperability](protobuf-interop.md)).
 
 ## Schema Format
 

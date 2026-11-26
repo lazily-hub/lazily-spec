@@ -140,7 +140,20 @@ fixture-mirror maintenance and verification commands.
 
 ## Wire Format
 
-All messages use **JSON** with `serde`-compatible tagging (`"type"` discriminant). Future binary codecs (bincode, postcard, protobuf) encode the same schemas — the JSON representation is normative.
+An `IpcMessage` (`Snapshot`, `Delta`, `CrdtSync`) is an **externally-tagged**
+envelope — `{"Snapshot": …}`, `{"Delta": …}`, `{"CrdtSync": …}` — not a
+`"type"` discriminant. Three codecs encode that one logical schema
+([Frame codecs](protocol.md#frame-codecs)):
+
+| Codec | Role | Required |
+|-------|------|----------|
+| `json` | Reference codec. Byte-canonical. Fixtures, logs, receipts, and the FFI baseline use this form. | **MUST** |
+| `msgpack` | Cross-language binary default. Named-field maps with the same omit-when-absent rule. Round-trip is semantic, not byte-identical. | **MUST** |
+| `postcard` | Positional Rust/same-schema fast path. Not cross-language. | **MAY** |
+
+`bincode` is not a frame codec. Protobuf is not an `IpcMessage` codec either:
+`protobuf-graph-boundary-v1` is an optional graph-boundary family
+([Protobuf graph-boundary interoperability](docs/protobuf-interop.md)).
 
 ## Schema Format
 
