@@ -39,6 +39,7 @@ _SCHEMA_NAMES = [
     "ffi",
     "signaling",
     "statechart",
+    "graph-ir",
     "receipts",
     "lossless-tree",
     "lossless-tree-delta",

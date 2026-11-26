@@ -3,6 +3,7 @@
 [Introduction](introduction.md)
 
 - [Reactive Graph](reactive-graph.md)
+- [Graph IR](graph-ir.md)
 - [Cell Model](cell-model.md)
 - [Deterministic-Replay Safety](replay-safety.md)
 - [Replay-Equivalence Proof](replay-equivalence.md)

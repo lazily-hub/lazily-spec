@@ -1489,6 +1489,15 @@ deterministic properties under concurrent access:
 > properties above are the contract that model check exercises; a binding with no
 > such tooling MUST at minimum exercise 1–4 under a threaded stress harness.
 
+## Definition document
+
+The sections above fix runtime behavior. A host closure is not a portable
+program: it cannot be inspected, edited, or emitted as source. The
+[Graph IR](graph-ir.md) is the compute document for sources, computeds,
+effects, and the expression trees that lower onto this graph. Edits add,
+replace, and remove those nodes while a runtime holds the document. The
+document is not a `Snapshot` or a `Delta`.
+
 ## Implementation status
 
 The single-threaded reactive context is required of every binding that

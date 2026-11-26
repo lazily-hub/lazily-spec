@@ -294,6 +294,15 @@ The `conformance/statechart/` directory contains canonical Harel/SCXML state-cha
 | `statechart/entry_exit_actions.json` | entry/exit/transition action ordering across LCA boundaries |
 | `statechart/malformed_rejected.json` | authoritative `kind`, strict field types, and declared-state reference closure |
 
+## Graph IR
+
+[`schemas/graph-ir.json`](schemas/graph-ir.json) is the compute document for a
+reactive graph ([Graph IR](docs/graph-ir.md)). It is not a conformance-corpus
+fixture and it is not a `Snapshot` or a `Delta`. Examples in
+[`examples/graph-ir/`](examples/graph-ir/) cover a create, an edit, dynamic
+reads, a merge policy, and structural values. The reference interpreter is
+lazily-rs (`graph-ir` feature).
+
 ## Durable Owner Conformance
 
 The `conformance/durable-owner/` corpus defines the backend-neutral atomic owner

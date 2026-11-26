@@ -1,0 +1,294 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/graph-ir.json",
+  "title": "Graph IR",
+  "description": "Compute document for a lazily reactive graph. This is not a wire message and MUST NOT be carried inside Snapshot or Delta. A document lowers onto a runtime context; an edit adds, replaces, or removes nodes while that runtime holds the document. Values that later cross IPC/FFI are ordinary cell payloads, not this document.",
+  "oneOf": [
+    {"$ref": "#/$defs/GraphDocument"},
+    {"$ref": "#/$defs/GraphEdit"}
+  ],
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+      "description": "Stable node id. It is an identifier so a lowering can emit it without quoting."
+    },
+    "Policy": {
+      "enum": ["keep-latest", "sum", "max", "min", "and", "or"],
+      "description": "Source merge policy. Omitted means keep-latest. sum/max/min require a numeric init. and/or require a boolean init."
+    },
+    "GraphDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ir", "nodes"],
+      "properties": {
+        "kind": {"const": "graph"},
+        "ir": {"const": "1"},
+        "id": {"$ref": "#/$defs/Id"},
+        "nodes": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/Node"}
+        }
+      }
+    },
+    "GraphEdit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ir", "ops"],
+      "properties": {
+        "kind": {"const": "edit"},
+        "ir": {"const": "1"},
+        "ops": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/EditOp"}
+        }
+      }
+    },
+    "Node": {
+      "oneOf": [
+        {"$ref": "#/$defs/SourceNode"},
+        {"$ref": "#/$defs/ComputedNode"},
+        {"$ref": "#/$defs/EffectNode"}
+      ]
+    },
+    "SourceNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "init"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Id"},
+        "kind": {"const": "source"},
+        "init": {
+          "description": "Canonical JSON initial value. Runtime writes do not change this field."
+        },
+        "policy": {"$ref": "#/$defs/Policy"}
+      }
+    },
+    "ComputedNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "expr"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Id"},
+        "kind": {"const": "computed"},
+        "eager": {
+          "type": "boolean",
+          "description": "When true, lower attaches the declarative eager puller. Omitted means false. Replace does not inherit the previous node's flag."
+        },
+        "expr": {"$ref": "#/$defs/Expr"}
+      }
+    },
+    "EffectNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "body"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Id"},
+        "kind": {"const": "effect"},
+        "body": {"$ref": "#/$defs/Stmt"}
+      }
+    },
+    "EditOp": {
+      "oneOf": [
+        {"$ref": "#/$defs/AddOp"},
+        {"$ref": "#/$defs/ReplaceOp"},
+        {"$ref": "#/$defs/RemoveOp"}
+      ]
+    },
+    "AddOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "node"],
+      "properties": {
+        "op": {"const": "add"},
+        "node": {"$ref": "#/$defs/Node"}
+      }
+    },
+    "ReplaceOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "node"],
+      "properties": {
+        "op": {"const": "replace"},
+        "node": {"$ref": "#/$defs/Node"}
+      }
+    },
+    "RemoveOp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "id"],
+      "properties": {
+        "op": {"const": "remove"},
+        "id": {"$ref": "#/$defs/Id"}
+      }
+    },
+    "Expr": {
+      "oneOf": [
+        {"$ref": "#/$defs/Lit"},
+        {"$ref": "#/$defs/Ref"},
+        {"$ref": "#/$defs/Call"},
+        {"$ref": "#/$defs/ObjectExpr"}
+      ]
+    },
+    "Lit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lit"],
+      "properties": {
+        "lit": {"description": "Any JSON value, including null, arrays, and objects."}
+      }
+    },
+    "Ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref"],
+      "properties": {
+        "ref": {"$ref": "#/$defs/Id"}
+      }
+    },
+    "Call": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "args"],
+      "properties": {
+        "op": {"$ref": "#/$defs/Op"},
+        "args": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/Expr"}
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"op": {"enum": ["neg", "not", "len"]}},
+            "required": ["op"]
+          },
+          "then": {"properties": {"args": {"minItems": 1, "maxItems": 1}}}
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": [
+                  "add", "sub", "mul", "div", "mod", "min", "max",
+                  "eq", "ne", "lt", "le", "gt", "ge",
+                  "concat", "get", "and", "or"
+                ]
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {"properties": {"args": {"minItems": 2, "maxItems": 2}}}
+        },
+        {
+          "if": {
+            "properties": {"op": {"const": "if"}},
+            "required": ["op"]
+          },
+          "then": {"properties": {"args": {"minItems": 3, "maxItems": 3}}}
+        },
+        {
+          "if": {
+            "properties": {"op": {"const": "array"}},
+            "required": ["op"]
+          },
+          "then": {"properties": {"args": {"minItems": 0}}}
+        }
+      ]
+    },
+    "Op": {
+      "enum": [
+        "neg", "not", "len",
+        "add", "sub", "mul", "div", "mod", "min", "max",
+        "eq", "ne", "lt", "le", "gt", "ge",
+        "concat", "get", "and", "or", "if",
+        "array"
+      ]
+    },
+    "ObjectExpr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object"],
+      "properties": {
+        "object": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/Field"}
+        }
+      }
+    },
+    "Field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "value"],
+      "properties": {
+        "key": {"type": "string"},
+        "value": {"$ref": "#/$defs/Expr"}
+      }
+    },
+    "Stmt": {
+      "oneOf": [
+        {"$ref": "#/$defs/EvalStmt"},
+        {"$ref": "#/$defs/SetStmt"},
+        {"$ref": "#/$defs/MergeStmt"},
+        {"$ref": "#/$defs/SeqStmt"},
+        {"$ref": "#/$defs/WhenStmt"}
+      ]
+    },
+    "EvalStmt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["do", "expr"],
+      "properties": {
+        "do": {"const": "eval"},
+        "expr": {"$ref": "#/$defs/Expr"}
+      }
+    },
+    "SetStmt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["do", "target", "expr"],
+      "properties": {
+        "do": {"const": "set"},
+        "target": {"$ref": "#/$defs/Id"},
+        "expr": {"$ref": "#/$defs/Expr"}
+      }
+    },
+    "MergeStmt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["do", "target", "expr"],
+      "properties": {
+        "do": {"const": "merge"},
+        "target": {"$ref": "#/$defs/Id"},
+        "expr": {"$ref": "#/$defs/Expr"}
+      }
+    },
+    "SeqStmt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["do", "steps"],
+      "properties": {
+        "do": {"const": "seq"},
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/Stmt"}
+        }
+      }
+    },
+    "WhenStmt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["do", "cond", "then"],
+      "properties": {
+        "do": {"const": "when"},
+        "cond": {"$ref": "#/$defs/Expr"},
+        "then": {"$ref": "#/$defs/Stmt"},
+        "else": {"$ref": "#/$defs/Stmt"}
+      }
+    }
+  }
+}
