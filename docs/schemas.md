@@ -21,6 +21,7 @@ the wire format is normative; binary codecs encode the same shapes.
 | `assertion-blocks.json` | Routed, fail-closed schemas for every canonical `assertions` / `expect` / `expected` object |
 | `core-profile.schema.json` | Product profile: Core symbols, binding mappings, toolchains, fixtures, and module dependency rules |
 | `core-artifact-consumers.schema.json` | Release evidence contract for clean installed-artifact consumers and support policy |
+| `interface-stability.schema.json` | Beta-contract versus explicitly unstable public surfaces |
 
 The IPC schemas describe the **normative externally-tagged envelope** that
 every binding serializes (the single-key `{"Snapshot": …}` / `{"Delta": …}` /
@@ -35,11 +36,12 @@ schema, so families without a whole-fixture schema still reject unknown claim
 keys and stale value shapes. See
 [Assertion-Block Schemas](assertion-block-schemas.md).
 
-The two Core schemas are product and release metadata, not wire messages.
-`core_api_generation` therefore advances independently of `protocol_version`;
-changing a Core import or deprecation window does not silently change the IPC
-envelope. Their generated human-readable views are [Core Beta](core-beta.md) and
-[Core support and artifact consumers](core-support.md).
+The Core schemas and the interface-stability schema are product and release
+metadata, not wire messages. `core_api_generation` therefore advances
+independently of `protocol_version`; changing a Core import or deprecation
+window does not silently change the IPC envelope. Their generated human-readable
+views are [Core Beta](core-beta.md), [Core support and artifact consumers](core-support.md),
+and [Interface stability](interface-stability.md).
 
 ## `defs.json`
 

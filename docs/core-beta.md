@@ -3,6 +3,7 @@
 
 Profile `core-v1` is **candidate** at Core API generation **1**.
 Only the allow-listed symbols and imports below are in the Core compatibility promise; other umbrella exports remain Preview or independently maturing modules.
+The stable-versus-unstable split is [Interface stability](interface-stability.md).
 
 ## Abstract Core surface
 

@@ -9,7 +9,8 @@ and the conformance corpus. Each binding declares the subset it actually replays
 coverage and Core-profile gates reject claims that outrun that executable evidence.
 
 Start here: the [wire protocol](protocol.md), the [cell model](cell-model.md), the
-[Core support contract](docs/core-support.md), the **Feature Set** matrix below, and
+[Core support contract](docs/core-support.md), the
+[interface stability classification](docs/interface-stability.md), the **Feature Set** matrix below, and
 the **Conformance Fixtures** each binding declares and must pass.
 Concurrency-bearing APIs use the machine-readable
 [`concurrency-scopes.json`](concurrency-scopes.json) taxonomy documented in

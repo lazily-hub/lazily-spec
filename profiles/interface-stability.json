@@ -1,0 +1,140 @@
+{
+  "$schema": "../schemas/interface-stability.schema.json",
+  "profile_id": "core-v1",
+  "profile_status": "candidate",
+  "beta_contract": {
+    "abstract_symbols": ["context", "source", "computed", "effect", "batch", "scope", "typed_context"],
+    "execution_flavors": ["single_threaded", "thread_safe", "async"],
+    "consumer_scenarios": ["source-computed-effect", "batch-coalescing", "scoped-disposal", "typed-context"]
+  },
+  "unstable_modules": [
+    {
+      "id": "collections",
+      "reason": "Keyed maps, queues, topics, reconcile, and merge algebra. The collection-family method list in cell-model.md is a conformance requirement for that module, not the product beta contract. Its coverage family is excluded from core rows."
+    },
+    {
+      "id": "statecharts",
+      "reason": "StateChart and StateMachine are always compiled in Rust, and the statechart Cargo feature is a deprecated empty alias. Always-on compilation is not the product profile: statecharts stay a module, and the statechart coverage family is excluded from core rows."
+    },
+    {
+      "id": "synchronization",
+      "reason": "No abstract symbol and no core coverage row. Membership, leases, and coordination stay outside the beta contract."
+    },
+    {
+      "id": "durable",
+      "reason": "Durable owner, outbox, sinks, and sqlite, postgres, and JetStream hosts are specified and excluded from core coverage. A store conformance pin is not a beta API freeze."
+    },
+    {
+      "id": "distributed",
+      "reason": "CRDT plane, text and sequence CRDTs, and the lossless tree. The Rust lossless-tree feature stays off by default until that protocol stabilizes. Distributed coverage families are excluded from core rows."
+    },
+    {
+      "id": "transport",
+      "reason": "IPC, ingress, egress, WebRTC, websocket, signaling, and zero-copy transport. protocol_version 1 is conformance-locked and still additive. The binding matrix can require a layer without promising it will not change."
+    },
+    {
+      "id": "codecs",
+      "reason": "JSON, MessagePack, Postcard, and Protobuf follow the wire. They are not the reactive kernel and are excluded from the core allow-list."
+    },
+    {
+      "id": "ffi",
+      "reason": "The C-ABI claim is fixtureless and module-scoped. Shipping it in an umbrella package does not put it in Core."
+    },
+    {
+      "id": "react",
+      "reason": "Adapter. It may depend on the beta contract. The beta contract must not depend on it."
+    },
+    {
+      "id": "r3",
+      "reason": "Adapter with the same boundary as react. Not a candidate binding and not a beta contract."
+    }
+  ],
+  "reactive_graph_outside_core_closure": [
+    "exact_fold_paths_stay_exact.json",
+    "merge_cell_acquires_no_dependency_edge.json",
+    "merge_feed_through_a_formula_coalesces.json",
+    "merge_folds_synchronously_in_batch.json",
+    "merge_per_settled_cone_not_per_write.json"
+  ],
+  "rust_core_facade": {
+    "beta_contract_reexports": ["Computed", "Context", "Effect", "Source", "TeardownScope", "TypedContext"],
+    "unstable_reexports": [
+      {
+        "name": "Compute",
+        "cfg": null,
+        "reason": "Tracked-read witness passed into a compute closure. Public from lazily::core, and not an allow-listed Rust name."
+      },
+      {
+        "name": "ComputeOps",
+        "cfg": null,
+        "reason": "Intra-model read trait implemented by Context and Compute. Not an allow-listed Rust name."
+      },
+      {
+        "name": "AsyncComputed",
+        "cfg": "async",
+        "reason": "Async flavor handle. Declared flavors must keep passing the reactive-graph closure. This type name is not allow-listed."
+      },
+      {
+        "name": "AsyncContext",
+        "cfg": "async",
+        "reason": "Async flavor context. Same split as AsyncComputed: flavor behavior is in the closure, the Rust name is not."
+      },
+      {
+        "name": "AsyncEffectHandle",
+        "cfg": "async",
+        "reason": "Async effect handle. Not an allow-listed Rust name."
+      },
+      {
+        "name": "AsyncSource",
+        "cfg": "async",
+        "reason": "Async source handle. Not an allow-listed Rust name."
+      },
+      {
+        "name": "AsyncTeardownScope",
+        "cfg": "async",
+        "reason": "Async teardown scope. Not an allow-listed Rust name."
+      },
+      {
+        "name": "ThreadSafeContext",
+        "cfg": "thread-safe",
+        "reason": "Thread-safe flavor context. The flavor is required evidence. The type name is not in the Rust symbol mapping."
+      },
+      {
+        "name": "ThreadSafeTeardownScope",
+        "cfg": "thread-safe",
+        "reason": "Thread-safe teardown scope. Not an allow-listed Rust name."
+      },
+      {
+        "name": "TypedThreadSafeContext",
+        "cfg": "thread-safe",
+        "reason": "Thread-safe typed context. Not an allow-listed Rust name. The allow-listed typed name is TypedContext."
+      }
+    ]
+  },
+  "not_candidate_bindings": [
+    {
+      "id": "gdscript",
+      "reason": "Scored in the coverage matrix and absent from core-v1 bindings. No beta-contract credit."
+    },
+    {
+      "id": "html",
+      "reason": "@lazily-hub/lazily-html is a renderer adapter on the JavaScript binding, not a core-v1 binding."
+    },
+    {
+      "id": "interop",
+      "reason": "lazily-interop supervises cross-binding network scenarios. It is not a reactive kernel and not a candidate binding."
+    },
+    {
+      "id": "formal",
+      "reason": "The Lean model is proof, not a package surface. It does not widen the beta contract."
+    }
+  ],
+  "stability_work": [
+    "Keep profile status at candidate until an explicit promotion. This classification does not promote it.",
+    "A beta-contract edit changes profiles/core-v1.json, the fixture digest, and this registry together. The checkers reject a one-sided edit.",
+    "A released core symbol stays compatible for the deprecation window in the artifact-consumer policy: at least two compatible cohorts and 90 days. Removal needs deprecated_since, replacement, and earliest_removal on the symbol.",
+    "Do not treat a MUST in the binding matrix, a conformance fixture, or an always-compiled Rust module as a beta promise. Those are implementation or module contracts.",
+    "Widening the Rust allow-list to Compute, ComputeOps, or the async and thread-safe facade names would expand the promise. Leave them unstable unless that edit is intentional.",
+    "Per-binding API snapshots and native diff gates are still future work. This lock is the allow-list, the fixture closure, the consumer scenarios, and the Rust lazily::core re-export split."
+  ]
+}

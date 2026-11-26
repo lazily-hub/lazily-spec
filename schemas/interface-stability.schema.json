@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/interface-stability.schema.json",
+  "title": "Lazily interface stability classification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "profile_id",
+    "profile_status",
+    "beta_contract",
+    "unstable_modules",
+    "reactive_graph_outside_core_closure",
+    "rust_core_facade",
+    "not_candidate_bindings",
+    "stability_work"
+  ],
+  "properties": {
+    "$schema": { "const": "../schemas/interface-stability.schema.json" },
+    "profile_id": { "const": "core-v1" },
+    "profile_status": { "enum": ["candidate", "beta"] },
+    "beta_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["abstract_symbols", "execution_flavors", "consumer_scenarios"],
+      "properties": {
+        "abstract_symbols": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+        },
+        "execution_flavors": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["single_threaded", "thread_safe", "async"] }
+        },
+        "consumer_scenarios": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "unstable_modules": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/reasonedId" }
+    },
+    "reactive_graph_outside_core_closure": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9_]+\\.json$" }
+    },
+    "rust_core_facade": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["beta_contract_reexports", "unstable_reexports"],
+      "properties": {
+        "beta_contract_reexports": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$" }
+        },
+        "unstable_reexports": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "cfg", "reason"],
+            "properties": {
+              "name": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$" },
+              "cfg": { "type": ["string", "null"], "enum": ["async", "thread-safe", null] },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "not_candidate_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/reasonedId" }
+    },
+    "stability_work": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "reasonedId": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reason"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

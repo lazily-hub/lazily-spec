@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { run as checkInterfaceStability } from "./check-interface-stability.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PROFILE_PATH = join(ROOT, "profiles", "core-v1.json");
@@ -204,6 +205,7 @@ function renderProfile(profile) {
     "",
     `Profile \`${profile.profile_id}\` is **${profile.status}** at Core API generation **${profile.core_api_generation}**.`,
     "Only the allow-listed symbols and imports below are in the Core compatibility promise; other umbrella exports remain Preview or independently maturing modules.",
+    "The stable-versus-unstable split is [Interface stability](interface-stability.md).",
     "",
     "## Abstract Core surface",
     "",
@@ -291,6 +293,7 @@ if (problems.length > 0) {
 }
 
 if (process.argv.includes("--self-test")) selfTest(profile, coverage);
+checkInterfaceStability();
 const rendered = renderProfile(profile);
 if (process.argv.includes("--write")) {
   writeFileSync(GENERATED_PATH, rendered);

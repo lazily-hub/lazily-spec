@@ -21,6 +21,7 @@
 - [Reactive Egress](transport-egress.md)
 - [Cross-Language Coverage](coverage.md)
 - [Core Support and Artifact Consumers](core-support.md)
+- [Interface Stability](interface-stability.md)
 - [Wire Protocol](protocol.md)
 - [Protobuf Graph-Boundary Interoperability](protobuf-interop.md)
 - [Assertion-Block Schemas](assertion-block-schemas.md)
