@@ -35,7 +35,11 @@ def validate_simulation_metadata(path: Path) -> None:
 
 
 def inventory() -> dict:
-    canonical_paths = sorted((ROOT / "conformance").rglob("*.json"))
+    canonical_paths = sorted(
+        path
+        for area in ("conformance", "conformance-extensions")
+        for path in (ROOT / area).rglob("*.json")
+    )
     canonical = []
     for path in canonical_paths:
         validate_simulation_metadata(path)

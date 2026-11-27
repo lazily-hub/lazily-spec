@@ -8,7 +8,7 @@ source license and provenance; a destination repository license does not erase
 it.
 
 [`provenance/fixtures.json`](../provenance/fixtures.json) records every current
-canonical fixture by path and SHA-256 digest and every byte-identical vendored
+canonical fixture in `conformance/` or `conformance-extensions/` by path and SHA-256 digest and every byte-identical vendored
 Go copy with its canonical source path. The generated ledger is checked against
 the filesystem by `scripts/generate-fixture-provenance.py --check`; additions,
 deletions, byte drift, or an unreviewed copy make `make check` fail.

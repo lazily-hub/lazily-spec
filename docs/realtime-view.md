@@ -21,7 +21,9 @@ expressions against the available values. Every binding must name a declared
 signal and every action must name an existing node. Multiple signals may read
 the same graph node. Bound graph nodes use type tag `lazily.view.scalar.v1`
 and inline UTF-8 JSON payloads containing exactly one scalar (null, boolean,
-safe integer, or string). Unbound signals read their declared initial value.
+safe integer, or string). Unbound signals read their declared initial value. Realtime expressions reject
+integer intermediates outside the safe range, including an overflowing partial
+sum. Hidden and disabled expressions must produce booleans.
 The current projection remains available after invalid input. A newer
 definition cannot change the document ID. A duplicate revision with the same
 definition, bindings, and actions is ignored. An equal revision with different
@@ -80,7 +82,8 @@ absent, hidden, or disabled is unavailable. The producer resolves the action
 from its own revision and applies its own authorization. Action IDs are
 routing data. Sending a View event confers no action authority.
 
-For an accepted event, reserve the event ID before exposing the authorized
+Serialize receiver operations and keep the host authorization predicate
+side-effect free. For an accepted event, reserve the event ID before exposing the authorized
 action to host application code. An exact repeat is a duplicate, including
 after a revision change or reconnect, and must not execute again. Reusing an
 accepted ID with a different revision, node, event, or payload is a conflict.
@@ -97,7 +100,7 @@ portable View effects on receipt of a definition or graph update.
 
 ## Conformance
 
-Shared [fixtures](../conformance/view/field_change.json) exercise identity through
+Shared [fixtures](../conformance-extensions/realtime-view/explorer.json) exercise identity through
 insertion, removal and reordering, invalid or reordered full revisions,
 Delta gaps and Snapshot recovery, and stale, duplicate, or conflicting
 events. Host tests separately verify focus, caret, IME, drafts, and action

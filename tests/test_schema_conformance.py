@@ -2545,7 +2545,8 @@ def test_view_schema_rejects_unknown_ops() -> None:
 
 
 def test_realtime_view_frames_match_wire_schemas() -> None:
-    fixture = json.loads((FIXTURE_DIR / "view" / "field_change.json").read_text())["realtime"]
+    path = ROOT / "conformance-extensions" / "realtime-view" / "explorer.json"
+    fixture = json.loads(path.read_text())
     validator = _validator("realtime-view")
     for revision in fixture["revisions"].values():
         # The nested duplicate-child revision passes structural validation and
