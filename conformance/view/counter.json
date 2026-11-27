@@ -5,7 +5,8 @@
     "id": "counter",
     "root": "root",
     "signals": {
-      "count": {"initial": 0}
+      "count": {"initial": 0},
+      "optional": {"initial": null}
     },
     "nodes": {
       "root": {
@@ -45,7 +46,7 @@
       }
     }
   },
-  "signals": {"count": 0},
+  "signals": {"count": 0, "optional": null},
   "expressions": {
     "label.text": "Count 0",
     "inc.text": "Increment"
@@ -62,7 +63,7 @@
       "node": "inc",
       "event": "activate",
       "value": null,
-      "signals": {"count": 1},
+      "signals": {"count": 1, "optional": null},
       "expressions": {
         "label.text": "Count 1",
         "inc.text": "Increment"

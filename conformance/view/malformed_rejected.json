@@ -3,6 +3,35 @@
   "kind": "ViewMalformed",
   "cases": [
     {
+      "name": "missing-signal-initial",
+      "reason": "an explicit null initial is valid, but omission is malformed",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {"a": {}},
+        "nodes": {"root": {"role": "region"}}
+      }
+    },
+    {
+      "name": "missing-signals",
+      "reason": "a declared empty signal map is valid, but omission is malformed",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "nodes": {"root": {"role": "region"}}
+      }
+    },
+    {
+      "name": "fractional-signal-initial",
+      "reason": "a decimal fraction is not a View literal",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {"a": {"initial": 1.5}},
+        "nodes": {"root": {"role": "region"}}
+      }
+    },
+    {
       "name": "widget-role",
       "reason": "widget is not a role",
       "view": {

@@ -1,5 +1,5 @@
 {
-  "description": "Stack list, len call, and a submit batch that sets a signal and sends to the chart cell.",
+  "description": "Stack list, len call, and a submit batch that sets a signal and sends to the chart cell. An unknown guard rejects a repeated send.",
   "kind": "View",
   "view": {
     "id": "gate",
@@ -12,7 +12,7 @@
       "states": {
         "root": {"initial": "idle"},
         "idle": {"parent": "root", "on": {"GO": "run"}},
-        "run": {"parent": "root", "on": {"GO": "idle"}}
+        "run": {"parent": "root", "on": {"GO": {"target": "idle", "guard": "canReset"}}}
       }
     },
     "nodes": {
@@ -64,6 +64,22 @@
   "trace": [],
   "chart": ["idle"],
   "steps": [
+    {
+      "node": "go",
+      "event": "submit",
+      "value": null,
+      "signals": {"open": true},
+      "expressions": {
+        "a.text": "A",
+        "b.text": 3,
+        "go.text": "Go"
+      },
+      "trace": [
+        {"op": "set", "signal": "open", "value": true},
+        {"op": "send", "event": "GO"}
+      ],
+      "chart": ["run"]
+    },
     {
       "node": "go",
       "event": "submit",

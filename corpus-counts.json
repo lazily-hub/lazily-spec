@@ -467,7 +467,7 @@
       "layout": 5,
       "trace": 0,
       "chart": 1,
-      "steps": 1
+      "steps": 2
     },
     "view/counter.json": {
       "layout": 3,
@@ -480,7 +480,7 @@
       "steps": 1
     },
     "view/malformed_rejected.json": {
-      "cases": 14
+      "cases": 17
     },
     "windowing/session.json": {
       "steps": 6

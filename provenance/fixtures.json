@@ -970,13 +970,13 @@
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/view/batch_send.json",
-      "sha256": "143ca8a6986a85ce02ccd220b6038b9255a8b7094a41e571107697bae227051b"
+      "sha256": "b51395d6fc15bafc75f93a12d23ab159c5719d78acd1b768aace5fd9c26d1c36"
     },
     {
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/view/counter.json",
-      "sha256": "3d47a42f83fa375a4e5ffb7a977c15865685280145cd8f25f5392a146e1840ba"
+      "sha256": "fd29d5f50f4e4168968b89e8a572cc54d4e0bff98cfdf3bed95f0d1f4eef5616"
     },
     {
       "license": "Apache-2.0",
@@ -988,7 +988,7 @@
       "license": "Apache-2.0",
       "origin": "first-party-lazily-spec",
       "path": "conformance/view/malformed_rejected.json",
-      "sha256": "1985861b06cced2ec259fe883c75f6bad1b60907898ca1ff516a271f277dea4d"
+      "sha256": "ff2f67d854a8048b04232dbb62aab7b3922f53df29a5fee1a812c205446c64c2"
     },
     {
       "license": "Apache-2.0",

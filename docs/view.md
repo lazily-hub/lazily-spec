@@ -25,8 +25,8 @@ pixel fields (`x`, `y`, `width`, `height`, `pixels`), and host event names
 
 ### Signals
 
-`initial` is null, a boolean, an integer, or a string. Objects, arrays, and
-non-integer numbers are rejected. Install creates one `Source` per signal,
+`initial` is required. It may be null, a boolean, an integer, or a string.
+Objects, arrays, and non-integer numbers are rejected. Install creates one `Source` per signal,
 seeded with `initial`.
 
 ### Nodes
@@ -115,7 +115,8 @@ subscriber that is not a host toolkit.
 
 When `chart` is present it is a state chart, installed as one cell on the same
 context (the chart's configuration source). `send` calls that chart with an
-empty guard map. When `chart` is absent, any `send` is malformed.
+empty guard map. A named guard therefore fails. An otherwise enabled
+unguarded ancestor transition may still run. When `chart` is absent, any `send` is malformed.
 
 ## Install
 
@@ -153,7 +154,7 @@ document.
 
 | Fixture | Covers |
 |---------|--------|
-| `counter.json` | `column` layout, `concat` / `ref` / `lit`, `call add`, `activate` → `set` |
+| `counter.json` | Explicit null signal, `column` layout, `concat` / `ref` / `lit`, `call add`, `activate` → `set` |
 | `field_change.json` | `row` layout, `field` `bind`, `change` → `trim` / `event`, `if` / `eq` / `not` |
-| `batch_send.json` | `stack` layout, `list`, `call len`, `submit` → `batch` of `set` and `send`, chart cell |
-| `malformed_rejected.json` | widget role, pixel field, host event name, unknown ops, dangling ids, `event` outside an effect, bad arity, cycle, orphan, unknown call, bad `bind`, `send` without a chart |
+| `batch_send.json` | `stack` layout, `list`, `call len`, `submit` → `batch` of `set` and `send`, chart cell and fail-closed guards |
+| `malformed_rejected.json` | Missing signal map or initial, fractional initial, widget role, pixel field, host event name, unknown ops, dangling ids, `event` outside an effect, bad arity, cycle, orphan, unknown call, bad `bind`, `send` without a chart |

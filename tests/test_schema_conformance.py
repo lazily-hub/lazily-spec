@@ -2461,47 +2461,39 @@ def test_view_schema_accepts_a_minimal_document() -> None:
 
 
 def test_view_fixtures_validate_against_the_schema() -> None:
-    directory = FIXTURE_DIR / "view"
+    schema_rejections = {
+        "missing-signal-initial",
+        "missing-signals",
+        "fractional-signal-initial",
+        "widget-role",
+        "pixel-field",
+        "host-event",
+        "unknown-expr-op",
+        "unknown-effect-op",
+    }
+    seen_rejections = set()
     checked = 0
-    for path in sorted(directory.glob("*.json")):
+    for path in sorted((FIXTURE_DIR / "view").glob("*.json")):
         fixture = json.loads(path.read_text())
-        if "view" in fixture:
-            documents = [fixture["view"]]
-        else:
-            documents = [case["view"] for case in fixture["cases"]]
-        for document in documents:
-            # Semantic rejects (dangling ids, bad arity) are still schema-valid
-            # objects. Schema rejects are asserted on their own below.
-            if document["nodes"][document["root"]].get("role") not in {
-                "text",
-                "button",
-                "field",
-                "list",
-                "region",
-            }:
-                assert _view_errors(document), path.name
-                continue
-            layout = document["nodes"][document["root"]].get("layout") or {}
-            effects = document["nodes"][document["root"]].get("effects") or {}
-            text = document["nodes"][document["root"]].get("text")
-            if (
-                "width" in layout
-                or "onClick" in effects
-                or "onPressed" in effects
-                or (isinstance(text, dict) and text.get("op") == "lambda")
-                or any(
-                    isinstance(effect, dict) and effect.get("op") not in {"set", "batch", "send"}
-                    for effect in effects.values()
-                )
-            ):
-                assert _view_errors(document), path.name
-                continue
+        documents = (
+            [(path.name, fixture["view"])]
+            if "view" in fixture
+            else [(case["name"], case["view"]) for case in fixture["cases"]]
+        )
+        for name, document in documents:
             errors = _view_errors(document)
+            if name in schema_rejections:
+                assert errors, f"{name} must fail the View schema"
+                seen_rejections.add(name)
+                continue
+            # Semantic rejects such as dangling ids still validate structurally.
             assert not errors, (
-                f"{path.name} view does not validate against view.json:\n"
+                f"{name} does not validate against view.json:\n"
                 + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
             )
-            checked += 1
+            if "view" in fixture:
+                checked += 1
+    assert seen_rejections == schema_rejections
     assert checked >= 3, checked
 
 
