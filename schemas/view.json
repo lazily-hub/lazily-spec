@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/view.json",
+  "title": "View",
+  "description": "Host-neutral view compute document. COMPUTE, not a wire message: a view is never a Snapshot, a Delta, or a distinct IPC kind. It is not a widget tree and not a pixel layout. Install, outside this document, lowers a signal to a Source, an expression to a guarded Computed, an effect to an Effect, and the optional chart to one cell. Conformance asserts resolved signals, expression values, the effect trace, and abstract layout — not pixels, focus, IME, gestures, or the accessibility tree.",
+  "type": "object",
+  "required": ["id", "root", "signals", "nodes"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "description": "Stable document id.",
+      "type": "string",
+      "minLength": 1
+    },
+    "root": {
+      "description": "Id of the root node. Every other node is reachable from it through children.",
+      "type": "string",
+      "minLength": 1
+    },
+    "signals": {
+      "description": "Signal id to its declaration. A signal installs as a Source.",
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/Signal"}
+    },
+    "nodes": {
+      "description": "Node id to its declaration. Ids are the object keys.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/Node"}
+    },
+    "chart": {
+      "description": "Optional statechart document installed as one cell beside the view. send effects deliver events to it.",
+      "$ref": "https://lazily.dev/schemas/statechart.json"
+    }
+  },
+  "$defs": {
+    "Signal": {
+      "type": "object",
+      "required": ["initial"],
+      "additionalProperties": false,
+      "properties": {
+        "initial": {
+          "description": "Initial value. Null, boolean, integer, or string. No objects, arrays, or non-integer numbers.",
+          "$ref": "#/$defs/Literal"
+        }
+      }
+    },
+    "Node": {
+      "type": "object",
+      "required": ["role"],
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "description": "Semantic role. Widget, host, and toolkit names are not roles.",
+          "enum": ["text", "button", "field", "list", "region"]
+        },
+        "children": {
+          "description": "Ordered child node ids. The tree is ordered by this array, not by object-key order.",
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "layout": {"$ref": "#/$defs/Layout"},
+        "text": {
+          "description": "A literal string or an expression. Installs as a guarded Computed.",
+          "oneOf": [
+            {"type": "string"},
+            {"$ref": "#/$defs/Expr"}
+          ]
+        },
+        "bind": {
+          "description": "Signal id this field reads. The signal must be declared. A change event does not write it unless an effect does.",
+          "type": "string",
+          "minLength": 1
+        },
+        "hidden": {
+          "description": "Boolean literal or an expression that evaluates to a boolean.",
+          "oneOf": [
+            {"type": "boolean"},
+            {"$ref": "#/$defs/Expr"}
+          ]
+        },
+        "disabled": {
+          "description": "Boolean literal or an expression that evaluates to a boolean.",
+          "oneOf": [
+            {"type": "boolean"},
+            {"$ref": "#/$defs/Expr"}
+          ]
+        },
+        "effects": {"$ref": "#/$defs/Effects"}
+      }
+    },
+    "Layout": {
+      "description": "Abstract layout. No pixels, no coordinates, no host units.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "flow": {
+          "description": "Abstract flow direction.",
+          "enum": ["row", "column", "stack"]
+        },
+        "align": {
+          "description": "Abstract cross-axis alignment. Not a pixel offset.",
+          "enum": ["start", "center", "end", "stretch"]
+        },
+        "grow": {
+          "description": "Abstract flex grow factor. Not a pixel size.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "Effects": {
+      "description": "Semantic events only. Host names such as onClick and onPressed are rejected.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "activate": {"$ref": "#/$defs/Effect"},
+        "change": {"$ref": "#/$defs/Effect"},
+        "submit": {"$ref": "#/$defs/Effect"}
+      }
+    },
+    "Literal": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "integer"},
+        {"type": "string"}
+      ]
+    },
+    "Expr": {
+      "description": "Expression tree. No host closures. op is closed; args are literals or expressions. call names are the closed set event, not, add, and len.",
+      "type": "object",
+      "required": ["op", "args"],
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "enum": ["lit", "ref", "call", "if", "eq", "concat", "trim"]
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {"$ref": "#/$defs/Literal"},
+              {"$ref": "#/$defs/Expr"}
+            ]
+          }
+        }
+      }
+    },
+    "Effect": {
+      "description": "Effect tree. set writes a signal, send delivers a chart event, batch runs nested effects in order. The conformance trace records set and send only; batch flattens.",
+      "type": "object",
+      "required": ["op", "args"],
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "enum": ["set", "batch", "send"]
+        },
+        "args": {
+          "type": "array"
+        }
+      }
+    }
+  }
+}

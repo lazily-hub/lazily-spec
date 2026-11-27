@@ -1,0 +1,79 @@
+{
+  "description": "Row field whose change effect trims the event value, plus if/eq/not text.",
+  "kind": "View",
+  "view": {
+    "id": "rename",
+    "root": "row",
+    "signals": {
+      "name": {"initial": "  Ada "},
+      "ok": {"initial": false}
+    },
+    "nodes": {
+      "row": {
+        "role": "region",
+        "children": ["input", "caption"],
+        "layout": {"flow": "row", "align": "center", "grow": 1}
+      },
+      "input": {
+        "role": "field",
+        "bind": "name",
+        "disabled": {"op": "ref", "args": ["ok"]},
+        "effects": {
+          "change": {
+            "op": "set",
+            "args": [
+              "name",
+              {"op": "trim", "args": [{"op": "call", "args": ["event"]}]}
+            ]
+          }
+        }
+      },
+      "caption": {
+        "role": "text",
+        "hidden": {
+          "op": "eq",
+          "args": [
+            {"op": "ref", "args": ["name"]},
+            {"op": "lit", "args": [""]}
+          ]
+        },
+        "text": {
+          "op": "if",
+          "args": [
+            {"op": "call", "args": ["not", {"op": "ref", "args": ["ok"]}]},
+            {"op": "ref", "args": ["name"]},
+            {"op": "lit", "args": ["locked"]}
+          ]
+        }
+      }
+    }
+  },
+  "signals": {"name": "  Ada ", "ok": false},
+  "expressions": {
+    "input.disabled": false,
+    "caption.hidden": false,
+    "caption.text": "  Ada "
+  },
+  "layout": [
+    {"id": "row", "role": "region", "children": ["input", "caption"], "flow": "row"},
+    {"id": "input", "role": "field", "children": [], "flow": null},
+    {"id": "caption", "role": "text", "children": [], "flow": null}
+  ],
+  "trace": [],
+  "chart": null,
+  "steps": [
+    {
+      "node": "input",
+      "event": "change",
+      "value": "  Lin ",
+      "signals": {"name": "Lin", "ok": false},
+      "expressions": {
+        "input.disabled": false,
+        "caption.hidden": false,
+        "caption.text": "Lin"
+      },
+      "trace": [{"op": "set", "signal": "name", "value": "Lin"}],
+      "chart": null
+    }
+  ]
+}

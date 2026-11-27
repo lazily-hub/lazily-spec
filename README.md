@@ -63,6 +63,7 @@ matrix with per-cell notes and platform carve-outs lives in
 | Materialization | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Family sync | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Statecharts | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| View | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Keyed collections | ✅ | ✅ | ✅ | ✅ | ✅ | ~ | ✅ | ✅ | ✅ | — |
 | Reactive queue | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Broadcast topic | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
@@ -93,7 +94,7 @@ matrix with per-cell notes and platform carve-outs lives in
 
 **Roll-up rule:** a family cell is `✅` only when *every required* row in that family is `✅`; `~` when the family is mixed (some shipped or partial); `—` when no required row is shipped or partial; `⊘` only when every required row in the family is not applicable. Rows the spec marks **MAY** (`optional`) are excluded from the roll-up — declining an optional feature is not a gap.
 
-A family cell summarises 85 feature rows. For row-level marks, per-cell notes, and platform carve-outs see [the canonical coverage matrix in `lazily-spec`](https://github.com/lazily-hub/lazily-spec/blob/main/docs/coverage.md).
+A family cell summarises 86 feature rows. For row-level marks, per-cell notes, and platform carve-outs see [the canonical coverage matrix in `lazily-spec`](https://github.com/lazily-hub/lazily-spec/blob/main/docs/coverage.md).
 <!-- coverage-table:end -->
 
 CRDT convergence and the wire protocol are pinned by the shared conformance fixtures
@@ -293,6 +294,17 @@ The `conformance/statechart/` directory contains canonical Harel/SCXML state-cha
 | `statechart/history_deep.json` | deep history: resume full nested leaf configuration |
 | `statechart/entry_exit_actions.json` | entry/exit/transition action ordering across LCA boundaries |
 | `statechart/malformed_rejected.json` | authoritative `kind`, strict field types, and declared-state reference closure |
+
+## View Conformance
+
+The `conformance/view/` directory contains canonical view-document fixtures (see [View](docs/view.md)). The document is normatively defined by [`schemas/view.json`](schemas/view.json). Like state charts, these fixtures are **compute**, not wire messages. Each binding installs the document, asserts resolved signals, expression values, the effect trace (`set` / `send`), and the abstract layout (`role`, `children`, `flow`).
+
+| Fixture | Covers |
+|---------|--------|
+| `view/counter.json` | column layout, concat/ref/lit, `call add`, activate → set |
+| `view/field_change.json` | row layout, field bind, change → trim/event, if/eq/not |
+| `view/batch_send.json` | stack layout, list, `call len`, submit → batch of set and send, chart cell |
+| `view/malformed_rejected.json` | widget role, pixel field, host event, unknown ops, dangling ids, cycle, orphan |
 
 ## Durable Owner Conformance
 

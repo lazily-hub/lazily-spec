@@ -44,6 +44,10 @@
       "title": "Statecharts"
     },
     {
+      "id": "view",
+      "title": "View"
+    },
+    {
       "id": "collections",
       "title": "Keyed collections"
     },
@@ -380,6 +384,30 @@
         "✅",
         "✅",
         "—"
+      ]
+    },
+    {
+      "id": "view-document",
+      "label": "View document",
+      "family": "view",
+      "feature": "Host-neutral view compute document. Signals, expression trees, set/send effect traces, and abstract role/children/flow. Not a widget tree, pixel layout, or wire message.",
+      "fixtures": [
+        "view/counter.json",
+        "view/field_change.json",
+        "view/batch_send.json",
+        "view/malformed_rejected.json"
+      ],
+      "marks": [
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅",
+        "✅"
       ]
     },
     {

@@ -17,6 +17,7 @@ the wire format is normative; binary codecs encode the same shapes.
 | `message-passing.json` | Command / RPC message plane (`CommandSubmit` / `CommandCancel` / `CommandEvents` / `CommandProjection`) |
 | `workflow-state.json` | Node tags for the sample workflow graph conformance fixtures |
 | `statechart.json` | Compute (Harel/SCXML chart form — not a wire message) |
+| `view.json` | Compute (host-neutral view document — not a wire message) |
 | `stdlib-fixture.schema.json` | Deterministic `Timer`, `Timeout`, and `RevisionBarrier` conformance scenarios |
 | `assertion-blocks.json` | Routed, fail-closed schemas for every canonical `assertions` / `expect` / `expected` object |
 | `core-profile.schema.json` | Product profile: Core symbols, binding mappings, toolchains, fixtures, and module dependency rules |
@@ -99,6 +100,17 @@ ordinary cell `Payload`. See [State Charts](state-charts.md).
 
 ```json
 {{#include ../schemas/statechart.json}}
+```
+
+## `view.json`
+
+This is a **compute** schema, not a wire message. It normatively defines the
+host-neutral view document: signals, semantic nodes, expression trees, effect
+trees, and abstract layout, with an optional state chart beside the view. A
+view is never a Snapshot, a Delta, or a widget tree. See [View](view.md).
+
+```json
+{{#include ../schemas/view.json}}
 ```
 
 ## `stdlib-fixture.schema.json`

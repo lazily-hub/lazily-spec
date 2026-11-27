@@ -1,5 +1,5 @@
 {
-  "fixtures": 165,
+  "fixtures": 169,
   "arrays": {
     "codec/blob_backend_discriminator.json": {
       "scenarios": 14
@@ -462,6 +462,25 @@
     },
     "temporal/timer_single_shot.json": {
       "steps": 3
+    },
+    "view/batch_send.json": {
+      "layout": 5,
+      "trace": 0,
+      "chart": 1,
+      "steps": 1
+    },
+    "view/counter.json": {
+      "layout": 3,
+      "trace": 0,
+      "steps": 1
+    },
+    "view/field_change.json": {
+      "layout": 3,
+      "trace": 0,
+      "steps": 1
+    },
+    "view/malformed_rejected.json": {
+      "cases": 14
     },
     "windowing/session.json": {
       "steps": 6

@@ -1,0 +1,74 @@
+{
+  "description": "Column region, concat/ref text, and an activate effect that adds one to a signal.",
+  "kind": "View",
+  "view": {
+    "id": "counter",
+    "root": "root",
+    "signals": {
+      "count": {"initial": 0}
+    },
+    "nodes": {
+      "root": {
+        "role": "region",
+        "children": ["label", "inc"],
+        "layout": {"flow": "column", "align": "start", "grow": 0}
+      },
+      "label": {
+        "role": "text",
+        "text": {
+          "op": "concat",
+          "args": [
+            {"op": "lit", "args": ["Count "]},
+            {"op": "ref", "args": ["count"]}
+          ]
+        }
+      },
+      "inc": {
+        "role": "button",
+        "text": "Increment",
+        "effects": {
+          "activate": {
+            "op": "set",
+            "args": [
+              "count",
+              {
+                "op": "call",
+                "args": [
+                  "add",
+                  {"op": "ref", "args": ["count"]},
+                  {"op": "lit", "args": [1]}
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "signals": {"count": 0},
+  "expressions": {
+    "label.text": "Count 0",
+    "inc.text": "Increment"
+  },
+  "layout": [
+    {"id": "root", "role": "region", "children": ["label", "inc"], "flow": "column"},
+    {"id": "label", "role": "text", "children": [], "flow": null},
+    {"id": "inc", "role": "button", "children": [], "flow": null}
+  ],
+  "trace": [],
+  "chart": null,
+  "steps": [
+    {
+      "node": "inc",
+      "event": "activate",
+      "value": null,
+      "signals": {"count": 1},
+      "expressions": {
+        "label.text": "Count 1",
+        "inc.text": "Increment"
+      },
+      "trace": [{"op": "set", "signal": "count", "value": 1}],
+      "chart": null
+    }
+  ]
+}

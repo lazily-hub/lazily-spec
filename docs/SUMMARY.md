@@ -11,6 +11,7 @@
 - [RelayCell — Algebra-Backed Backpressure](relaycell.md)
 - [State Machine](state-machine.md)
 - [State Charts](state-charts.md)
+- [View](view.md)
 - [Async Reactive Context](async.md)
 - [Concurrency Scopes](concurrency-scopes.md)
 - [Lossless Tree CRDT](lossless-tree-crdt.md)

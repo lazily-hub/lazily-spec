@@ -39,6 +39,7 @@ _SCHEMA_NAMES = [
     "ffi",
     "signaling",
     "statechart",
+    "view",
     "receipts",
     "lossless-tree",
     "lossless-tree-delta",
@@ -2428,3 +2429,115 @@ def test_backend_accept_scenarios_pin_the_encoder_half() -> None:
         assert expect["reencoded_backend_field_present"] is (expect["decoded_backend"] != "shm")
         checked += 1
     assert checked == 10, f"expected 10 accept scenarios, checked {checked}"
+
+
+# ---------------------------------------------------------------------------
+# view.json — compute document, not a widget tree or a pixel layout
+# ---------------------------------------------------------------------------
+
+
+def _view_errors(document: dict) -> list[jsonschema.ValidationError]:
+    return sorted(_validator("view").iter_errors(document), key=lambda e: list(e.path))
+
+
+def _minimal_view() -> dict:
+    return {
+        "id": "sample",
+        "root": "root",
+        "signals": {"count": {"initial": 0}},
+        "nodes": {
+            "root": {
+                "role": "region",
+                "children": ["label"],
+                "layout": {"flow": "column", "align": "start", "grow": 0},
+            },
+            "label": {"role": "text", "text": "Hello"},
+        },
+    }
+
+
+def test_view_schema_accepts_a_minimal_document() -> None:
+    assert _view_errors(_minimal_view()) == []
+
+
+def test_view_fixtures_validate_against_the_schema() -> None:
+    directory = FIXTURE_DIR / "view"
+    checked = 0
+    for path in sorted(directory.glob("*.json")):
+        fixture = json.loads(path.read_text())
+        if "view" in fixture:
+            documents = [fixture["view"]]
+        else:
+            documents = [case["view"] for case in fixture["cases"]]
+        for document in documents:
+            # Semantic rejects (dangling ids, bad arity) are still schema-valid
+            # objects. Schema rejects are asserted on their own below.
+            if document["nodes"][document["root"]].get("role") not in {
+                "text",
+                "button",
+                "field",
+                "list",
+                "region",
+            }:
+                assert _view_errors(document), path.name
+                continue
+            layout = document["nodes"][document["root"]].get("layout") or {}
+            effects = document["nodes"][document["root"]].get("effects") or {}
+            text = document["nodes"][document["root"]].get("text")
+            if (
+                "width" in layout
+                or "onClick" in effects
+                or "onPressed" in effects
+                or (isinstance(text, dict) and text.get("op") == "lambda")
+                or any(
+                    isinstance(effect, dict) and effect.get("op") not in {"set", "batch", "send"}
+                    for effect in effects.values()
+                )
+            ):
+                assert _view_errors(document), path.name
+                continue
+            errors = _view_errors(document)
+            assert not errors, (
+                f"{path.name} view does not validate against view.json:\n"
+                + "\n".join(f"  - {list(e.path)}: {e.message}" for e in errors)
+            )
+            checked += 1
+    assert checked >= 3, checked
+
+
+def test_view_schema_rejects_widget_names() -> None:
+    for role in ("widget", "card", "hiccup", "div", "Button"):
+        document = _minimal_view()
+        document["nodes"]["root"]["role"] = role
+        assert _view_errors(document), role
+
+
+def test_view_schema_rejects_pixel_fields() -> None:
+    for key, value in (("x", 1), ("y", 2), ("width", 3), ("height", 4), ("pixels", 5)):
+        document = _minimal_view()
+        document["nodes"]["root"][key] = value
+        assert _view_errors(document), key
+        document = _minimal_view()
+        document["nodes"]["root"]["layout"][key] = value
+        assert _view_errors(document), f"layout.{key}"
+
+
+def test_view_schema_rejects_host_event_names() -> None:
+    for name in ("onClick", "onPressed", "onTap", "click"):
+        document = _minimal_view()
+        document["nodes"]["label"]["effects"] = {
+            name: {"op": "set", "args": ["count", 1]}
+        }
+        assert _view_errors(document), name
+
+
+def test_view_schema_rejects_unknown_ops() -> None:
+    document = _minimal_view()
+    document["nodes"]["label"]["text"] = {"op": "lambda", "args": []}
+    assert _view_errors(document)
+    document = _minimal_view()
+    document["nodes"]["label"]["effects"] = {"activate": {"op": "emit", "args": []}}
+    assert _view_errors(document)
+    document = _minimal_view()
+    document["nodes"]["label"]["text"] = {"op": "lit", "args": ["ok"], "fn": "host"}
+    assert _view_errors(document)

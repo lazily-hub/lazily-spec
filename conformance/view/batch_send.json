@@ -1,0 +1,84 @@
+{
+  "description": "Stack list, len call, and a submit batch that sets a signal and sends to the chart cell.",
+  "kind": "View",
+  "view": {
+    "id": "gate",
+    "root": "stack",
+    "signals": {
+      "open": {"initial": false}
+    },
+    "chart": {
+      "initial": "idle",
+      "states": {
+        "root": {"initial": "idle"},
+        "idle": {"parent": "root", "on": {"GO": "run"}},
+        "run": {"parent": "root", "on": {"GO": "idle"}}
+      }
+    },
+    "nodes": {
+      "stack": {
+        "role": "region",
+        "children": ["items", "go"],
+        "layout": {"flow": "stack", "align": "stretch", "grow": 0}
+      },
+      "items": {
+        "role": "list",
+        "children": ["a", "b"]
+      },
+      "a": {
+        "role": "text",
+        "text": {"op": "lit", "args": ["A"]}
+      },
+      "b": {
+        "role": "text",
+        "text": {"op": "call", "args": ["len", {"op": "lit", "args": ["Ada"]}]}
+      },
+      "go": {
+        "role": "button",
+        "text": "Go",
+        "effects": {
+          "submit": {
+            "op": "batch",
+            "args": [
+              {"op": "set", "args": ["open", {"op": "lit", "args": [true]}]},
+              {"op": "send", "args": ["GO"]}
+            ]
+          }
+        }
+      }
+    }
+  },
+  "signals": {"open": false},
+  "expressions": {
+    "a.text": "A",
+    "b.text": 3,
+    "go.text": "Go"
+  },
+  "layout": [
+    {"id": "stack", "role": "region", "children": ["items", "go"], "flow": "stack"},
+    {"id": "items", "role": "list", "children": ["a", "b"], "flow": null},
+    {"id": "a", "role": "text", "children": [], "flow": null},
+    {"id": "b", "role": "text", "children": [], "flow": null},
+    {"id": "go", "role": "button", "children": [], "flow": null}
+  ],
+  "trace": [],
+  "chart": ["idle"],
+  "steps": [
+    {
+      "node": "go",
+      "event": "submit",
+      "value": null,
+      "signals": {"open": true},
+      "expressions": {
+        "a.text": "A",
+        "b.text": 3,
+        "go.text": "Go"
+      },
+      "trace": [
+        {"op": "set", "signal": "open", "value": true},
+        {"op": "send", "event": "GO"}
+      ],
+      "chart": ["run"]
+    }
+  ]
+}

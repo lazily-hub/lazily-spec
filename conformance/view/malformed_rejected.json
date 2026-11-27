@@ -1,0 +1,185 @@
+{
+  "description": "Documents the view schema and installer both reject.",
+  "kind": "ViewMalformed",
+  "cases": [
+    {
+      "name": "widget-role",
+      "reason": "widget is not a role",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {"root": {"role": "widget"}}
+      }
+    },
+    {
+      "name": "pixel-field",
+      "reason": "layout has no pixel fields",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {
+          "root": {"role": "region", "layout": {"flow": "row", "width": 12}}
+        }
+      }
+    },
+    {
+      "name": "host-event",
+      "reason": "onClick is not a semantic event",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {"a": {"initial": 0}},
+        "nodes": {
+          "root": {
+            "role": "button",
+            "effects": {"onClick": {"op": "set", "args": ["a", 1]}}
+          }
+        }
+      }
+    },
+    {
+      "name": "unknown-expr-op",
+      "reason": "lambda is not an expression op",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {
+          "root": {"role": "text", "text": {"op": "lambda", "args": []}}
+        }
+      }
+    },
+    {
+      "name": "unknown-effect-op",
+      "reason": "emit is not an effect op",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {
+          "root": {
+            "role": "button",
+            "effects": {"activate": {"op": "emit", "args": []}}
+          }
+        }
+      }
+    },
+    {
+      "name": "dangling-child",
+      "reason": "children must name declared nodes",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {"root": {"role": "region", "children": ["missing"]}}
+      }
+    },
+    {
+      "name": "dangling-ref",
+      "reason": "ref must name a declared signal",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {
+          "root": {"role": "text", "text": {"op": "ref", "args": ["missing"]}}
+        }
+      }
+    },
+    {
+      "name": "send-without-chart",
+      "reason": "send requires a chart cell",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {
+          "root": {
+            "role": "button",
+            "effects": {"activate": {"op": "send", "args": ["GO"]}}
+          }
+        }
+      }
+    },
+    {
+      "name": "event-outside-effect",
+      "reason": "call event is illegal in text",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {
+          "root": {"role": "text", "text": {"op": "call", "args": ["event"]}}
+        }
+      }
+    },
+    {
+      "name": "bad-if-arity",
+      "reason": "if takes three arguments",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {
+          "root": {
+            "role": "text",
+            "text": {"op": "if", "args": [{"op": "lit", "args": [true]}]}
+          }
+        }
+      }
+    },
+    {
+      "name": "cycle",
+      "reason": "children must be a tree",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {
+          "root": {"role": "region", "children": ["a"]},
+          "a": {"role": "region", "children": ["root"]}
+        }
+      }
+    },
+    {
+      "name": "orphan",
+      "reason": "every node is reachable from root",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {
+          "root": {"role": "region"},
+          "extra": {"role": "text", "text": "x"}
+        }
+      }
+    },
+    {
+      "name": "unknown-call",
+      "reason": "call names are closed",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {
+          "root": {
+            "role": "text",
+            "text": {"op": "call", "args": ["host", {"op": "lit", "args": [1]}]}
+          }
+        }
+      }
+    },
+    {
+      "name": "bind-unknown-signal",
+      "reason": "bind must name a declared signal",
+      "view": {
+        "id": "bad",
+        "root": "root",
+        "signals": {},
+        "nodes": {"root": {"role": "field", "bind": "missing"}}
+      }
+    }
+  ]
+}
