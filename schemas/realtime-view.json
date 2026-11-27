@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazily.dev/schemas/realtime-view.json",
+  "title": "Realtime View v1",
+  "oneOf": [
+    {"$ref": "#/$defs/Revision"},
+    {"$ref": "#/$defs/Event"}
+  ],
+  "$defs": {
+    "Id": {"type": "string", "minLength": 1},
+    "RevisionNumber": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "Scalar": {
+      "oneOf": [
+        {"type": ["null", "boolean", "string"]},
+        {"type": "integer", "minimum": -9007199254740991, "maximum": 9007199254740991}
+      ]
+    },
+    "Revision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "view_instance", "revision", "definition", "bindings", "actions"],
+      "properties": {
+        "version": {"const": 1},
+        "view_instance": {"$ref": "#/$defs/Id"},
+        "revision": {"$ref": "#/$defs/RevisionNumber"},
+        "definition": {"$ref": "https://lazily.dev/schemas/view.json"},
+        "bindings": {
+          "type": "object",
+          "propertyNames": {"$ref": "#/$defs/Id"},
+          "additionalProperties": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}
+        },
+        "actions": {
+          "type": "object",
+          "propertyNames": {"$ref": "#/$defs/Id"},
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "activate": {"$ref": "#/$defs/Id"},
+              "change": {"$ref": "#/$defs/Id"},
+              "submit": {"$ref": "#/$defs/Id"}
+            }
+          }
+        }
+      }
+    },
+    "Event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "view_instance", "displayed_revision", "node_id", "event_id", "event", "payload"],
+      "properties": {
+        "version": {"const": 1},
+        "view_instance": {"$ref": "#/$defs/Id"},
+        "displayed_revision": {"$ref": "#/$defs/RevisionNumber"},
+        "node_id": {"$ref": "#/$defs/Id"},
+        "event_id": {"$ref": "#/$defs/Id"},
+        "event": {"enum": ["activate", "change", "submit"]},
+        "payload": {"$ref": "#/$defs/Scalar"}
+      },
+      "if": {"properties": {"event": {"const": "activate"}}},
+      "then": {"properties": {"payload": {"type": "null"}}}
+    }
+  }
+}

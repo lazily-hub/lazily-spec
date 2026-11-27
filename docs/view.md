@@ -128,6 +128,8 @@ Install is not part of the document.
 5. The chart, if any, becomes one cell.
 
 After install, hosts exchange values. A Snapshot cannot rebuild the view.
+The optional [Realtime View](realtime-view.md) extension pairs a full View
+revision with that graph state.
 
 ## What conformance asserts
 

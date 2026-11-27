@@ -113,6 +113,15 @@ view is never a Snapshot, a Delta, or a widget tree. See [View](view.md).
 {{#include ../schemas/view.json}}
 ```
 
+## `realtime-view.json`
+
+Defines versioned full View revisions and semantic events. Reactive values
+use the existing graph Snapshot and Delta messages. See [Realtime View](realtime-view.md).
+
+```json
+{{#include ../schemas/realtime-view.json}}
+```
+
 ## `stdlib-fixture.schema.json`
 
 This compute schema validates the portable standard-library fixture corpus. It

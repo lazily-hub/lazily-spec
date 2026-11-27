@@ -40,6 +40,7 @@ _SCHEMA_NAMES = [
     "signaling",
     "statechart",
     "view",
+    "realtime-view",
     "receipts",
     "lossless-tree",
     "lossless-tree-delta",
@@ -2541,3 +2542,19 @@ def test_view_schema_rejects_unknown_ops() -> None:
     document = _minimal_view()
     document["nodes"]["label"]["text"] = {"op": "lit", "args": ["ok"], "fn": "host"}
     assert _view_errors(document)
+
+
+def test_realtime_view_frames_match_wire_schemas() -> None:
+    fixture = json.loads((FIXTURE_DIR / "view" / "field_change.json").read_text())["realtime"]
+    validator = _validator("realtime-view")
+    for revision in fixture["revisions"].values():
+        # The nested duplicate-child revision passes structural validation and
+        # must fail semantic tree validation in each binding.
+        validator.validate(revision)
+    for snapshot in fixture["snapshots"].values():
+        _validator("snapshot").validate(snapshot)
+    for delta in fixture["deltas"].values():
+        _validator("delta").validate(delta)
+    for step in fixture["steps"]:
+        if step["operation"] == "event":
+            assert validator.is_valid(step["frame"]) == (step["status"] != "invalid")
